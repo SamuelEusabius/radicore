@@ -115,3 +115,12 @@ package-lock.json
 Thumbs.db
 ehthumbs.db
 Desktop.ini
+
+# ============================================================
+# Temp / Refactor Files
+# ============================================================
+*.before_*
+delete_*.py
+cleanup_*.py
+refactor_*.py
+move_*.py
