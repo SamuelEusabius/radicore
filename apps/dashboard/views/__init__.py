@@ -108,7 +108,24 @@ from .grades import (
     class_teacher_all_report_cards_merged,
     _render_report_card_pdf,
 )
-
+from .communication import (
+    notifications_list,
+    mark_notification_read,
+    alerts_dashboard,
+    alert_resolve,
+    alert_dismiss,
+    run_scan,
+    send_test_sms_view,
+    bulk_sms,
+    messages_inbox,
+    message_detail,
+    message_archive,
+    compose_message,
+    messages_sent,
+    message_delete,
+    admin_alerts_list,
+    admin_alert_resolve,
+)
 
 # TEMPORARY: import remaining views from views_old.py
 from ..views_old import *  # noqa: F401, F403
