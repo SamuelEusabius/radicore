@@ -58,7 +58,15 @@ from .teachers import (
     class_teacher_parents_download,
     _ct_teacher_and_class,
 )
-
+from .attendance import (
+    teacher_attendance,
+    class_teacher_attendance,
+    class_teacher_attendance_sheet,
+    class_teacher_attendance_pdf,
+    admin_attendance_overview,
+    admin_class_attendance,
+    admin_attendance_export,
+)
 
 
 # TEMPORARY: import remaining views from views_old.py
