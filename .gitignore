@@ -124,3 +124,10 @@ delete_*.py
 cleanup_*.py
 refactor_*.py
 move_*.py
+# One-off refactor scripts
+extract_*.py
+delete_*.py
+cleanup_*.py
+refactor_*.py
+move_*.py
+*.before_*
