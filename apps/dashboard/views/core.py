@@ -94,3 +94,16 @@ def school_admin_dash(request):
         'recent_parents': parents_qs[:5],
         'recent_staff': staff_qs[:5],
     })
+    
+
+def redirect_dashboard(request):
+    """Send user to their own dashboard based on role."""
+    role = request.user.role
+    return redirect({
+        'super_admin': 'dash_super_admin',
+        'school_admin': 'dash_school_admin',
+        'teacher': 'dash_teacher',
+        'parent': 'dash_parent',
+        'accountant': 'dash_accountant',
+        'student': 'dash_student',
+    }.get(role, 'landing'))

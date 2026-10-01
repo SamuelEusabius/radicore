@@ -604,3 +604,12 @@ def admin_alert_resolve(request, alert_id):
     return redirect('admin_alerts_list')
 
 
+def mark_all_read(request):
+    """Mark all notifications as read for the current user."""
+    from apps.notifications.models import Notification
+    Notification.objects.filter(user=request.user, is_read=False).update(is_read=True)
+    from django.contrib import messages
+    messages.success(request, 'All notifications marked as read.')
+    return redirect('notifications_list')
+
+

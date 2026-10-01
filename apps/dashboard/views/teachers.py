@@ -11,6 +11,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import HttpResponse
 from django.db.models import Q, Count, Sum, Avg
+from .timetable import TIMETABLE_PERIODS
 
 from apps.accounts.decorators import (
     role_required, school_staff_only, teacher_only,

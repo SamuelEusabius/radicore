@@ -58,6 +58,7 @@ from .teachers import (
     class_teacher_parents_download,
     _ct_teacher_and_class,
 )
+
 from .attendance import (
     teacher_attendance,
     class_teacher_attendance,
@@ -67,6 +68,23 @@ from .attendance import (
     admin_class_attendance,
     admin_attendance_export,
 )
+
+from .grades import (
+    manage_exams,
+    enter_grades,
+    class_results,
+    class_results_pdf,
+    class_teacher_grades,
+    class_teacher_new_exam,
+    class_teacher_rankings,
+    class_teacher_rankings_download,
+    _ct_build_rankings,
+    class_teacher_results_sheet_pdf,
+    class_teacher_all_report_cards_zip,
+    class_teacher_all_report_cards_merged,
+    _render_report_card_pdf,
+)
+
 from .finance import (
     accountant_dash,
     accountant_invoices,
@@ -93,24 +111,11 @@ from .finance import (
     expenditure_pdf,
     add_expenditure,
 )
-from .grades import (
-    manage_exams,
-    enter_grades,
-    class_results,
-    class_results_pdf,
-    class_teacher_grades,
-    class_teacher_new_exam,
-    class_teacher_rankings,
-    class_teacher_rankings_download,
-    _ct_build_rankings,
-    class_teacher_results_sheet_pdf,
-    class_teacher_all_report_cards_zip,
-    class_teacher_all_report_cards_merged,
-    _render_report_card_pdf,
-)
+
 from .communication import (
     notifications_list,
     mark_notification_read,
+    mark_all_read,
     alerts_dashboard,
     alert_resolve,
     alert_dismiss,
@@ -126,6 +131,7 @@ from .communication import (
     admin_alerts_list,
     admin_alert_resolve,
 )
+
 from .admin_schools import (
     super_admin_dash,
     manage_users,
@@ -142,5 +148,31 @@ from .admin_schools import (
     super_admin_performance,
     admin_student_detail,
 )
-# TEMPORARY: import remaining views from views_old.py
-from ..views_old import *  # noqa: F401, F403
+
+from .users import (
+    staff_list,
+    add_staff,
+    delete_staff,
+    user_deactivate,
+    user_delete,
+    user_change_role,
+)
+
+from .academics import (
+    manage_classes,
+    manage_subjects,
+    subject_delete,
+)
+
+from .timetable import (
+    timetable_view,
+    timetable_add,
+    timetable_delete,
+    timetable_pdf,
+)
+from .core import (
+    redirect_to_own_dashboard,
+    super_admin_dash,
+    school_admin_dash,
+    redirect_dashboard,
+)
