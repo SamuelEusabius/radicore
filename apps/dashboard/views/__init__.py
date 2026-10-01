@@ -67,6 +67,21 @@ from .attendance import (
     admin_class_attendance,
     admin_attendance_export,
 )
+from .grades import (
+    manage_exams,
+    enter_grades,
+    class_results,
+    class_results_pdf,
+    class_teacher_grades,
+    class_teacher_new_exam,
+    class_teacher_rankings,
+    class_teacher_rankings_download,
+    _ct_build_rankings,
+    class_teacher_results_sheet_pdf,
+    class_teacher_all_report_cards_zip,
+    class_teacher_all_report_cards_merged,
+    _render_report_card_pdf,
+)
 
 
 # TEMPORARY: import remaining views from views_old.py
