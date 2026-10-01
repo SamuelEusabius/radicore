@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+{% block title %}Add Lesson{% endblock %}
+{% block header_title %}➕ Add Lesson to Timetable{% endblock %}
+
+{% block content %}
+
+<div class="max-w-2xl mx-auto bg-white rounded-xl shadow-sm border border-gray-100 p-8">
+
+  {% if messages %}
+    {% for m in messages %}
+      <div class="p-3 rounded mb-4 text-sm {% if m.tags == 'error' %}bg-red-100 text-red-700{% else %}bg-green-100 text-green-700{% endif %}">
+        {{ m }}
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  <form method="post" class="space-y-5">
+    {% csrf_token %}
+
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-1">Class <span class="text-red-500">*</span></label>
+      <select name="class_level" required class="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-teal-500">
+        <option value="">— Select class —</option>
+        {% for c in classes %}<option value="{{ c.id }}">{{ c.name }}</option>{% endfor %}
+      </select>
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-1">Day <span class="text-red-500">*</span></label>
+      <select name="day_of_week" required class="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-teal-500">
+        <option value="">— Select day —</option>
+        {% for value, label in days %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
+      </select>
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-1">Subject / Learning Area <span class="text-red-500">*</span></label>
+      <select name="subject" required class="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-teal-500">
+        <option value="">— Select subject —</option>
+        {% for s in subjects %}<option value="{{ s.id }}">{{ s.name }}</option>{% endfor %}
+      </select>
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-1">Teacher (optional)</label>
+      <select name="teacher" class="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-teal-500">
+        <option value="">— Assign teacher —</option>
+        {% for t in teachers %}
+          <option value="{{ t.id }}">{{ t.get_full_name|default:t.email }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-1">Time Slot <span class="text-red-500">*</span></label>
+      <select name="start_time" required onchange="setEndTime(this)"
+              class="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-teal-500">
+        <option value="">— Select period —</option>
+        {% for p in periods %}
+          <option value="{{ p.0 }}" data-end="{{ p.1 }}">{{ p.0 }} – {{ p.1 }}</option>
+        {% endfor %}
+      </select>
+      <input type="hidden" name="end_time" id="end_time">
+    </div>
+
+    <div class="flex gap-3 pt-4">
+      <button type="submit" class="bg-teal-600 hover:bg-teal-700 text-white font-semibold px-6 py-3 rounded-lg">
+        ✅ Add Lesson
+      </button>
+      <a href="{% url 'timetable_view' %}" class="border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium px-6 py-3 rounded-lg">
+        Cancel
+      </a>
+    </div>
+
+  </form>
+
+</div>
+
+<script>
+function setEndTime(select) {
+  const opt = select.options[select.selectedIndex];
+  document.getElementById('end_time').value = opt.getAttribute('data-end') || '';
+}
+</script>
+
+{% endblock %}

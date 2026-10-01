@@ -1,0 +1,80 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls %}
+
+{% block header_sub %}
+  {% if add %}Add new {{ opts.verbose_name }}{% else %}Edit {{ opts.verbose_name }}{% endif %}
+{% endblock %}
+
+{% block admin_content %}
+
+<div class="bg-white rounded-xl shadow-sm border border-gray-100 p-8 max-w-4xl">
+
+  <div class="flex justify-between items-center mb-6 flex-wrap gap-3">
+    <h2 class="text-2xl font-bold text-gray-800">
+      {% if add %}➕ Add new {{ opts.verbose_name }}
+      {% else %}✏️ Edit {{ opts.verbose_name }}{% endif %}
+    </h2>
+    <a href="{% url opts|admin_urlname:'changelist' %}" class="text-sm text-teal-600 hover:underline font-medium">
+      ← Back to list
+    </a>
+  </div>
+
+  <form {% if has_file_field %}enctype="multipart/form-data" {% endif %}method="post" id="{{ opts.model_name }}_form">
+    {% csrf_token %}
+
+    {% if adminform.form.errors %}
+      <div class="bg-red-100 text-red-700 p-3 rounded mb-4">
+        <strong>Please fix the errors below.</strong>
+      </div>
+    {% endif %}
+
+    <div class="space-y-4">
+      {% for fieldset in adminform %}
+        <div class="bg-gray-50 p-5 rounded-lg">
+          <h3 class="text-sm font-bold text-teal-700 mb-4 uppercase tracking-wider">
+            {{ fieldset.name|default:"Details" }}
+          </h3>
+          <div class="space-y-4">
+            {% for line in fieldset %}
+              {% for field in line %}
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">
+                    {{ field.field.label }}{% if field.field.required %} <span class="text-red-500">*</span>{% endif %}
+                  </label>
+                  {{ field.field }}
+                  {% if field.field.help_text %}
+                    <p class="text-xs text-gray-500 mt-1">{{ field.field.help_text }}</p>
+                  {% endif %}
+                  {% for error in field.errors %}
+                    <p class="text-xs text-red-600 mt-1">{{ error }}</p>
+                  {% endfor %}
+                </div>
+              {% endfor %}
+            {% endfor %}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+
+    <div class="flex gap-3 mt-6 pt-6 border-t flex-wrap">
+      <button type="submit" name="_save"
+              class="bg-teal-600 hover:bg-teal-700 text-white px-6 py-3 rounded-lg font-medium">
+        💾 Save
+      </button>
+      {% if not add %}
+        <button type="submit" name="_continue"
+                class="border border-teal-600 text-teal-600 hover:bg-teal-50 px-6 py-3 rounded-lg font-medium">
+          Save and continue editing
+        </button>
+      {% endif %}
+      <button type="submit" name="_addanother"
+              class="border border-gray-300 text-gray-700 hover:bg-gray-50 px-6 py-3 rounded-lg font-medium">
+        Save and add another
+      </button>
+    </div>
+
+  </form>
+
+</div>
+
+{% endblock %}

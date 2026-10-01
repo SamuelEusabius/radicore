@@ -1,0 +1,159 @@
+{% extends 'base.html' %}
+{% block title %}Complete Payment{% endblock %}
+{% block header_title %}Complete Your Payment{% endblock %}
+{% block header_sub %}{{ school.name }} — {{ subscription.plan.name }}{% endblock %}
+
+{% block content %}
+
+<div class="max-w-3xl mx-auto">
+
+  <!-- Success banner -->
+  <div style="background: #d1fae5; border-left: 4px solid #059669; padding: 16px; margin-bottom: 24px;">
+    <div style="font-weight: 700; color: #065f46; font-family: 'Poppins', sans-serif; font-size: 15px; margin-bottom: 4px;">
+      ✓ Plan Selected Successfully
+    </div>
+    <div style="font-size: 13px; color: #065f46;">
+      Your subscription is pending payment. Follow the instructions below to complete payment.
+    </div>
+  </div>
+
+  <!-- Order summary -->
+  <div class="pro-card" style="margin-bottom: 24px;">
+    <div class="pro-card-title">
+      {% include 'partials/icons.html' with name="file-text" size=18 %}
+      <span>Order Summary</span>
+    </div>
+
+    <table style="width: 100%; border-collapse: collapse;">
+      <tr style="border-bottom: 1px solid #f1f5f9;">
+        <td style="padding: 12px 0; color: #6b7280; font-size: 13px;">Plan</td>
+        <td style="padding: 12px 0; font-weight: 700; color: #1a1a1a; font-size: 13px; text-align: right;">{{ subscription.plan.name }}</td>
+      </tr>
+      <tr style="border-bottom: 1px solid #f1f5f9;">
+        <td style="padding: 12px 0; color: #6b7280; font-size: 13px;">Billing Cycle</td>
+        <td style="padding: 12px 0; font-weight: 600; color: #1a1a1a; font-size: 13px; text-align: right;">{{ subscription.billing_cycle_display }}</td>
+      </tr>
+      <tr style="border-bottom: 1px solid #f1f5f9;">
+        <td style="padding: 12px 0; color: #6b7280; font-size: 13px;">Reference Number</td>
+        <td style="padding: 12px 0; font-weight: 700; color: #00695c; font-size: 13px; text-align: right; font-family: 'JetBrains Mono', monospace;">{{ reference }}</td>
+      </tr>
+      <tr style="border-bottom: 1px solid #f1f5f9;">
+        <td style="padding: 12px 0; color: #6b7280; font-size: 13px;">Payment Method</td>
+        <td style="padding: 12px 0; font-weight: 600; color: #1a1a1a; font-size: 13px; text-align: right;">{{ subscription.get_last_payment_method_display }}</td>
+      </tr>
+      <tr>
+        <td style="padding: 16px 0 0 0; color: #1a1a1a; font-weight: 700; font-size: 15px;">Total Amount</td>
+        <td style="padding: 16px 0 0 0; font-weight: 800; color: #ff6f00; font-size: 22px; text-align: right; font-family: 'Poppins', sans-serif;">
+          KES {{ subscription.total_paid_kes|floatformat:0 }}
+        </td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- Payment instructions -->
+  {% if subscription.last_payment_method == 'mpesa' %}
+
+    <div class="pro-card" style="margin-bottom: 24px; border-left: 4px solid #00a651;">
+      <div class="pro-card-title">
+        {% include 'partials/icons.html' with name="phone" size=18 %}
+        <span>Pay via M-Pesa</span>
+      </div>
+
+      <div style="font-size: 14px; color: #374151; line-height: 1.9;">
+        <p style="margin-bottom: 12px;">Follow these steps to complete your M-Pesa payment:</p>
+
+        <ol style="padding-left: 20px; line-height: 2;">
+          <li>Open <strong>M-Pesa</strong> on your phone</li>
+          <li>Select <strong>Lipa na M-Pesa</strong> → <strong>Pay Bill</strong></li>
+          <li>Enter Business Number: <strong style="color: #00695c; font-family: 'JetBrains Mono', monospace; background: #f1f5f9; padding: 2px 6px;">247247</strong></li>
+          <li>Enter Account Number: <strong style="color: #00695c; font-family: 'JetBrains Mono', monospace; background: #f1f5f9; padding: 2px 6px;">{{ reference }}</strong></li>
+          <li>Enter Amount: <strong style="color: #ff6f00;">KES {{ subscription.total_paid_kes|floatformat:0 }}</strong></li>
+          <li>Enter your M-Pesa PIN and confirm</li>
+        </ol>
+
+        <div style="background: #fef3c7; padding: 12px; border-left: 3px solid #d97706; margin-top: 16px; font-size: 12.5px; color: #92400e;">
+          <strong>Important:</strong> Use the reference number <strong>{{ reference }}</strong> exactly as shown. This helps us identify your payment quickly.
+        </div>
+      </div>
+    </div>
+
+  {% elif subscription.last_payment_method == 'bank' %}
+
+    <div class="pro-card" style="margin-bottom: 24px; border-left: 4px solid #1a237e;">
+      <div class="pro-card-title">
+        {% include 'partials/icons.html' with name="briefcase" size=18 %}
+        <span>Bank Transfer Details</span>
+      </div>
+
+      <div style="font-size: 14px; color: #374151; line-height: 1.9;">
+        <p style="margin-bottom: 12px;">Transfer the amount to the following bank account:</p>
+
+        <table style="width: 100%; border-collapse: collapse; background: #f8fafc;">
+          <tr>
+            <td style="padding: 10px 14px; color: #6b7280; font-size: 13px; width: 40%;">Bank Name</td>
+            <td style="padding: 10px 14px; font-weight: 700; font-size: 13px;">Equity Bank Kenya</td>
+          </tr>
+          <tr style="border-top: 1px solid #e5e7eb;">
+            <td style="padding: 10px 14px; color: #6b7280; font-size: 13px;">Account Name</td>
+            <td style="padding: 10px 14px; font-weight: 700; font-size: 13px;">LoyTech Developer Limited</td>
+          </tr>
+          <tr style="border-top: 1px solid #e5e7eb;">
+            <td style="padding: 10px 14px; color: #6b7280; font-size: 13px;">Account Number</td>
+            <td style="padding: 10px 14px; font-weight: 700; font-size: 13px; font-family: 'JetBrains Mono', monospace;">0123456789012</td>
+          </tr>
+          <tr style="border-top: 1px solid #e5e7eb;">
+            <td style="padding: 10px 14px; color: #6b7280; font-size: 13px;">Branch</td>
+            <td style="padding: 10px 14px; font-weight: 700; font-size: 13px;">Bungoma</td>
+          </tr>
+          <tr style="border-top: 1px solid #e5e7eb;">
+            <td style="padding: 10px 14px; color: #6b7280; font-size: 13px;">Amount</td>
+            <td style="padding: 10px 14px; font-weight: 800; color: #ff6f00; font-size: 15px;">KES {{ subscription.total_paid_kes|floatformat:0 }}</td>
+          </tr>
+          <tr style="border-top: 1px solid #e5e7eb;">
+            <td style="padding: 10px 14px; color: #6b7280; font-size: 13px;">Reference</td>
+            <td style="padding: 10px 14px; font-weight: 700; color: #00695c; font-size: 13px; font-family: 'JetBrains Mono', monospace;">{{ reference }}</td>
+          </tr>
+        </table>
+
+        <div style="background: #fef3c7; padding: 12px; border-left: 3px solid #d97706; margin-top: 16px; font-size: 12.5px; color: #92400e;">
+          <strong>Important:</strong> Include the reference number <strong>{{ reference }}</strong> in your transfer description.
+        </div>
+      </div>
+    </div>
+
+  {% endif %}
+
+  <!-- Info box -->
+  <div class="pro-card" style="margin-bottom: 24px;">
+    <div style="display: flex; align-items: start; gap: 12px;">
+      <div style="width: 40px; height: 40px; background: #dbeafe; color: #1e40af; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+        {% include 'partials/icons.html' with name="info" size=20 %}
+      </div>
+      <div>
+        <div style="font-weight: 700; color: #1a1a1a; font-family: 'Poppins', sans-serif; font-size: 14px; margin-bottom: 6px;">
+          What happens next?
+        </div>
+        <ol style="padding-left: 18px; font-size: 13px; color: #4b5563; line-height: 1.8; margin: 0;">
+          <li>Complete the payment using the details above</li>
+          <li>Our team will verify your payment (usually within 1–2 hours)</li>
+          <li>You'll receive an email confirming your subscription is active</li>
+          <li>You can start using all features immediately</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+
+  <!-- Actions -->
+  <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+    <a href="{% url 'subscription_payment_status' school.id %}" class="pro-btn pro-btn-primary">
+      {% include 'partials/icons.html' with name="activity" size=15 %}
+      <span>Check Payment Status</span>
+    </a>
+    <a href="{% url 'dashboard_home' %}" class="pro-btn pro-btn-secondary">
+      Back to Dashboard
+    </a>
+  </div>
+
+</div>
+
+{% endblock %}

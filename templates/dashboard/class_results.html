@@ -1,0 +1,232 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Class Results{% endblock %}
+{% block header_title %}Class Results{% endblock %}
+{% block header_sub %}{{ selected_class.name|default:"Select a class" }} · {{ selected_exam.name|default:"Select an exam" }}{% endblock %}
+
+{% block content %}
+
+<!-- ============================================ -->
+<!-- FILTER BAR                                   -->
+<!-- ============================================ -->
+<div class="card mb-6 no-print">
+  <form method="get" style="display: flex; flex-wrap: wrap; gap: var(--s-3); align-items: flex-end;">
+
+    <div style="min-width: 220px;">
+      <label style="display: block; font-size: var(--text-xs); font-weight: 600; color: var(--ink-600); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: var(--s-1);">
+        Class
+      </label>
+      <select name="class" onchange="this.form.submit()" class="select">
+        {% for c in classes %}
+          <option value="{{ c.id }}" {% if selected_class and selected_class.id == c.id %}selected{% endif %}>{{ c.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div style="min-width: 260px;">
+      <label style="display: block; font-size: var(--text-xs); font-weight: 600; color: var(--ink-600); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: var(--s-1);">
+        Exam
+      </label>
+      <select name="exam" onchange="this.form.submit()" class="select">
+        {% for e in exams %}
+          <option value="{{ e.id }}" {% if selected_exam and selected_exam.id == e.id %}selected{% endif %}>
+            {{ e.name }} — {{ e.term }} {{ e.year }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    {% if results %}
+      <div style="display: flex; gap: var(--s-2);">
+        <a href="{% url 'class_results_pdf' %}?class={{ selected_class.id }}&exam={{ selected_exam.id }}"
+           target="_blank" class="btn btn-primary">
+          {% include 'partials/icons.html' with name="download" size=15 %}
+          <span>Download PDF</span>
+        </a>
+        <button type="button" onclick="window.print()" class="btn btn-secondary no-print">
+          {% include 'partials/icons.html' with name="printer" size=15 %}
+          <span>Print</span>
+        </button>
+      </div>
+    {% endif %}
+
+  </form>
+</div>
+
+{% if results %}
+
+<!-- ============================================ -->
+<!-- STATS ROW                                    -->
+<!-- ============================================ -->
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Students Ranked</span>
+      <div class="stat-icon" style="background: rgba(10, 138, 95, 0.1); color: var(--primary);">
+        {% include 'partials/icons.html' with name="users" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value">{{ total_students }}</div>
+    <div class="stat-meta">In this class</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Class Average</span>
+      <div class="stat-icon" style="background: rgba(37, 99, 235, 0.1); color: #2563EB;">
+        {% include 'partials/icons.html' with name="bar-chart" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: {% if class_average >= 80 %}var(--success){% elif class_average >= 65 %}#2563EB{% elif class_average >= 50 %}var(--warning){% else %}var(--danger){% endif %};">
+      {{ class_average }}%
+    </div>
+    <div class="stat-meta">Across all subjects</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Top Score</span>
+      <div class="stat-icon" style="background: rgba(217, 119, 6, 0.1); color: var(--warning);">
+        {% include 'partials/icons.html' with name="award" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--success);">{{ top_score|floatformat:1 }}%</div>
+    <div class="stat-meta">
+      {% if results %}{{ results.0.student.full_name|truncatechars:20 }}{% endif %}
+    </div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Subjects</span>
+      <div class="stat-icon" style="background: rgba(124, 58, 237, 0.1); color: #7C3AED;">
+        {% include 'partials/icons.html' with name="book" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value">{{ subject_count }}</div>
+    <div class="stat-meta">Graded this exam</div>
+  </div>
+
+</div>
+
+<!-- ============================================ -->
+<!-- RESULTS TABLE                                -->
+<!-- ============================================ -->
+<div class="card" style="padding: 0; overflow: hidden;">
+
+  <!-- Header -->
+  <div style="background: linear-gradient(135deg, var(--primary-dark) 0%, var(--ink-900) 100%); color: #FFFFFF; padding: var(--s-5) var(--s-6); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--s-3);">
+    <div>
+      <h3 style="font-weight: 700; font-size: var(--text-lg); margin: 0; font-family: var(--font-heading); color: #FFFFFF;">
+        {{ selected_class.name }} — {{ selected_exam.name }}
+      </h3>
+      <p style="color: rgba(255,255,255,0.75); font-size: var(--text-xs); margin: var(--s-1) 0 0;">
+        {{ selected_exam.term }} {{ selected_exam.year }}
+        {% if class_teacher_name %} · Class Teacher: {{ class_teacher_name }}{% endif %}
+      </p>
+    </div>
+    <div style="text-align: right; font-size: var(--text-xs); color: rgba(255,255,255,0.85); line-height: 1.6;">
+      <strong>EE</strong> ≥ 80% · <strong>ME</strong> ≥ 65% · <strong>AE</strong> ≥ 50% · <strong>BE</strong> &lt; 50%
+    </div>
+  </div>
+
+  <div style="overflow-x: auto;">
+    <table class="table">
+      <thead>
+        <tr>
+          <th style="text-align: center; width: 80px;">Rank</th>
+          <th>Student</th>
+          <th>Admission No</th>
+          <th style="text-align: center;">Marks</th>
+          <th style="text-align: center;">Average</th>
+          <th style="text-align: center;">CBC Grade</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in results %}
+        <tr class="{% if r.student.gender == 'M' %}gender-boy{% else %}gender-girl{% endif %}">
+          <td style="text-align: center;">
+            {% if r.position == 1 %}
+              <span style="font-size: 24px;">🥇</span>
+            {% elif r.position == 2 %}
+              <span style="font-size: 24px;">🥈</span>
+            {% elif r.position == 3 %}
+              <span style="font-size: 24px;">🥉</span>
+            {% else %}
+              <span class="font-mono" style="font-weight: 700; color: var(--ink-700);">{{ r.position }}</span>
+            {% endif %}
+          </td>
+          <td>
+            <div style="display: flex; align-items: center; gap: var(--s-3);">
+              <div class="avatar avatar-sm" style="{% if r.student.gender == 'F' %}background: #EC4899;{% else %}background: #2563EB;{% endif %}">
+                {{ r.student.initials }}
+              </div>
+              <span style="font-weight: 600; color: var(--ink-900);">{{ r.student.full_name }}</span>
+            </div>
+          </td>
+          <td>
+            <span class="font-mono" style="font-weight: 600; color: var(--ink-700); font-size: var(--text-xs);">
+              {{ r.student.admission_number }}
+            </span>
+          </td>
+          <td style="text-align: center;">
+            <span class="font-mono">{{ r.marks|floatformat:0 }}/{{ r.out_of|floatformat:0 }}</span>
+          </td>
+          <td style="text-align: center;">
+            <span class="font-mono" style="font-weight: 700;
+              {% if r.avg >= 80 %}color: var(--success);
+              {% elif r.avg >= 65 %}color: #2563EB;
+              {% elif r.avg >= 50 %}color: var(--warning);
+              {% else %}color: var(--danger);{% endif %}">
+              {{ r.avg|floatformat:1 }}%
+            </span>
+          </td>
+          <td style="text-align: center;">
+            {% if r.cbc == 'EE' %}
+              <span class="badge badge-success">EE</span>
+            {% elif r.cbc == 'ME' %}
+              <span class="badge badge-info">ME</span>
+            {% elif r.cbc == 'AE' %}
+              <span class="badge badge-warning">AE</span>
+            {% else %}
+              <span class="badge badge-danger">BE</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+{% else %}
+
+<div class="card">
+  <div class="empty" style="border: none;">
+    {% include 'partials/icons.html' with name="bar-chart" size=56 %}
+    <h3>No results yet</h3>
+    <p>Enter grades for this exam first, then come back to see the ranked results.</p>
+    <a href="{% url 'enter_grades' %}" class="btn btn-primary">
+      {% include 'partials/icons.html' with name="edit" size=15 %}
+      <span>Enter Grades</span>
+    </a>
+  </div>
+</div>
+
+{% endif %}
+
+{% endblock %}
+
+{% block extra_css %}
+<style>
+  @media print {
+    .no-print { display: none !important; }
+    aside, .topbar, .sidebar, .mobile-backdrop { display: none !important; }
+    body { background: #FFFFFF; }
+    .main-area { margin: 0; }
+    .page-content { padding: 0; }
+  }
+</style>
+{% endblock %}

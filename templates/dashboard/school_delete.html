@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% block title %}Delete School{% endblock %}
+{% block header_title %}🗑️ Delete School{% endblock %}
+
+{% block content %}
+
+<div class="max-w-lg mx-auto bg-white rounded-xl shadow-sm border border-gray-100 p-8">
+
+  <div class="text-center mb-6">
+    <div class="w-20 h-20 rounded-full bg-red-100 text-red-600 flex items-center justify-center text-4xl mx-auto mb-4">⚠️</div>
+    <h2 class="text-2xl font-bold text-gray-800 mb-2">Delete this school?</h2>
+    <p class="text-gray-500 text-sm">This will permanently remove the school and ALL its data.</p>
+  </div>
+
+  <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded mb-6">
+    <p class="font-bold text-red-800">{{ school.name }}</p>
+    <p class="text-xs text-red-600 mt-1">Code: {{ school.code }} · {{ school.county|default:"" }}</p>
+    <p class="text-xs text-red-700 mt-3 font-semibold">
+      ⚠️ This will delete: students, teachers, parents, staff, invoices, and all associated records.
+    </p>
+  </div>
+
+  <form method="post" class="flex gap-3 justify-center">
+    {% csrf_token %}
+    <a href="{% url 'schools_manage' %}"
+       class="border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium px-6 py-3 rounded-lg">
+      Cancel
+    </a>
+    <button type="submit"
+            class="bg-red-600 hover:bg-red-700 text-white font-semibold px-6 py-3 rounded-lg">
+      🗑️ Yes, delete permanently
+    </button>
+  </form>
+
+</div>
+
+{% endblock %}

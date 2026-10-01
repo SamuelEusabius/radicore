@@ -1,0 +1,364 @@
+{% extends 'account/base_auth.html' %}
+{% load static %}
+{% block title %}Signed Out · School MS{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* ============ LEFT: BRAND PANEL ============ */
+  .logout-brand {
+    padding: var(--s-9);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: relative;
+    overflow: hidden;
+    color: #FFFFFF;
+    background-image: url('{% static "images/graduation-cap-books.png" %}');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+  }
+  .logout-brand::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      160deg,
+      rgba(10, 138, 95, 0.92) 0%,
+      rgba(5, 90, 62, 0.94) 55%,
+      rgba(11, 18, 32, 0.96) 100%
+    );
+    z-index: 1;
+    pointer-events: none;
+  }
+  .logout-brand::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(circle at 20% 20%, rgba(255,255,255,0.08) 0%, transparent 45%),
+      radial-gradient(circle at 80% 70%, rgba(255,255,255,0.06) 0%, transparent 45%);
+    z-index: 2;
+    pointer-events: none;
+  }
+  .logout-brand-inner { position: relative; z-index: 3; max-width: 480px; }
+
+  .logout-brand-logo {
+    display: inline-flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: var(--s-10);
+  }
+  .logout-brand-logo-mark {
+    width: 52px; height: 52px;
+    border-radius: var(--radius-lg);
+    background: rgba(255,255,255,0.14);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.18);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-heading);
+    font-weight: 800;
+    font-size: 20px;
+    letter-spacing: -0.02em;
+    overflow: hidden;
+  }
+  .logout-brand-logo-mark img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+  .logout-brand-logo-text {
+    font-family: var(--font-heading);
+    font-size: var(--text-lg);
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+  .logout-brand-logo-text small {
+    display: block;
+    font-size: 11px;
+    font-weight: 500;
+    opacity: 0.75;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+
+  .logout-brand h1 {
+    font-size: 38px;
+    font-weight: 800;
+    line-height: 1.15;
+    letter-spacing: -0.03em;
+    margin-bottom: var(--s-5);
+    color: #FFFFFF;
+  }
+  .logout-brand h1 span {
+    background: linear-gradient(90deg, #A7F3D0, #6EE7B7);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .logout-brand p {
+    font-size: var(--text-md);
+    line-height: 1.6;
+    opacity: 0.9;
+    margin-bottom: var(--s-8);
+    max-width: 420px;
+    color: #FFFFFF;
+  }
+
+  .logout-brand-quote {
+    border-left: 3px solid rgba(255,255,255,0.3);
+    padding-left: var(--s-4);
+    margin-top: var(--s-8);
+  }
+  .logout-brand-quote p {
+    font-style: italic;
+    font-size: var(--text-sm);
+    opacity: 0.9;
+    margin: 0;
+  }
+  .logout-brand-quote cite {
+    display: block;
+    font-style: normal;
+    font-size: var(--text-xs);
+    opacity: 0.65;
+    margin-top: var(--s-2);
+    letter-spacing: 0.04em;
+  }
+
+  .logout-brand-footer {
+    position: relative;
+    z-index: 3;
+    font-size: var(--text-xs);
+    opacity: 0.75;
+    letter-spacing: 0.02em;
+    line-height: 1.6;
+  }
+  .logout-brand-footer strong {
+    display: block;
+    font-weight: 600;
+    opacity: 0.9;
+    margin-bottom: 2px;
+  }
+
+  /* ============ RIGHT: PANEL ============ */
+  .logout-panel {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--s-9) var(--s-6);
+    background: var(--surface);
+  }
+  .logout-panel-inner {
+    width: 100%;
+    max-width: 420px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .logout-icon {
+    width: 84px; height: 84px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: var(--s-6);
+    box-shadow: 0 12px 32px rgba(10, 138, 95, 0.3);
+    animation: popIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  @keyframes popIn {
+    from { transform: scale(0.6); opacity: 0; }
+    to   { transform: scale(1); opacity: 1; }
+  }
+  .logout-icon svg {
+    width: 40px; height: 40px;
+    color: #FFFFFF;
+    stroke-width: 2.5;
+  }
+
+  .logout-title {
+    font-family: var(--font-heading);
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--ink-900);
+    margin-bottom: var(--s-3);
+    letter-spacing: -0.02em;
+  }
+  .logout-subtitle {
+    font-size: var(--text-sm);
+    color: var(--ink-500);
+    margin-bottom: var(--s-8);
+    line-height: 1.6;
+  }
+
+  .logout-actions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-3);
+    margin-bottom: var(--s-8);
+    width: 100%;
+  }
+
+  .logout-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 14px;
+    font-family: var(--font-sans);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    border-radius: var(--radius);
+    text-decoration: none;
+    transition: all var(--t-fast);
+    border: 1.5px solid transparent;
+    width: 100%;
+  }
+
+  .logout-btn-primary {
+    background: var(--primary);
+    color: #FFFFFF;
+  }
+  .logout-btn-primary:hover {
+    background: var(--primary-hover);
+    box-shadow: 0 4px 12px rgba(10, 138, 95, 0.3);
+    transform: translateY(-1px);
+    color: #FFFFFF;
+  }
+
+  .logout-btn-secondary {
+    background: var(--surface);
+    color: var(--ink-800);
+    border-color: var(--border-strong);
+  }
+  .logout-btn-secondary:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+    background: var(--primary-soft);
+  }
+
+  .logout-btn-ghost {
+    color: var(--ink-500);
+    font-weight: 500;
+    font-size: var(--text-sm);
+    padding: 10px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+    width: auto;
+  }
+  .logout-btn-ghost:hover { color: var(--primary); }
+
+  .logout-footer {
+    margin-top: var(--s-6);
+    padding-top: var(--s-6);
+    border-top: 1px solid var(--border);
+    font-size: var(--text-xs);
+    color: var(--ink-500);
+    line-height: 1.8;
+    width: 100%;
+    text-align: center;
+  }
+  .logout-footer strong { color: var(--ink-700); font-weight: 600; }
+
+  @media (max-width: 900px) {
+    .logout-brand { padding: var(--s-7) var(--s-6); min-height: auto; }
+    .logout-brand h1 { font-size: 26px; }
+    .logout-brand p { font-size: var(--text-sm); margin-bottom: var(--s-4); }
+    .logout-brand-inner { max-width: 100%; }
+    .logout-brand-logo { margin-bottom: var(--s-5); }
+    .logout-brand-quote { display: none; }
+    .logout-brand-footer { display: none; }
+    .logout-panel { padding: var(--s-7) var(--s-5); }
+  }
+  @media (max-width: 480px) {
+    .logout-title { font-size: 22px; }
+    .logout-icon { width: 68px; height: 68px; margin-bottom: var(--s-5); }
+    .logout-icon svg { width: 32px; height: 32px; }
+    .logout-brand h1 { font-size: 22px; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="auth-split">
+
+  <!-- LEFT: BRAND SIDE -->
+  <div class="logout-brand">
+    <div class="logout-brand-inner">
+
+      <div class="logout-brand-logo">
+        <div class="logout-brand-logo-mark"><img src="/static/images/graduation-cap-books.png" alt="School MS"></div>
+        <div class="logout-brand-logo-text">
+          School MS
+          <small>Integrated Management System</small>
+        </div>
+      </div>
+
+      <h1>Building the digital foundation for <span>every Kenyan school</span>.</h1>
+      <p>
+        Our vision is to become the most trusted digital partner for schools across East Africa —
+        empowering administrators, teachers, parents, and students with technology built for our local reality.
+      </p>
+
+      <div class="logout-brand-quote">
+        <p>"Technology is best when it brings people together."</p>
+        <cite>— Matt Mullenweg</cite>
+      </div>
+
+    </div>
+
+    <div class="logout-brand-footer">
+      <strong>© {% now "Y" %} School MS</strong>
+      Developed by LoyTech Developer Limited · Bungoma, Kenya
+    </div>
+  </div>
+
+  <!-- RIGHT: MESSAGE SIDE -->
+  <div class="logout-panel">
+    <div class="logout-panel-inner">
+
+      <div class="logout-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+      </div>
+
+      <h1 class="logout-title">You've been signed out</h1>
+      <p class="logout-subtitle">
+        Your session has ended securely. Thank you for using School MS. We hope to see you back soon.
+      </p>
+
+      <div class="logout-actions">
+        <a href="{% url 'account_login' %}" class="logout-btn logout-btn-primary">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg>
+          Sign In Again
+        </a>
+
+        <a href="{% url 'about' %}" class="logout-btn logout-btn-secondary">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+          Learn About Our Vision
+        </a>
+      </div>
+
+      <a href="/" class="logout-btn-ghost">
+        ← Return to Homepage
+      </a>
+
+      <div class="logout-footer">
+        <strong>School MS</strong> · Integrated Management System<br>
+        © {% now "Y" %} All Rights Reserved · Built for Kenyan Schools
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}

@@ -1,0 +1,143 @@
+{% extends 'base.html' %}
+{% block title %}{{ parent.first_name }} {{ parent.last_name }}{% endblock %}
+{% block header_title %}Parent Details{% endblock %}
+{% block header_sub %}{{ cls.name }} — Class Parent{% endblock %}
+
+{% block content %}
+
+<a href="{% url 'class_teacher_parents' %}"
+   class="inline-flex items-center gap-1 text-sm text-teal-700 hover:underline mb-4">
+  ← Back to all parents
+</a>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+  <!-- ============ BIO CARD ============ -->
+  <div class="lg:col-span-1">
+    <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-6 text-center">
+
+      {% if parent.photo %}
+        <img src="{{ parent.photo.url }}"
+             class="w-24 h-24 rounded-full object-cover mx-auto mb-4">
+      {% else %}
+        <div class="w-24 h-24 rounded-full bg-teal-100 text-teal-700 flex items-center justify-center text-2xl font-bold mx-auto mb-4">
+          {{ parent.first_name|first|upper }}{{ parent.last_name|first|upper }}
+        </div>
+      {% endif %}
+
+      <h2 class="text-lg font-bold text-gray-900">
+        {{ parent.first_name }} {{ parent.last_name }}
+      </h2>
+
+      <span class="inline-block mt-2 px-3 py-1 text-xs font-semibold rounded
+        {% if parent.relationship == 'father' %}bg-blue-100 text-blue-700
+        {% elif parent.relationship == 'mother' %}bg-pink-100 text-pink-700
+        {% else %}bg-gray-100 text-gray-700{% endif %}">
+        {{ parent.get_relationship_display }}
+      </span>
+
+      <div class="mt-6 pt-6 border-t border-gray-100 text-left space-y-3 text-sm">
+        <div>
+          <div class="text-xs text-gray-500 uppercase tracking-wide">Email</div>
+          <div class="text-gray-800 truncate">{{ parent.user.email }}</div>
+        </div>
+        <div>
+          <div class="text-xs text-gray-500 uppercase tracking-wide">Phone</div>
+          <div class="text-gray-800 tabular-nums">{{ parent.phone|default:"—" }}</div>
+        </div>
+        <div>
+          <div class="text-xs text-gray-500 uppercase tracking-wide">ID Number</div>
+          <div class="text-gray-800 tabular-nums">{{ parent.id_number|default:"—" }}</div>
+        </div>
+        <div>
+          <div class="text-xs text-gray-500 uppercase tracking-wide">Occupation</div>
+          <div class="text-gray-800">{{ parent.occupation|default:"—" }}</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ============ CHILDREN + INFO ============ -->
+  <div class="lg:col-span-2 space-y-6">
+
+    <!-- Children -->
+    <div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+      <div class="p-5 border-b border-gray-100">
+        <h3 class="text-sm font-semibold text-gray-800">
+          Children ({{ children|length }})
+        </h3>
+        <p class="text-xs text-gray-500 mt-0.5">
+          Students linked to this parent across the school
+        </p>
+      </div>
+
+      <div class="divide-y divide-gray-50">
+        {% for child in children %}
+        <div class="p-5 flex items-center gap-4">
+
+          {% if child.photo %}
+            <img src="{{ child.photo.url }}" class="w-12 h-12 rounded-full object-cover flex-shrink-0">
+          {% else %}
+            <div class="w-12 h-12 rounded-full bg-teal-100 text-teal-700 flex items-center justify-center text-sm font-bold flex-shrink-0">
+              {{ child.first_name|first|upper }}{{ child.last_name|first|upper }}
+            </div>
+          {% endif %}
+
+          <div class="flex-1 min-w-0">
+            <div class="font-medium text-gray-900">{{ child.full_name }}</div>
+            <div class="text-xs text-gray-500">
+              {{ child.admission_number }}
+              · {{ child.class_level|default:"No class" }}
+              {% if child.class_level == cls.name %}
+                <span class="ml-1 px-1.5 py-0.5 bg-teal-50 text-teal-700 rounded text-xs">In your class</span>
+              {% endif %}
+            </div>
+          </div>
+
+          <a href="{% url 'class_teacher_view_student' child.id %}"
+             class="text-xs px-3 py-1.5 bg-teal-50 hover:bg-teal-100 text-teal-700 rounded transition">
+            View Student
+          </a>
+
+        </div>
+        {% empty %}
+        <div class="p-8 text-center text-sm text-gray-500">
+          No children linked to this parent.
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Contact actions -->
+    <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+      <h3 class="text-sm font-semibold text-gray-800 mb-3">Contact Parent</h3>
+      <div class="flex flex-wrap gap-3">
+        {% if parent.phone %}
+        <a href="tel:{{ parent.phone }}"
+           class="pro-btn pro-btn-primary">
+          {% include 'partials/icons.html' with name="phone" size=15 %}
+          <span>Call {{ parent.phone }}</span>
+        </a>
+        <a href="sms:{{ parent.phone }}"
+           class="pro-btn pro-btn-secondary">
+          {% include 'partials/icons.html' with name="message-square" size=15 %}
+          <span>Send SMS</span>
+        </a>
+        {% endif %}
+        <a href="mailto:{{ parent.user.email }}"
+           class="pro-btn pro-btn-secondary">
+          {% include 'partials/icons.html' with name="mail" size=15 %}
+          <span>Email</span>
+        </a>
+      </div>
+      <p class="text-xs text-gray-500 mt-3">
+        SMS via Africa's Talking — coming soon.
+      </p>
+    </div>
+
+  </div>
+
+</div>
+
+{% endblock %}

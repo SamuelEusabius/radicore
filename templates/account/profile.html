@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+{% block title %}My Profile{% endblock %}
+{% block header_title %}👤 My Profile{% endblock %}
+{% block header_sub %}Your account information{% endblock %}
+
+{% block content %}
+
+<div class="max-w-3xl mx-auto space-y-6">
+
+  <!-- Profile card -->
+  <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-8">
+    <div class="flex items-center gap-6 flex-wrap">
+      <div class="w-20 h-20 rounded-full bg-teal-500 text-white flex items-center justify-center font-bold text-3xl">
+        {{ user.email|first|upper }}
+      </div>
+      <div class="flex-1 min-w-0">
+        <h2 class="text-xl font-bold text-gray-800">
+          {{ user.get_full_name|default:"Unnamed User" }}
+        </h2>
+        <p class="text-gray-500 text-sm mt-1">{{ user.email }}</p>
+        <div class="flex gap-2 mt-3 flex-wrap">
+          <span class="bg-teal-100 text-teal-700 px-3 py-1 rounded-full text-xs font-semibold">
+            {{ user.get_role_display }}
+          </span>
+          {% if user.school %}
+            <span class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-semibold">
+              {{ user.school.name }}
+            </span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick actions -->
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <a href="{% url 'change_password' %}"
+       class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:border-teal-500 hover:shadow-md transition flex items-center gap-4">
+      <div class="w-12 h-12 rounded-full bg-teal-100 text-teal-600 flex items-center justify-center text-xl">🔒</div>
+      <div>
+        <div class="font-semibold text-gray-800">Change Password</div>
+        <div class="text-xs text-gray-500 mt-0.5">Update your login password</div>
+      </div>
+    </a>
+
+    <a href="{% url 'dashboard_home' %}"
+       class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:border-teal-500 hover:shadow-md transition flex items-center gap-4">
+      <div class="w-12 h-12 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xl">🏠</div>
+      <div>
+        <div class="font-semibold text-gray-800">Back to Dashboard</div>
+        <div class="text-xs text-gray-500 mt-0.5">Return to your dashboard</div>
+      </div>
+    </a>
+  </div>
+
+  <!-- Info -->
+  <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+    <h3 class="font-bold text-gray-800 mb-4">Account Details</h3>
+    <dl class="space-y-3 text-sm">
+      <div class="flex justify-between py-2 border-b border-gray-100">
+        <dt class="text-gray-500">Email</dt>
+        <dd class="font-medium text-gray-800">{{ user.email }}</dd>
+      </div>
+      <div class="flex justify-between py-2 border-b border-gray-100">
+        <dt class="text-gray-500">Role</dt>
+        <dd class="font-medium text-gray-800">{{ user.get_role_display }}</dd>
+      </div>
+      {% if user.phone %}
+      <div class="flex justify-between py-2 border-b border-gray-100">
+        <dt class="text-gray-500">Phone</dt>
+        <dd class="font-medium text-gray-800">{{ user.phone }}</dd>
+      </div>
+      {% endif %}
+      <div class="flex justify-between py-2">
+        <dt class="text-gray-500">Joined</dt>
+        <dd class="font-medium text-gray-800">{{ user.date_joined|date:"M d, Y" }}</dd>
+      </div>
+    </dl>
+  </div>
+
+</div>
+
+{% endblock %}

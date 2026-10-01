@@ -1,0 +1,154 @@
+{% extends 'base.html' %}
+{% block title %}Smart Alerts{% endblock %}
+{% block header_title %}Smart Alerts{% endblock %}
+{% block header_sub %}Automatic detection of issues needing your attention{% endblock %}
+
+{% block content %}
+
+<!-- ============ SUMMARY CARDS ============ -->
+<div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+
+  <div class="pro-stat">
+    <div class="pro-stat-value" style="color: #1a1a1a;">{{ counts.new }}</div>
+    <div class="pro-stat-label">Total New</div>
+  </div>
+
+  <a href="?severity=critical" class="pro-stat" style="text-decoration: none; color: inherit;">
+    <div class="pro-stat-icon pro-icon-bg-red">
+      {% include 'partials/icons.html' with name="alert-circle" size=20 %}
+    </div>
+    <div class="pro-stat-value" style="color: #dc2626;">{{ counts.critical }}</div>
+    <div class="pro-stat-label">Critical</div>
+  </a>
+
+  <a href="?severity=high" class="pro-stat" style="text-decoration: none; color: inherit;">
+    <div class="pro-stat-icon pro-icon-bg-orange">
+      {% include 'partials/icons.html' with name="alert-triangle" size=20 %}
+    </div>
+    <div class="pro-stat-value" style="color: #ea580c;">{{ counts.high }}</div>
+    <div class="pro-stat-label">High</div>
+  </a>
+
+  <a href="?severity=medium" class="pro-stat" style="text-decoration: none; color: inherit;">
+    <div class="pro-stat-icon pro-icon-bg-yellow">
+      {% include 'partials/icons.html' with name="alert-triangle" size=20 %}
+    </div>
+    <div class="pro-stat-value" style="color: #d97706;">{{ counts.medium }}</div>
+    <div class="pro-stat-label">Medium</div>
+  </a>
+
+  <a href="?severity=low" class="pro-stat" style="text-decoration: none; color: inherit;">
+    <div class="pro-stat-icon pro-icon-bg-blue">
+      {% include 'partials/icons.html' with name="alert-circle" size=20 %}
+    </div>
+    <div class="pro-stat-value" style="color: #2563eb;">{{ counts.low }}</div>
+    <div class="pro-stat-label">Low</div>
+  </a>
+
+</div>
+
+<!-- ============ SCAN BUTTON ============ -->
+<div class="pro-card mb-6" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+  <div>
+    <div style="font-weight: 600; color: #1a1a1a; font-family: 'Poppins', sans-serif; font-size: 14px;">Smart Scan</div>
+    <div style="font-size: 12px; color: #6b7280; margin-top: 2px;">Run all detection rules to find new issues</div>
+  </div>
+  <a href="{% url 'run_scan' %}" class="pro-btn pro-btn-primary">
+    {% include 'partials/icons.html' with name="activity" size=15 %}
+    <span>Run Scan Now</span>
+  </a>
+</div>
+
+<!-- ============ FILTERS ============ -->
+<div class="bg-white shadow-sm border border-gray-200 p-4 mb-6" style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
+  <span style="font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; font-family: 'Poppins', sans-serif; margin-right: 8px;">Filter:</span>
+  <a href="{% url 'alerts_dashboard' %}" class="pro-btn {% if not filter_severity and not filter_status %}pro-btn-primary{% else %}pro-btn-secondary{% endif %}" style="font-size: 12px; padding: 6px 14px;">All</a>
+  <a href="?status=new" class="pro-btn {% if filter_status == 'new' %}pro-btn-primary{% else %}pro-btn-secondary{% endif %}" style="font-size: 12px; padding: 6px 14px;">New</a>
+  <a href="?status=resolved" class="pro-btn {% if filter_status == 'resolved' %}pro-btn-primary{% else %}pro-btn-secondary{% endif %}" style="font-size: 12px; padding: 6px 14px;">Resolved</a>
+  <a href="?status=dismissed" class="pro-btn {% if filter_status == 'dismissed' %}pro-btn-primary{% else %}pro-btn-secondary{% endif %}" style="font-size: 12px; padding: 6px 14px;">Dismissed</a>
+</div>
+
+<!-- ============ ALERTS LIST ============ -->
+<div style="display: flex; flex-direction: column; gap: 12px;">
+
+  {% for alert in alerts %}
+  <div class="bg-white shadow-sm border border-gray-200" style="overflow: hidden; display: flex;">
+
+    <!-- Severity stripe -->
+    <div style="width: 4px; flex-shrink: 0;
+      {% if alert.severity == 'critical' %}background: #dc2626;
+      {% elif alert.severity == 'high' %}background: #ea580c;
+      {% elif alert.severity == 'medium' %}background: #d97706;
+      {% else %}background: #6b7280;{% endif %}"></div>
+
+    <div style="flex: 1; padding: 20px;">
+
+      <div style="display: flex; justify-content: space-between; align-items: start; flex-wrap: wrap; gap: 12px;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div class="pro-stat-icon
+            {% if alert.severity == 'critical' %}pro-icon-bg-red
+            {% elif alert.severity == 'high' %}pro-icon-bg-orange
+            {% elif alert.severity == 'medium' %}pro-icon-bg-yellow
+            {% else %}pro-icon-bg-blue{% endif %}"
+            style="margin: 0; width: 40px; height: 40px;">
+            {% include 'partials/icons.html' with name="alert-triangle" size=20 %}
+          </div>
+          <div>
+            <div style="font-weight: 700; color: #1a1a1a; font-family: 'Poppins', sans-serif; font-size: 14px;">{{ alert.title }}</div>
+            <div style="font-size: 11px; color: #6b7280; margin-top: 3px;">
+              {{ alert.get_category_display }} · {{ alert.created_at|date:"M d, Y H:i" }}
+              {% if alert.school %}· {{ alert.school.name }}{% endif %}
+            </div>
+          </div>
+        </div>
+
+        <div>
+          {% if alert.status == 'new' %}
+            <span class="pro-badge pro-badge-info">New</span>
+          {% elif alert.status == 'resolved' %}
+            <span class="pro-badge pro-badge-success">Resolved</span>
+          {% elif alert.status == 'dismissed' %}
+            <span class="pro-badge pro-badge-gray">Dismissed</span>
+          {% elif alert.status == 'reviewing' %}
+            <span class="pro-badge pro-badge-warning">Reviewing</span>
+          {% endif %}
+        </div>
+      </div>
+
+      <p style="font-size: 13px; color: #4b5563; margin: 14px 0 0 0; line-height: 1.6; font-family: 'Inter', sans-serif;">{{ alert.description }}</p>
+
+      {% if alert.resolved_by %}
+      <div style="margin-top: 12px; font-size: 11px; color: #6b7280; font-style: italic;">
+        Resolved by {{ alert.resolved_by.get_full_name|default:alert.resolved_by.email }} on {{ alert.resolved_at|date:"M d, Y H:i" }}
+        {% if alert.resolution_notes %} — "{{ alert.resolution_notes }}"{% endif %}
+      </div>
+      {% endif %}
+
+      {% if alert.status == 'new' %}
+      <div style="margin-top: 16px; display: flex; gap: 8px; flex-wrap: wrap;">
+        <a href="{% url 'alert_resolve' alert.id %}" class="pro-btn pro-btn-primary" style="font-size: 12px; padding: 8px 16px;">
+          {% include 'partials/icons.html' with name="check-circle" size=14 %}
+          <span>Resolve</span>
+        </a>
+        <a href="{% url 'alert_dismiss' alert.id %}" class="pro-btn pro-btn-secondary" style="font-size: 12px; padding: 8px 16px;">
+          Dismiss
+        </a>
+      </div>
+      {% endif %}
+
+    </div>
+  </div>
+
+  {% empty %}
+
+  <div class="pro-empty">
+    {% include 'partials/icons.html' with name="check-circle" size=64 %}
+    <h3>No alerts</h3>
+    <p>Everything looks clean. Click <strong>Run Scan Now</strong> to check for new issues.</p>
+  </div>
+
+  {% endfor %}
+
+</div>
+
+{% endblock %}

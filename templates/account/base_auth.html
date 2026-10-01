@@ -1,0 +1,440 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}School MS{% endblock %}</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="{% static 'css/design-tokens.css' %}">
+  <link rel="stylesheet" href="{% static 'css/components.css' %}">
+  <link rel="stylesheet" href="{% static 'css/utilities.css' %}">
+
+  <style>
+    /* ============ PUBLIC NAV (same as base_public.html) ============ */
+    .pub-nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+    .pub-nav-inner {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: var(--s-3) var(--s-6);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--s-6);
+    }
+    .pub-logo {
+      display: flex;
+      align-items: center;
+      gap: var(--s-3);
+      text-decoration: none;
+      color: var(--ink-900);
+    }
+    .pub-logo-mark {
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius);
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #FFFFFF;
+      font-family: var(--font-heading);
+      font-weight: 800;
+      font-size: var(--text-sm);
+      letter-spacing: -0.02em;
+      box-shadow: 0 4px 12px rgba(10, 138, 95, 0.25);
+    }
+    .pub-logo-text {
+      font-family: var(--font-heading);
+      font-weight: 800;
+      font-size: var(--text-md);
+      color: var(--ink-900);
+      letter-spacing: -0.02em;
+    }
+    .pub-logo-text small {
+      display: block;
+      font-size: 10px;
+      font-weight: 500;
+      color: var(--ink-500);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-top: 1px;
+    }
+
+    .pub-menu {
+      display: flex;
+      align-items: center;
+      gap: var(--s-6);
+      flex: 1;
+      justify-content: center;
+    }
+    .pub-menu-link {
+      font-size: var(--text-sm);
+      font-weight: 500;
+      color: var(--ink-700);
+      text-decoration: none;
+      transition: color var(--t-fast);
+      padding: var(--s-2) 0;
+      position: relative;
+    }
+    .pub-menu-link:hover { color: var(--primary); }
+    .pub-menu-link.active {
+      color: var(--primary);
+      font-weight: 600;
+    }
+    .pub-menu-link.active::after {
+      content: '';
+      position: absolute;
+      bottom: -4px;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: var(--primary);
+      border-radius: 2px;
+    }
+
+    .pub-cta {
+      display: flex;
+      align-items: center;
+      gap: var(--s-2);
+    }
+
+    /* Hamburger */
+    .pub-hamburger {
+      display: none;
+      width: 40px;
+      height: 40px;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      border-radius: var(--radius);
+      color: var(--ink-700);
+      transition: all var(--t-fast);
+    }
+    .pub-hamburger:hover { background: var(--surface-muted); color: var(--primary); }
+    .pub-hamburger svg { width: 24px; height: 24px; }
+
+    /* Mobile drawer */
+    .pub-mobile-menu {
+      display: none;
+      position: fixed;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      width: 320px;
+      max-width: 88vw;
+      background: var(--surface);
+      box-shadow: -8px 0 32px rgba(15, 23, 42, 0.15);
+      padding: var(--s-6);
+      z-index: 300;
+      transform: translateX(100%);
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      overflow-y: auto;
+    }
+    .pub-mobile-menu.open { transform: translateX(0); }
+    .pub-mobile-menu-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: var(--s-5);
+      padding-bottom: var(--s-4);
+      border-bottom: 1px solid var(--border);
+    }
+    .pub-mobile-brand { display: flex; align-items: center; gap: 10px; }
+    .pub-mobile-brand-mark {
+      width: 36px;
+      height: 36px;
+      border-radius: var(--radius);
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      display: flex; align-items: center; justify-content: center;
+      color: #FFFFFF; font-family: var(--font-heading);
+      font-weight: 800; font-size: var(--text-xs);
+    }
+    .pub-mobile-brand-text {
+      font-family: var(--font-heading);
+      font-weight: 700;
+      font-size: var(--text-sm);
+      color: var(--ink-900);
+      line-height: 1.2;
+    }
+    .pub-mobile-brand-text small {
+      display: block;
+      font-size: 9px;
+      font-weight: 500;
+      color: var(--ink-500);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-top: 1px;
+    }
+    .pub-mobile-close {
+      width: 36px; height: 36px;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--surface-muted); border: none;
+      border-radius: var(--radius); cursor: pointer; color: var(--ink-700);
+    }
+    .pub-mobile-close svg { width: 20px; height: 20px; }
+
+    .pub-mobile-section-label {
+      padding: var(--s-4) var(--s-3) var(--s-2);
+      font-family: var(--font-heading);
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--ink-400);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+    .pub-mobile-link {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      font-size: var(--text-sm);
+      font-weight: 600;
+      color: var(--ink-800);
+      text-decoration: none;
+      border-radius: var(--radius);
+      transition: all var(--t-fast);
+      margin-bottom: 2px;
+    }
+    .pub-mobile-link:hover,
+    .pub-mobile-link.active {
+      background: var(--primary-soft);
+      color: var(--primary);
+    }
+    .pub-mobile-link-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: var(--radius-sm);
+      background: var(--surface-muted);
+      color: var(--ink-600);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: all var(--t-fast);
+    }
+    .pub-mobile-link-icon svg { width: 16px; height: 16px; }
+    .pub-mobile-link:hover .pub-mobile-link-icon,
+    .pub-mobile-link.active .pub-mobile-link-icon {
+      background: var(--primary);
+      color: #FFFFFF;
+    }
+
+    .pub-mobile-actions {
+      margin-top: var(--s-6);
+      padding-top: var(--s-5);
+      border-top: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: var(--s-3);
+    }
+
+    .pub-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.5);
+      backdrop-filter: blur(4px);
+      z-index: 250;
+      opacity: 0;
+      transition: opacity var(--t-base);
+    }
+    .pub-backdrop.open { display: block; opacity: 1; }
+
+    /* ============ AUTH LAYOUT ============ */
+    /* Split-screen: nav on top, then two columns filling the rest of the viewport */
+    body.auth-page {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background: var(--bg);
+      font-family: var(--font-sans);
+    }
+    .auth-split {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      min-height: calc(100vh - 72px);
+    }
+
+    @media (max-width: 900px) {
+      .auth-split { grid-template-columns: 1fr; min-height: auto; }
+    }
+    /* Force all brand-mark images to fit their containers */
+.pub-logo-mark,
+.pub-mobile-brand-mark,
+.pub-footer-brand-mark,
+.login-brand-logo-mark,
+.logout-brand-logo-mark,
+.reset-brand-logo-mark {
+  overflow: hidden;
+}
+
+.pub-logo-mark img,
+.pub-mobile-brand-mark img,
+.pub-footer-brand-mark img,
+.login-brand-logo-mark img,
+.logout-brand-logo-mark img,
+.reset-brand-logo-mark img {
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  display: block;
+}
+  </style>
+
+  {% block extra_css %}{% endblock %}
+</head>
+<body class="auth-page">
+
+<!-- ============================================ -->
+<!-- PUBLIC NAV                                  -->
+<!-- ============================================ -->
+<nav class="pub-nav">
+  <div class="pub-nav-inner">
+
+    <a href="{% url 'landing' %}" class="pub-logo">
+      <div class="pub-logo-mark"><img src="/static/images/graduation-cap-books.png" alt="School MS"></div>
+      <div class="pub-logo-text">
+        School MS
+        <small>Modern Management</small>
+      </div>
+    </a>
+
+    <div class="pub-menu">
+      <a href="{% url 'landing' %}#features" class="pub-menu-link">Features</a>
+      <a href="{% url 'about' %}" class="pub-menu-link">About</a>
+      <a href="{% url 'help_page' %}" class="pub-menu-link">Help</a>
+      <a href="{% url 'contact' %}" class="pub-menu-link">Contact</a>
+    </div>
+
+    <div class="pub-cta">
+      <a href="{% url 'school_signup' %}" class="btn btn-primary">Get Started</a>
+    </div>
+
+    <button type="button" class="pub-hamburger" id="pub-hamburger" aria-label="Open menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="3" y1="6" x2="21" y2="6"></line>
+        <line x1="3" y1="12" x2="21" y2="12"></line>
+        <line x1="3" y1="18" x2="21" y2="18"></line>
+      </svg>
+    </button>
+
+  </div>
+</nav>
+
+<!-- Mobile menu -->
+<div class="pub-backdrop" id="pub-backdrop"></div>
+<div class="pub-mobile-menu" id="pub-mobile-menu">
+  <div class="pub-mobile-menu-header">
+    <div class="pub-mobile-brand">
+      <div class="pub-mobile-brand-mark"><img src="/static/images/graduation-cap-books.png" alt="School MS"></div>
+      <div class="pub-mobile-brand-text">
+        School MS
+        <small>Modern Management</small>
+      </div>
+    </div>
+    <button type="button" class="pub-mobile-close" id="pub-mobile-close" aria-label="Close menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="18" y1="6" x2="6" y2="18"></line>
+        <line x1="6" y1="6" x2="18" y2="18"></line>
+      </svg>
+    </button>
+  </div>
+
+  <div class="pub-mobile-section-label">Navigate</div>
+
+  <a href="{% url 'landing' %}" class="pub-mobile-link">
+    <span class="pub-mobile-link-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+    </span>
+    <span>Home</span>
+  </a>
+  <a href="{% url 'landing' %}#features" class="pub-mobile-link">
+    <span class="pub-mobile-link-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+    </span>
+    <span>Features</span>
+  </a>
+  <a href="{% url 'about' %}" class="pub-mobile-link">
+    <span class="pub-mobile-link-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+    </span>
+    <span>About</span>
+  </a>
+  <a href="{% url 'help_page' %}" class="pub-mobile-link">
+    <span class="pub-mobile-link-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+    </span>
+    <span>Help</span>
+  </a>
+  <a href="{% url 'contact' %}" class="pub-mobile-link">
+    <span class="pub-mobile-link-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+    </span>
+    <span>Contact</span>
+  </a>
+
+  <div class="pub-mobile-actions">
+    <a href="{% url 'school_signup' %}" class="btn btn-primary" style="width: 100%;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16" style="margin-right: 6px;"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+      Get Started
+    </a>
+  </div>
+</div>
+
+<!-- ============================================ -->
+<!-- PAGE CONTENT                                -->
+<!-- ============================================ -->
+{% block content %}{% endblock %}
+
+<script>
+  (function() {
+    const btn = document.getElementById('pub-hamburger');
+    const closeBtn = document.getElementById('pub-mobile-close');
+    const menu = document.getElementById('pub-mobile-menu');
+    const backdrop = document.getElementById('pub-backdrop');
+
+    if (!btn || !menu) return;
+
+    function openMenu() {
+      menu.classList.add('open');
+      backdrop.classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeMenu() {
+      menu.classList.remove('open');
+      backdrop.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+
+    btn.addEventListener('click', openMenu);
+    if (closeBtn) closeBtn.addEventListener('click', closeMenu);
+    if (backdrop) backdrop.addEventListener('click', closeMenu);
+    menu.querySelectorAll('a').forEach(a => a.addEventListener('click', closeMenu));
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeMenu();
+    });
+  })();
+</script>
+
+{% block extra_js %}{% endblock %}
+</body>
+</html>

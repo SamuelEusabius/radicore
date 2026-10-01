@@ -1,0 +1,228 @@
+{% extends 'base.html' %}
+{% block title %}Edit Subscription{% endblock %}
+{% block header_title %}Edit Subscription{% endblock %}
+{% block header_sub %}{{ school.name }} · {{ school.code }}{% endblock %}
+
+{% block content %}
+
+<div class="max-w-5xl mx-auto">
+
+  {% if messages %}
+    {% for m in messages %}
+      <div style="padding: 12px 16px; margin-bottom: 16px; font-size: 13px; {% if m.tags == 'error' %}background: #fee2e2; color: #991b1b; border-left: 4px solid #dc2626;{% elif m.tags == 'warning' %}background: #fef3c7; color: #92400e; border-left: 4px solid #d97706;{% else %}background: #d1fae5; color: #065f46; border-left: 4px solid #059669;{% endif %}">
+        {{ m }}
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  <!-- ============ HEADER ============ -->
+  <div class="bg-white shadow-sm border border-gray-200 p-4 mb-6" style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between;">
+    <div>
+      <div style="font-weight: 600; color: #1a1a1a; font-family: 'Poppins', sans-serif; font-size: 15px;">
+        {{ school.name }}
+      </div>
+      <div style="font-size: 12px; color: #6b7280; margin-top: 2px;">
+        Code: <span style="font-family: 'JetBrains Mono', monospace;">{{ school.code }}</span>
+      </div>
+    </div>
+    <div style="display: flex; gap: 8px;">
+      <a href="{% url 'schools_manage' %}" class="pro-btn pro-btn-secondary">Back to Schools</a>
+    </div>
+  </div>
+
+  <!-- ============ CURRENT STATUS ============ -->
+  <div class="pro-card mb-6">
+    <div class="pro-card-title">
+      {% include 'partials/icons.html' with name="info" size=18 %}
+      <span>Current Subscription Status</span>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px;">
+      <div>
+        <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: #6b7280; font-weight: 600;">Status</div>
+        <div style="font-size: 15px; font-weight: 700; color: #00695c; font-family: 'Poppins', sans-serif; margin-top: 4px;">
+          {{ subscription.get_status_display }}
+        </div>
+      </div>
+      <div>
+        <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: #6b7280; font-weight: 600;">Plan</div>
+        <div style="font-size: 15px; font-weight: 700; color: #1a1a1a; font-family: 'Poppins', sans-serif; margin-top: 4px;">
+          {{ subscription.plan.name|default:"— None —" }}
+        </div>
+      </div>
+      <div>
+        <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: #6b7280; font-weight: 600;">Billing</div>
+        <div style="font-size: 15px; font-weight: 700; color: #1a1a1a; font-family: 'Poppins', sans-serif; margin-top: 4px;">
+          {{ subscription.billing_cycle_display }}
+        </div>
+      </div>
+      <div>
+        <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: #6b7280; font-weight: 600;">Days Remaining</div>
+        <div style="font-size: 15px; font-weight: 700; color: #ff6f00; font-family: 'Poppins', sans-serif; margin-top: 4px;">
+          {{ subscription.days_remaining }}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ QUICK ACTIONS ============ -->
+  <div class="pro-card mb-6">
+    <div class="pro-card-title">
+      {% include 'partials/icons.html' with name="settings" size=18 %}
+      <span>Quick Actions</span>
+    </div>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 12px;">
+
+      <form method="post" style="display: inline;">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="reset_trial">
+        <button type="submit" class="pro-btn pro-btn-secondary">
+          {% include 'partials/icons.html' with name="activity" size=15 %}
+          <span>Reset 30-Day Trial</span>
+        </button>
+      </form>
+
+      <form method="post" style="display: inline;">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="activate">
+        <button type="submit" class="pro-btn pro-btn-primary">
+          {% include 'partials/icons.html' with name="check-circle" size=15 %}
+          <span>Activate</span>
+        </button>
+      </form>
+
+      <form method="post" style="display: inline;">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="cancel">
+        <button type="submit" class="pro-btn pro-btn-danger" onclick="return confirm('Cancel this school\'s subscription?');">
+          {% include 'partials/icons.html' with name="x-circle" size=15 %}
+          <span>Cancel Subscription</span>
+        </button>
+      </form>
+
+    </div>
+  </div>
+
+  <!-- ============ MAIN EDIT FORM ============ -->
+  <form method="post" class="pro-card">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="save">
+
+    <div class="pro-card-title">
+      {% include 'partials/icons.html' with name="edit" size=18 %}
+      <span>Edit Subscription Details</span>
+    </div>
+
+    <!-- ---------- PLAN + BILLING ---------- -->
+    <h3 style="font-size: 13px; font-weight: 700; color: #00695c; text-transform: uppercase; letter-spacing: 0.05em; margin: 16px 0 12px;">Plan &amp; Billing</h3>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <div>
+        <label style="display: block; font-size: 12px; font-weight: 500; color: #374151; margin-bottom: 6px;">Plan</label>
+        <select name="plan" style="width: 100%; border: 1px solid #d1d5db; padding: 8px; font-size: 13px;">
+          <option value="">— None —</option>
+          {% for p in plans %}
+            <option value="{{ p.id }}">{{ p.name }} — KES {{ p.term_price }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label style="display: block; font-size: 12px; font-weight: 500; color: #374151; margin-bottom: 6px;">Billing Cycle</label>
+        <select name="billing_cycle" style="width: 100%; border: 1px solid #d1d5db; padding: 8px; font-size: 13px;">
+          {% for value, label in billing_cycles %}
+            <option value="{{ value }}" {% if subscription.billing_cycle == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label style="display: block; font-size: 12px; font-weight: 500; color: #374151; margin-bottom: 6px;">Contract Years</label>
+        <select name="contract_years" style="width: 100%; border: 1px solid #d1d5db; padding: 8px; font-size: 13px;">
+          <option value="0" {% if subscription.contract_years == 0 %}selected{% endif %}>— Not a contract —</option>
+          <option value="1" {% if subscription.contract_years == 1 %}selected{% endif %}>1 Year</option>
+          <option value="2" {% if subscription.contract_years == 2 %}selected{% endif %}>2 Years</option>
+          <option value="3" {% if subscription.contract_years == 3 %}selected{% endif %}>3 Years</option>
+          <option value="5" {% if subscription.contract_years == 5 %}selected{% endif %}>5 Years</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- ---------- STATUS ---------- -->
+    <h3 style="font-size: 13px; font-weight: 700; color: #00695c; text-transform: uppercase; letter-spacing: 0.05em; margin: 16px 0 12px;">Status</h3>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <div>
+        <label style="display: block; font-size: 12px; font-weight: 500; color: #374151; margin-bottom: 6px;">Status</label>
+        <select name="status" style="width: 100%; border: 1px solid #d1d5db; padding: 8px; font-size: 13px;">
+          {% for value, label in statuses %}
+            <option value="{{ value }}" {% if subscription.status == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label style="display: block; font-size: 12px; font-weight: 500; color: #374151; margin-bottom: 6px;">Paid Until</label>
+        <input type="date" name="paid_until" value="{{ paid_until_iso }}"
+               style="width: 100%; border: 1px solid #d1d5db; padding: 8px; font-size: 13px;">
+      </div>
+      <div>
+        <label style="display: block; font-size: 12px; font-weight: 500; color: #374151; margin-bottom: 6px;">Trial Ends (read-only)</label>
+        <input type="text" value="{{ trial_ends_iso }}" readonly disabled
+               style="width: 100%; border: 1px solid #e5e7eb; padding: 8px; font-size: 13px; background: #f9fafb; color: #6b7280;">
+      </div>
+    </div>
+
+    <!-- ---------- LIMITS ---------- -->
+    <h3 style="font-size: 13px; font-weight: 700; color: #00695c; text-transform: uppercase; letter-spacing: 0.05em; margin: 16px 0 12px;">Custom Limits</h3>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <div>
+        <label style="display: block; font-size: 12px; font-weight: 500; color: #374151; margin-bottom: 6px;">Max Students</label>
+        <input type="number" name="max_students" value="{{ subscription.max_students }}" min="1"
+               style="width: 100%; border: 1px solid #d1d5db; padding: 8px; font-size: 13px;">
+      </div>
+      <div>
+        <label style="display: block; font-size: 12px; font-weight: 500; color: #374151; margin-bottom: 6px;">Max Teachers</label>
+        <input type="number" name="max_teachers" value="{{ subscription.max_teachers }}" min="1"
+               style="width: 100%; border: 1px solid #d1d5db; padding: 8px; font-size: 13px;">
+      </div>
+    </div>
+
+    <!-- ---------- PAYMENT ---------- -->
+    <h3 style="font-size: 13px; font-weight: 700; color: #00695c; text-transform: uppercase; letter-spacing: 0.05em; margin: 16px 0 12px;">Payment</h3>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <div>
+        <label style="display: block; font-size: 12px; font-weight: 500; color: #374151; margin-bottom: 6px;">Method</label>
+        <select name="last_payment_method" style="width: 100%; border: 1px solid #d1d5db; padding: 8px; font-size: 13px;">
+          <option value="">— None —</option>
+          {% for value, label in payment_methods %}
+            <option value="{{ value }}" {% if subscription.last_payment_method == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label style="display: block; font-size: 12px; font-weight: 500; color: #374151; margin-bottom: 6px;">Reference</label>
+        <input type="text" name="last_payment_reference" value="{{ subscription.last_payment_reference }}"
+               style="width: 100%; border: 1px solid #d1d5db; padding: 8px; font-size: 13px; font-family: 'JetBrains Mono', monospace;">
+      </div>
+      <div>
+        <label style="display: block; font-size: 12px; font-weight: 500; color: #374151; margin-bottom: 6px;">Total Paid (KES)</label>
+        <input type="number" name="total_paid_kes" value="{{ subscription.total_paid_kes }}" step="0.01" min="0"
+               style="width: 100%; border: 1px solid #d1d5db; padding: 8px; font-size: 13px;">
+      </div>
+    </div>
+
+    <!-- ---------- SAVE ---------- -->
+    <div style="display: flex; justify-content: flex-end; gap: 12px; padding-top: 20px; margin-top: 20px; border-top: 1px solid #e5e7eb;">
+      <a href="{% url 'schools_manage' %}" class="pro-btn pro-btn-secondary">Cancel</a>
+      <button type="submit" class="pro-btn pro-btn-primary">
+        {% include 'partials/icons.html' with name="save" size=15 %}
+        <span>Save Subscription</span>
+      </button>
+    </div>
+
+  </form>
+
+</div>
+
+{% endblock %}

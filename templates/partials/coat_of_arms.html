@@ -1,0 +1,6 @@
+{% load static %}
+{% comment %}
+Kenya Coat of Arms image for PDFs.
+Usage: {% include 'partials/coat_of_arms.html' with size=60 %}
+{% endcomment %}
+<img src="{% static 'images/coat_of_arms.png' %}" alt="Kenya Coat of Arms" style="width: {{ size|default:60 }}px; height: {{ size|default:60 }}px; object-fit: contain;">

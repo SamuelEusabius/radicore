@@ -1,0 +1,333 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Subjects{% endblock %}
+{% block header_title %}Subjects{% endblock %}
+{% block header_sub %}{{ stats.total }} subject{{ stats.total|pluralize }} · {{ stats.assigned }} assigned to teachers{% endblock %}
+
+{% block content %}
+
+<!-- ============================================ -->
+<!-- STATS CARDS                                  -->
+<!-- ============================================ -->
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Total Subjects</span>
+      <div class="stat-icon" style="background: rgba(10, 138, 95, 0.1); color: var(--primary);">
+        {% include 'partials/icons.html' with name="book" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value">{{ stats.total }}</div>
+    <div class="stat-meta">Offered in your school</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Assigned</span>
+      <div class="stat-icon" style="background: rgba(5, 150, 105, 0.1); color: var(--success);">
+        {% include 'partials/icons.html' with name="check-circle" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--success);">{{ stats.assigned }}</div>
+    <div class="stat-meta">Have a teacher</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Unassigned</span>
+      <div class="stat-icon" style="background: rgba(217, 119, 6, 0.1); color: var(--warning);">
+        {% include 'partials/icons.html' with name="alert-triangle" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--warning);">{{ stats.unassigned }}</div>
+    <div class="stat-meta">Need teacher assignment</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Teachers</span>
+      <div class="stat-icon" style="background: rgba(37, 99, 235, 0.1); color: #2563EB;">
+        {% include 'partials/icons.html' with name="teacher" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: #2563EB;">{{ stats.teachers }}</div>
+    <div class="stat-meta">Currently teaching subjects</div>
+  </div>
+
+</div>
+
+<!-- ============================================ -->
+<!-- ADD SUBJECT + FILTERS                        -->
+<!-- ============================================ -->
+<div class="card mb-6">
+  <div class="card-title">
+    {% include 'partials/icons.html' with name="plus" size=18 %}
+    Add New Subject
+  </div>
+
+  <form method="post" style="display: flex; flex-wrap: wrap; gap: var(--s-3); align-items: flex-end;">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="add">
+
+    <div style="flex: 1; min-width: 200px;">
+      <label class="form-label">Subject Name <span class="required">*</span></label>
+      <input type="text" name="name" required class="input" placeholder="e.g. Mathematics">
+    </div>
+
+    <div style="min-width: 140px;">
+      <label class="form-label">Code</label>
+      <input type="text" name="code" class="input font-mono" placeholder="MATH">
+    </div>
+
+    <div style="min-width: 220px;">
+      <label class="form-label">Teacher</label>
+      <select name="teacher" class="select">
+        <option value="">— Assign later —</option>
+        {% for t in teachers %}
+          <option value="{{ t.id }}">{{ t.get_full_name|default:t.email }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div>
+      <button type="submit" class="btn btn-primary">
+        {% include 'partials/icons.html' with name="plus" size=15 %}
+        <span>Add Subject</span>
+      </button>
+    </div>
+  </form>
+</div>
+
+<!-- ============================================ -->
+<!-- SEARCH + FILTER BAR                          -->
+<!-- ============================================ -->
+<div class="card mb-6">
+  <form method="get" style="display: flex; flex-wrap: wrap; gap: var(--s-3); align-items: flex-end;">
+
+    <div style="flex: 1; min-width: 220px;">
+      <label class="form-label">Search</label>
+      <input name="q" value="{{ search }}" placeholder="Subject name or code..." class="input">
+    </div>
+
+    <div style="min-width: 200px;">
+      <label class="form-label">Teacher</label>
+      <select name="teacher" class="select">
+        <option value="">All Teachers</option>
+        <option value="none" {% if teacher_filter == 'none' %}selected{% endif %}>Unassigned</option>
+        {% for t in teachers %}
+          <option value="{{ t.id }}" {% if teacher_filter == t.id|stringformat:"s" %}selected{% endif %}>
+            {{ t.get_full_name|default:t.email }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div style="min-width: 160px;">
+      <label class="form-label">Status</label>
+      <select name="status" class="select">
+        <option value="">All</option>
+        <option value="assigned" {% if status_filter == 'assigned' %}selected{% endif %}>Assigned</option>
+        <option value="unassigned" {% if status_filter == 'unassigned' %}selected{% endif %}>Unassigned</option>
+      </select>
+    </div>
+
+    <div style="display: flex; gap: var(--s-2); align-items: flex-end;">
+      <button type="submit" class="btn btn-secondary">
+        {% include 'partials/icons.html' with name="search" size=15 %}
+        <span>Filter</span>
+      </button>
+      {% if search or teacher_filter or status_filter %}
+        <a href="{% url 'manage_subjects' %}" class="btn btn-ghost">Clear</a>
+      {% endif %}
+    </div>
+
+  </form>
+</div>
+
+<!-- ============================================ -->
+<!-- SUBJECTS TABLE                               -->
+<!-- ============================================ -->
+<div class="card" style="padding: 0; overflow: hidden;">
+  {% if subjects %}
+    <div style="overflow-x: auto;">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Subject</th>
+            <th style="width: 120px;">Code</th>
+            <th>Teacher</th>
+            <th style="text-align: right;">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in subjects %}
+          <tr>
+            <td>
+              <div style="font-weight: 600; color: var(--ink-900);">{{ s.name }}</div>
+            </td>
+
+            <td>
+              {% if s.code %}
+                <span class="badge badge-neutral font-mono">{{ s.code }}</span>
+              {% else %}
+                <span style="color: var(--ink-400);">—</span>
+              {% endif %}
+            </td>
+
+            <td>
+              {% if s.teacher %}
+                <div style="display: flex; align-items: center; gap: var(--s-3);">
+                  <div class="avatar avatar-sm" style="background: var(--primary);">
+                    {{ s.teacher.first_name|first|upper|default:"T" }}{{ s.teacher.last_name|first|upper }}
+                  </div>
+                  <div>
+                    <div style="font-size: var(--text-sm); font-weight: 600; color: var(--ink-900);">
+                      {{ s.teacher.get_full_name|default:s.teacher.email }}
+                    </div>
+                    <div style="font-size: var(--text-xs); color: var(--ink-500);">{{ s.teacher.email }}</div>
+                  </div>
+                </div>
+              {% else %}
+                <span class="badge badge-warning">Unassigned</span>
+              {% endif %}
+            </td>
+
+            <td>
+              <div class="table-actions">
+                <button type="button"
+                        onclick="openEditModal({{ s.id }}, '{{ s.name|escapejs }}', '{{ s.code|escapejs }}', '{{ s.teacher.id|default:'' }}')"
+                        class="btn btn-sm btn-secondary">
+                  {% include 'partials/icons.html' with name="edit" size=13 %}
+                  <span>Edit</span>
+                </button>
+
+                <form method="post" style="display: inline;"
+                      onsubmit="return confirm('Delete subject {{ s.name|escapejs }}? This cannot be undone.');">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="delete">
+                  <input type="hidden" name="subject_id" value="{{ s.id }}">
+                  <button type="submit" class="btn btn-sm btn-danger">
+                    {% include 'partials/icons.html' with name="trash" size=13 %}
+                  </button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% if page_obj.has_other_pages %}
+    <div style="padding: var(--s-5) var(--s-6); border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--s-3);">
+      <div style="font-size: var(--text-sm); color: var(--ink-500);">
+        Showing <strong>{{ page_obj.start_index }}</strong> – <strong>{{ page_obj.end_index }}</strong> of <strong>{{ paginator.count }}</strong>
+      </div>
+      <div style="display: flex; gap: var(--s-1);">
+        {% if page_obj.has_previous %}
+          <a href="?{% if search %}q={{ search }}&{% endif %}{% if teacher_filter %}teacher={{ teacher_filter }}&{% endif %}{% if status_filter %}status={{ status_filter }}&{% endif %}page={{ page_obj.previous_page_number }}" class="btn btn-sm btn-secondary">← Prev</a>
+        {% endif %}
+        {% for num in page_obj.paginator.page_range %}
+          {% if num == page_obj.number %}
+            <span class="btn btn-sm btn-primary" style="cursor: default;">{{ num }}</span>
+          {% elif num > page_obj.number|add:"-3" and num < page_obj.number|add:"3" %}
+            <a href="?{% if search %}q={{ search }}&{% endif %}{% if teacher_filter %}teacher={{ teacher_filter }}&{% endif %}{% if status_filter %}status={{ status_filter }}&{% endif %}page={{ num }}" class="btn btn-sm btn-secondary">{{ num }}</a>
+          {% endif %}
+        {% endfor %}
+        {% if page_obj.has_next %}
+          <a href="?{% if search %}q={{ search }}&{% endif %}{% if teacher_filter %}teacher={{ teacher_filter }}&{% endif %}{% if status_filter %}status={{ status_filter }}&{% endif %}page={{ page_obj.next_page_number }}" class="btn btn-sm btn-secondary">Next →</a>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+  {% else %}
+    <div class="empty" style="border: none; border-radius: 0;">
+      {% include 'partials/icons.html' with name="book" size=56 %}
+      <h3>No subjects {% if search or teacher_filter or status_filter %}matched{% else %}yet{% endif %}</h3>
+      <p>
+        {% if search or teacher_filter or status_filter %}
+          Try changing your filters or clear them.
+        {% else %}
+          Add subjects above to start building your curriculum.
+        {% endif %}
+      </p>
+      {% if search or teacher_filter or status_filter %}
+        <a href="{% url 'manage_subjects' %}" class="btn btn-secondary">Clear filters</a>
+      {% endif %}
+    </div>
+  {% endif %}
+</div>
+
+<!-- ============================================ -->
+<!-- EDIT MODAL                                   -->
+<!-- ============================================ -->
+<div id="edit-subject-modal" class="modal-backdrop">
+  <div class="modal">
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="edit">
+      <input type="hidden" name="subject_id" id="edit-subject-id">
+
+      <div class="modal-header">
+        <h3 class="modal-title">Edit Subject</h3>
+        <button type="button" onclick="closeEditModal()" class="btn btn-sm btn-ghost">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Subject Name <span class="required">*</span></label>
+          <input type="text" name="name" id="edit-name" required class="input">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Code</label>
+          <input type="text" name="code" id="edit-code" class="input font-mono">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Teacher</label>
+          <select name="teacher" id="edit-teacher" class="select">
+            <option value="">— Assign later —</option>
+            {% for t in teachers %}
+              <option value="{{ t.id }}">{{ t.get_full_name|default:t.email }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" onclick="closeEditModal()" class="btn btn-secondary">Cancel</button>
+        <button type="submit" class="btn btn-primary">
+          {% include 'partials/icons.html' with name="save" size=15 %}
+          <span>Update Subject</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  function openEditModal(id, name, code, teacherId) {
+    document.getElementById('edit-subject-id').value = id;
+    document.getElementById('edit-name').value = name;
+    document.getElementById('edit-code').value = code;
+    document.getElementById('edit-teacher').value = teacherId || '';
+    document.getElementById('edit-subject-modal').classList.add('open');
+  }
+
+  function closeEditModal() {
+    document.getElementById('edit-subject-modal').classList.remove('open');
+  }
+
+  document.getElementById('edit-subject-modal').addEventListener('click', (e) => {
+    if (e.target.id === 'edit-subject-modal') closeEditModal();
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeEditModal();
+  });
+</script>
+
+{% endblock %}

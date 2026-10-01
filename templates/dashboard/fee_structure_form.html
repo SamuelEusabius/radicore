@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+{% block title %}{% if action == 'edit' %}Edit Fee Structure{% else %}Add Fee Structure{% endif %}{% endblock %}
+{% block header_title %}{% if action == 'edit' %}Edit Fee Structure{% else %}Add Fee Structure{% endif %}{% endblock %}
+{% block header_sub %}{{ current_school.name }} — Set fees per class{% endblock %}
+
+{% block content %}
+
+<div class="max-w-2xl mx-auto bg-white shadow-sm border border-gray-200 p-8">
+
+  <form method="post" style="display: flex; flex-direction: column; gap: 16px;">
+    {% csrf_token %}
+
+    <!-- ================= FEE NAME ================= -->
+    <div>
+      <label style="display: block; font-size: 13px; font-weight: 500; color: #374151; margin-bottom: 6px;">
+        Fee Name <span style="color: #dc2626;">*</span>
+      </label>
+      <input type="text" name="name" required
+             value="{% if form_data and form_data.name %}{{ form_data.name }}{% elif fee_structure %}{{ fee_structure.name }}{% endif %}"
+             placeholder="e.g. Term 1 Fees 2026"
+             style="width: 100%; border: 1px solid #d1d5db; padding: 10px; font-size: 14px;">
+      <p style="font-size: 11px; color: #6b7280; margin-top: 4px;">
+        Use a clear name like "Term 1 2026 — Tuition"
+      </p>
+    </div>
+
+    <!-- ================= CLASS ================= -->
+    <div>
+      <label style="display: block; font-size: 13px; font-weight: 500; color: #374151; margin-bottom: 6px;">
+        Class <span style="color: #dc2626;">*</span>
+      </label>
+      <select name="class_level" required
+              style="width: 100%; border: 1px solid #d1d5db; padding: 10px; font-size: 14px;">
+        <option value="">— Select class —</option>
+        {% for c in classes %}
+          <option value="{{ c.name }}"
+            {% if fee_structure and fee_structure.class_level == c.name %}selected{% endif %}
+            {% if form_data and form_data.class_level == c.name %}selected{% endif %}>
+            {{ c.name }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- ================= AMOUNT + DUE DATE ================= -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+      <div>
+        <label style="display: block; font-size: 13px; font-weight: 500; color: #374151; margin-bottom: 6px;">
+          Amount (KES) <span style="color: #dc2626;">*</span>
+        </label>
+        <input type="number" name="amount_kes" step="0.01" min="1" required
+               value="{% if form_data and form_data.amount_kes %}{{ form_data.amount_kes }}{% elif fee_structure %}{{ fee_structure.amount_kes }}{% endif %}"
+               style="width: 100%; border: 1px solid #d1d5db; padding: 10px; font-size: 14px;">
+      </div>
+      <div>
+        <label style="display: block; font-size: 13px; font-weight: 500; color: #374151; margin-bottom: 6px;">
+          Due Date <span style="color: #dc2626;">*</span>
+        </label>
+        <input type="date" name="due_date" required
+               value="{% if form_data and form_data.due_date %}{{ form_data.due_date }}{% elif fee_structure %}{{ fee_structure.due_date|date:'Y-m-d' }}{% endif %}"
+               style="width: 100%; border: 1px solid #d1d5db; padding: 10px; font-size: 14px;">
+      </div>
+    </div>
+
+    <!-- ================= ACTIONS ================= -->
+    <div style="display: flex; gap: 12px; justify-content: flex-end; padding-top: 12px; border-top: 1px solid #e5e7eb;">
+      <a href="{% url 'fee_structure_list' %}" class="pro-btn pro-btn-secondary">Cancel</a>
+      <button type="submit" class="pro-btn pro-btn-primary">
+        {% include 'partials/icons.html' with name="save" size=15 %}
+        <span>{% if action == 'edit' %}Update Fee{% else %}Save Fee{% endif %}</span>
+      </button>
+    </div>
+
+  </form>
+
+</div>
+
+{% endblock %}

@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+{% block title %}Add Board Member{% endblock %}
+{% block header_title %}Add Board Member{% endblock %}
+{% block header_sub %}{{ school.name }}{% endblock %}
+
+{% block content %}
+
+<div class="max-w-2xl mx-auto bg-white shadow-sm border border-gray-200 p-8">
+
+  <form method="post" enctype="multipart/form-data" style="display: flex; flex-direction: column; gap: 16px;">
+    {% csrf_token %}
+
+    <div>
+      <label style="display: block; font-size: 13px; font-weight: 500; color: #374151; margin-bottom: 6px;">
+        Full Name <span style="color: #dc2626;">*</span>
+      </label>
+      <input type="text" name="full_name" required
+             style="width: 100%; border: 1px solid #d1d5db; padding: 10px; font-size: 14px;">
+    </div>
+
+    <div>
+      <label style="display: block; font-size: 13px; font-weight: 500; color: #374151; margin-bottom: 6px;">
+        National ID <span style="color: #dc2626;">*</span>
+      </label>
+      <input type="text" name="id_number" required
+             style="width: 100%; border: 1px solid #d1d5db; padding: 10px; font-size: 14px; font-family: 'JetBrains Mono', monospace;">
+    </div>
+
+    <div>
+      <label style="display: block; font-size: 13px; font-weight: 500; color: #374151; margin-bottom: 6px;">
+        Role <span style="color: #dc2626;">*</span>
+      </label>
+      <select name="role" required style="width: 100%; border: 1px solid #d1d5db; padding: 10px; font-size: 14px;">
+        {% for value, label in roles %}
+          <option value="{{ value }}">{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div>
+      <label style="display: block; font-size: 13px; font-weight: 500; color: #374151; margin-bottom: 6px;">Occupation</label>
+      <input type="text" name="occupation"
+             style="width: 100%; border: 1px solid #d1d5db; padding: 10px; font-size: 14px;">
+    </div>
+
+    <div>
+      <label style="display: block; font-size: 13px; font-weight: 500; color: #374151; margin-bottom: 6px;">Phone</label>
+      <input type="tel" name="phone"
+             style="width: 100%; border: 1px solid #d1d5db; padding: 10px; font-size: 14px;">
+    </div>
+
+    <div>
+      <label style="display: block; font-size: 13px; font-weight: 500; color: #374151; margin-bottom: 6px;">Email</label>
+      <input type="email" name="email"
+             style="width: 100%; border: 1px solid #d1d5db; padding: 10px; font-size: 14px;">
+    </div>
+
+    <div>
+      <label style="display: block; font-size: 13px; font-weight: 500; color: #374151; margin-bottom: 6px;">Photo</label>
+      <input type="file" name="photo" accept="image/*"
+             style="width: 100%; border: 1px solid #d1d5db; padding: 8px; font-size: 13px;">
+    </div>
+
+    <div style="display: flex; gap: 12px; padding-top: 8px;">
+      <button type="submit" class="pro-btn pro-btn-primary">
+        {% include 'partials/icons.html' with name="save" size=15 %}
+        <span>Add Member</span>
+      </button>
+      <a href="{% url 'school_edit' school.id %}" class="pro-btn pro-btn-secondary">Cancel</a>
+    </div>
+
+  </form>
+
+</div>
+
+{% endblock %}

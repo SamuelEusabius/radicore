@@ -1,0 +1,277 @@
+{% load static %}
+<aside class="sidebar" id="sidebar">
+
+  <!-- Brand -->
+  <div class="sidebar-brand">
+  <div class="sidebar-logo">
+    <img src="{% static 'images/graduation-cap-books.png' %}" alt="School MS"
+         style="width: 100%; height: 100%; object-fit: contain; display: block;">
+  </div>
+  <div class="sidebar-brand-text">
+    <p class="sidebar-brand-name">{{ current_school.name|default:"School MS"|truncatechars:18 }}</p>
+    <p class="sidebar-brand-role">
+      {% if user.role == 'super_admin' %}Super Admin
+      {% elif user.role == 'school_admin' %}Admin
+      {% elif user.role == 'teacher' %}Teacher
+      {% elif user.role == 'accountant' %}Accountant
+      {% elif user.role == 'parent' %}Parent
+      {% elif user.role == 'student' %}Student
+      {% else %}{{ user.role|default:"User" }}{% endif %}
+    </p>
+  </div>
+</div>
+  <!-- Nav -->
+  <nav class="sidebar-nav">
+
+    <!-- ============ SUPER ADMIN ============ -->
+    {% if user.role == 'super_admin' %}
+      <div class="sidebar-section-label">Overview</div>
+      <a href="{% url 'dashboard_home' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="home" size=18 %}
+        <span class="sidebar-link-text">Dashboard</span>
+      </a>
+
+      <div class="sidebar-section-label">Schools</div>
+      <a href="{% url 'schools_manage' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="school" size=18 %}
+        <span class="sidebar-link-text">Manage Schools</span>
+      </a>
+      <a href="{% url 'school_add' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="plus" size=18 %}
+        <span class="sidebar-link-text">Add School</span>
+      </a>
+
+      <div class="sidebar-section-label">Users</div>
+      <a href="{% url 'manage_users' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="users" size=18 %}
+        <span class="sidebar-link-text">All Users</span>
+      </a>
+      <a href="{% url 'create_user' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="user-plus" size=18 %}
+        <span class="sidebar-link-text">Create User</span>
+      </a>
+
+      <div class="sidebar-section-label">Analytics</div>
+      <a href="{% url 'super_admin_performance' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="bar-chart" size=18 %}
+        <span class="sidebar-link-text">Performance</span>
+      </a>
+      <a href="{% url 'subscription_admin_picker' %}" class="sidebar-link">
+  {% include 'partials/icons.html' with name="credit-card" size=18 %}
+  <span class="sidebar-link-text">Subscriptions</span>
+</a>
+    {% endif %}
+
+    <!-- ============ SCHOOL ADMIN ============ -->
+    {% if user.role == 'school_admin' %}
+      <div class="sidebar-section-label">Overview</div>
+      <a href="{% url 'dashboard_home' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="home" size=18 %}
+        <span class="sidebar-link-text">Dashboard</span>
+      </a>
+
+      <div class="sidebar-section-label">People</div>
+      <a href="{% url 'students_list' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="graduation-cap" size=18 %}
+        <span class="sidebar-link-text">Students</span>
+      </a>
+      <a href="{% url 'teachers_list' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="teacher" size=18 %}
+        <span class="sidebar-link-text">Teachers</span>
+      </a>
+      <a href="{% url 'parents_list' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="users" size=18 %}
+        <span class="sidebar-link-text">Parents</span>
+      </a>
+      <a href="{% url 'staff_list' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="briefcase" size=18 %}
+        <span class="sidebar-link-text">Non-Teaching Staff</span>
+      </a>
+
+      <div class="sidebar-section-label">Academics</div>
+      <a href="{% url 'manage_classes' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="book" size=18 %}
+        <span class="sidebar-link-text">Classes</span>
+      </a>
+      <a href="{% url 'manage_subjects' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="book-open" size=18 %}
+        <span class="sidebar-link-text">Subjects</span>
+      </a>
+      <a href="{% url 'timetable_view' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="calendar" size=18 %}
+        <span class="sidebar-link-text">Timetable</span>
+      </a>
+      <a href="{% url 'class_results' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="bar-chart" size=18 %}
+        <span class="sidebar-link-text">Class Results</span>
+      </a>
+      <a href="{% url 'admin_attendance_overview' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="clipboard" size=18 %}
+        <span class="sidebar-link-text">Attendance</span>
+      </a>
+
+      <div class="sidebar-section-label">Tools</div>
+      <a href="{% url 'manage_users' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="user-plus" size=18 %}
+        <span class="sidebar-link-text">User Accounts</span>
+      </a>
+      <a href="{% url 'messages_inbox' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="mail" size=18 %}
+        <span class="sidebar-link-text">Inbox</span>
+      </a>
+      <a href="{% url 'bulk_sms' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="message-square" size=18 %}
+        <span class="sidebar-link-text">Bulk SMS</span>
+      </a>
+      <a href="{% url 'admin_alerts_list' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="alert-triangle" size=18 %}
+        <span class="sidebar-link-text">Smart Alerts</span>
+      </a>
+      <a href="{% url 'subscription_plans' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="credit-card" size=18 %}
+        <span class="sidebar-link-text">Subscription</span>
+      </a>
+    {% endif %}
+
+    <!-- ============ TEACHER ============ -->
+    {% if user.role == 'teacher' %}
+      <div class="sidebar-section-label">Overview</div>
+      <a href="{% url 'dashboard_home' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="home" size=18 %}
+        <span class="sidebar-link-text">Dashboard</span>
+      </a>
+
+      <div class="sidebar-section-label">Teaching</div>
+      <a href="{% url 'teacher_attendance' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="clipboard" size=18 %}
+        <span class="sidebar-link-text">Mark Attendance</span>
+      </a>
+      <a href="{% url 'enter_grades' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="edit" size=18 %}
+        <span class="sidebar-link-text">Enter Grades</span>
+      </a>
+      <a href="{% url 'class_results' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="bar-chart" size=18 %}
+        <span class="sidebar-link-text">Class Results</span>
+      </a>
+      <a href="{% url 'teacher_timetable' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="calendar" size=18 %}
+        <span class="sidebar-link-text">My Timetable</span>
+      </a>
+
+      {% if user.teacher_profile.is_class_teacher %}
+        <div class="sidebar-section-label">Class Teacher</div>
+        <a href="{% url 'class_teacher_dashboard' %}" class="sidebar-link">
+          {% include 'partials/icons.html' with name="award" size=18 %}
+          <span class="sidebar-link-text">My Class</span>
+        </a>
+      {% endif %}
+
+      <div class="sidebar-section-label">Communication</div>
+      <a href="{% url 'messages_inbox' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="mail" size=18 %}
+        <span class="sidebar-link-text">Inbox</span>
+      </a>
+    {% endif %}
+
+    <!-- ============ ACCOUNTANT ============ -->
+    {% if user.role == 'accountant' %}
+      <div class="sidebar-section-label">Overview</div>
+      <a href="{% url 'dashboard_home' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="home" size=18 %}
+        <span class="sidebar-link-text">Dashboard</span>
+      </a>
+
+      <a href="{% url 'accountant_students' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="graduation-cap" size=18 %}
+        <span class="sidebar-link-text">Students &amp; Fees</span>
+      </a>
+
+      <div class="sidebar-section-label">Finance</div>
+      <a href="{% url 'accountant_transactions' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="bar-chart" size=18 %}
+        <span class="sidebar-link-text">Transactions</span>
+      </a>
+      <a href="{% url 'fee_structure_list' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="file-text" size=18 %}
+        <span class="sidebar-link-text">Fee Structures</span>
+      </a>
+      <a href="{% url 'fee_structure_matrix' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="file-plus" size=18 %}
+        <span class="sidebar-link-text">Draft Fee Matrix</span>
+      </a>
+      <a href="{% url 'accountant_invoices' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="file-text" size=18 %}
+        <span class="sidebar-link-text">Invoices</span>
+      </a>
+      <a href="{% url 'generate_invoices' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="file-plus" size=18 %}
+        <span class="sidebar-link-text">Generate Invoices</span>
+      </a>
+      <a href="{% url 'expenditure_list' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="trending-down" size=18 %}
+        <span class="sidebar-link-text">Expenditures</span>
+      </a>
+      <a href="{% url 'add_expenditure' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="trending-down" size=18 %}
+        <span class="sidebar-link-text">Add Expenditure</span>
+      </a>
+
+      <div class="sidebar-section-label">Communication</div>
+      <a href="{% url 'messages_inbox' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="mail" size=18 %}
+        <span class="sidebar-link-text">Inbox</span>
+      </a>
+    {% endif %}
+
+    <!-- ============ PARENT ============ -->
+    {% if user.role == 'parent' %}
+      <div class="sidebar-section-label">Overview</div>
+      <a href="{% url 'dashboard_home' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="home" size=18 %}
+        <span class="sidebar-link-text">Dashboard</span>
+      </a>
+      <a href="{% url 'parent_children' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="users" size=18 %}
+        <span class="sidebar-link-text">My Children</span>
+      </a>
+    {% endif %}
+
+    <!-- ============ STUDENT ============ -->
+    {% if user.role == 'student' %}
+      <div class="sidebar-section-label">Overview</div>
+      <a href="{% url 'dashboard_home' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="home" size=18 %}
+        <span class="sidebar-link-text">Dashboard</span>
+      </a>
+    {% endif %}
+
+    <!-- ============ ACCOUNT (all roles) ============ -->
+    <div class="sidebar-section-label">Account</div>
+    <a href="{% url 'super_admin_profile' %}" class="sidebar-link">
+      {% include 'partials/icons.html' with name="user" size=18 %}
+      <span class="sidebar-link-text">My Profile</span>
+    </a>
+    <a href="{% url 'change_password' %}" class="sidebar-link">
+      {% include 'partials/icons.html' with name="lock" size=18 %}
+      <span class="sidebar-link-text">Change Password</span>
+    </a>
+    <a href="/accounts/logout/" class="sidebar-link" style="color: #F87171;">
+      {% include 'partials/icons.html' with name="log-out" size=18 %}
+      <span class="sidebar-link-text">Logout</span>
+    </a>
+
+  </nav>
+
+  <!-- User -->
+  <div class="sidebar-user">
+    <div class="sidebar-user-avatar">
+      {{ user.email|first|upper }}
+    </div>
+    <div class="sidebar-user-info">
+      <div class="sidebar-user-name">{{ user.get_full_name|default:user.email|truncatechars:20 }}</div>
+      <div class="sidebar-user-email">{{ user.email|truncatechars:22 }}</div>
+    </div>
+  </div>
+
+</aside>

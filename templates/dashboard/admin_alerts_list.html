@@ -1,0 +1,140 @@
+{% extends 'base.html' %}
+{% block title %}Alerts{% endblock %}
+{% block header_title %}Smart Alerts{% endblock %}
+{% block header_sub %}{{ current_school.name }} · Absence and system alerts{% endblock %}
+
+{% block content %}
+
+<!-- ============ STATUS TABS ============ -->
+<div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 mb-6">
+  <div class="flex flex-wrap gap-2">
+    <a href="?status=" class="px-4 py-2 text-sm rounded-md transition
+       {% if not status_filter or status_filter == 'unresolved' %}bg-teal-600 text-white{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %}">
+      Unresolved <span class="ml-1 text-xs opacity-75">{{ counts.new|add:counts.reviewing }}</span>
+    </a>
+    <a href="?status=new" class="px-4 py-2 text-sm rounded-md transition
+       {% if status_filter == 'new' %}bg-teal-600 text-white{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %}">
+      New <span class="ml-1 text-xs opacity-75">{{ counts.new }}</span>
+    </a>
+    <a href="?status=reviewing" class="px-4 py-2 text-sm rounded-md transition
+       {% if status_filter == 'reviewing' %}bg-teal-600 text-white{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %}">
+      Reviewing <span class="ml-1 text-xs opacity-75">{{ counts.reviewing }}</span>
+    </a>
+    <a href="?status=resolved" class="px-4 py-2 text-sm rounded-md transition
+       {% if status_filter == 'resolved' %}bg-teal-600 text-white{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %}">
+      Resolved <span class="ml-1 text-xs opacity-75">{{ counts.resolved }}</span>
+    </a>
+    <a href="?status=dismissed" class="px-4 py-2 text-sm rounded-md transition
+       {% if status_filter == 'dismissed' %}bg-teal-600 text-white{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %}">
+      Dismissed <span class="ml-1 text-xs opacity-75">{{ counts.dismissed }}</span>
+    </a>
+    <a href="?status=all" class="px-4 py-2 text-sm rounded-md transition
+       {% if status_filter == 'all' %}bg-teal-600 text-white{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %}">
+      All <span class="ml-1 text-xs opacity-75">{{ counts.all }}</span>
+    </a>
+  </div>
+</div>
+
+<!-- ============ ALERTS LIST ============ -->
+<div class="space-y-3">
+
+  {% for alert in alerts %}
+  <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5 hover:shadow-md transition">
+
+    <div class="flex items-start justify-between gap-4 flex-wrap">
+      <div class="flex-1 min-w-0">
+
+        <!-- Severity + category row -->
+        <div class="flex items-center gap-2 mb-2 flex-wrap">
+          <span class="px-2 py-0.5 text-xs font-bold rounded uppercase tracking-wide
+            {% if alert.severity == 'critical' %}bg-red-600 text-white
+            {% elif alert.severity == 'high' %}bg-red-100 text-red-700
+            {% elif alert.severity == 'medium' %}bg-yellow-100 text-yellow-700
+            {% else %}bg-blue-100 text-blue-700{% endif %}">
+            {{ alert.get_severity_display }}
+          </span>
+          <span class="px-2 py-0.5 text-xs font-medium rounded bg-gray-100 text-gray-700">
+            {{ alert.get_category_display }}
+          </span>
+          {% if alert.rule_code %}
+          <span class="px-2 py-0.5 text-xs font-mono rounded bg-gray-50 text-gray-500">
+            {{ alert.rule_code }}
+          </span>
+          {% endif %}
+          <span class="text-xs text-gray-400 ml-auto">
+            {{ alert.created_at|timesince }} ago
+          </span>
+        </div>
+
+        <!-- Title + description -->
+        <h3 class="font-semibold text-gray-900 mb-1">{{ alert.title }}</h3>
+        <p class="text-sm text-gray-600 leading-relaxed">{{ alert.description }}</p>
+
+        <!-- Metadata chips -->
+        {% if alert.metadata.guardian_phone %}
+        <div class="mt-3 flex items-center gap-2 text-xs">
+          <span class="text-gray-500">Guardian:</span>
+          <a href="tel:{{ alert.metadata.guardian_phone }}"
+             class="font-mono text-teal-700 hover:underline tabular-nums">
+            {{ alert.metadata.guardian_phone }}
+          </a>
+        </div>
+        {% endif %}
+
+      </div>
+
+      <!-- Actions -->
+      <div class="flex flex-col gap-2 flex-shrink-0">
+
+        {% if alert.status == 'new' or alert.status == 'reviewing' %}
+
+          <form method="post" action="{% url 'admin_alert_resolve' alert.id %}" class="flex gap-1">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="resolve">
+            <button type="submit" class="text-xs px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded transition">
+              Resolve
+            </button>
+          </form>
+
+          <form method="post" action="{% url 'admin_alert_resolve' alert.id %}">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="dismiss">
+            <button type="submit" class="text-xs px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded transition">
+              Dismiss
+            </button>
+          </form>
+
+        {% else %}
+
+          <span class="text-xs px-3 py-1.5 rounded
+            {% if alert.status == 'resolved' %}bg-green-50 text-green-700
+            {% else %}bg-gray-100 text-gray-600{% endif %}">
+            {{ alert.get_status_display }}
+          </span>
+
+        {% endif %}
+
+        {% if alert.related_object_type == 'Student' and alert.related_object_id %}
+        <a href="{% url 'admin_student_detail' alert.related_object_id %}"
+           class="text-xs px-3 py-1.5 bg-teal-50 hover:bg-teal-100 text-teal-700 rounded transition text-center">
+          View Student
+        </a>
+        {% endif %}
+
+      </div>
+    </div>
+
+  </div>
+  {% empty %}
+
+  <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-12 text-center">
+    <div class="text-5xl mb-3 opacity-30">✓</div>
+    <h3 class="font-semibold text-gray-700 mb-1">All clear</h3>
+    <p class="text-sm text-gray-500">No alerts matching this filter.</p>
+  </div>
+
+  {% endfor %}
+
+</div>
+
+{% endblock %}

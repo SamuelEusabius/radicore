@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Delete User{% endblock %}
+{% block header_title %}Delete User{% endblock %}
+{% block header_sub %}This action cannot be undone{% endblock %}
+
+{% block content %}
+
+<div style="max-width: 560px; margin: 0 auto;">
+
+  <div class="card" style="border-left: 4px solid var(--danger);">
+    <div style="text-align: center; margin-bottom: var(--s-5);">
+      <div style="width: 64px; height: 64px; border-radius: 50%; background: var(--danger-light); color: var(--danger); display: inline-flex; align-items: center; justify-content: center; margin-bottom: var(--s-3);">
+        {% include 'partials/icons.html' with name="alert-triangle" size=28 %}
+      </div>
+      <h2 style="font-size: var(--text-xl); font-weight: 700; color: var(--ink-900); margin: 0 0 var(--s-2);">
+        Delete this user?
+      </h2>
+      <p style="font-size: var(--text-sm); color: var(--ink-500); margin: 0;">
+        This will permanently delete the account and cannot be undone.
+      </p>
+    </div>
+
+    <div style="padding: var(--s-4); background: var(--surface-muted); border-radius: var(--radius); margin-bottom: var(--s-5);">
+      <div style="display: flex; align-items: center; gap: var(--s-3);">
+        <div class="avatar" style="background: var(--danger);">
+          {{ target.email|first|upper }}
+        </div>
+        <div style="min-width: 0;">
+          <div style="font-weight: 600; color: var(--ink-900);">
+            {% if target.get_full_name %}{{ target.get_full_name }}{% else %}{{ target.email }}{% endif %}
+          </div>
+          <div style="font-size: var(--text-xs); color: var(--ink-500);">
+            {{ target.email }} · {{ target.get_role_display }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <form method="post">
+      {% csrf_token %}
+
+      <div class="form-group">
+        <label class="form-label">
+          Type the email to confirm: <strong class="font-mono">{{ target.email }}</strong>
+        </label>
+        <input type="text" name="confirm_email" required class="input font-mono"
+               placeholder="{{ target.email }}" autocomplete="off" autofocus>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: var(--s-3);">
+        <a href="{% url 'manage_users' %}" class="btn btn-secondary">Cancel</a>
+        <button type="submit" class="btn btn-danger">
+          {% include 'partials/icons.html' with name="trash" size=15 %}
+          <span>Delete Permanently</span>
+        </button>
+      </div>
+    </form>
+
+  </div>
+
+</div>
+
+{% endblock %}

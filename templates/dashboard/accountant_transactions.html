@@ -1,0 +1,290 @@
+{% extends 'base.html' %}
+{% block title %}Transactions{% endblock %}
+{% block header_title %}Financial Overview{% endblock %}
+{% block header_sub %}{{ current_school.name }} — {{ period_label }}{% endblock %}
+
+{% block content %}
+
+<!-- ============ TOP BAR WITH PDF BUTTON ============ -->
+<div class="flex justify-end mb-4">
+  <a href="{% url 'financial_report_pdf' %}?period={{ period }}&start={{ start_date_iso }}&end={{ end_date_iso }}"
+     target="_blank"
+     class="pro-btn pro-btn-primary">
+    {% include 'partials/icons.html' with name="download" size=15 %}
+    <span>Download Financial Report (PDF)</span>
+  </a>
+</div>
+
+<!-- ============ PERIOD SELECTOR ============ -->
+<div class="bg-white shadow-sm border border-gray-200 p-4 mb-6">
+  <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between;">
+    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+      <a href="?period=month" class="pro-btn {% if period == 'month' %}pro-btn-primary{% else %}pro-btn-secondary{% endif %}">This Month</a>
+      <a href="?period=term" class="pro-btn {% if period == 'term' %}pro-btn-primary{% else %}pro-btn-secondary{% endif %}">This Term</a>
+      <a href="?period=year" class="pro-btn {% if period == 'year' %}pro-btn-primary{% else %}pro-btn-secondary{% endif %}">This Year</a>
+      <a href="?period=custom" class="pro-btn {% if period == 'custom' %}pro-btn-primary{% else %}pro-btn-secondary{% endif %}">Custom Range</a>
+    </div>
+    <div style="font-size: 13px; color: #6b7280; font-family: 'Inter', sans-serif;">
+      Period: <strong style="color: #1a1a1a;">{{ period_label }}</strong>
+    </div>
+  </div>
+
+  {% if period == 'custom' %}
+  <form method="get" style="margin-top: 16px; display: flex; gap: 12px; align-items: end; flex-wrap: wrap;">
+    <input type="hidden" name="period" value="custom">
+    <div>
+      <label style="display: block; font-size: 11px; font-weight: 500; color: #4b5563; margin-bottom: 4px;">From</label>
+      <input type="date" name="start" value="{{ start_date|date:'Y-m-d' }}" class="border border-gray-300 p-2 text-sm">
+    </div>
+    <div>
+      <label style="display: block; font-size: 11px; font-weight: 500; color: #4b5563; margin-bottom: 4px;">To</label>
+      <input type="date" name="end" value="{{ end_date|date:'Y-m-d' }}" class="border border-gray-300 p-2 text-sm">
+    </div>
+    <button type="submit" class="pro-btn pro-btn-primary">Apply</button>
+  </form>
+  {% endif %}
+</div>
+
+<!-- ============ SUMMARY CARDS ============ -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+
+    <div class="pro-stat">
+    <div class="pro-stat-icon pro-icon-bg-green">
+      {% include 'partials/icons.html' with name="trending-up" size=22 %}
+    </div>
+    <div class="pro-stat-value" style="color: #059669;">KES {{ total_collected|floatformat:0 }}</div>
+    <div class="pro-stat-label">Collected</div>
+    {% if collected_delta %}
+      <div class="text-xs mt-1 {% if collected_delta.direction == 'up' %}text-green-600{% elif collected_delta.direction == 'down' %}text-red-600{% else %}text-gray-500{% endif %}">
+        {% if collected_delta.direction == 'up' %}▲{% elif collected_delta.direction == 'down' %}▼{% else %}—{% endif %}
+        {{ collected_delta.pct|floatformat:1 }}%
+        <span class="text-gray-400">vs prev period</span>
+      </div>
+    {% endif %}
+  </div>
+
+    <div class="pro-stat">
+    <div class="pro-stat-icon pro-icon-bg-red">
+      {% include 'partials/icons.html' with name="trending-down" size=22 %}
+    </div>
+    <div class="pro-stat-value" style="color: #dc2626;">KES {{ total_expenditure|floatformat:0 }}</div>
+    <div class="pro-stat-label">Expenditure</div>
+    {% if expenditure_delta %}
+      <div class="text-xs mt-1 {% if expenditure_delta.direction == 'down' %}text-green-600{% elif expenditure_delta.direction == 'up' %}text-red-600{% else %}text-gray-500{% endif %}">
+        {% if expenditure_delta.direction == 'up' %}▲{% elif expenditure_delta.direction == 'down' %}▼{% else %}—{% endif %}
+        {{ expenditure_delta.pct|floatformat:1 }}%
+        <span class="text-gray-400">vs prev period</span>
+      </div>
+    {% endif %}
+  </div>
+
+  <div class="pro-stat">
+    <div class="pro-stat-icon pro-icon-bg-orange">
+      {% include 'partials/icons.html' with name="alert-circle" size=22 %}
+    </div>
+    <div class="pro-stat-value" style="color: #ea580c;">KES {{ total_debts|floatformat:0 }}</div>
+    <div class="pro-stat-label">Debts Owed · {{ debt_count }} student{{ debt_count|pluralize }}</div>
+  </div>
+
+    <div class="pro-stat">
+    <div class="pro-stat-icon {% if net_position >= 0 %}pro-icon-bg-green{% else %}pro-icon-bg-red{% endif %}">
+      {% include 'partials/icons.html' with name="dollar" size=22 %}
+    </div>
+    <div class="pro-stat-value" style="color: {% if net_position >= 0 %}#059669{% else %}#dc2626{% endif %};">
+      KES {{ net_position|floatformat:0 }}
+    </div>
+    <div class="pro-stat-label">Net Position</div>
+    {% if net_delta %}
+      <div class="text-xs mt-1 {% if net_delta.direction == 'up' %}text-green-600{% elif net_delta.direction == 'down' %}text-red-600{% else %}text-gray-500{% endif %}">
+        {% if net_delta.direction == 'up' %}▲{% elif net_delta.direction == 'down' %}▼{% else %}—{% endif %}
+        {{ net_delta.pct|floatformat:1 }}%
+        <span class="text-gray-400">vs prev period</span>
+      </div>
+    {% endif %}
+  </div>
+
+</div>
+
+<!-- ============ METHOD + CATEGORY BREAKDOWNS ============ -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+
+  <div class="pro-card">
+    <div class="pro-card-title">
+      {% include 'partials/icons.html' with name="credit-card" size=18 %}
+      <span>Collection by Method</span>
+    </div>
+    {% if method_breakdown %}
+      {% for method, amount in method_breakdown.items %}
+      <div style="display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f1f5f9;">
+        <span style="font-size: 13px; color: #1f2937;">{{ method }}</span>
+        <span style="font-size: 13px; font-weight: 700; color: #00695c; font-family: 'JetBrains Mono', monospace;">KES {{ amount|floatformat:0 }}</span>
+      </div>
+      {% endfor %}
+    {% else %}
+      <p style="font-size: 13px; color: #9ca3af; text-align: center; padding: 24px 0; margin: 0;">No collections in this period.</p>
+    {% endif %}
+  </div>
+
+  <div class="pro-card">
+    <div class="pro-card-title">
+      {% include 'partials/icons.html' with name="pie-chart" size=18 %}
+      <span>Expenditure by Category</span>
+    </div>
+    {% if expenditure_by_category %}
+      {% for row in expenditure_by_category %}
+      <div style="display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f1f5f9;">
+        <span style="font-size: 13px; color: #1f2937;">{{ row.category|title }}</span>
+        <span style="font-size: 13px; font-weight: 700; color: #dc2626; font-family: 'JetBrains Mono', monospace;">KES {{ row.total|floatformat:0 }}</span>
+      </div>
+      {% endfor %}
+    {% else %}
+      <p style="font-size: 13px; color: #9ca3af; text-align: center; padding: 24px 0; margin: 0;">No expenditure in this period.</p>
+    {% endif %}
+  </div>
+
+</div>
+<!-- ============ PER-CLASS COLLECTION BREAKDOWN ============ -->
+<div class="bg-white rounded-xl border border-gray-100 shadow-sm p-6 mb-6">
+  <div class="flex items-center justify-between mb-4">
+    <div>
+      <h3 class="text-sm font-semibold text-gray-800">Collections by Class</h3>
+      <p class="text-xs text-gray-500 mt-0.5">Which classes are paying (and which aren't)</p>
+    </div>
+  </div>
+
+  {% if class_breakdown %}
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="text-left px-4 py-2 font-semibold text-gray-600 text-xs uppercase tracking-wide">Class</th>
+            <th class="text-center px-4 py-2 font-semibold text-gray-600 text-xs uppercase tracking-wide">Students</th>
+            <th class="text-right px-4 py-2 font-semibold text-gray-600 text-xs uppercase tracking-wide">Collected</th>
+            <th class="text-right px-4 py-2 font-semibold text-gray-600 text-xs uppercase tracking-wide">Outstanding</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in class_breakdown %}
+          <tr class="border-t border-gray-50">
+            <td class="px-4 py-3 font-medium text-gray-900">{{ row.class_name }}</td>
+            <td class="px-4 py-3 text-center tabular-nums">{{ row.students }}</td>
+            <td class="px-4 py-3 text-right font-semibold text-green-600 tabular-nums">KES {{ row.collected|floatformat:0 }}</td>
+            <td class="px-4 py-3 text-right font-semibold text-red-600 tabular-nums">
+              {% if row.outstanding > 0 %}KES {{ row.outstanding|floatformat:0 }}{% else %}—{% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="text-center py-6">
+      <p class="text-sm text-gray-500">No collections in this period.</p>
+    </div>
+  {% endif %}
+</div>
+
+<!-- ============ TOP DEBTORS ============ -->
+<div class="bg-white shadow-sm border border-gray-200 mb-6 overflow-hidden">
+  <div style="padding: 16px 20px; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center;">
+    <h3 style="font-weight: 700; color: #1a1a1a; font-size: 14px; text-transform: uppercase; letter-spacing: 0.05em; font-family: 'Poppins', sans-serif; display: flex; align-items: center; gap: 8px; margin: 0;">
+      {% include 'partials/icons.html' with name="alert-triangle" size=16 %}
+      <span>Top Debtors</span>
+    </h3>
+    <a href="{% url 'accountant_invoices' %}?status=unpaid" style="font-size: 12px; color: #00695c; text-decoration: none; font-weight: 500;">
+      View all invoices →
+    </a>
+  </div>
+  <table class="pro-table">
+    <thead>
+      <tr>
+        <th>Student</th>
+        <th>Class</th>
+        <th style="text-align: right;">Balance</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for inv in top_debtors %}
+      <tr class="{% if inv.student.gender == 'M' %}row-boy{% else %}row-girl{% endif %}">
+        <td>
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div class="pro-avatar {% if inv.student.gender == 'M' %}pro-avatar-boy{% else %}pro-avatar-girl{% endif %}" style="width: 32px; height: 32px; font-size: 11px;">
+              {{ inv.student.initials }}
+            </div>
+            <span style="font-weight: 600; font-family: 'Poppins', sans-serif;">{{ inv.student.full_name }}</span>
+          </div>
+        </td>
+        <td style="font-size: 12px;">{{ inv.student.class_level|default:"—" }}</td>
+        <td style="text-align: right; font-weight: 700; color: #dc2626; font-family: 'JetBrains Mono', monospace;">
+          KES {{ inv.balance|floatformat:0 }}
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="3" style="text-align: center; padding: 32px; color: #9ca3af; font-size: 13px;">No outstanding balances.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- ============ RECENT TRANSACTIONS ============ -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+  <div class="pro-card">
+    <div class="pro-card-title">
+      {% include 'partials/icons.html' with name="trending-up" size=18 %}
+      <span>Recent Payments</span>
+    </div>
+    <div style="max-height: 400px; overflow-y: auto;">
+      {% for p in recent_payments %}
+      <div style="padding: 12px 0; border-bottom: 1px solid #f1f5f9;">
+        <div style="display: flex; justify-content: space-between; align-items: start;">
+          <div>
+            <div style="font-size: 13px; font-weight: 600; color: #1a1a1a; font-family: 'Poppins', sans-serif;">{{ p.invoice.student.full_name }}</div>
+            <div style="font-size: 11px; color: #6b7280; font-family: 'JetBrains Mono', monospace; margin-top: 2px;">{{ p.reference }}</div>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-size: 13px; font-weight: 700; color: #059669; font-family: 'JetBrains Mono', monospace;">KES {{ p.amount_kes|floatformat:0 }}</div>
+            <div style="font-size: 11px; color: #6b7280;">{{ p.paid_at|date:"M d, Y" }}</div>
+          </div>
+        </div>
+      </div>
+      {% empty %}
+      <p style="text-align: center; padding: 24px 0; color: #9ca3af; font-size: 13px;">No payments yet.</p>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="pro-card">
+    <div class="pro-card-title">
+      {% include 'partials/icons.html' with name="trending-down" size=18 %}
+      <span>Recent Expenditure</span>
+      <a href="{% url 'add_expenditure' %}" class="pro-btn pro-btn-orange" style="margin-left: auto; font-size: 11px; padding: 6px 12px;">
+        {% include 'partials/icons.html' with name="plus" size=13 %}
+        <span>Add</span>
+      </a>
+    </div>
+    <div style="max-height: 400px; overflow-y: auto;">
+      {% for e in recent_expenditures %}
+      <div style="padding: 12px 0; border-bottom: 1px solid #f1f5f9;">
+        <div style="display: flex; justify-content: space-between; align-items: start;">
+          <div>
+            <div style="font-size: 13px; font-weight: 600; color: #1a1a1a; font-family: 'Poppins', sans-serif;">{{ e.description }}</div>
+            <div style="font-size: 11px; color: #6b7280; margin-top: 2px;">{{ e.get_category_display }} · {{ e.paid_to|default:"—" }}</div>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-size: 13px; font-weight: 700; color: #dc2626; font-family: 'JetBrains Mono', monospace;">KES {{ e.amount_kes|floatformat:0 }}</div>
+            <div style="font-size: 11px; color: #6b7280;">{{ e.spent_on|date:"M d, Y" }}</div>
+          </div>
+        </div>
+      </div>
+      {% empty %}
+      <p style="text-align: center; padding: 24px 0; color: #9ca3af; font-size: 13px;">No expenditure recorded yet.</p>
+      {% endfor %}
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}

@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  @page {
+    size: A4 portrait;
+    margin: 12mm 12mm 15mm 12mm;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    font-family: Helvetica, Arial, sans-serif;
+    font-size: 9.5pt;
+    color: #1a1a1a;
+    margin: 0;
+    padding: 0;
+  }
+
+  .header {
+    border-bottom: 2px solid #00695c;
+    padding-bottom: 8px;
+    margin-bottom: 14px;
+  }
+  .header-table { width: 100%; border-collapse: collapse; }
+  .header-table td { vertical-align: top; padding: 0; }
+  .logo-cell { width: 70px; }
+  .logo-cell img { width: 62px; height: auto; }
+
+  .school-name {
+    font-size: 15pt;
+    font-weight: bold;
+    color: #00695c;
+    margin: 0;
+  }
+  .school-motto {
+    font-size: 8pt;
+    font-style: italic;
+    color: #6b7280;
+    margin: 2px 0 0 0;
+  }
+  .school-meta {
+    font-size: 8pt;
+    color: #4b5563;
+    margin: 3px 0 0 0;
+    line-height: 1.4;
+  }
+
+  .title-block {
+    text-align: center;
+    margin: 10px 0 12px 0;
+  }
+  .title-main {
+    font-size: 14pt;
+    font-weight: bold;
+    color: #111827;
+    margin: 0;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .title-sub {
+    font-size: 10pt;
+    color: #4b5563;
+    margin: 4px 0 0 0;
+  }
+
+  .info-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 12px;
+    font-size: 9pt;
+  }
+  .info-table td {
+    padding: 3px 6px;
+    vertical-align: top;
+  }
+  .info-label { color: #6b7280; }
+  .info-value { font-weight: bold; color: #111827; }
+
+  /* ============ SUBJECTS TABLE ============ */
+  .subjects-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 12px;
+  }
+  .subjects-table th {
+    background: #00695c;
+    color: white;
+    font-size: 8.5pt;
+    padding: 6px 4px;
+    text-align: center;
+    font-weight: bold;
+    border: 1px solid #004d40;
+  }
+  .subjects-table th.subject-col {
+    text-align: left;
+    width: 32%;
+  }
+  .subjects-table td {
+    padding: 5px 4px;
+    font-size: 9pt;
+    border: 1px solid #d1d5db;
+    text-align: center;
+  }
+  .subjects-table td.subject-name {
+    text-align: left;
+    background: #f9fafb;
+    font-weight: 500;
+  }
+  .subjects-table tr.total-row td {
+    background: #e6f5ef;
+    font-weight: bold;
+    font-size: 9.5pt;
+    color: #004d40;
+    border-top: 2px solid #00695c;
+  }
+  .grade-EE { color: #059669; font-weight: bold; }
+  .grade-ME { color: #2563eb; font-weight: bold; }
+  .grade-AE { color: #d97706; font-weight: bold; }
+  .grade-BE { color: #dc2626; font-weight: bold; }
+
+  /* ============ CHART ============ */
+  .chart-section {
+    margin: 12px 0;
+    page-break-inside: avoid;
+  }
+  .chart-title {
+    font-size: 10pt;
+    font-weight: bold;
+    color: #111827;
+    margin: 0 0 6px 0;
+  }
+  .chart-img {
+    width: 100%;
+    max-height: 260px;
+    border: 1px solid #e5e7eb;
+  }
+
+  /* ============ REMARKS ============ */
+  .remarks-section {
+    margin: 12px 0;
+    padding: 10px 12px;
+    background: #f9fafb;
+    border-left: 3px solid #00695c;
+  }
+  .remarks-title {
+    font-size: 9pt;
+    font-weight: bold;
+    color: #374151;
+    margin: 0 0 4px 0;
+  }
+  .remarks-text {
+    font-size: 9pt;
+    color: #4b5563;
+    line-height: 1.4;
+    min-height: 30px;
+  }
+
+  /* ============ SIGNATURES ============ */
+  .signature-block {
+    margin-top: 18px;
+    font-size: 9pt;
+  }
+  .signature-table { width: 100%; border-collapse: collapse; }
+  .signature-table td { padding: 6px 0; vertical-align: bottom; }
+  .signature-line {
+    border-bottom: 1px solid #4b5563;
+    height: 24px;
+    margin-bottom: 3px;
+  }
+  .signature-label { color: #6b7280; font-size: 8.5pt; }
+
+  .footer {
+    margin-top: 14px;
+    padding-top: 6px;
+    border-top: 1px solid #d1d5db;
+    font-size: 8pt;
+    color: #6b7280;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <table class="header-table">
+    <tr>
+      {% if school.logo %}
+      <td class="logo-cell">
+        <img src="{{ school.logo.path }}" alt="Logo">
+      </td>
+      {% endif %}
+      <td>
+        <p class="school-name">{{ school.name }}</p>
+        {% if school.motto %}
+          <p class="school-motto">"{{ school.motto }}"</p>
+        {% endif %}
+        <p class="school-meta">
+          {% if school.code %}Code: {{ school.code }}{% endif %}
+          {% if school.nemis_code %} · NEMIS: {{ school.nemis_code }}{% endif %}
+          <br>
+          {% if school.postal_address %}{{ school.postal_address }}{% endif %}
+          {% if school.phone %} · Tel: {{ school.phone }}{% endif %}
+        </p>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<!-- TITLE -->
+<div class="title-block">
+  <p class="title-main">Student Report Card</p>
+  <p class="title-sub">{{ exam.name }} · {{ exam.term }} {{ exam.year }}</p>
+</div>
+
+<!-- STUDENT INFO -->
+<table class="info-table">
+  <tr>
+    <td style="width: 60%;">
+      <span class="info-label">Student:</span>
+      <span class="info-value">{{ student.full_name }}</span>
+      <br>
+      <span class="info-label">Admission No:</span>
+      <span class="info-value">{{ student.admission_number }}</span>
+      · <span class="info-label">Class:</span>
+      <span class="info-value">{{ student.class_level }}</span>
+    </td>
+    <td style="text-align: right;">
+      <span class="info-label">Class Rank:</span>
+      <span class="info-value">{{ class_rank }} / {{ class_size }}</span>
+      <br>
+      <span class="info-label">Overall Grade:</span>
+      <span class="info-value grade-{{ overall_grade }}">{{ overall_grade }}</span>
+    </td>
+  </tr>
+</table>
+
+<!-- SUBJECTS TABLE -->
+<table class="subjects-table">
+  <thead>
+    <tr>
+      <th class="subject-col">Subject</th>
+      <th>Marks</th>
+      <th>Out Of</th>
+      <th>Percentage</th>
+      <th>Grade</th>
+      <th>Class Position</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in grade_rows %}
+    <tr>
+      <td class="subject-name">{{ row.subject }}</td>
+      <td>{{ row.marks|floatformat:0 }}</td>
+      <td>{{ row.out_of|floatformat:0 }}</td>
+      <td>{{ row.pct|floatformat:1 }}%</td>
+      <td class="grade-{{ row.grade }}">{{ row.grade }}</td>
+      <td>{{ row.position }}</td>
+    </tr>
+    {% endfor %}
+
+    <tr class="total-row">
+      <td class="subject-name">TOTAL</td>
+      <td>{{ total_marks|floatformat:0 }}</td>
+      <td>{{ total_out_of|floatformat:0 }}</td>
+      <td>{{ avg_pct|floatformat:1 }}%</td>
+      <td class="grade-{{ overall_grade }}">{{ overall_grade }}</td>
+      <td>{{ class_rank }} / {{ class_size }}</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- PERFORMANCE CHART -->
+{% if chart_path %}
+<div class="chart-section">
+  <p class="chart-title">Performance Trend vs {{ prev_exam.name }} ({{ prev_exam.term }} {{ prev_exam.year }})</p>
+  <img class="chart-img" src="{{ chart_path }}">
+</div>
+{% endif %}
+
+<!-- TEACHER REMARKS -->
+<div class="remarks-section">
+  <p class="remarks-title">Class Teacher's Remarks:</p>
+  <div class="remarks-text">
+    {% if teacher_remarks %}
+      {{ teacher_remarks }}
+    {% else %}
+      &nbsp;
+    {% endif %}
+  </div>
+</div>
+
+<!-- SIGNATURES -->
+<div class="signature-block">
+  <table class="signature-table">
+    <tr>
+      <td style="width: 50%; padding-right: 15px;">
+        <div class="signature-line"></div>
+        <div class="signature-label">Class Teacher</div>
+      </td>
+      <td style="width: 50%; padding-left: 15px;">
+        <div class="signature-line"></div>
+        <div class="signature-label">
+          {% if school.principal_name %}Principal: {{ school.principal_name }}{% else %}Principal / School Admin{% endif %}
+        </div>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+  {{ school.name }} · Generated {{ user.get_full_name|default:user.email }}
+</div>
+
+</body>
+</html>

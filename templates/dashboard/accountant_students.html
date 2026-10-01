@@ -1,0 +1,183 @@
+{% extends 'base.html' %}
+{% block title %}Students & Fees{% endblock %}
+{% block header_title %}Students &amp; Fee Balances{% endblock %}
+{% block header_sub %}{{ total_students }} student{{ total_students|pluralize }} in view{% endblock %}
+
+{% block content %}
+
+<!-- ============ GRAND TOTALS ============ -->
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+
+  <div class="pro-stat" style="text-align: center;">
+    <div class="pro-stat-icon pro-icon-bg-teal" style="margin: 0 auto 12px;">
+      {% include 'partials/icons.html' with name="graduation-cap" size=22 %}
+    </div>
+    <div class="pro-stat-value">{{ total_students }}</div>
+    <div class="pro-stat-label">Students</div>
+  </div>
+
+  <div class="pro-stat" style="text-align: center;">
+    <div class="pro-stat-icon pro-icon-bg-blue" style="margin: 0 auto 12px;">
+      {% include 'partials/icons.html' with name="dollar" size=22 %}
+    </div>
+    <div class="pro-stat-value">KES {{ grand_invoiced|floatformat:0 }}</div>
+    <div class="pro-stat-label">Total Invoiced</div>
+  </div>
+
+  <div class="pro-stat" style="text-align: center;">
+    <div class="pro-stat-icon pro-icon-bg-green" style="margin: 0 auto 12px;">
+      {% include 'partials/icons.html' with name="trending-up" size=22 %}
+    </div>
+    <div class="pro-stat-value" style="color: #059669;">KES {{ grand_paid|floatformat:0 }}</div>
+    <div class="pro-stat-label">Total Collected</div>
+  </div>
+
+  <div class="pro-stat" style="text-align: center;">
+    <div class="pro-stat-icon pro-icon-bg-red" style="margin: 0 auto 12px;">
+      {% include 'partials/icons.html' with name="alert-circle" size=22 %}
+    </div>
+    <div class="pro-stat-value" style="color: #dc2626;">KES {{ grand_balance|floatformat:0 }}</div>
+    <div class="pro-stat-label">Outstanding</div>
+  </div>
+
+</div>
+
+<!-- ============ FILTERS ============ -->
+<div class="bg-white shadow-sm border border-gray-200 p-4 mb-6">
+  <form method="get" style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center;">
+
+    <input name="q" value="{{ search }}" placeholder="Search by name, admission no, or UPI..."
+           style="flex: 1; min-width: 240px; border: 1px solid #d1d5db; padding: 10px; font-size: 14px;">
+
+    <select name="class" style="border: 1px solid #d1d5db; padding: 10px; font-size: 14px;">
+      <option value="">All Classes</option>
+      {% for c in classes %}
+        <option value="{{ c.id }}" {% if class_id == c.id|stringformat:"s" %}selected{% endif %}>{{ c.name }}</option>
+      {% endfor %}
+    </select>
+
+    <select name="status" style="border: 1px solid #d1d5db; padding: 10px; font-size: 14px;">
+      <option value="">All Statuses</option>
+      <option value="paid" {% if status_filter == 'paid' %}selected{% endif %}>Paid</option>
+      <option value="partial" {% if status_filter == 'partial' %}selected{% endif %}>Partial</option>
+      <option value="unpaid" {% if status_filter == 'unpaid' %}selected{% endif %}>Unpaid</option>
+      <option value="overdue" {% if status_filter == 'overdue' %}selected{% endif %}>Overdue</option>
+    </select>
+
+    <button type="submit" class="pro-btn pro-btn-primary">
+      {% include 'partials/icons.html' with name="search" size=15 %}
+      <span>Filter</span>
+    </button>
+    <a href="{% url 'accountant_students' %}" class="pro-btn pro-btn-secondary">Clear</a>
+
+  </form>
+</div>
+
+<!-- ============ TABLE ============ -->
+<div class="bg-white shadow-sm border border-gray-200 overflow-hidden">
+  <table class="pro-table">
+    <thead>
+      <tr>
+        <th>Student</th>
+        <th>Adm No</th>
+        <th>Class</th>
+        <th style="text-align: right;">Invoiced</th>
+        <th style="text-align: right;">Paid</th>
+        <th style="text-align: right;">Balance</th>
+        <th style="text-align: center;">Status</th>
+        <th style="text-align: right;">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in students_data %}
+      <tr class="{% if row.student.gender == 'M' %}row-boy{% else %}row-girl{% endif %}">
+        <td>
+          <div style="display: flex; align-items: center; gap: 12px;">
+            {% if row.student.photo %}
+              <img src="{{ row.student.photo.url }}" class="pro-avatar" style="object-fit: cover;">
+            {% else %}
+              <div class="pro-avatar {% if row.student.gender == 'M' %}pro-avatar-boy{% else %}pro-avatar-girl{% endif %}">
+                {{ row.student.initials }}
+              </div>
+            {% endif %}
+            <div>
+              <div style="font-weight: 600; font-family: 'Poppins', sans-serif;">
+                {{ row.student.full_name }}
+              </div>
+              {% if row.student.upi %}
+                <div style="font-size: 11px; color: #6b7280; margin-top: 2px;">
+                  UPI: {{ row.student.upi }}
+                </div>
+              {% endif %}
+            </div>
+          </div>
+        </td>
+
+        <td style="font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 600;">
+          {{ row.student.admission_number }}
+        </td>
+
+        <td style="font-size: 12px;">
+          {{ row.student.class_level|default:"—" }}
+        </td>
+
+        <td style="text-align: right; font-family: 'JetBrains Mono', monospace; font-size: 12px;">
+          KES {{ row.invoiced|floatformat:0 }}
+        </td>
+
+        <td style="text-align: right; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #059669;">
+          KES {{ row.paid|floatformat:0 }}
+        </td>
+
+        <td style="text-align: right; font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700; color: {% if row.balance > 0 %}#dc2626{% else %}#059669{% endif %};">
+          KES {{ row.balance|floatformat:0 }}
+        </td>
+
+        <td style="text-align: center;">
+          {% if row.status == 'paid' %}
+            <span class="pro-badge pro-badge-success">Paid</span>
+          {% elif row.status == 'overdue' %}
+            <span class="pro-badge pro-badge-danger">Overdue</span>
+          {% elif row.status == 'partial' %}
+            <span class="pro-badge pro-badge-warning">Partial</span>
+          {% elif row.status == 'unpaid' %}
+            <span class="pro-badge pro-badge-info">Unpaid</span>
+          {% else %}
+            <span class="pro-badge pro-badge-gray">No invoice</span>
+          {% endif %}
+        </td>
+
+                <td>
+          <div class="pro-table-actions" style="justify-content: flex-end; gap: 6px;">
+            <a href="{% url 'invoice_student_quick' row.student.id %}"
+               class="pro-action-edit"
+               title="Create an invoice for this student">
+              {% include 'partials/icons.html' with name="file-plus" size=13 %}
+              <span>Invoice</span>
+            </a>
+            <a href="{% url 'fee_statement_pdf' row.student.id %}"
+               class="pro-action-view"
+               target="_blank"
+               title="Download fee statement">
+              {% include 'partials/icons.html' with name="eye" size=13 %}
+              <span>Statement</span>
+            </a>
+          </div>
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="8">
+          <div class="pro-empty">
+            {% include 'partials/icons.html' with name="users" size=64 %}
+            <h3>No students match your filters</h3>
+            <p>Try clearing filters or adding students to your school.</p>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% endblock %}

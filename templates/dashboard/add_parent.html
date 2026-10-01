@@ -1,0 +1,163 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Add Parent{% endblock %}
+{% block header_title %}Add Parent / Guardian{% endblock %}
+{% block header_sub %}{{ current_school.name|default:"School" }} · register a new parent account{% endblock %}
+
+{% block content %}
+
+<div style="max-width: 900px; margin: 0 auto;">
+
+  <a href="{% url 'parents_list' %}" class="btn btn-ghost btn-sm" style="margin-bottom: var(--s-4);">
+    ← Back to Parents
+  </a>
+
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    <!-- ============================================ -->
+    <!-- LOGIN ACCOUNT                                -->
+    <!-- ============================================ -->
+    <div class="card mb-6" style="border-left: 4px solid var(--primary); background: var(--primary-soft);">
+      <div class="card-title" style="color: var(--primary-dark);">
+        {% include 'partials/icons.html' with name="lock" size=18 %}
+        Login Account
+      </div>
+
+      <p class="form-hint" style="margin-top: calc(-1 * var(--s-3)); margin-bottom: var(--s-4); color: var(--primary-dark); opacity: 0.85;">
+        The parent will use these credentials to log in.
+      </p>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="form-group">
+          <label class="form-label">Email (username) <span class="required">*</span></label>
+          <input type="email" name="email" required value="{{ form_data.email|default:'' }}" class="input" placeholder="parent@example.com">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Initial Password <span class="required">*</span></label>
+          <input type="text" name="password" required minlength="6" value="{{ form_data.password|default:'changeme123' }}" class="input font-mono">
+          <p class="form-hint">Share with the parent — they can change it after login.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- PERSONAL INFO                                -->
+    <!-- ============================================ -->
+    <div class="card mb-6">
+      <div class="card-title">
+        {% include 'partials/icons.html' with name="user" size=18 %}
+        Personal Information
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+        <div class="form-group">
+          <label class="form-label">First Name <span class="required">*</span></label>
+          <input type="text" name="first_name" required value="{{ form_data.first_name|default:'' }}" class="input">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Last Name <span class="required">*</span></label>
+          <input type="text" name="last_name" required value="{{ form_data.last_name|default:'' }}" class="input">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">National ID</label>
+          <input type="text" name="id_number" value="{{ form_data.id_number|default:'' }}" class="input font-mono">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Phone</label>
+          <input type="tel" name="phone" value="{{ form_data.phone|default:'' }}" class="input font-mono" placeholder="+2547...">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Occupation</label>
+          <input type="text" name="occupation" value="{{ form_data.occupation|default:'' }}" class="input" placeholder="e.g. Farmer, Teacher">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Relationship</label>
+          <select name="relationship" class="select">
+            {% for value, label in relationships %}
+              <option value="{{ value }}" {% if form_data.relationship == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group" style="grid-column: 1 / -1;">
+          <label class="form-label">Photo</label>
+          <input type="file" name="photo" accept="image/*" class="input" style="padding: 8px;">
+          <p class="form-hint">JPG or PNG, up to 5MB</p>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- LINK CHILDREN                                -->
+    <!-- ============================================ -->
+    <div class="card mb-6">
+      <div class="card-title">
+        {% include 'partials/icons.html' with name="graduation-cap" size=18 %}
+        Link Children
+      </div>
+
+      {% if students %}
+        <p class="form-hint" style="margin-top: calc(-1 * var(--s-3)); margin-bottom: var(--s-4);">
+          Tick the student(s) this parent is responsible for.
+        </p>
+
+        <div style="max-height: 340px; overflow-y: auto; border: 1px solid var(--border); border-radius: var(--radius); padding: var(--s-2);">
+
+          {% regroup students by class_level as class_groups %}
+
+          {% for group in class_groups %}
+            <div style="padding: var(--s-2) var(--s-3) var(--s-1); font-size: 10px; font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: 0.08em; border-bottom: 1px solid var(--border); margin-bottom: var(--s-1);">
+              {{ group.grouper|default:"Unassigned" }}
+            </div>
+
+            {% for s in group.list %}
+              <label style="display: flex; align-items: center; gap: var(--s-3); padding: var(--s-2) var(--s-3); cursor: pointer; border-radius: var(--radius-sm); transition: background var(--t-fast);">
+                <input type="checkbox" name="students" value="{{ s.id }}"
+                       {% if s.id|stringformat:"s" in form_data.students %}checked{% endif %}
+                       style="width: 16px; height: 16px; accent-color: var(--primary);">
+                <div class="avatar avatar-sm" style="{% if s.gender == 'F' %}background: #EC4899;{% else %}background: #2563EB;{% endif %} font-size: 10px;">
+                  {{ s.initials }}
+                </div>
+                <div style="flex: 1; min-width: 0;">
+                  <div style="font-size: var(--text-sm); font-weight: 600; color: var(--ink-900);">{{ s.full_name }}</div>
+                  <div style="font-size: var(--text-xs); color: var(--ink-500);">
+                    {{ s.admission_number }}{% if s.cbc_level %} · {{ s.get_cbc_level_display }}{% endif %}
+                  </div>
+                </div>
+              </label>
+            {% endfor %}
+          {% endfor %}
+
+        </div>
+      {% else %}
+        <p style="font-size: var(--text-sm); color: var(--ink-500); text-align: center; padding: var(--s-5); margin: 0;">
+          No students enrolled yet. You can link children later.
+        </p>
+      {% endif %}
+    </div>
+
+    <!-- ============================================ -->
+    <!-- ACTIONS                                      -->
+    <!-- ============================================ -->
+    <div style="display: flex; justify-content: flex-end; gap: var(--s-3); margin-bottom: var(--s-10);">
+      <a href="{% url 'parents_list' %}" class="btn btn-secondary">Cancel</a>
+      <button type="submit" class="btn btn-primary" style="padding: 12px 32px;">
+        {% include 'partials/icons.html' with name="save" size=15 %}
+        <span>Save Parent</span>
+      </button>
+    </div>
+
+  </form>
+
+</div>
+
+{% endblock %}

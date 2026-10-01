@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% block title %}Manage Exams{% endblock %}
+{% block header_title %}Manage Exams{% endblock %}
+{% block header_sub %}Create and view exams{% endblock %}
+
+{% block content %}
+
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+  <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+    <h2 class="font-bold text-lg mb-4">Create Exam</h2>
+    <form method="post" class="space-y-4">
+      {% csrf_token %}
+      <input name="name" placeholder="Exam name (e.g. End of Term 1)" required
+             class="w-full border border-gray-300 p-3 rounded-lg">
+      <input name="term" placeholder="Term (e.g. Term 1)" required
+             class="w-full border border-gray-300 p-3 rounded-lg">
+      <input name="year" type="number" value="2026" required
+             class="w-full border border-gray-300 p-3 rounded-lg">
+      <button class="w-full bg-teal-600 hover:bg-teal-700 text-white py-2.5 rounded-lg font-medium">
+        Create Exam
+      </button>
+    </form>
+  </div>
+
+  <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+    <h2 class="font-bold text-lg mb-4">Exams ({{ exams|length }})</h2>
+    <ul class="divide-y">
+      {% for e in exams %}
+      <li class="py-3 flex justify-between items-center">
+        <div>
+          <p class="font-medium text-gray-800">{{ e.name }}</p>
+          <p class="text-xs text-gray-500">{{ e.term }} {{ e.year }}</p>
+        </div>
+        <a href="{% url 'enter_grades' %}?exam={{ e.id }}"
+           class="text-teal-600 text-xs hover:underline">Enter grades →</a>
+      </li>
+      {% empty %}
+      <li class="text-gray-500 py-4 text-center">No exams yet.</li>
+      {% endfor %}
+    </ul>
+  </div>
+
+</div>
+
+{% endblock %}

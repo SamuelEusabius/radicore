@@ -1,0 +1,171 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Super Admin Dashboard{% endblock %}
+{% block header_title %}Platform Overview{% endblock %}
+{% block header_sub %}{{ current_school.name|default:"All Schools" }}{% endblock %}
+
+{% block content %}
+
+<!-- ============================================ -->
+<!-- WELCOME BANNER                                -->
+<!-- ============================================ -->
+<div class="page-header">
+  <div class="page-header-info">
+    <h1 class="page-title">Good {% now "H" as hour %}{% if hour < "12" %}morning{% elif hour < "17" %}afternoon{% else %}evening{% endif %}, {{ user.get_full_name|default:user.email|truncatechars:20 }}</h1>
+    <p class="page-subtitle">
+      <span style="display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px; background: rgba(124, 58, 237, 0.1); color: #7C3AED; border-radius: var(--radius-full); font-size: var(--text-xs); font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; margin-right: var(--s-2);">
+        <span style="width: 6px; height: 6px; border-radius: 50%; background: #7C3AED;"></span>
+        Platform
+      </span>
+      Aggregate view — no tenant data
+    </p>
+  </div>
+</div>
+
+<!-- ============================================ -->
+<!-- KPI ROW — 4 cards                            -->
+<!-- ============================================ -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+
+  <a href="{% url 'schools_manage' %}" class="stat card-hover" style="text-decoration: none; color: inherit;">
+    <div class="stat-header">
+      <span class="stat-label">Total Schools</span>
+      <div class="stat-icon" style="background: rgba(10, 138, 95, 0.1); color: var(--primary);">
+        {% include 'partials/icons.html' with name="school" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value">{{ school_count }}</div>
+    <div class="stat-meta">{{ active_count }} active · {{ inactive_count }} inactive</div>
+  </a>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Active</span>
+      <div class="stat-icon" style="background: rgba(5, 150, 105, 0.1); color: #059669;">
+        {% include 'partials/icons.html' with name="check-circle" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--success);">{{ active_count }}</div>
+    <div class="stat-meta">Schools currently running</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Inactive</span>
+      <div class="stat-icon" style="background: rgba(220, 38, 38, 0.1); color: var(--danger);">
+        {% include 'partials/icons.html' with name="x-circle" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--danger);">{{ inactive_count }}</div>
+    <div class="stat-meta">Awaiting activation</div>
+  </div>
+
+  <a href="{% url 'super_admin_performance' %}" class="stat card-hover" style="text-decoration: none; color: inherit;">
+    <div class="stat-header">
+      <span class="stat-label">Analytics</span>
+      <div class="stat-icon" style="background: rgba(124, 58, 237, 0.1); color: #7C3AED;">
+        {% include 'partials/icons.html' with name="bar-chart" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value">View</div>
+    <div class="stat-meta">Performance Report →</div>
+  </a>
+
+</div>
+
+<!-- ============================================ -->
+<!-- PENDING PAYMENTS                             -->
+<!-- ============================================ -->
+{% if pending_payments %}
+<div class="card mb-6" style="padding: 0; overflow: hidden; border-left: 4px solid var(--warning);">
+  <div style="display: flex; align-items: center; gap: var(--s-2); padding: var(--s-5) var(--s-6); border-bottom: 1px solid var(--border);">
+    <div class="stat-icon" style="background: rgba(217, 119, 6, 0.1); color: var(--warning); width: 32px; height: 32px;">
+      {% include 'partials/icons.html' with name="alert-triangle" size=16 %}
+    </div>
+    <div>
+      <h3 style="font-size: var(--text-md); font-weight: 700; color: var(--ink-900); margin: 0;">
+        Pending Payment Confirmations
+      </h3>
+      <p style="font-size: var(--text-xs); color: var(--ink-500); margin: var(--s-1) 0 0;">
+        {{ pending_payments|length }} school{{ pending_payments|length|pluralize }} awaiting confirmation
+      </p>
+    </div>
+  </div>
+
+  <div style="overflow-x: auto;">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>School</th>
+          <th>Plan</th>
+          <th>Reference</th>
+          <th style="text-align: right;">Amount</th>
+          <th style="text-align: right;">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for sub in pending_payments %}
+        <tr>
+          <td>
+            <div style="font-weight: 600; color: var(--ink-900);">{{ sub.school.name }}</div>
+            <div class="font-mono" style="font-size: var(--text-xs); color: var(--ink-500);">{{ sub.school.code|default:"" }}</div>
+          </td>
+          <td>{{ sub.plan.name|default:"—" }}</td>
+          <td>
+            <span class="font-mono" style="font-size: var(--text-xs); color: var(--ink-600);">
+              {{ sub.last_payment_reference|default:"—" }}
+            </span>
+          </td>
+          <td style="text-align: right;">
+            <span class="font-mono" style="font-weight: 700; color: var(--warning);">
+              KES {{ sub.total_paid_kes|floatformat:0 }}
+            </span>
+          </td>
+          <td style="text-align: right;">
+            <a href="{% url 'confirm_subscription_payment' sub.school.id %}" class="btn btn-sm btn-primary">
+              Confirm
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+<!-- ============================================ -->
+<!-- QUICK ACTIONS                                -->
+<!-- ============================================ -->
+<div>
+  <h3 style="font-size: var(--text-md); font-weight: 700; color: var(--ink-900); margin: 0 0 var(--s-4);">Quick Actions</h3>
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+
+    <a href="{% url 'schools_manage' %}" class="card card-hover" style="text-decoration: none; padding: var(--s-5); text-align: center;">
+      <div class="stat-icon" style="margin: 0 auto var(--s-3); background: rgba(10, 138, 95, 0.1); color: var(--primary); width: 44px; height: 44px;">
+        {% include 'partials/icons.html' with name="school" size=20 %}
+      </div>
+      <div style="font-size: var(--text-sm); font-weight: 700; color: var(--ink-900);">Manage Schools</div>
+      <div style="font-size: var(--text-xs); color: var(--ink-500); margin-top: 4px;">View, edit, activate</div>
+    </a>
+
+    <a href="{% url 'school_add' %}" class="card card-hover" style="text-decoration: none; padding: var(--s-5); text-align: center;">
+      <div class="stat-icon" style="margin: 0 auto var(--s-3); background: rgba(37, 99, 235, 0.1); color: #2563EB; width: 44px; height: 44px;">
+        {% include 'partials/icons.html' with name="plus" size=20 %}
+      </div>
+      <div style="font-size: var(--text-sm); font-weight: 700; color: var(--ink-900);">Add New School</div>
+      <div style="font-size: var(--text-xs); color: var(--ink-500); margin-top: 4px;">Register + admin account</div>
+    </a>
+
+    <a href="{% url 'subscription_plans' %}" class="card card-hover" style="text-decoration: none; padding: var(--s-5); text-align: center;">
+      <div class="stat-icon" style="margin: 0 auto var(--s-3); background: rgba(217, 119, 6, 0.1); color: var(--warning); width: 44px; height: 44px;">
+        {% include 'partials/icons.html' with name="credit-card" size=20 %}
+      </div>
+      <div style="font-size: var(--text-sm); font-weight: 700; color: var(--ink-900);">Subscriptions</div>
+      <div style="font-size: var(--text-xs); color: var(--ink-500); margin-top: 4px;">Manage plans &amp; billing</div>
+    </a>
+
+  </div>
+</div>
+
+{% endblock %}

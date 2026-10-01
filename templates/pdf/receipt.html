@@ -1,0 +1,250 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  @page {
+    size: A5 portrait;
+    margin: 8mm 10mm 8mm 10mm;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: Helvetica, Arial, sans-serif;
+    font-size: 8.5pt;
+    color: #1a1a1a;
+    margin: 0;
+    padding: 0;
+    line-height: 1.3;
+  }
+
+  .header {
+    border-bottom: 2px solid #0d9488;
+    padding-bottom: 5px;
+    margin-bottom: 8px;
+  }
+  .header-table { width: 100%; border-collapse: collapse; }
+  .header-table td { vertical-align: top; padding: 0; }
+
+  .school-name { font-size: 12pt; font-weight: bold; color: #0d9488; margin: 0; }
+  .school-motto { font-size: 7pt; font-style: italic; color: #6b7280; margin: 1px 0 0 0; }
+  .school-meta { font-size: 7pt; color: #4b5563; margin: 2px 0 0 0; line-height: 1.35; }
+
+  .receipt-no-box {
+    display: inline-block;
+    background: #0d9488;
+    color: #fff;
+    padding: 4px 10px;
+    font-weight: bold;
+    font-size: 9pt;
+    font-family: monospace;
+  }
+  .receipt-no-label { font-size: 7pt; color: #6b7280; }
+
+  .title-block { text-align: center; margin: 6px 0 8px 0; }
+  .title-main {
+    font-size: 11pt; font-weight: bold; color: #111827;
+    margin: 0; letter-spacing: 1px; text-transform: uppercase;
+  }
+
+  .info-table {
+    width: 100%; border-collapse: collapse; margin-bottom: 8px;
+  }
+  .info-table td {
+    padding: 3px 4px; font-size: 8pt; vertical-align: middle;
+    border-bottom: 1px solid #f1f5f9;
+  }
+  .info-label { color: #6b7280; width: 35%; font-size: 7.5pt; }
+  .info-value { font-weight: 600; color: #111827; }
+
+  .amount-box {
+    background: #f0fdfa;
+    border: 2px solid #14b8a6;
+    padding: 10px;
+    text-align: center;
+    margin: 8px 0;
+  }
+  .amount-label {
+    color: #0f766e;
+    font-size: 7.5pt;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+  .amount-value {
+    color: #0d9488;
+    font-size: 20pt;
+    font-weight: bold;
+    margin-top: 2px;
+  }
+
+  .summary-table {
+    width: 100%; border-collapse: collapse; margin-bottom: 6px;
+  }
+  .summary-table td {
+    padding: 4px 6px; font-size: 8.5pt;
+    border-bottom: 1px solid #e5e7eb;
+  }
+  .summary-table td.label { color: #4b5563; }
+  .summary-table td.value {
+    text-align: right; font-weight: bold;
+    font-family: monospace;
+  }
+  .summary-table td.paid { color: #059669; }
+  .summary-table td.balance { color: #dc2626; }
+  .summary-table td.balance-zero { color: #059669; }
+
+  .balance-box {
+    background: #fef3c7;
+    border-left: 4px solid #f59e0b;
+    padding: 8px 10px;
+    margin: 8px 0;
+    font-size: 8pt;
+  }
+  .balance-box strong { color: #92400e; }
+  .balance-box.paid {
+    background: #d1fae5;
+    border-left-color: #059669;
+  }
+  .balance-box.paid strong { color: #065f46; }
+
+  .stamp {
+    text-align: center;
+    margin-top: 12px;
+  }
+  .stamp p {
+    color: #0d9488;
+    font-weight: bold;
+    font-size: 8pt;
+    border-top: 2px dashed #14b8a6;
+    padding-top: 4px;
+    display: inline-block;
+    margin: 0;
+  }
+
+  .footer {
+    margin-top: 10px;
+    padding-top: 5px;
+    border-top: 1px solid #d1d5db;
+    text-align: center;
+    color: #6b7280;
+    font-size: 6.5pt;
+    line-height: 1.35;
+  }
+  .footer p { margin: 1px 0; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <table class="header-table">
+    <tr>
+      <td>
+        <p class="school-name">{{ school.name }}</p>
+        {% if school.motto %}<p class="school-motto">"{{ school.motto }}"</p>{% endif %}
+        <p class="school-meta">
+          {% if school.postal_address %}{{ school.postal_address }}{% endif %}
+          {% if school.physical_address %} · {{ school.physical_address }}{% endif %}
+          {% if school.phone %} · Tel: {{ school.phone }}{% endif %}
+          {% if school.email %} · {{ school.email }}{% endif %}
+          {% if school.nemis_code %} · NEMIS: {{ school.nemis_code }}{% endif %}
+        </p>
+      </td>
+      <td style="text-align: right;">
+        <div class="receipt-no-label">Receipt No.</div>
+        <div class="receipt-no-box">{{ payment.reference }}</div>
+        <p style="font-size: 7.5pt; color: #4b5563; margin: 4px 0 0 0;">
+          {{ payment.paid_at|date:"d M Y H:i" }}
+        </p>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<!-- TITLE -->
+<div class="title-block">
+  <p class="title-main">Official Fee Receipt</p>
+</div>
+
+<!-- INFO -->
+<table class="info-table">
+  <tr>
+    <td class="info-label">Student Name</td>
+    <td class="info-value">{{ student.full_name }}</td>
+  </tr>
+  <tr>
+    <td class="info-label">Admission No.</td>
+    <td class="info-value">{{ student.admission_number }}
+      {% if student.class_level %} · {{ student.class_level }}{% endif %}
+    </td>
+  </tr>
+  <tr>
+    <td class="info-label">Fee Item</td>
+    <td class="info-value">{{ invoice.fee_structure.name|default:"Fee" }}</td>
+  </tr>
+  <tr>
+    <td class="info-label">Payment Method</td>
+    <td class="info-value">{{ payment.get_method_display }}</td>
+  </tr>
+  {% if payment.external_reference %}
+  <tr>
+    <td class="info-label">Transaction Ref</td>
+    <td class="info-value" style="font-family: monospace;">{{ payment.external_reference }}</td>
+  </tr>
+  {% endif %}
+</table>
+
+<!-- AMOUNT BOX -->
+<div class="amount-box">
+  <div class="amount-label">Amount Paid</div>
+  <div class="amount-value">KES {{ payment.amount_kes|floatformat:2 }}</div>
+</div>
+
+<!-- SUMMARY -->
+<table class="summary-table">
+  <tr>
+    <td class="label">Invoice Amount</td>
+    <td class="value">KES {{ invoice.amount_due|floatformat:2 }}</td>
+  </tr>
+  <tr>
+    <td class="label">Total Paid to Date</td>
+    <td class="value paid">KES {{ invoice.amount_paid|floatformat:2 }}</td>
+  </tr>
+  <tr>
+    <td class="label" style="font-weight: bold;">Balance Remaining</td>
+    <td class="value {% if invoice.balance <= 0 %}balance-zero{% else %}balance{% endif %}">
+      KES {{ invoice.balance|floatformat:2 }}
+    </td>
+  </tr>
+</table>
+
+<!-- STATUS -->
+{% if invoice.balance > 0 %}
+<div class="balance-box">
+  <strong>Outstanding:</strong> KES {{ invoice.balance|floatformat:2 }} — due by {{ invoice.due_date|date:"d M Y" }}
+</div>
+{% else %}
+<div class="balance-box paid">
+  <strong>✓ Fully Paid</strong> — Thank you!
+</div>
+{% endif %}
+
+<!-- NOTES -->
+{% if payment.notes %}
+<div style="margin-top: 6px; font-size: 7.5pt; color: #6b7280;">
+  <strong>Notes:</strong> {{ payment.notes }}
+</div>
+{% endif %}
+
+<!-- STAMP -->
+<div class="stamp">
+  <p>OFFICIAL RECEIPT — {{ school.name|upper }}</p>
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+  <p>Generated {{ payment.paid_at|date:"d M Y H:i" }} · Served by {{ user.get_full_name|default:user.email }}</p>
+  <p>This is a computer-generated receipt. No signature required.</p>
+</div>
+
+</body>
+</html>

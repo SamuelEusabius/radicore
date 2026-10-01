@@ -1,0 +1,214 @@
+{% extends 'base.html' %}
+{% block title %}Leaving Certificate{% endblock %}
+{% block header_title %}Leaving Certificate Editor{% endblock %}
+{% block header_sub %}{{ student.full_name }} — {{ student.admission_number }}{% endblock %}
+
+{% block content %}
+
+<!-- Rich text editor via Quill -->
+<link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+<script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+
+<!-- Toolbar -->
+<div class="bg-white shadow-sm border border-gray-200 p-4 mb-6" style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between;">
+
+  <div>
+    <div style="font-weight: 600; color: #1a1a1a; font-family: 'Poppins', sans-serif; font-size: 14px;">
+      Edit certificate content
+    </div>
+    <div style="font-size: 12px; color: #6b7280; margin-top: 2px;">
+      Use the toolbar to format text · Content saves on PDF download
+    </div>
+  </div>
+
+  <div style="display: flex; gap: 8px;">
+    <a href="{% url 'students_list' %}" class="pro-btn pro-btn-secondary">
+      Back to Students
+    </a>
+    <button type="button" onclick="submitForm()" class="pro-btn pro-btn-primary">
+      {% include 'partials/icons.html' with name="download" size=15 %}
+      <span>Download PDF</span>
+    </button>
+  </div>
+
+</div>
+
+<form method="post" action="{% url 'leaving_certificate_pdf' student.id %}" target="_blank" id="cert-form">
+  {% csrf_token %}
+  <input type="hidden" name="content_html" id="content_html">
+
+  <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
+
+    <!-- LEFT: Editor (2/5 width) -->
+    <div class="lg:col-span-2" style="display: flex; flex-direction: column; gap: 16px;">
+
+      <!-- Content editor -->
+      <div class="pro-card">
+        <div class="pro-card-title">
+          {% include 'partials/icons.html' with name="edit" size=18 %}
+          <span>Certificate Body</span>
+        </div>
+
+        <div id="editor-container" style="height: 340px; background: white;"></div>
+      </div>
+
+      <!-- Settings -->
+      <div class="pro-card">
+        <div class="pro-card-title">
+          {% include 'partials/icons.html' with name="settings" size=18 %}
+          <span>Settings</span>
+        </div>
+
+        <div style="margin-bottom: 16px;">
+          <label style="display: block; font-size: 12px; font-weight: 500; color: #374151; margin-bottom: 6px;">
+            Reason for leaving
+          </label>
+          <select name="clearance_reason" style="width: 100%; border: 1px solid #d1d5db; padding: 8px; font-size: 13px;">
+            <option value="Completed Primary" {% if student.clearance_reason == 'Completed Primary' %}selected{% endif %}>Completed Primary</option>
+            <option value="Completed Junior Secondary" {% if student.clearance_reason == 'Completed Junior Secondary' %}selected{% endif %}>Completed Junior Secondary</option>
+            <option value="Completed Senior School" {% if student.clearance_reason == 'Completed Senior School' %}selected{% endif %}>Completed Senior School</option>
+            <option value="Transferred to another school" {% if student.clearance_reason == 'Transferred to another school' %}selected{% endif %}>Transferred to another school</option>
+            <option value="Relocated" {% if student.clearance_reason == 'Relocated' %}selected{% endif %}>Relocated</option>
+            <option value="Other" {% if student.clearance_reason == 'Other' %}selected{% endif %}>Other</option>
+          </select>
+        </div>
+
+        <div>
+          <label style="display: block; font-size: 12px; font-weight: 500; color: #374151; margin-bottom: 6px;">
+            Internal notes (not printed)
+          </label>
+          <textarea name="certificate_notes" rows="3"
+                    placeholder="Notes for your records..."
+                    style="width: 100%; border: 1px solid #d1d5db; padding: 8px; font-size: 13px;">{{ student.leaving_certificate_notes }}</textarea>
+        </div>
+      </div>
+
+      <!-- Info -->
+      <div class="pro-card">
+        <div class="pro-card-title">
+          {% include 'partials/icons.html' with name="user" size=18 %}
+          <span>Student Details</span>
+        </div>
+        <div style="font-size: 12px; color: #4b5563; line-height: 1.8;">
+          <div><strong>Name:</strong> {{ student.full_name }}</div>
+          <div><strong>Admission No:</strong> {{ student.admission_number }}</div>
+          <div><strong>Level:</strong> {{ student.get_cbc_level_display|default:"—" }}</div>
+          <div><strong>Class:</strong> {{ student.class_level|default:"—" }}</div>
+          <div><strong>Admitted:</strong> {{ student.admission_date|date:"d M Y"|default:"—" }}</div>
+          <div><strong>Cleared:</strong> {{ student.cleared_at|date:"d M Y"|default:"—" }}</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- RIGHT: Live preview (3/5 width) -->
+    <div class="lg:col-span-3">
+      <div style="position: sticky; top: 90px;">
+
+        <div style="font-size: 12px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">
+          A4 Preview
+        </div>
+
+        <!-- A4 preview page -->
+        <div id="preview-cert" style="background: white; width: 100%; max-width: 794px; min-height: 1123px; margin: 0 auto; box-shadow: 0 4px 24px rgba(0,0,0,0.12); border: 3pt solid; border-image: linear-gradient(to bottom, #000000 33%, #dc2626 33%, #dc2626 66%, #059669 66%) 1; padding: 60px 70px; font-family: 'Georgia', serif; box-sizing: border-box;">
+
+          <!-- Header -->
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #00695c; padding-bottom: 16px; margin-bottom: 30px;">
+            <div style="display: flex; align-items: center; gap: 14px;">
+              <div style="width: 70px; height: 70px; background: #f3f4f6; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 9px; color: #6b7280; text-align: center; line-height: 1.2; font-family: 'Inter', sans-serif;">
+                Kenya<br>Coat of Arms
+              </div>
+              <div>
+                <div style="font-weight: 700; font-size: 14px; color: #1a1a1a; font-family: 'Poppins', sans-serif;">MINISTRY OF EDUCATION</div>
+                <div style="font-size: 11px; color: #6b7280;">Republic of Kenya</div>
+              </div>
+            </div>
+            <div>
+              {% if school.logo %}
+                <img src="{{ school.logo.url }}" style="width: 70px; height: 70px; object-fit: contain;">
+              {% else %}
+                <div style="width: 70px; height: 70px; background: #00695c; color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 18px; font-family: 'Poppins', sans-serif;">
+                  {{ school.name|slice:":2"|upper }}
+                </div>
+              {% endif %}
+            </div>
+          </div>
+
+          <!-- Title -->
+          <div style="text-align: center; margin-bottom: 40px;">
+            <h1 style="font-size: 26px; font-weight: 700; color: #00695c; margin: 0; letter-spacing: 0.1em; text-transform: uppercase; font-family: 'Poppins', sans-serif;">Leaving Certificate</h1>
+            <div style="font-size: 12px; color: #6b7280; margin-top: 6px; font-style: italic;">{{ school.name }}</div>
+          </div>
+
+          <!-- Body (editable) -->
+          <div id="preview-body" style="font-size: 14px; line-height: 2; color: #1a1a1a; min-height: 400px;">
+            {{ student.leaving_certificate_content|default:"<p>Start typing your certificate content in the editor on the left. It will appear here in real-time.</p>"|safe }}
+          </div>
+
+          <!-- Signature + Stamp -->
+          <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 80px;">
+            <div>
+              <div style="border-top: 1.5px dashed #6b7280; padding-top: 6px; min-width: 200px;">
+                <div style="font-size: 11px; color: #6b7280; font-family: 'Inter', sans-serif;">Principal's Signature &amp; Date</div>
+              </div>
+            </div>
+            <div style="text-align: center;">
+              <div style="width: 90px; height: 90px; border: 2px dashed #dc2626; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 9px; color: #dc2626; text-align: center; line-height: 1.2; font-family: 'Inter', sans-serif;">
+                Official<br>School<br>Stamp
+              </div>
+            </div>
+          </div>
+
+          <!-- Footer -->
+          <div style="text-align: center; margin-top: 30px; padding-top: 12px; border-top: 1px solid #e5e7eb; font-size: 10px; color: #6b7280; font-style: italic;">
+            Generated by School MS · {{ school.name }} · {% now "d M Y" %}
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+</form>
+
+<script>
+// Initial content — either saved HTML or default
+const initialContent = `{{ student.leaving_certificate_content|default:""|escapejs }}` ||
+  `<p>This is to certify that <strong>{{ student.full_name }}</strong>{% if student.admission_number %} (Admission No: <strong>{{ student.admission_number }}</strong>){% endif %} was a bona fide student of <strong>{{ school.name }}</strong>{% if student.class_level %} in <strong>{{ student.class_level }}</strong>{% endif %}{% if student.admission_date %} from <strong>{{ student.admission_date|date:"d F Y" }}</strong>{% endif %}{% if student.cleared_at %} to <strong>{{ student.cleared_at|date:"d F Y" }}</strong>{% endif %}.</p>
+   <p>The student's conduct during this period was <strong>{{ student.clearance_reason|default:"Good" }}</strong>.</p>
+   <p>We wish the student every success in their future endeavours.</p>`;
+
+// Initialize Quill editor
+const quill = new Quill('#editor-container', {
+  theme: 'snow',
+  modules: {
+    toolbar: [
+      [{ 'header': [1, 2, 3, false] }],
+      ['bold', 'italic', 'underline', 'strike'],
+      [{ 'color': [] }, { 'background': [] }],
+      [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+      [{ 'align': [] }],
+      ['blockquote'],
+      ['clean']
+    ]
+  }
+});
+
+// Load existing content
+quill.clipboard.dangerouslyPasteHTML(initialContent);
+
+// Live preview
+quill.on('text-change', function() {
+  document.getElementById('preview-body').innerHTML = quill.root.innerHTML;
+});
+
+// Submit form
+function submitForm() {
+  document.getElementById('content_html').value = quill.root.innerHTML;
+  document.getElementById('cert-form').submit();
+}
+</script>
+
+{% endblock %}

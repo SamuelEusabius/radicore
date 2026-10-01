@@ -1,0 +1,311 @@
+{% load static %}
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  @page {
+    size: A4 portrait;
+    margin: 6mm;
+  }
+  * { box-sizing: border-box; }
+
+  body {
+    font-family: 'DejaVu Serif', Georgia, serif;
+    color: #1a1a1a;
+    font-size: 10.5pt;
+    margin: 0;
+    padding: 0;
+    line-height: 1.7;
+  }
+
+  /* ============================================================
+     KENYAN FLAG BORDER
+     A single fixed-height div wraps the certificate.
+     Each band is an inline-block strip, not a table cell.
+     ============================================================ */
+
+  /* Outer black ring */
+  .flag-border {
+    width: 100%;
+    background: #000000;
+    padding: 3px;
+  }
+
+  /* Red ring */
+  .flag-red {
+    background: #BB0000;
+    padding: 3px;
+  }
+
+  /* White separator */
+  .flag-white {
+    background: #FFFFFF;
+    padding: 3px;
+  }
+
+  /* Green ring */
+  .flag-green {
+    background: #006600;
+    padding: 3px;
+  }
+
+  /* Pure white certificate content */
+  .cert-inner {
+    background: #FFFFFF;
+    padding: 10mm 10mm 8mm 10mm;
+    color: #1a1a1a;
+  }
+
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+  }
+  td {
+    vertical-align: top;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+
+  /* ============================================================
+     HEADER
+     ============================================================ */
+  .header-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 12px;
+  }
+  .header-table td {
+    vertical-align: middle;
+    padding-bottom: 8px;
+    border-bottom: 2pt solid #00695c;
+  }
+
+  .header-left {
+    width: 90px;
+    text-align: left;
+  }
+  .header-left img {
+    width: 75px;
+    height: auto;
+    display: block;
+  }
+
+  .header-center {
+    text-align: center;
+    padding: 0 6px;
+  }
+  .header-center .ministry-title {
+    font-family: 'DejaVu Sans', Arial, sans-serif;
+    font-weight: 700;
+    font-size: 18pt;
+    color: #1a1a1a;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    line-height: 1.15;
+    margin: 0;
+  }
+  .header-center .ministry-sub {
+    font-family: 'DejaVu Sans', Arial, sans-serif;
+    font-size: 11.5pt;
+    font-weight: 700;
+    color: #1a1a1a;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-top: 3px;
+  }
+
+  .header-right {
+    width: 90px;
+    text-align: right;
+  }
+  .header-right img {
+    width: 70px;
+    height: 70px;
+    display: block;
+    margin-left: auto;
+  }
+  .header-right .logo-fallback {
+    width: 70px;
+    height: 70px;
+    background: #00695c;
+    color: #FFFFFF;
+    font-family: 'DejaVu Sans', Arial, sans-serif;
+    font-weight: 700;
+    font-size: 18pt;
+    text-align: center;
+    line-height: 70px;
+    margin-left: auto;
+  }
+
+  /* ============================================================
+     TITLE
+     ============================================================ */
+  .title-table { width: 100%; margin: 14px 0 16px 0; }
+  .title-table td { text-align: center; padding: 0; }
+  .title-main {
+    font-size: 22pt;
+    font-weight: 700;
+    color: #00695c;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-family: 'DejaVu Sans', Arial, sans-serif;
+    margin: 0;
+  }
+  .title-school {
+    font-size: 10.5pt;
+    color: #6b7280;
+    font-style: italic;
+    text-align: center;
+    margin-top: 4px;
+  }
+
+  /* ============================================================
+     BODY CONTENT
+     ============================================================ */
+  .body-content {
+    font-size: 10.5pt;
+    line-height: 1.7;
+    color: #1a1a1a;
+  }
+  .body-content p {
+    margin: 0 0 10px 0;
+    text-align: justify;
+  }
+  .body-content strong { color: #00695c; font-weight: 700; }
+  .body-content em { font-style: italic; }
+  .body-content u { text-decoration: underline; }
+  .body-content h1,
+  .body-content h2,
+  .body-content h3 {
+    color: #00695c;
+    margin: 10px 0 6px 0;
+    font-family: 'DejaVu Sans', Arial, sans-serif;
+  }
+  .body-content ul,
+  .body-content ol { margin: 8px 0; padding-left: 20px; }
+  .body-content li { margin-bottom: 4px; text-align: justify; }
+
+  /* ============================================================
+     SIGNATURE + STAMP
+     ============================================================ */
+  .footer-table { width: 100%; margin-top: 30px; }
+  .footer-table td { padding-top: 12px; vertical-align: bottom; }
+  .footer-left { width: 60%; text-align: left; }
+  .footer-right { width: 40%; text-align: right; }
+
+  .signature-line {
+    display: inline-block;
+    border-top: 1.5pt dashed #6b7280;
+    padding-top: 5px;
+    font-size: 9pt;
+    color: #6b7280;
+    width: 180px;
+    font-family: 'DejaVu Sans', Arial, sans-serif;
+    text-align: center;
+  }
+
+  .stamp-circle {
+    display: inline-block;
+    width: 80px;
+    height: 80px;
+    border: 2pt dashed #dc2626;
+    border-radius: 40px;
+    font-size: 7.5pt;
+    color: #dc2626;
+    text-align: center;
+    padding-top: 24px;
+    line-height: 1.3;
+    font-family: 'DejaVu Sans', Arial, sans-serif;
+  }
+
+  /* ============================================================
+     FOOTER NOTE
+     ============================================================ */
+  .footer-note {
+    text-align: center;
+    margin-top: 14px;
+    padding-top: 6px;
+    border-top: 0.5pt solid #e5e7eb;
+    font-size: 8pt;
+    color: #6b7280;
+    font-style: italic;
+    font-family: 'DejaVu Sans', Arial, sans-serif;
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ SINGLE OUTER DIV WITH FLAG BORDER ============ -->
+<div class="flag-border">
+  <div class="flag-red">
+    <div class="flag-white">
+      <div class="flag-green">
+        <div class="cert-inner">
+
+          <!-- HEADER -->
+          <table class="header-table">
+            <tr>
+              <td class="header-left">
+                {% if coat_of_arms_path %}
+                  <img src="{{ coat_of_arms_path }}" alt="Kenya Coat of Arms">
+                {% endif %}
+              </td>
+
+              <td class="header-center">
+                <div class="ministry-title">Ministry of Education</div>
+                <div class="ministry-sub">Republic of Kenya</div>
+              </td>
+
+              <td class="header-right">
+                {% if school_logo_path %}
+                  <img src="{{ school_logo_path }}" alt="{{ school.name }}">
+                {% else %}
+                  <div class="logo-fallback">{{ school.name|slice:":2"|upper }}</div>
+                {% endif %}
+              </td>
+            </tr>
+          </table>
+
+          <!-- TITLE -->
+          <table class="title-table">
+            <tr>
+              <td>
+                <div class="title-main">Leaving Certificate</div>
+                <div class="title-school">{{ school.name }}</div>
+              </td>
+            </tr>
+          </table>
+
+          <!-- BODY -->
+          <div class="body-content">
+            {{ content|safe }}
+          </div>
+
+          <!-- SIGNATURE + STAMP -->
+          <table class="footer-table">
+            <tr>
+              <td class="footer-left">
+                <div class="signature-line">Principal's Signature &amp; Date</div>
+              </td>
+              <td class="footer-right">
+                <div class="stamp-circle">Official<br>School<br>Stamp</div>
+              </td>
+            </tr>
+          </table>
+
+          <!-- FOOTER NOTE -->
+          <div class="footer-note">
+            Generated by School MS · {{ school.name }} · {% now "d M Y" %}
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

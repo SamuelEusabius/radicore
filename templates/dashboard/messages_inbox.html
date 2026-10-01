@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+{% block title %}Inbox{% endblock %}
+{% block header_title %}Messages Inbox{% endblock %}
+{% block header_sub %}
+  {% if unread_count %}{{ unread_count }} unread · {% endif %}
+  {{ messages|length }} total
+{% endblock %}
+
+{% block content %}
+
+<div class="max-w-4xl mx-auto">
+
+  <!-- Toolbar -->
+  <div class="bg-white shadow-sm border border-gray-200 p-4 mb-6" style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between;">
+
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <div class="pro-stat-icon pro-icon-bg-teal" style="width: 40px; height: 40px; margin: 0;">
+        {% include 'partials/icons.html' with name="mail" size=20 %}
+      </div>
+      <div>
+        <div style="font-weight: 600; color: #1a1a1a; font-family: 'Poppins', sans-serif; font-size: 14px;">
+          Inbox
+        </div>
+        <div style="font-size: 12px; color: #6b7280; margin-top: 2px;">
+          {{ unread_count }} unread
+        </div>
+      </div>
+    </div>
+
+    {% if user.role == 'school_admin' or user.role == 'super_admin' %}
+    <a href="{% url 'compose_message' %}" class="pro-btn pro-btn-orange">
+      {% include 'partials/icons.html' with name="send" size=15 %}
+      <span>Compose New</span>
+    </a>
+    {% endif %}
+
+  </div>
+
+  <!-- Messages -->
+  {% if messages %}
+
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+
+      {% for m in messages %}
+      <a href="{% url 'message_detail' m.id %}" style="text-decoration: none; color: inherit;">
+        <div class="bg-white shadow-sm border border-gray-200" style="display: flex; overflow: hidden; {% if not m.is_read %}border-left: 4px solid #00695c;{% endif %}">
+
+          <!-- Category icon -->
+          <div style="width: 60px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: {% if not m.is_read %}#e0f2f1{% else %}#f9fafb{% endif %};">
+            {% include 'partials/icons.html' with name=m.message.category_icon size=22 %}
+          </div>
+
+          <!-- Content -->
+          <div style="flex: 1; padding: 16px 20px; min-width: 0;">
+
+            <div style="display: flex; align-items: start; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 6px;">
+              <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <span class="pro-badge {{ m.message.priority_class }}" style="font-size: 10px;">
+                  {{ m.message.get_priority_display }}
+                </span>
+                <span class="pro-badge pro-badge-gray" style="font-size: 10px;">
+                  {{ m.message.get_category_display }}
+                </span>
+                {% if not m.is_read %}
+                  <span class="pro-badge pro-badge-success" style="font-size: 10px;">New</span>
+                {% endif %}
+              </div>
+              <span style="font-size: 11px; color: #6b7280; white-space: nowrap;">
+                {{ m.message.created_at|date:"d M Y H:i" }}
+              </span>
+            </div>
+
+            <div style="font-weight: 700; color: #1a1a1a; font-family: 'Poppins', sans-serif; font-size: 14px; margin-bottom: 4px; word-wrap: break-word;">
+              {{ m.message.subject }}
+            </div>
+
+            <div style="font-size: 12px; color: #6b7280;">
+              From: <strong style="color: #4b5563;">{{ m.message.sender.get_full_name|default:m.message.sender.email }}</strong>
+            </div>
+
+            <div style="font-size: 13px; color: #4b5563; line-height: 1.6; margin-top: 8px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">
+              {{ m.message.body|truncatechars:200 }}
+            </div>
+
+          </div>
+
+        </div>
+      </a>
+      {% endfor %}
+
+    </div>
+
+  {% else %}
+
+    <div class="pro-empty">
+      {% include 'partials/icons.html' with name="mail" size=64 %}
+      <h3>Inbox is empty</h3>
+      <p>You have no messages yet. Messages from the school admin will appear here.</p>
+    </div>
+
+  {% endif %}
+
+</div>
+
+{% endblock %}

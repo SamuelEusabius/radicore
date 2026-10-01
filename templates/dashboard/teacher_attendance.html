@@ -1,0 +1,359 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Mark Attendance{% endblock %}
+{% block header_title %}Mark Attendance{% endblock %}
+{% block header_sub %}
+  {{ selected_class.name|default:"Select a class" }} · {{ selected_date|date:"D, d M Y" }}
+{% endblock %}
+
+{% block content %}
+
+<!-- ============================================ -->
+<!-- FILTER BAR                                   -->
+<!-- ============================================ -->
+<div class="card mb-6">
+  <form method="get" style="display: flex; flex-wrap: wrap; gap: var(--s-3); align-items: flex-end;">
+
+    <div style="min-width: 220px;">
+      <label style="display: block; font-size: var(--text-xs); font-weight: 600; color: var(--ink-600); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: var(--s-1);">
+        Class
+      </label>
+      <select name="class" onchange="this.form.submit()" class="select">
+        {% for c in classes %}
+          <option value="{{ c.id }}" {% if selected_class and selected_class.id == c.id %}selected{% endif %}>
+            {{ c.name }}
+          </option>
+        {% empty %}
+          <option value="">No classes yet</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div style="min-width: 180px;">
+      <label style="display: block; font-size: var(--text-xs); font-weight: 600; color: var(--ink-600); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: var(--s-1);">
+        Date
+      </label>
+      <input type="date" name="date" value="{{ selected_date|date:'Y-m-d' }}"
+             max="{{ today|date:'Y-m-d' }}"
+             onchange="this.form.submit()"
+             class="input">
+    </div>
+
+    <div style="display: flex; gap: var(--s-2); align-items: flex-end; flex-wrap: wrap;">
+      <a href="?class={{ selected_class.id|default:'' }}&date={{ today|date:'Y-m-d' }}"
+         class="btn {% if selected_date == today %}btn-primary{% else %}btn-secondary{% endif %} btn-sm">
+        Today
+      </a>
+      <a href="?class={{ selected_class.id|default:'' }}&date={{ yesterday|date:'Y-m-d' }}"
+         class="btn {% if selected_date == yesterday %}btn-primary{% else %}btn-secondary{% endif %} btn-sm">
+        Yesterday
+      </a>
+    </div>
+
+  </form>
+</div>
+
+<!-- ============================================ -->
+<!-- SUMMARY CARDS                                -->
+<!-- ============================================ -->
+{% if rows %}
+<div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Total</span>
+      <div class="stat-icon" style="background: rgba(10, 138, 95, 0.1); color: var(--primary);">
+        {% include 'partials/icons.html' with name="users" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value">{{ summary.total }}</div>
+    <div class="stat-meta">{{ summary.marked }} marked</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Present</span>
+      <div class="stat-icon" style="background: rgba(5, 150, 105, 0.1); color: #059669;">
+        {% include 'partials/icons.html' with name="check-circle" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--success);">{{ summary.present }}</div>
+    <div class="stat-meta">In class today</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Absent</span>
+      <div class="stat-icon" style="background: rgba(220, 38, 38, 0.1); color: var(--danger);">
+        {% include 'partials/icons.html' with name="x-circle" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--danger);">{{ summary.absent }}</div>
+    <div class="stat-meta">Missing</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Late</span>
+      <div class="stat-icon" style="background: rgba(217, 119, 6, 0.1); color: var(--warning);">
+        {% include 'partials/icons.html' with name="alert-triangle" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--warning);">{{ summary.late }}</div>
+    <div class="stat-meta">Arrived late</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Excused</span>
+      <div class="stat-icon" style="background: rgba(148, 163, 184, 0.2); color: var(--ink-600);">
+        {% include 'partials/icons.html' with name="info" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value">{{ summary.excused }}</div>
+    <div class="stat-meta">With permission</div>
+  </div>
+
+</div>
+{% endif %}
+
+<!-- ============================================ -->
+<!-- BULK ACTIONS                                 -->
+<!-- ============================================ -->
+{% if rows %}
+<div class="card mb-6" style="padding: var(--s-4);">
+  <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--s-3);">
+    <div style="font-size: var(--text-sm); color: var(--ink-600);">
+      Quick actions for {{ rows|length }} student{{ rows|length|pluralize }}
+    </div>
+    <div style="display: flex; gap: var(--s-2); flex-wrap: wrap;">
+      <button type="button" onclick="setAllStatus('P')" class="btn btn-sm btn-success">
+        {% include 'partials/icons.html' with name="check-circle" size=14 %}
+        <span>All Present</span>
+      </button>
+      <button type="button" onclick="setAllStatus('A')" class="btn btn-sm btn-danger">
+        {% include 'partials/icons.html' with name="x-circle" size=14 %}
+        <span>All Absent</span>
+      </button>
+      <button type="button" onclick="setAllStatus('')" class="btn btn-sm btn-secondary">
+        <span>Reset</span>
+      </button>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- ============================================ -->
+<!-- ATTENDANCE FORM                              -->
+<!-- ============================================ -->
+{% if rows %}
+<form method="post" id="attendance-form">
+  {% csrf_token %}
+  <input type="hidden" name="class" value="{{ selected_class.id }}">
+  <input type="hidden" name="date" value="{{ selected_date|date:'Y-m-d' }}">
+
+  <div class="card" style="padding: 0; overflow: hidden;">
+
+    <div class="table-wrap" style="border: none; border-radius: 0; box-shadow: none;">
+      <table class="table">
+        <thead>
+          <tr>
+            <th style="width: 60px;">#</th>
+            <th>Student</th>
+            <th style="width: 100px;">Adm No</th>
+            <th style="width: 80px;">Gender</th>
+            <th style="text-align: center; width: 340px;">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in rows %}
+          <tr class="{% if row.student.gender == 'M' %}gender-boy{% else %}gender-girl{% endif %}" data-student-id="{{ row.student.id }}">
+            <td>
+              <span class="font-mono" style="font-size: var(--text-xs); color: var(--ink-500);">
+                {{ forloop.counter }}
+              </span>
+            </td>
+
+            <td>
+              <div style="display: flex; align-items: center; gap: var(--s-3);">
+                {% if row.student.photo %}
+                  <img src="{{ row.student.photo.url }}" class="avatar avatar-sm" style="object-fit: cover;">
+                {% else %}
+                  <div class="avatar avatar-sm" style="{% if row.student.gender == 'F' %}background: #EC4899;{% else %}background: #2563EB;{% endif %}">
+                    {{ row.student.initials }}
+                  </div>
+                {% endif %}
+                <div style="font-weight: 600; color: var(--ink-900);">
+                  {{ row.student.full_name }}
+                </div>
+              </div>
+            </td>
+
+            <td>
+              <span class="font-mono" style="font-size: var(--text-xs); color: var(--ink-600);">
+                {{ row.student.admission_number }}
+              </span>
+            </td>
+
+            <td>
+              {% if row.student.gender == 'M' %}
+                <span class="badge badge-info">Boy</span>
+              {% else %}
+                <span class="badge badge-warning">Girl</span>
+              {% endif %}
+            </td>
+
+            <td>
+              <div class="att-status-group" data-status="{{ row.status }}">
+                <input type="hidden" name="status_{{ row.student.id }}" value="{{ row.status }}" class="status-input">
+                <button type="button" onclick="setStatus(this, 'P')" data-status="P"
+                        class="status-btn status-P {% if row.status == 'P' %}active{% endif %}">P</button>
+                <button type="button" onclick="setStatus(this, 'A')" data-status="A"
+                        class="status-btn status-A {% if row.status == 'A' %}active{% endif %}">A</button>
+                <button type="button" onclick="setStatus(this, 'L')" data-status="L"
+                        class="status-btn status-L {% if row.status == 'L' %}active{% endif %}">L</button>
+                <button type="button" onclick="setStatus(this, 'E')" data-status="E"
+                        class="status-btn status-E {% if row.status == 'E' %}active{% endif %}">E</button>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+
+  <!-- ============================================ -->
+  <!-- SAVE BAR                                     -->
+  <!-- ============================================ -->
+  <div class="card" style="margin-top: var(--s-5); padding: var(--s-4) var(--s-5); position: sticky; bottom: var(--s-4); z-index: 10; box-shadow: var(--shadow-md);">
+    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--s-3);">
+      <div style="font-size: var(--text-sm); color: var(--ink-600);">
+        {% if summary.marked == summary.total %}
+          <span style="color: var(--success); font-weight: 600;">✓ All students marked for this date</span>
+        {% else %}
+          <strong style="color: var(--ink-800);">{{ summary.marked }}</strong> of
+          <strong style="color: var(--ink-800);">{{ summary.total }}</strong> already marked ·
+          saving will update them
+        {% endif %}
+      </div>
+      <div style="display: flex; gap: var(--s-2);">
+        <a href="{% url 'teacher_dash' %}" class="btn btn-secondary">Cancel</a>
+        <button type="submit" class="btn btn-primary" style="padding: 12px 32px;">
+          {% include 'partials/icons.html' with name="save" size=15 %}
+          <span>Save Attendance</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+</form>
+
+{% else %}
+
+<div class="card">
+  <div class="empty" style="border: none;">
+    {% include 'partials/icons.html' with name="clipboard" size=56 %}
+    <h3>No students to mark</h3>
+    <p>There are no active students in this class yet.</p>
+    <a href="{% url 'students_list' %}" class="btn btn-primary">
+      {% include 'partials/icons.html' with name="users" size=15 %}
+      <span>View Students</span>
+    </a>
+  </div>
+</div>
+
+{% endif %}
+
+{% endblock %}
+
+{% block extra_css %}
+<style>
+  .att-status-group {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+  }
+
+  .status-btn {
+    width: 42px;
+    height: 38px;
+    border: 1.5px solid var(--border-strong);
+    background: var(--surface);
+    color: var(--ink-600);
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: var(--text-sm);
+    cursor: pointer;
+    transition: all var(--t-fast);
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .status-btn:hover {
+    border-color: var(--ink-400);
+    background: var(--surface-hover);
+  }
+
+  .status-btn.active.status-P {
+    background: #D1FAE5;
+    color: #065F46;
+    border-color: #059669;
+    box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.15);
+  }
+
+  .status-btn.active.status-A {
+    background: #FEE2E2;
+    color: #991B1B;
+    border-color: #DC2626;
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15);
+  }
+
+  .status-btn.active.status-L {
+    background: #FEF3C7;
+    color: #92400E;
+    border-color: #D97706;
+    box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.15);
+  }
+
+  .status-btn.active.status-E {
+    background: #E5E7EB;
+    color: #374151;
+    border-color: #6B7280;
+    box-shadow: 0 0 0 3px rgba(107, 114, 128, 0.15);
+  }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  function setStatus(button, status) {
+    const group = button.closest('.att-status-group');
+    const input = group.querySelector('.status-input');
+
+    if (input.value === status) {
+      // Toggle off
+      input.value = '';
+      group.querySelectorAll('.status-btn').forEach(b => b.classList.remove('active'));
+    } else {
+      input.value = status;
+      group.querySelectorAll('.status-btn').forEach(b => b.classList.remove('active'));
+      button.classList.add('active');
+    }
+  }
+
+  function setAllStatus(status) {
+    document.querySelectorAll('.att-status-group').forEach(group => {
+      const input = group.querySelector('.status-input');
+      input.value = status;
+      group.querySelectorAll('.status-btn').forEach(b => {
+        b.classList.remove('active');
+        if (b.dataset.status === status) b.classList.add('active');
+      });
+    });
+  }
+</script>
+{% endblock %}

@@ -1,0 +1,274 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Expenditures{% endblock %}
+{% block header_title %}Expenditures{% endblock %}
+{% block header_sub %}{{ count }} record{{ count|pluralize }} · Total: KES {{ total|floatformat:0 }}{% endblock %}
+
+{% block content %}
+
+<!-- ============================================ -->
+<!-- SUMMARY CARDS                                -->
+<!-- ============================================ -->
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Total Expenditure</span>
+      <div class="stat-icon" style="background: rgba(220, 38, 38, 0.1); color: var(--danger);">
+        {% include 'partials/icons.html' with name="trending-down" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--danger);">KES {{ total|floatformat:0 }}</div>
+    <div class="stat-meta">{{ count }} entr{{ count|pluralize:"y,ies" }}</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Categories</span>
+      <div class="stat-icon" style="background: rgba(37, 99, 235, 0.1); color: #2563EB;">
+        {% include 'partials/icons.html' with name="bar-chart" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value">{{ category_summary|length }}</div>
+    <div class="stat-meta">Distinct categories used</div>
+  </div>
+
+  <a href="{% url 'expenditure_pdf' %}?category={{ category_filter }}&from={{ date_from }}&to={{ date_to }}"
+     target="_blank"
+     class="stat card-hover"
+     style="text-decoration: none; color: inherit;">
+    <div class="stat-header">
+      <span class="stat-label">Download</span>
+      <div class="stat-icon" style="background: rgba(124, 58, 237, 0.1); color: #7C3AED;">
+        {% include 'partials/icons.html' with name="download" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: #7C3AED;">PDF</div>
+    <div class="stat-meta">Expenditure statement →</div>
+  </a>
+
+</div>
+
+<!-- ============================================ -->
+<!-- FILTERS + ADD BUTTON                         -->
+<!-- ============================================ -->
+<div class="card mb-6">
+  <form method="get" style="display: flex; flex-wrap: wrap; gap: var(--s-3); align-items: flex-end;">
+
+    <div style="flex: 1; min-width: 200px;">
+      <label style="display: block; font-size: var(--text-xs); font-weight: 600; color: var(--ink-600); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: var(--s-1);">
+        Search
+      </label>
+      <input name="q" value="{{ search }}" placeholder="Description, vendor, reference..."
+             class="input">
+    </div>
+
+    <div style="min-width: 180px;">
+      <label style="display: block; font-size: var(--text-xs); font-weight: 600; color: var(--ink-600); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: var(--s-1);">
+        Category
+      </label>
+      <select name="category" class="select">
+        <option value="">All Categories</option>
+        {% for value, label in categories %}
+          <option value="{{ value }}" {% if category_filter == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div style="min-width: 150px;">
+      <label style="display: block; font-size: var(--text-xs); font-weight: 600; color: var(--ink-600); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: var(--s-1);">
+        From
+      </label>
+      <input type="date" name="from" value="{{ date_from }}" class="input">
+    </div>
+
+    <div style="min-width: 150px;">
+      <label style="display: block; font-size: var(--text-xs); font-weight: 600; color: var(--ink-600); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: var(--s-1);">
+        To
+      </label>
+      <input type="date" name="to" value="{{ date_to }}" class="input">
+    </div>
+
+    <div style="display: flex; gap: var(--s-2); align-items: flex-end;">
+      <button type="submit" class="btn btn-primary">
+        {% include 'partials/icons.html' with name="search" size=15 %}
+        <span>Filter</span>
+      </button>
+      {% if search or category_filter or date_from or date_to %}
+        <a href="{% url 'expenditure_list' %}" class="btn btn-secondary">Clear</a>
+      {% endif %}
+    </div>
+
+  </form>
+
+  <!-- Actions row -->
+  <div style="margin-top: var(--s-4); padding-top: var(--s-4); border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--s-3);">
+    <div style="font-size: var(--text-xs); color: var(--ink-500);">
+      {% if count %}{{ count }} matching entr{{ count|pluralize:"y,ies" }}{% endif %}
+    </div>
+    <a href="{% url 'expenditure_add' %}" class="btn btn-primary">
+      {% include 'partials/icons.html' with name="plus" size=15 %}
+      <span>Add Expenditure</span>
+    </a>
+  </div>
+</div>
+
+<!-- ============================================ -->
+<!-- TABLE                                        -->
+<!-- ============================================ -->
+<div class="card" style="padding: 0; overflow: hidden;">
+  {% if expenditures %}
+    <div style="overflow-x: auto;">
+      <table class="table">
+        <thead>
+          <tr>
+            <th style="width: 110px;">Date</th>
+            <th>Category</th>
+            <th>Description</th>
+            <th>Paid To</th>
+            <th>Method</th>
+            <th style="text-align: right;">Amount</th>
+            <th style="text-align: right;">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for e in expenditures %}
+          <tr>
+            <td>
+              <span style="font-size: var(--text-sm); color: var(--ink-700); font-variant-numeric: tabular-nums;">
+                {{ e.spent_on|date:"d M Y" }}
+              </span>
+            </td>
+
+            <td>
+              <span class="badge
+                {% if e.category == 'salaries' %}badge-info
+                {% elif e.category == 'food' %}badge-warning
+                {% elif e.category == 'utilities' %}badge-primary
+                {% elif e.category == 'transport' %}badge-neutral
+                {% elif e.category == 'maintenance' %}badge-danger
+                {% elif e.category == 'supplies' %}badge-info
+                {% elif e.category == 'rent' %}badge-neutral
+                {% elif e.category == 'events' %}badge-warning
+                {% else %}badge-neutral{% endif %}">
+                {{ e.get_category_display }}
+              </span>
+            </td>
+
+            <td>
+              <div style="font-weight: 600; color: var(--ink-900);">{{ e.description }}</div>
+              {% if e.reference %}
+                <div class="font-mono" style="font-size: var(--text-xs); color: var(--ink-500); margin-top: 2px;">
+                  Ref: {{ e.reference }}
+                </div>
+              {% endif %}
+            </td>
+
+            <td style="font-size: var(--text-sm); color: var(--ink-700);">
+              {{ e.paid_to|default:"—" }}
+            </td>
+
+            <td style="font-size: var(--text-sm); color: var(--ink-600);">
+              {{ e.get_payment_method_display }}
+            </td>
+
+            <td style="text-align: right;">
+              <span class="font-mono" style="font-weight: 700; color: var(--danger);">
+                KES {{ e.amount_kes|floatformat:0 }}
+              </span>
+            </td>
+
+            <td>
+              <div class="table-actions">
+                <a href="{% url 'expenditure_edit' e.id %}" class="btn btn-sm btn-secondary">
+                  {% include 'partials/icons.html' with name="edit" size=13 %}
+                  <span>Edit</span>
+                </a>
+
+                <a href="{% url 'expenditure_delete' e.id %}"
+                   onclick="return confirm('Delete this expenditure?');"
+                   class="btn btn-sm btn-danger">
+                  {% include 'partials/icons.html' with name="trash" size=13 %}
+                </a>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+
+        <tfoot>
+          <tr style="background: var(--surface-muted); border-top: 2px solid var(--border-strong);">
+            <td colspan="5" style="text-align: right; padding: var(--s-4) var(--s-5); font-weight: 700; color: var(--ink-800);">
+              TOTAL
+            </td>
+            <td style="text-align: right; padding: var(--s-4) var(--s-5);">
+              <span class="font-mono" style="font-weight: 800; color: var(--danger); font-size: var(--text-md);">
+                KES {{ total|floatformat:0 }}
+              </span>
+            </td>
+            <td></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- PAGINATION                                   -->
+    <!-- ============================================ -->
+    {% if page_obj.has_other_pages %}
+    <div style="padding: var(--s-5) var(--s-6); border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--s-3);">
+      <div style="font-size: var(--text-sm); color: var(--ink-500);">
+        Showing
+        <strong style="color: var(--ink-800);">{{ page_obj.start_index }}</strong>
+        –
+        <strong style="color: var(--ink-800);">{{ page_obj.end_index }}</strong>
+        of
+        <strong style="color: var(--ink-800);">{{ paginator.count }}</strong>
+      </div>
+
+      <div style="display: flex; gap: var(--s-1);">
+        {% if page_obj.has_previous %}
+          <a href="?{% if search %}q={{ search }}&{% endif %}{% if category_filter %}category={{ category_filter }}&{% endif %}{% if date_from %}from={{ date_from }}&{% endif %}{% if date_to %}to={{ date_to }}&{% endif %}page={{ page_obj.previous_page_number }}"
+             class="btn btn-sm btn-secondary">← Prev</a>
+        {% endif %}
+
+        {% for num in page_obj.paginator.page_range %}
+          {% if num == page_obj.number %}
+            <span class="btn btn-sm btn-primary" style="cursor: default;">{{ num }}</span>
+          {% elif num > page_obj.number|add:"-3" and num < page_obj.number|add:"3" %}
+            <a href="?{% if search %}q={{ search }}&{% endif %}{% if category_filter %}category={{ category_filter }}&{% endif %}{% if date_from %}from={{ date_from }}&{% endif %}{% if date_to %}to={{ date_to }}&{% endif %}page={{ num }}"
+               class="btn btn-sm btn-secondary">{{ num }}</a>
+          {% endif %}
+        {% endfor %}
+
+        {% if page_obj.has_next %}
+          <a href="?{% if search %}q={{ search }}&{% endif %}{% if category_filter %}category={{ category_filter }}&{% endif %}{% if date_from %}from={{ date_from }}&{% endif %}{% if date_to %}to={{ date_to }}&{% endif %}page={{ page_obj.next_page_number }}"
+             class="btn btn-sm btn-secondary">Next →</a>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+  {% else %}
+    <div class="empty" style="border: none; border-radius: 0;">
+      {% include 'partials/icons.html' with name="trending-down" size=56 %}
+      <h3>No expenditures recorded</h3>
+      <p>
+        {% if search or category_filter or date_from or date_to %}
+          Try changing your filters or clear them.
+        {% else %}
+          Record your first expense to get started.
+        {% endif %}
+      </p>
+      {% if search or category_filter or date_from or date_to %}
+        <a href="{% url 'expenditure_list' %}" class="btn btn-secondary" style="margin-right: var(--s-2);">Clear filters</a>
+      {% endif %}
+      <a href="{% url 'expenditure_add' %}" class="btn btn-primary">
+        {% include 'partials/icons.html' with name="plus" size=15 %}
+        <span>Add Expenditure</span>
+      </a>
+    </div>
+  {% endif %}
+</div>
+
+{% endblock %}

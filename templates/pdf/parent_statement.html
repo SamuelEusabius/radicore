@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  @page { size: A4 portrait; margin: 12mm 12mm 15mm 12mm; }
+  * { box-sizing: border-box; }
+  body { font-family: Helvetica, Arial, sans-serif; font-size: 9.5pt; color: #1a1a1a; margin: 0; padding: 0; }
+
+  .header { border-bottom: 2px solid #00695c; padding-bottom: 8px; margin-bottom: 14px; }
+  .header-table { width: 100%; border-collapse: collapse; }
+  .header-table td { vertical-align: top; padding: 0; }
+  .logo-cell { width: 70px; }
+  .logo-cell img { width: 60px; height: auto; }
+
+  .school-name { font-size: 15pt; font-weight: bold; color: #00695c; margin: 0; }
+  .school-motto { font-size: 8pt; font-style: italic; color: #6b7280; margin: 2px 0 0 0; }
+  .school-meta { font-size: 8pt; color: #4b5563; margin: 3px 0 0 0; line-height: 1.4; }
+
+  .title-block { text-align: center; margin: 10px 0 12px 0; }
+  .title-main { font-size: 14pt; font-weight: bold; color: #111827; margin: 0; letter-spacing: 1px; text-transform: uppercase; }
+  .title-sub { font-size: 10pt; color: #4b5563; margin: 4px 0 0 0; }
+
+  .info-table { width: 100%; border-collapse: collapse; margin-bottom: 12px; font-size: 9pt; }
+  .info-table td { padding: 3px 6px; vertical-align: top; }
+  .info-label { color: #6b7280; }
+  .info-value { font-weight: bold; color: #111827; }
+
+  .summary-box {
+    width: 100%; margin-bottom: 14px;
+    background: #f9fafb; border-left: 3px solid #00695c;
+    padding: 10px 14px;
+  }
+  .summary-table { width: 100%; border-collapse: collapse; }
+  .summary-table td { padding: 4px 8px; font-size: 10pt; }
+  .summary-table .label { color: #4b5563; }
+  .summary-table .value { font-weight: bold; text-align: right; tabular-nums; }
+
+  .ledger-table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
+  .ledger-table th {
+    background: #00695c; color: white; font-size: 8.5pt;
+    padding: 6px 6px; text-align: left; font-weight: bold;
+    border: 1px solid #004d40;
+  }
+  .ledger-table th.right { text-align: right; }
+  .ledger-table td {
+    padding: 5px 6px; font-size: 8.5pt;
+    border: 1px solid #d1d5db;
+    vertical-align: middle;
+  }
+  .ledger-table td.right { text-align: right; tabular-nums; }
+  .ledger-table td.charge { color: #dc2626; font-weight: 600; }
+  .ledger-table td.payment { color: #059669; font-weight: 600; }
+
+  .footer {
+    margin-top: 20px; padding-top: 8px;
+    border-top: 1px solid #d1d5db;
+    font-size: 8pt; color: #6b7280; text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <table class="header-table">
+    <tr>
+      {% if school.logo %}
+      <td class="logo-cell"><img src="{{ school.logo.path }}" alt="Logo"></td>
+      {% endif %}
+      <td>
+        <p class="school-name">{{ school.name }}</p>
+        {% if school.motto %}<p class="school-motto">"{{ school.motto }}"</p>{% endif %}
+        <p class="school-meta">
+          {% if school.code %}Code: {{ school.code }}{% endif %}
+          {% if school.nemis_code %} · NEMIS: {{ school.nemis_code }}{% endif %}
+          {% if school.postal_address %} · {{ school.postal_address }}{% endif %}
+          {% if school.phone %} · Tel: {{ school.phone }}{% endif %}
+        </p>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<div class="title-block">
+  <p class="title-main">Fee Statement</p>
+  <p class="title-sub">{{ period_label }}</p>
+</div>
+
+<table class="info-table">
+  <tr>
+    <td style="width: 60%;">
+      <span class="info-label">Student:</span> <span class="info-value">{{ child.full_name }}</span>
+      <br>
+      <span class="info-label">Admission No:</span> <span class="info-value">{{ child.admission_number }}</span>
+      · <span class="info-label">Class:</span> <span class="info-value">{{ child.class_level|default:"—" }}</span>
+    </td>
+    <td style="text-align: right;">
+      <span class="info-label">Issued To:</span> <span class="info-value">{{ parent.get_full_name|default:parent.email }}</span>
+      <br>
+      <span class="info-label">Date:</span> <span class="info-value">{{ generated_at|date:"d M Y" }}</span>
+    </td>
+  </tr>
+</table>
+
+<div class="summary-box">
+  <table class="summary-table">
+    <tr>
+      <td class="label">Total Invoiced</td>
+      <td class="value">KES {{ total_invoiced|floatformat:2 }}</td>
+    </tr>
+    <tr>
+      <td class="label">Total Paid</td>
+      <td class="value" style="color: #059669;">KES {{ total_paid|floatformat:2 }}</td>
+    </tr>
+    <tr style="border-top: 1px solid #d1d5db;">
+      <td class="label" style="font-weight: bold;">Balance</td>
+      <td class="value" style="color: {% if balance > 0 %}#dc2626{% else %}#059669{% endif %}; font-size: 11pt;">
+        KES {{ balance|floatformat:2 }}
+      </td>
+    </tr>
+  </table>
+</div>
+
+<table class="ledger-table">
+  <thead>
+    <tr>
+      <th style="width: 15%;">Date</th>
+      <th style="width: 45%;">Description</th>
+      <th class="right" style="width: 13%;">Charge</th>
+      <th class="right" style="width: 13%;">Payment</th>
+      <th class="right" style="width: 14%;">Balance</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in ledger %}
+    <tr>
+      <td>{{ row.date|date:"d M Y" }}</td>
+      <td>{{ row.description }}</td>
+      <td class="right charge">{% if row.charge %}{{ row.charge|floatformat:2 }}{% else %}—{% endif %}</td>
+      <td class="right payment">{% if row.payment %}{{ row.payment|floatformat:2 }}{% else %}—{% endif %}</td>
+      <td class="right" style="font-weight: bold;">{{ row.balance|floatformat:2 }}</td>
+    </tr>
+    {% empty %}
+    <tr>
+      <td colspan="5" style="padding: 20px; text-align: center; color: #6b7280;">
+        No transactions in this period.
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<div class="footer">
+  {{ school.name }} · {{ school.code }} · Generated {{ generated_at|date:"d M Y H:i" }}
+  <br>
+  This is a system-generated statement. For inquiries, contact the school accounts office.
+</div>
+
+</body>
+</html>

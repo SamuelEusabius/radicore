@@ -1,0 +1,223 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}School Admin Dashboard{% endblock %}
+{% block header_title %}School Overview{% endblock %}
+{% block header_sub %}{{ current_school.name|default:"Your School" }}{% endblock %}
+
+{% block content %}
+
+<!-- ============================================ -->
+<!-- WELCOME BANNER                                -->
+<!-- ============================================ -->
+<div class="page-header">
+  <div class="page-header-info">
+    <h1 class="page-title">Good {% now "H" as hour %}{% if hour < "12" %}morning{% elif hour < "17" %}afternoon{% else %}evening{% endif %}, {{ user.get_full_name|default:user.email|truncatechars:20 }}</h1>
+    <p class="page-subtitle">Here's how {{ current_school.name|default:"your school" }} is doing today.</p>
+  </div>
+</div>
+
+<!-- ============================================ -->
+<!-- PEOPLE KPI ROW                               -->
+<!-- ============================================ -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+
+  <a href="{% url 'students_list' %}" class="stat card-hover" style="text-decoration: none; color: inherit;">
+    <div class="stat-header">
+      <span class="stat-label">Students</span>
+      <div class="stat-icon" style="background: rgba(10, 138, 95, 0.1); color: var(--primary);">
+        {% include 'partials/icons.html' with name="graduation-cap" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value">{{ student_count }}</div>
+    <div class="stat-meta">Active enrollment</div>
+  </a>
+
+  <a href="{% url 'teachers_list' %}" class="stat card-hover" style="text-decoration: none; color: inherit;">
+    <div class="stat-header">
+      <span class="stat-label">Teachers</span>
+      <div class="stat-icon" style="background: rgba(37, 99, 235, 0.1); color: #2563EB;">
+        {% include 'partials/icons.html' with name="teacher" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value">{{ teacher_count }}</div>
+    <div class="stat-meta">Active teachers</div>
+  </a>
+
+  <a href="{% url 'parents_list' %}" class="stat card-hover" style="text-decoration: none; color: inherit;">
+    <div class="stat-header">
+      <span class="stat-label">Parents</span>
+      <div class="stat-icon" style="background: rgba(5, 150, 105, 0.1); color: #059669;">
+        {% include 'partials/icons.html' with name="users" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value">{{ parent_count }}</div>
+    <div class="stat-meta">Guardians linked</div>
+  </a>
+
+  <a href="{% url 'staff_list' %}" class="stat card-hover" style="text-decoration: none; color: inherit;">
+    <div class="stat-header">
+      <span class="stat-label">Staff</span>
+      <div class="stat-icon" style="background: rgba(217, 119, 6, 0.1); color: #D97706;">
+        {% include 'partials/icons.html' with name="briefcase" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value">{{ staff_count }}</div>
+    <div class="stat-meta">Non-teaching</div>
+  </a>
+
+</div>
+
+<!-- ============================================ -->
+<!-- ACADEMICS KPI ROW                            -->
+<!-- ============================================ -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Classes</span>
+      <div class="stat-icon" style="background: rgba(124, 58, 237, 0.1); color: #7C3AED;">
+        {% include 'partials/icons.html' with name="book" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value">{{ class_count }}</div>
+    <div class="stat-meta">Across all levels</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Subjects</span>
+      <div class="stat-icon" style="background: rgba(37, 99, 235, 0.1); color: #2563EB;">
+        {% include 'partials/icons.html' with name="book-open" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value">{{ subject_count }}</div>
+    <div class="stat-meta">Offered this term</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Outstanding Fees</span>
+      <div class="stat-icon" style="background: rgba(220, 38, 38, 0.1); color: var(--danger);">
+        {% include 'partials/icons.html' with name="dollar" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--danger);">KES {{ total_outstanding|floatformat:0 }}</div>
+    <div class="stat-meta">Pending collection</div>
+  </div>
+
+</div>
+
+<!-- ============================================ -->
+<!-- RECENT STUDENTS                              -->
+<!-- ============================================ -->
+<div class="card mb-6" style="padding: 0; overflow: hidden;">
+  <div style="display: flex; align-items: center; justify-content: space-between; padding: var(--s-5) var(--s-6); border-bottom: 1px solid var(--border);">
+    <div style="display: flex; align-items: center; gap: var(--s-2);">
+      {% include 'partials/icons.html' with name="graduation-cap" size=18 %}
+      <h3 style="font-size: var(--text-md); font-weight: 700; color: var(--ink-900); margin: 0;">Recent Students</h3>
+    </div>
+    <a href="{% url 'students_list' %}" style="font-size: var(--text-xs); color: var(--primary); font-weight: 600; text-decoration: none;">
+      View all ({{ student_count }}) →
+    </a>
+  </div>
+
+  {% if recent_students %}
+  <div style="overflow-x: auto;">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Student</th>
+          <th>Admission No</th>
+          <th>Level</th>
+          <th>Gender</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in recent_students %}
+        <tr class="{% if s.gender == 'M' %}gender-boy{% else %}gender-girl{% endif %}">
+          <td>
+            <div style="display: flex; align-items: center; gap: var(--s-3);">
+              {% if s.photo %}
+                <img src="{{ s.photo.url }}" alt="{{ s.full_name }}" class="avatar avatar-sm" style="object-fit: cover;">
+              {% else %}
+                <div class="avatar avatar-sm">
+                  {{ s.initials }}
+                </div>
+              {% endif %}
+              <div style="font-weight: 600; color: var(--ink-900);">{{ s.full_name }}</div>
+            </div>
+          </td>
+          <td>
+            <span class="font-mono" style="font-weight: 600; color: var(--ink-700);">{{ s.admission_number }}</span>
+          </td>
+          <td>
+            {% if s.cbc_level %}
+              <span class="badge badge-primary">{{ s.get_cbc_level_display }}</span>
+            {% else %}
+              <span style="color: var(--ink-400);">—</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if s.gender == 'M' %}
+              <span class="badge badge-info">Boy</span>
+            {% else %}
+              <span class="badge badge-warning">Girl</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty" style="border: none; border-radius: 0;">
+    {% include 'partials/icons.html' with name="graduation-cap" size=48 %}
+    <h3>No students yet</h3>
+    <p>Add your first student to get started.</p>
+    <a href="{% url 'add_student' %}" class="btn btn-primary">
+      {% include 'partials/icons.html' with name="plus" size=15 %}
+      <span>Add Student</span>
+    </a>
+  </div>
+  {% endif %}
+</div>
+
+<!-- ============================================ -->
+<!-- QUICK ACTIONS                                -->
+<!-- ============================================ -->
+<div>
+  <h3 style="font-size: var(--text-md); font-weight: 700; color: var(--ink-900); margin: 0 0 var(--s-4);">Quick Actions</h3>
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+
+    <a href="{% url 'add_student' %}" class="card card-hover" style="text-decoration: none; padding: var(--s-4); text-align: center;">
+      <div class="stat-icon" style="margin: 0 auto var(--s-3); background: rgba(10, 138, 95, 0.1); color: var(--primary);">
+        {% include 'partials/icons.html' with name="user-plus" size=18 %}
+      </div>
+      <div style="font-size: var(--text-sm); font-weight: 700; color: var(--ink-900);">Add Student</div>
+    </a>
+
+    <a href="{% url 'manage_users' %}" class="card card-hover" style="text-decoration: none; padding: var(--s-4); text-align: center;">
+      <div class="stat-icon" style="margin: 0 auto var(--s-3); background: rgba(37, 99, 235, 0.1); color: #2563EB;">
+        {% include 'partials/icons.html' with name="users" size=18 %}
+      </div>
+      <div style="font-size: var(--text-sm); font-weight: 700; color: var(--ink-900);">Manage Users</div>
+    </a>
+
+    <a href="{% url 'bulk_sms' %}" class="card card-hover" style="text-decoration: none; padding: var(--s-4); text-align: center;">
+      <div class="stat-icon" style="margin: 0 auto var(--s-3); background: rgba(124, 58, 237, 0.1); color: #7C3AED;">
+        {% include 'partials/icons.html' with name="message-square" size=18 %}
+      </div>
+      <div style="font-size: var(--text-sm); font-weight: 700; color: var(--ink-900);">Send SMS</div>
+    </a>
+
+    <a href="{% url 'admin_alerts_list' %}" class="card card-hover" style="text-decoration: none; padding: var(--s-4); text-align: center;">
+      <div class="stat-icon" style="margin: 0 auto var(--s-3); background: rgba(220, 38, 38, 0.1); color: var(--danger);">
+        {% include 'partials/icons.html' with name="alert-triangle" size=18 %}
+      </div>
+      <div style="font-size: var(--text-sm); font-weight: 700; color: var(--ink-900);">Smart Alerts</div>
+    </a>
+
+  </div>
+</div>
+
+{% endblock %}

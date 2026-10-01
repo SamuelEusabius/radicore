@@ -1,0 +1,196 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Parent Dashboard{% endblock %}
+{% block header_title %}Parent Dashboard{% endblock %}
+{% block header_sub %}{{ current_school.name|default:"Your School" }}{% endblock %}
+
+{% block content %}
+
+<!-- ============================================ -->
+<!-- WELCOME BANNER                                -->
+<!-- ============================================ -->
+<div class="page-header">
+  <div class="page-header-info">
+    <h1 class="page-title">Good {% now "H" as hour %}{% if hour < "12" %}morning{% elif hour < "17" %}afternoon{% else %}evening{% endif %}, {{ user.get_full_name|default:user.email|truncatechars:20 }}</h1>
+    <p class="page-subtitle">
+      {% if stats.children_count %}
+        {{ stats.children_count }} child{{ stats.children_count|pluralize:"ren" }} linked · {{ stats.unpaid_count }} pending invoice{{ stats.unpaid_count|pluralize }}
+      {% else %}
+        Welcome to your parent portal.
+      {% endif %}
+    </p>
+  </div>
+</div>
+
+<!-- ============================================ -->
+<!-- KPI ROW                                       -->
+<!-- ============================================ -->
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Children</span>
+      <div class="stat-icon" style="background: rgba(10, 138, 95, 0.1); color: var(--primary);">
+        {% include 'partials/icons.html' with name="users" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value">{{ stats.children_count }}</div>
+    <div class="stat-meta">Linked to your account</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Total Due</span>
+      <div class="stat-icon" style="background: rgba(220, 38, 38, 0.1); color: var(--danger);">
+        {% include 'partials/icons.html' with name="dollar" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: {% if total_due > 0 %}var(--danger){% else %}var(--success){% endif %};">
+      KES {{ total_due|floatformat:0 }}
+    </div>
+    <div class="stat-meta">
+      {% if total_due > 0 %}Outstanding balance{% else %}All cleared{% endif %}
+    </div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Total Paid</span>
+      <div class="stat-icon" style="background: rgba(5, 150, 105, 0.1); color: var(--success);">
+        {% include 'partials/icons.html' with name="check-circle" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--success);">KES {{ total_paid|floatformat:0 }}</div>
+    <div class="stat-meta">Lifetime payments</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Invoices</span>
+      <div class="stat-icon" style="background: rgba(37, 99, 235, 0.1); color: #2563EB;">
+        {% include 'partials/icons.html' with name="file-text" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value">{{ stats.invoices_count }}</div>
+    <div class="stat-meta">{{ stats.unpaid_count }} pending</div>
+  </div>
+
+</div>
+
+<!-- ============================================ -->
+<!-- MY CHILDREN + RECENT INVOICES                -->
+<!-- ============================================ -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+
+  <!-- My children -->
+  <div class="card" style="padding: 0; overflow: hidden;">
+    <div style="padding: var(--s-5) var(--s-6); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between;">
+      <div style="display: flex; align-items: center; gap: var(--s-2);">
+        {% include 'partials/icons.html' with name="users" size=18 %}
+        <h3 style="font-size: var(--text-md); font-weight: 700; color: var(--ink-900); margin: 0;">
+          My Children
+        </h3>
+      </div>
+      <a href="{% url 'parent_children' %}" style="font-size: var(--text-xs); color: var(--primary); font-weight: 600; text-decoration: none;">
+        View all →
+      </a>
+    </div>
+
+    {% if children %}
+      <div style="display: flex; flex-direction: column;">
+        {% for c in children %}
+          <div style="padding: var(--s-4) var(--s-6); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: var(--s-4); {% if forloop.last %}border-bottom: none;{% endif %}">
+            {% if c.photo %}
+              <img src="{{ c.photo.url }}" alt="{{ c.full_name }}" class="avatar avatar-sm" style="object-fit: cover;">
+            {% else %}
+              <div class="avatar avatar-sm" style="{% if c.gender == 'F' %}background: #EC4899;{% else %}background: #2563EB;{% endif %}">
+                {{ c.initials }}
+              </div>
+            {% endif %}
+            <div style="flex: 1; min-width: 0;">
+              <div style="font-size: var(--text-sm); font-weight: 600; color: var(--ink-900);">{{ c.full_name }}</div>
+              <div class="font-mono" style="font-size: var(--text-xs); color: var(--ink-500); margin-top: 2px;">
+                {{ c.admission_number }} · {{ c.class_level|default:"No class" }}
+              </div>
+            </div>
+            <a href="{% url 'parent_child_detail' c.id %}" class="btn btn-sm btn-secondary">
+              View
+            </a>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div style="text-align: center; padding: var(--s-8) var(--s-6);">
+        <div style="opacity: 0.3; margin-bottom: var(--s-3);">
+          {% include 'partials/icons.html' with name="users" size=48 %}
+        </div>
+        <p style="font-size: var(--text-sm); color: var(--ink-500); margin: 0;">No children linked yet</p>
+        <p style="font-size: var(--text-xs); color: var(--ink-400); margin: var(--s-1) 0 0;">Contact the school administrator</p>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Recent invoices -->
+  <div class="card" style="padding: 0; overflow: hidden;">
+    <div style="padding: var(--s-5) var(--s-6); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between;">
+      <div style="display: flex; align-items: center; gap: var(--s-2);">
+        {% include 'partials/icons.html' with name="file-text" size=18 %}
+        <h3 style="font-size: var(--text-md); font-weight: 700; color: var(--ink-900); margin: 0;">
+          Recent Invoices
+        </h3>
+      </div>
+      <span style="font-size: var(--text-xs); color: var(--ink-500);">{{ stats.unpaid_count }} pending</span>
+    </div>
+
+    {% if invoices %}
+      <div style="display: flex; flex-direction: column;">
+        {% for inv in invoices %}
+          <div style="padding: var(--s-4) var(--s-6); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: var(--s-4); {% if forloop.last %}border-bottom: none;{% endif %}">
+            <div style="flex: 1; min-width: 0;">
+              <div style="font-size: var(--text-sm); font-weight: 600; color: var(--ink-900); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                {{ inv.student.full_name }}
+              </div>
+              <div style="font-size: var(--text-xs); color: var(--ink-500); margin-top: 2px;">
+                {{ inv.fee_structure.name|default:"Fee" }}
+              </div>
+            </div>
+            <div style="text-align: right; flex-shrink: 0;">
+              <div class="font-mono" style="font-size: var(--text-sm); font-weight: 700;
+                {% if inv.balance > 0 %}color: var(--danger);{% else %}color: var(--success);{% endif %}">
+                KES {{ inv.balance|floatformat:0 }}
+              </div>
+              {% if inv.status == 'paid' %}
+                <span class="badge badge-success" style="margin-top: 4px;">Paid</span>
+              {% elif inv.status == 'overdue' %}
+                <span class="badge badge-danger" style="margin-top: 4px;">Overdue</span>
+              {% elif inv.status == 'partial' %}
+                <span class="badge badge-warning" style="margin-top: 4px;">Partial</span>
+              {% else %}
+                <span class="badge badge-neutral" style="margin-top: 4px;">Unpaid</span>
+              {% endif %}
+            </div>
+            {% if inv.balance > 0 %}
+              <button type="button"
+                      onclick="if (typeof toast === 'function') { toast('M-Pesa payment is coming soon. Please pay at the school office or via bank transfer for now.', 'info'); } else { alert('M-Pesa payment is coming soon.'); }"
+                      class="btn btn-sm btn-primary">
+                {% include 'partials/icons.html' with name="credit-card" size=13 %}
+                Pay
+              </button>
+            {% endif %}
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div style="text-align: center; padding: var(--s-8) var(--s-6);">
+        <div style="opacity: 0.3; margin-bottom: var(--s-3);">
+          {% include 'partials/icons.html' with name="check-circle" size=48 %}
+        </div>
+        <p style="font-size: var(--text-sm); color: var(--ink-500); margin: 0;">No invoices</p>
+        <p style="font-size: var(--text-xs); color: var(--ink-400); margin: var(--s-1) 0 0;">You're all set</p>
+      </div>
+    {% endif %}
+  </div>
+
+</div>
+
+{% endblock %}

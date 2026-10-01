@@ -1,0 +1,159 @@
+{% extends 'public/base_public.html' %}
+{% load static %}
+{% block title %}Sign Up · School MS{% endblock %}
+
+{% block extra_css %}
+<style>
+  .signup-wrap {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: var(--s-10) var(--s-6);
+  }
+  .signup-header {
+    text-align: center;
+    margin-bottom: var(--s-7);
+  }
+  .signup-header h1 {
+    font-family: var(--font-heading);
+    font-size: 36px;
+    font-weight: 800;
+    color: var(--ink-900);
+    letter-spacing: -0.03em;
+    margin: 0 0 var(--s-3);
+  }
+  .signup-header p {
+    font-size: var(--text-md);
+    color: var(--ink-600);
+    margin: 0;
+  }
+  .signup-form {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: var(--s-6);
+    box-shadow: var(--shadow-sm);
+  }
+  .plan-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--s-3);
+    margin-bottom: var(--s-5);
+  }
+  .plan-option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--s-4);
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: all var(--t-fast);
+  }
+  .plan-option:hover { border-color: var(--primary); background: var(--primary-soft); }
+  .plan-option input { display: none; }
+  .plan-option input:checked + .plan-content { }
+  .plan-option:has(input:checked) {
+    border-color: var(--primary);
+    background: var(--primary-soft);
+  }
+  .plan-name {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: var(--text-md);
+    color: var(--ink-900);
+  }
+  .plan-price {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    color: var(--primary);
+    font-size: var(--text-md);
+  }
+  @media (max-width: 900px) {
+    .signup-header h1 { font-size: 28px; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="signup-wrap">
+
+  <div class="signup-header">
+    <h1>Create Your School Account</h1>
+    <p>Start your free 30-day trial. No credit card required.</p>
+  </div>
+
+  <form class="signup-form" method="post">
+    {% csrf_token %}
+
+    {% if messages %}
+      {% for m in messages %}
+        <div class="flash {% if m.tags == 'error' %}flash-error{% else %}flash-success{% endif %}" style="margin-bottom: var(--s-5);">
+          {{ m }}
+        </div>
+      {% endfor %}
+    {% endif %}
+
+    <h3 style="font-family: var(--font-heading); font-size: var(--text-md); font-weight: 700; color: var(--ink-900); margin: 0 0 var(--s-4); padding-bottom: var(--s-3); border-bottom: 1px solid var(--border);">
+      School Information
+    </h3>
+
+    <div class="form-group">
+      <label class="form-label">School Name <span class="required">*</span></label>
+      <input type="text" name="name" required class="input" placeholder="e.g. Nairibischool">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">School Email</label>
+      <input type="email" name="email" class="input" placeholder="info@school.ac.ke">
+    </div>
+
+    <h3 style="font-family: var(--font-heading); font-size: var(--text-md); font-weight: 700; color: var(--ink-900); margin: var(--s-6) 0 var(--s-4); padding-bottom: var(--s-3); border-bottom: 1px solid var(--border);">
+      Admin Account
+    </h3>
+
+    <div class="form-group">
+      <label class="form-label">Your Email <span class="required">*</span></label>
+      <input type="email" name="admin_email" required class="input" placeholder="you@school.ac.ke">
+      <p class="form-hint">You'll log in with this email</p>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Password <span class="required">*</span></label>
+      <input type="password" name="admin_password" required minlength="6" class="input" placeholder="At least 6 characters">
+    </div>
+
+    {% if plans %}
+    <h3 style="font-family: var(--font-heading); font-size: var(--text-md); font-weight: 700; color: var(--ink-900); margin: var(--s-6) 0 var(--s-4); padding-bottom: var(--s-3); border-bottom: 1px solid var(--border);">
+      Choose a Plan
+    </h3>
+
+    <div class="plan-grid">
+      {% for plan in plans %}
+      <label class="plan-option">
+        <input type="radio" name="plan" value="{{ plan.id }}" {% if forloop.first %}checked{% endif %}>
+        <div class="plan-content">
+          <div class="plan-name">{{ plan.name }}</div>
+          <div style="font-size: var(--text-xs); color: var(--ink-500); margin-top: 2px;">
+            Up to {{ plan.max_students }} students
+          </div>
+        </div>
+        <div class="plan-price">KES {{ plan.price_kes|floatformat:0 }}<span style="font-size: 11px; opacity: 0.7;">/term</span></div>
+      </label>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <button type="submit" class="btn btn-primary" style="width: 100%; padding: 14px; margin-top: var(--s-5);">
+      Create Account
+    </button>
+
+    <p style="font-size: var(--text-xs); color: var(--ink-500); text-align: center; margin: var(--s-4) 0 0;">
+      By signing up, you agree to our <a href="{% url 'terms' %}" style="color: var(--primary);">Terms</a> and <a href="{% url 'privacy' %}" style="color: var(--primary);">Privacy Policy</a>.
+    </p>
+
+  </form>
+
+</div>
+
+{% endblock %}

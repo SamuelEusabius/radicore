@@ -1,0 +1,171 @@
+{% extends 'public/base_public.html' %}
+{% load static %}
+{% block title %}Help Center · School MS{% endblock %}
+
+{% block extra_css %}
+<style>
+  .page-hero {
+    padding: var(--s-10) var(--s-6) var(--s-8);
+    text-align: center;
+    background: linear-gradient(180deg, var(--primary-soft) 0%, var(--bg) 100%);
+  }
+  .page-hero h1 {
+    font-family: var(--font-heading);
+    font-size: 44px;
+    font-weight: 800;
+    color: var(--ink-900);
+    letter-spacing: -0.03em;
+    margin: 0 0 var(--s-4);
+  }
+  .page-hero p {
+    font-size: var(--text-md);
+    color: var(--ink-600);
+    max-width: 640px;
+    margin: 0 auto;
+  }
+  .help-wrap {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: var(--s-10) var(--s-6);
+  }
+  .faq-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    margin-bottom: var(--s-3);
+    overflow: hidden;
+  }
+  .faq-item summary {
+    padding: var(--s-5);
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: var(--text-md);
+    color: var(--ink-900);
+    cursor: pointer;
+    list-style: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: background var(--t-fast);
+  }
+  .faq-item summary:hover { background: var(--surface-muted); }
+  .faq-item summary::-webkit-details-marker { display: none; }
+  .faq-item summary::after {
+    content: '+';
+    font-size: 24px;
+    color: var(--primary);
+    font-weight: 400;
+  }
+  .faq-item[open] summary::after { content: '−'; }
+  .faq-body {
+    padding: 0 var(--s-5) var(--s-5);
+    font-size: var(--text-sm);
+    color: var(--ink-700);
+    line-height: 1.7;
+  }
+  .help-cta {
+    margin-top: var(--s-10);
+    padding: var(--s-7);
+    background: var(--primary-soft);
+    border-radius: var(--radius-lg);
+    text-align: center;
+  }
+  .help-cta h3 {
+    font-family: var(--font-heading);
+    font-size: var(--text-lg);
+    font-weight: 700;
+    color: var(--ink-900);
+    margin: 0 0 var(--s-2);
+  }
+  .help-cta p {
+    font-size: var(--text-sm);
+    color: var(--ink-600);
+    margin: 0 0 var(--s-5);
+  }
+  @media (max-width: 900px) {
+    .page-hero h1 { font-size: 32px; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<section class="page-hero">
+  <h1>Help Center</h1>
+  <p>Answers to common questions about School MS. Can't find what you're looking for? Contact us.</p>
+</section>
+
+<div class="help-wrap">
+
+  <details class="faq-item" open>
+    <summary>How much does School MS cost?</summary>
+    <div class="faq-body">
+      Plans start from free for small schools (up to 50 students) and scale to KES 25,000 per term for large institutions. Visit our landing page to see all plans, or contact us for a custom quote.
+    </div>
+  </details>
+
+  <details class="faq-item">
+    <summary>Can I try it before paying?</summary>
+    <div class="faq-body">
+      Yes — every new school gets a full-featured 30-day free trial. No credit card required. Set up your school, invite staff, and explore everything at no cost.
+    </div>
+  </details>
+
+  <details class="faq-item">
+    <summary>Does it work on phones and tablets?</summary>
+    <div class="faq-body">
+      Absolutely. School MS is fully responsive and works on any device with a browser — Android phones, iPhones, tablets, laptops, and desktop computers. No app installation required.
+    </div>
+  </details>
+
+  <details class="faq-item">
+    <summary>How do parents receive fee statements?</summary>
+    <div class="faq-body">
+      Parents get their own login to view invoices, balances, payment history, and results. You can also send SMS reminders directly from the admin dashboard, and download printable PDF statements.
+    </div>
+  </details>
+
+  <details class="faq-item">
+    <summary>Is my school's data secure?</summary>
+    <div class="faq-body">
+      Every school's data is strictly isolated — no one from another school, and not even our own team, can access your records. We run on enterprise-grade hosting with daily backups, HTTPS encryption, and audit logs.
+    </div>
+  </details>
+
+  <details class="faq-item">
+    <summary>Can I accept M-Pesa payments?</summary>
+    <div class="faq-body">
+      Yes. We integrate directly with Safaricom's Daraja API, so parents can pay fees via M-Pesa STK Push or Paybill. Payments are automatically recorded against the correct invoice.
+    </div>
+  </details>
+
+  <details class="faq-item">
+    <summary>How long does setup take?</summary>
+    <div class="faq-body">
+      Most schools are fully set up within a day. Add classes, upload students, invite teachers, and start invoicing. Our team can help with bulk data import if needed.
+    </div>
+  </details>
+
+  <details class="faq-item">
+    <summary>Can I import my existing student data?</summary>
+    <div class="faq-body">
+      Yes — you can import students, parents, and staff via CSV. Our support team is happy to help with your first import, no matter the size.
+    </div>
+  </details>
+
+  <details class="faq-item">
+    <summary>What happens if I need help?</summary>
+    <div class="faq-body">
+      Contact us by email or phone anytime. We respond within 24 hours on business days. Enterprise customers get priority support with a dedicated account manager.
+    </div>
+  </details>
+
+  <div class="help-cta">
+    <h3>Still need help?</h3>
+    <p>Our team is here to assist you with anything else.</p>
+    <a href="{% url 'contact' %}" class="btn btn-primary">Contact Support</a>
+  </div>
+
+</div>
+
+{% endblock %}

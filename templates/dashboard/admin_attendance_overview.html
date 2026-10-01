@@ -1,0 +1,242 @@
+{% extends 'base.html' %}
+{% block title %}School Attendance{% endblock %}
+{% block header_title %}School Attendance{% endblock %}
+{% block header_sub %}{{ selected_date|date:"D, d M Y" }} · {{ current_school.name }}{% endblock %}
+
+{% block content %}
+
+<!-- ============ TOP BAR: Date ============ -->
+<div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5 mb-6">
+  <div class="flex items-center justify-between flex-wrap gap-4">
+
+    <form method="get" class="flex items-center gap-3 flex-wrap">
+      <label class="text-xs font-semibold text-gray-600 uppercase tracking-wide">Date:</label>
+      <input type="date"
+             name="date"
+             value="{{ selected_date|date:'Y-m-d' }}"
+             max="{{ today|date:'Y-m-d' }}"
+             onchange="this.form.submit()"
+             class="border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-teal-600">
+      {% if is_today %}
+        <span class="text-xs px-2 py-1 bg-teal-50 text-teal-700 rounded">Today</span>
+      {% else %}
+        <a href="{% url 'admin_attendance_overview' %}" class="text-xs text-teal-700 hover:underline">← Today</a>
+      {% endif %}
+    </form>
+
+    <div class="flex items-center gap-2">
+      <a href="{% url 'admin_attendance_export' %}?date={{ selected_date|date:'Y-m-d' }}"
+         class="pro-btn pro-btn-secondary">
+        {% include 'partials/icons.html' with name="download" size=15 %}
+        <span>Export CSV</span>
+      </a>
+    </div>
+
+  </div>
+</div>
+
+<!-- ============ KPI ROW ============ -->
+<div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+
+  <div class="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
+    <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Total Students</div>
+    <div class="text-2xl font-bold text-gray-900 tabular-nums">{{ total_students }}</div>
+    <div class="text-xs text-gray-500 mt-1">active enrollment</div>
+  </div>
+
+  <div class="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
+    <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Present</div>
+    <div class="text-2xl font-bold text-green-600 tabular-nums">{{ present_count }}</div>
+    <div class="text-xs text-gray-500 mt-1">{{ late_count }} late</div>
+  </div>
+
+  <div class="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
+    <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Absent</div>
+    <div class="text-2xl font-bold text-red-600 tabular-nums">{{ absent_count }}</div>
+    <div class="text-xs text-gray-500 mt-1">{{ excused_count }} excused</div>
+  </div>
+
+  <div class="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
+    <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Attendance Rate</div>
+    <div class="text-2xl font-bold text-teal-700 tabular-nums">{{ attendance_pct }}%</div>
+    <div class="w-full h-2 bg-gray-100 rounded-full mt-2 overflow-hidden">
+      <div class="h-full bg-teal-600 rounded-full transition-all" style="width: {{ attendance_pct }}%"></div>
+    </div>
+  </div>
+
+  <div class="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
+    <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Not Marked</div>
+    <div class="text-2xl font-bold tabular-nums {% if not_marked > 0 %}text-yellow-600{% else %}text-gray-400{% endif %}">
+      {{ not_marked }}
+    </div>
+    <div class="text-xs text-gray-500 mt-1">
+      {% if not_marked > 0 %}classes pending{% else %}all classes done{% endif %}
+    </div>
+  </div>
+
+</div>
+
+<!-- ============ PER-CLASS BREAKDOWN ============ -->
+<div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden mb-6">
+
+  <div class="p-5 border-b border-gray-100">
+    <h3 class="text-sm font-semibold text-gray-800">Per-Class Breakdown</h3>
+    <p class="text-xs text-gray-500 mt-0.5">
+      Live view of attendance marking progress across all classes
+    </p>
+  </div>
+
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="text-left px-4 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">Class</th>
+          <th class="text-center px-4 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">Students</th>
+          <th class="text-center px-4 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">Present</th>
+          <th class="text-center px-4 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">Absent</th>
+          <th class="text-center px-4 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">Late</th>
+          <th class="text-center px-4 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">Rate</th>
+          <th class="text-right px-4 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in class_rows %}
+        <tr class="border-t border-gray-50 hover:bg-teal-50/30">
+
+          <td class="px-4 py-3">
+            <div class="font-medium text-gray-900">{{ row.class.name }}</div>
+          </td>
+
+          <td class="px-4 py-3 text-center tabular-nums text-gray-700">{{ row.total }}</td>
+
+          <td class="px-4 py-3 text-center tabular-nums font-semibold text-green-600">
+            {{ row.present }}
+          </td>
+
+          <td class="px-4 py-3 text-center tabular-nums font-semibold
+            {% if row.absent > 0 %}text-red-600{% else %}text-gray-400{% endif %}">
+            {{ row.absent }}
+          </td>
+
+          <td class="px-4 py-3 text-center tabular-nums text-yellow-600">
+            {{ row.late }}
+          </td>
+
+          <td class="px-4 py-3 text-center">
+            {% if row.pct is not None %}
+              <span class="inline-flex items-center gap-2">
+                <span class="font-bold tabular-nums
+                  {% if row.pct >= 90 %}text-green-600
+                  {% elif row.pct >= 75 %}text-blue-600
+                  {% elif row.pct >= 60 %}text-yellow-600
+                  {% else %}text-red-600{% endif %}">
+                  {{ row.pct }}%
+                </span>
+                <span class="w-16 h-1.5 bg-gray-100 rounded-full overflow-hidden hidden md:inline-block">
+                  <span class="block h-full rounded-full
+                    {% if row.pct >= 90 %}bg-green-500
+                    {% elif row.pct >= 75 %}bg-blue-500
+                    {% elif row.pct >= 60 %}bg-yellow-500
+                    {% else %}bg-red-500{% endif %}"
+                    style="width: {{ row.pct }}%"></span>
+                </span>
+              </span>
+            {% else %}
+              <span class="text-xs px-2 py-0.5 bg-yellow-50 text-yellow-700 rounded font-medium">
+                Not marked
+              </span>
+            {% endif %}
+          </td>
+
+          <td class="px-4 py-3 text-right">
+            <a href="{% url 'admin_class_attendance' row.class.id %}?date={{ selected_date|date:'Y-m-d' }}"
+               class="text-xs px-3 py-1.5 bg-teal-50 hover:bg-teal-100 text-teal-700 rounded transition">
+              View
+            </a>
+          </td>
+
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="7" class="p-12 text-center">
+            <div class="text-4xl mb-2 opacity-30">📊</div>
+            <p class="text-sm text-gray-500">No classes with students yet.</p>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<!-- ============ ABSENT STUDENTS TODAY ============ -->
+<div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+
+  <div class="p-5 border-b border-gray-100 flex items-center justify-between flex-wrap gap-3">
+    <div>
+      <h3 class="text-sm font-semibold text-gray-800">
+        Absent Students — {{ selected_date|date:"d M Y" }}
+      </h3>
+      <p class="text-xs text-gray-500 mt-0.5">
+        {{ absent_today|length }} student{{ absent_today|length|pluralize }} absent
+      </p>
+    </div>
+  </div>
+
+  {% if absent_today %}
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="text-left px-4 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">Student</th>
+            <th class="text-left px-4 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">Adm No</th>
+            <th class="text-left px-4 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">Class</th>
+            <th class="text-left px-4 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">Guardian Phone</th>
+            <th class="text-right px-4 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for a in absent_today %}
+          <tr class="border-t border-gray-50 hover:bg-red-50/30">
+            <td class="px-4 py-3">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full bg-red-100 text-red-700 flex items-center justify-center text-xs font-bold flex-shrink-0">
+                  {{ a.student.first_name|first|upper }}{{ a.student.last_name|first|upper }}
+                </div>
+                <div class="font-medium text-gray-900">{{ a.student.full_name }}</div>
+              </div>
+            </td>
+            <td class="px-4 py-3 text-xs text-gray-700">{{ a.student.admission_number }}</td>
+            <td class="px-4 py-3 text-xs text-gray-700">{{ a.student.class_level|default:"—" }}</td>
+            <td class="px-4 py-3 text-xs text-gray-700">
+              {{ a.student.guardian_phone|default:"—" }}
+            </td>
+            <td class="px-4 py-3 text-right">
+              <a href="{% url 'admin_student_detail' a.student.id %}"
+                 class="text-xs px-3 py-1.5 bg-teal-50 hover:bg-teal-100 text-teal-700 rounded transition">
+                View
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="p-12 text-center">
+      <div class="text-4xl mb-2 opacity-30">🎉</div>
+      <p class="text-sm font-medium text-gray-700">No students absent</p>
+      <p class="text-xs text-gray-500 mt-1">
+        {% if marked_count == 0 %}
+          Attendance hasn't been marked for this date yet.
+        {% else %}
+          Everyone showed up today!
+        {% endif %}
+      </p>
+    </div>
+  {% endif %}
+
+</div>
+
+{% endblock %}

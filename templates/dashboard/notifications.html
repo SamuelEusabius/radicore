@@ -1,0 +1,224 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Notifications{% endblock %}
+{% block header_title %}Notifications{% endblock %}
+{% block header_sub %}{{ stats.total }} notification{{ stats.total|pluralize }} · {{ stats.unread }} unread{% endblock %}
+
+{% block content %}
+
+<!-- ============================================ -->
+<!-- STATS CARDS                                  -->
+<!-- ============================================ -->
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Total</span>
+      <div class="stat-icon" style="background: rgba(10, 138, 95, 0.1); color: var(--primary);">
+        {% include 'partials/icons.html' with name="bell" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value">{{ stats.total }}</div>
+    <div class="stat-meta">All notifications</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Unread</span>
+      <div class="stat-icon" style="background: rgba(220, 38, 38, 0.1); color: var(--danger);">
+        {% include 'partials/icons.html' with name="alert-circle" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--danger);">{{ stats.unread }}</div>
+    <div class="stat-meta">Needs your attention</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">In-App</span>
+      <div class="stat-icon" style="background: rgba(37, 99, 235, 0.1); color: #2563EB;">
+        {% include 'partials/icons.html' with name="activity" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: #2563EB;">{{ stats.in_app }}</div>
+    <div class="stat-meta">System events</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">SMS</span>
+      <div class="stat-icon" style="background: rgba(124, 58, 237, 0.1); color: #7C3AED;">
+        {% include 'partials/icons.html' with name="message-square" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: #7C3AED;">{{ stats.sms }}</div>
+    <div class="stat-meta">Text messages</div>
+  </div>
+
+</div>
+
+<!-- ============================================ -->
+<!-- FILTERS + MARK ALL BUTTON                    -->
+<!-- ============================================ -->
+<div class="card mb-6">
+  <form method="get" style="display: flex; flex-wrap: wrap; gap: var(--s-3); align-items: flex-end;">
+
+    <div style="flex: 1; min-width: 240px;">
+      <label class="form-label">Search</label>
+      <input name="q" value="{{ search }}" placeholder="Search title or message..." class="input">
+    </div>
+
+    <div style="min-width: 160px;">
+      <label class="form-label">Channel</label>
+      <select name="channel" class="select">
+        <option value="">All Channels</option>
+        <option value="in_app" {% if channel_filter == 'in_app' %}selected{% endif %}>In-App</option>
+        <option value="sms" {% if channel_filter == 'sms' %}selected{% endif %}>SMS</option>
+        <option value="email" {% if channel_filter == 'email' %}selected{% endif %}>Email</option>
+      </select>
+    </div>
+
+    <div style="min-width: 150px;">
+      <label class="form-label">Status</label>
+      <select name="status" class="select">
+        <option value="">All</option>
+        <option value="unread" {% if status_filter == 'unread' %}selected{% endif %}>Unread</option>
+        <option value="read" {% if status_filter == 'read' %}selected{% endif %}>Read</option>
+      </select>
+    </div>
+
+    <div style="display: flex; gap: var(--s-2); align-items: flex-end;">
+      <button type="submit" class="btn btn-primary">
+        {% include 'partials/icons.html' with name="search" size=15 %}
+        <span>Filter</span>
+      </button>
+      {% if search or channel_filter or status_filter %}
+        <a href="{% url 'notifications_list' %}" class="btn btn-secondary">Clear</a>
+      {% endif %}
+    </div>
+
+  </form>
+
+  {% if stats.unread > 0 %}
+  <div style="margin-top: var(--s-4); padding-top: var(--s-4); border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--s-3);">
+    <div style="font-size: var(--text-xs); color: var(--ink-500);">
+      {{ stats.unread }} unread notification{{ stats.unread|pluralize }}
+    </div>
+    <a href="{% url 'mark_all_read' %}" class="btn btn-primary">
+      {% include 'partials/icons.html' with name="check-circle" size=15 %}
+      <span>Mark All Read</span>
+    </a>
+  </div>
+  {% endif %}
+</div>
+
+<!-- ============================================ -->
+<!-- NOTIFICATIONS LIST                           -->
+<!-- ============================================ -->
+{% if notifications %}
+
+  <!-- Today -->
+  {% if groups.today %}
+  <div class="card mb-4" style="padding: 0; overflow: hidden;">
+    <div style="padding: var(--s-3) var(--s-5); border-bottom: 1px solid var(--border); background: var(--surface-muted);">
+      <span style="font-size: var(--text-xs); font-weight: 700; color: var(--ink-700); text-transform: uppercase; letter-spacing: 0.08em;">
+        Today
+      </span>
+    </div>
+    <div>
+      {% for n in groups.today %}
+        {% include 'dashboard/partials/_notification_row.html' with n=n %}
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Yesterday -->
+  {% if groups.yesterday %}
+  <div class="card mb-4" style="padding: 0; overflow: hidden;">
+    <div style="padding: var(--s-3) var(--s-5); border-bottom: 1px solid var(--border); background: var(--surface-muted);">
+      <span style="font-size: var(--text-xs); font-weight: 700; color: var(--ink-700); text-transform: uppercase; letter-spacing: 0.08em;">
+        Yesterday
+      </span>
+    </div>
+    <div>
+      {% for n in groups.yesterday %}
+        {% include 'dashboard/partials/_notification_row.html' with n=n %}
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- This Week -->
+  {% if groups.this_week %}
+  <div class="card mb-4" style="padding: 0; overflow: hidden;">
+    <div style="padding: var(--s-3) var(--s-5); border-bottom: 1px solid var(--border); background: var(--surface-muted);">
+      <span style="font-size: var(--text-xs); font-weight: 700; color: var(--ink-700); text-transform: uppercase; letter-spacing: 0.08em;">
+        This Week
+      </span>
+    </div>
+    <div>
+      {% for n in groups.this_week %}
+        {% include 'dashboard/partials/_notification_row.html' with n=n %}
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Older -->
+  {% if groups.older %}
+  <div class="card mb-4" style="padding: 0; overflow: hidden;">
+    <div style="padding: var(--s-3) var(--s-5); border-bottom: 1px solid var(--border); background: var(--surface-muted);">
+      <span style="font-size: var(--text-xs); font-weight: 700; color: var(--ink-700); text-transform: uppercase; letter-spacing: 0.08em;">
+        Older
+      </span>
+    </div>
+    <div>
+      {% for n in groups.older %}
+        {% include 'dashboard/partials/_notification_row.html' with n=n %}
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Pagination -->
+  {% if page_obj.has_other_pages %}
+  <div class="card" style="padding: var(--s-5) var(--s-6);">
+    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--s-3);">
+      <div style="font-size: var(--text-sm); color: var(--ink-500);">
+        Showing <strong>{{ page_obj.start_index }}</strong> – <strong>{{ page_obj.end_index }}</strong> of <strong>{{ paginator.count }}</strong>
+      </div>
+      <div style="display: flex; gap: var(--s-1);">
+        {% if page_obj.has_previous %}
+          <a href="?{% if search %}q={{ search }}&{% endif %}{% if channel_filter %}channel={{ channel_filter }}&{% endif %}{% if status_filter %}status={{ status_filter }}&{% endif %}page={{ page_obj.previous_page_number }}" class="btn btn-sm btn-secondary">← Prev</a>
+        {% endif %}
+        {% if page_obj.has_next %}
+          <a href="?{% if search %}q={{ search }}&{% endif %}{% if channel_filter %}channel={{ channel_filter }}&{% endif %}{% if status_filter %}status={{ status_filter }}&{% endif %}page={{ page_obj.next_page_number }}" class="btn btn-sm btn-secondary">Next →</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+{% else %}
+
+  <div class="card">
+    <div class="empty" style="border: none;">
+      {% include 'partials/icons.html' with name="bell" size=56 %}
+      <h3>{% if search or channel_filter or status_filter %}No notifications matched{% else %}All caught up!{% endif %}</h3>
+      <p>
+        {% if search or channel_filter or status_filter %}
+          Try changing your filters or clear them.
+        {% else %}
+          You have no notifications yet. We'll let you know when something happens.
+        {% endif %}
+      </p>
+      {% if search or channel_filter or status_filter %}
+        <a href="{% url 'notifications_list' %}" class="btn btn-secondary">Clear filters</a>
+      {% endif %}
+    </div>
+  </div>
+
+{% endif %}
+
+{% endblock %}

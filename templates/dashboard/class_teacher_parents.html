@@ -1,0 +1,131 @@
+{% extends 'base.html' %}
+{% block title %}Class Parents{% endblock %}
+{% block header_title %}Parents — {{ cls.name }}{% endblock %}
+{% block header_sub %}{{ total_parents }} parent{{ total_parents|pluralize }} linked to your class{% endblock %}
+
+{% block content %}
+
+<!-- ============ TOP BAR ============ -->
+<div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5 mb-6">
+  <div class="flex items-center justify-between flex-wrap gap-4">
+
+    <form method="get" class="flex items-center gap-3 flex-1 min-w-[250px]">
+      <input type="text"
+             name="q"
+             value="{{ search|default:'' }}"
+             placeholder="Search by name or phone…"
+             class="flex-1 border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-teal-600">
+      <button type="submit" class="pro-btn pro-btn-primary">
+        {% include 'partials/icons.html' with name="search" size=15 %}
+        <span>Search</span>
+      </button>
+      {% if search %}
+      <a href="{% url 'class_teacher_parents' %}" class="pro-btn pro-btn-secondary">Clear</a>
+      {% endif %}
+    </form>
+
+    <a href="{% url 'class_teacher_parents_download' %}"
+       class="pro-btn pro-btn-secondary">
+      {% include 'partials/icons.html' with name="download" size=15 %}
+      <span>Download CSV</span>
+    </a>
+
+  </div>
+</div>
+
+<!-- ============ PARENTS TABLE ============ -->
+<div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+
+  <div class="p-5 border-b border-gray-100">
+    <h3 class="text-sm font-semibold text-gray-800">Parents of Class Students</h3>
+    <p class="text-xs text-gray-500 mt-0.5">
+      Each parent may be linked to multiple children. Contact information shown below.
+    </p>
+  </div>
+
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="text-left px-4 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">Parent</th>
+          <th class="text-left px-4 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">Relationship</th>
+          <th class="text-left px-4 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">Phone</th>
+          <th class="text-left px-4 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">Occupation</th>
+          <th class="text-left px-4 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">Children in Class</th>
+          <th class="text-right px-4 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in parents %}
+        <tr class="border-t border-gray-50 hover:bg-teal-50/30">
+
+          <td class="px-4 py-3">
+            <div class="flex items-center gap-3">
+              {% if p.photo %}
+                <img src="{{ p.photo.url }}" class="w-9 h-9 rounded-full object-cover flex-shrink-0">
+              {% else %}
+                <div class="w-9 h-9 rounded-full bg-teal-100 text-teal-700 flex items-center justify-center text-xs font-bold flex-shrink-0">
+                  {{ p.first_name|first|upper }}{{ p.last_name|first|upper }}
+                </div>
+              {% endif %}
+              <div class="min-w-0">
+                <div class="font-medium text-gray-900 truncate">
+                  {{ p.first_name }} {{ p.last_name }}
+                </div>
+                <div class="text-xs text-gray-500 truncate">
+                  {{ p.user.email }}
+                </div>
+              </div>
+            </div>
+          </td>
+
+          <td class="px-4 py-3">
+            <span class="px-2 py-0.5 text-xs font-semibold rounded
+              {% if p.relationship == 'father' %}bg-blue-100 text-blue-700
+              {% elif p.relationship == 'mother' %}bg-pink-100 text-pink-700
+              {% else %}bg-gray-100 text-gray-700{% endif %}">
+              {{ p.get_relationship_display }}
+            </span>
+          </td>
+
+          <td class="px-4 py-3 text-xs text-gray-700 tabular-nums">
+            {{ p.phone|default:"—" }}
+          </td>
+
+          <td class="px-4 py-3 text-xs text-gray-700">
+            {{ p.occupation|default:"—" }}
+          </td>
+
+          <td class="px-4 py-3 text-xs text-gray-700">
+            {% for child in p.class_children %}
+              <div>{{ child.full_name }} <span class="text-gray-400">({{ child.admission_number }})</span></div>
+            {% empty %}
+              <span class="text-gray-400">—</span>
+            {% endfor %}
+          </td>
+
+          <td class="px-4 py-3 text-right">
+            <a href="{% url 'class_teacher_view_parent' p.id %}"
+               class="text-xs px-2 py-1 bg-teal-50 hover:bg-teal-100 text-teal-700 rounded transition">
+              View
+            </a>
+          </td>
+
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="6" class="p-12 text-center">
+            <div class="text-4xl mb-2 opacity-30">👥</div>
+            <p class="text-sm text-gray-500">
+              {% if search %}No parents match your search.{% else %}No parents linked to this class yet.{% endif %}
+            </p>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+{% endblock %}

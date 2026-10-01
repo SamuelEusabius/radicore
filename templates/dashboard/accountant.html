@@ -1,0 +1,379 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Accountant Dashboard{% endblock %}
+{% block header_title %}Finance Overview{% endblock %}
+{% block header_sub %}{{ current_school.name|default:"Financials" }} · Current Term{% endblock %}
+
+{% block content %}
+
+<!-- ============================================ -->
+<!-- WELCOME BANNER                                -->
+<!-- ============================================ -->
+<div class="page-header">
+  <div class="page-header-info">
+    <h1 class="page-title">Good {% now "H" as hour %}{% if hour < "12" %}morning{% elif hour < "17" %}afternoon{% else %}evening{% endif %}, {{ user.get_full_name|default:user.email|truncatechars:20 }}</h1>
+    <p class="page-subtitle">Here's what's happening with your school's finances today.</p>
+  </div>
+</div>
+
+<!-- ============================================ -->
+<!-- KPI ROW — 4 cards                            -->
+<!-- ============================================ -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+
+  <!-- Total Invoiced -->
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Total Invoiced</span>
+      <div class="stat-icon" style="background: rgba(37, 99, 235, 0.1); color: #2563EB;">
+        {% include 'partials/icons.html' with name="file-text" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value">KES {{ total_invoiced|floatformat:0 }}</div>
+    <div class="stat-meta">
+      {{ invoice_count }} invoice{{ invoice_count|pluralize }} issued
+    </div>
+  </div>
+
+  <!-- Collected -->
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Collected</span>
+      <div class="stat-icon" style="background: rgba(5, 150, 105, 0.1); color: #059669;">
+        {% include 'partials/icons.html' with name="trending-up" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--primary);">KES {{ total_paid|floatformat:0 }}</div>
+    <div class="stat-meta">
+      <span class="stat-trend-up">{{ collection_rate }}% collection rate</span>
+    </div>
+  </div>
+
+  <!-- Outstanding -->
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Outstanding</span>
+      <div class="stat-icon" style="background: rgba(220, 38, 38, 0.1); color: #DC2626;">
+        {% include 'partials/icons.html' with name="alert-triangle" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--danger);">KES {{ outstanding|floatformat:0 }}</div>
+    <div class="stat-meta">
+      {{ overdue_count }} overdue · {{ unpaid_count }} unpaid
+    </div>
+  </div>
+
+  <!-- Collection Rate Visual -->
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Collection Rate</span>
+      <div class="stat-icon" style="background: rgba(10, 138, 95, 0.1); color: var(--primary);">
+        {% include 'partials/icons.html' with name="bar-chart" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value">{{ collection_rate }}%</div>
+    <div style="width: 100%; height: 6px; background: var(--ink-100); border-radius: var(--radius-full); margin-top: var(--s-3); overflow: hidden;">
+      <div style="height: 100%; background: var(--primary); border-radius: var(--radius-full); width: {{ collection_rate }}%; transition: width 0.6s ease;"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ============================================ -->
+<!-- CHART + RECENT PAYMENTS                      -->
+<!-- ============================================ -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+
+  <!-- Collections chart -->
+  <div class="lg:col-span-2 card">
+    <div class="card-title">
+      {% include 'partials/icons.html' with name="bar-chart" size=18 %}
+      Collections — Last 6 Months
+    </div>
+    <div style="height: 240px; position: relative;">
+      <canvas id="collectionsChart"></canvas>
+    </div>
+  </div>
+
+  <!-- Recent payments -->
+  <div class="card">
+    <div class="card-title" style="justify-content: space-between;">
+      <span style="display: flex; align-items: center; gap: var(--s-2);">
+        {% include 'partials/icons.html' with name="credit-card" size=18 %}
+        Recent Payments
+      </span>
+      <a href="{% url 'accountant_transactions' %}" style="font-size: var(--text-xs); color: var(--primary); font-weight: 600; text-decoration: none;">View all →</a>
+    </div>
+
+    {% if recent_payments %}
+      <div style="display: flex; flex-direction: column; gap: var(--s-3);">
+        {% for p in recent_payments %}
+          <div style="display: flex; align-items: center; gap: var(--s-3); padding-bottom: var(--s-3); border-bottom: 1px solid var(--border); {% if forloop.last %}border-bottom: none; padding-bottom: 0;{% endif %}">
+            <div class="avatar avatar-sm">
+              {{ p.invoice.student.first_name|first|upper }}{{ p.invoice.student.last_name|first|upper }}
+            </div>
+            <div style="flex: 1; min-width: 0;">
+              <div style="font-size: var(--text-sm); font-weight: 500; color: var(--ink-900); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                {{ p.invoice.student.full_name|default:p.invoice.student }}
+              </div>
+              <div style="font-size: var(--text-xs); color: var(--ink-500);">
+                {{ p.get_method_display }} · {{ p.paid_at|date:"d M, H:i" }}
+              </div>
+            </div>
+            <div class="font-mono" style="font-size: var(--text-sm); font-weight: 700; color: var(--ink-900); flex-shrink: 0;">
+              {{ p.amount_kes|floatformat:0 }}
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div style="text-align: center; padding: var(--s-8) 0;">
+        <div style="font-size: 40px; opacity: 0.3; margin-bottom: var(--s-2);">💳</div>
+        <p style="font-size: var(--text-sm); color: var(--ink-500); margin: 0;">No payments yet</p>
+        <p style="font-size: var(--text-xs); color: var(--ink-400); margin: var(--s-1) 0 0;">They'll show up here as they come in.</p>
+      </div>
+    {% endif %}
+  </div>
+
+</div>
+
+<!-- ============================================ -->
+<!-- PAYMENT METHOD BREAKDOWN                     -->
+<!-- ============================================ -->
+<div class="card mb-6">
+  <div class="card-title" style="justify-content: space-between;">
+    <span style="display: flex; align-items: center; gap: var(--s-2);">
+      {% include 'partials/icons.html' with name="pie-chart" size=18 %}
+      Collections by Method — This Month
+    </span>
+    <span class="font-mono" style="font-size: var(--text-sm); color: var(--ink-600); font-weight: 600;">
+      KES {{ method_total|floatformat:0 }}
+    </span>
+  </div>
+
+  {% if method_breakdown %}
+    <div style="display: flex; flex-direction: column; gap: var(--s-4);">
+      {% for m in method_breakdown %}
+      <div>
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--s-2);">
+          <div style="display: flex; align-items: center; gap: var(--s-2); font-size: var(--text-sm);">
+            <span style="width: 10px; height: 10px; border-radius: 50%;
+              {% if m.code == 'mpesa' %}background: #10B981;
+              {% elif m.code == 'cash' %}background: var(--primary);
+              {% elif m.code == 'bank' %}background: #2563EB;
+              {% elif m.code == 'cheque' %}background: #7C3AED;
+              {% elif m.code == 'airtel' %}background: #DC2626;
+              {% else %}background: var(--ink-400);{% endif %}"></span>
+            <span style="font-weight: 600; color: var(--ink-800);">{{ m.label }}</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: var(--s-3);">
+            <span class="font-mono" style="font-size: var(--text-sm); font-weight: 700; color: var(--ink-900);">KES {{ m.total|floatformat:0 }}</span>
+            <span style="font-size: var(--text-xs); color: var(--ink-500); font-variant-numeric: tabular-nums; min-width: 40px; text-align: right;">{{ m.pct }}%</span>
+          </div>
+        </div>
+        <div style="width: 100%; height: 6px; background: var(--ink-100); border-radius: var(--radius-full); overflow: hidden;">
+          <div style="height: 100%; border-radius: var(--radius-full); width: {{ m.pct }}%;
+            {% if m.code == 'mpesa' %}background: #10B981;
+            {% elif m.code == 'cash' %}background: var(--primary);
+            {% elif m.code == 'bank' %}background: #2563EB;
+            {% elif m.code == 'cheque' %}background: #7C3AED;
+            {% elif m.code == 'airtel' %}background: #DC2626;
+            {% else %}background: var(--ink-400);{% endif %}"></div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div style="text-align: center; padding: var(--s-6) 0;">
+      <div style="font-size: 36px; opacity: 0.3; margin-bottom: var(--s-2);">💳</div>
+      <p style="font-size: var(--text-sm); color: var(--ink-500); margin: 0;">No payments this month</p>
+    </div>
+  {% endif %}
+</div>
+
+<!-- ============================================ -->
+<!-- TOP DEBTORS                                  -->
+<!-- ============================================ -->
+<div class="card mb-6" style="padding: 0; overflow: hidden;">
+  <div style="display: flex; align-items: center; justify-content: space-between; padding: var(--s-5) var(--s-6); border-bottom: 1px solid var(--border);">
+    <div>
+      <h3 style="font-size: var(--text-md); font-weight: 700; color: var(--ink-900); margin: 0;">Top Debtors</h3>
+      <p style="font-size: var(--text-xs); color: var(--ink-500); margin: var(--s-1) 0 0;">Students with the highest outstanding balances</p>
+    </div>
+    <a href="{% url 'accountant_students' %}" style="font-size: var(--text-xs); color: var(--primary); font-weight: 600; text-decoration: none;">View all →</a>
+  </div>
+
+  {% if top_debtors %}
+    <div style="overflow-x: auto;">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Student</th>
+            <th>Class</th>
+            <th style="text-align: right;">Balance</th>
+            <th style="text-align: right;">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in top_debtors %}
+          <tr>
+            <td>
+              <div style="display: flex; align-items: center; gap: var(--s-3);">
+                <div class="avatar avatar-sm">
+                  {{ s.first_name|first|upper }}{{ s.last_name|first|upper }}
+                </div>
+                <div>
+                  <div style="font-weight: 600; color: var(--ink-900);">{{ s.full_name }}</div>
+                  <div class="font-mono" style="font-size: var(--text-xs); color: var(--ink-500);">{{ s.admission_number }}</div>
+                </div>
+              </div>
+            </td>
+            <td style="color: var(--ink-700);">{{ s.class_level|default:"—" }}</td>
+            <td style="text-align: right;">
+              <span class="font-mono" style="font-weight: 700; color: var(--danger);">KES {{ s.balance|floatformat:0 }}</span>
+            </td>
+            <td style="text-align: right;">
+              <button type="button"
+                      onclick="if (typeof toast === 'function') { toast('SMS reminders coming soon!', 'info'); } else { alert('SMS reminders coming soon!'); }"
+                      class="btn btn-sm btn-secondary">
+                Send Reminder
+              </button>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div style="text-align: center; padding: var(--s-10) var(--s-6);">
+      <div style="font-size: 48px; opacity: 0.3; margin-bottom: var(--s-3);">🎉</div>
+      <p style="font-size: var(--text-md); font-weight: 600; color: var(--ink-800); margin: 0;">No outstanding balances</p>
+      <p style="font-size: var(--text-sm); color: var(--ink-500); margin: var(--s-1) 0 0;">All students are up to date with their fees.</p>
+    </div>
+  {% endif %}
+</div>
+
+<!-- ============================================ -->
+<!-- QUICK ACTIONS                                -->
+<!-- ============================================ -->
+<div>
+  <h3 style="font-size: var(--text-md); font-weight: 700; color: var(--ink-900); margin: 0 0 var(--s-4);">Quick Actions</h3>
+  <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+
+    <a href="{% url 'accountant_invoices' %}" class="card card-hover" style="text-decoration: none; padding: var(--s-4);">
+      <div class="stat-icon" style="margin-bottom: var(--s-3); background: rgba(37, 99, 235, 0.1); color: #2563EB;">
+        {% include 'partials/icons.html' with name="file-text" size=18 %}
+      </div>
+      <div style="font-size: var(--text-sm); font-weight: 700; color: var(--ink-900);">All Invoices</div>
+      <div style="font-size: var(--text-xs); color: var(--ink-500); margin-top: 2px;">{{ invoice_count }} total</div>
+    </a>
+
+    <a href="{% url 'generate_invoices' %}" class="card card-hover" style="text-decoration: none; padding: var(--s-4);">
+      <div class="stat-icon" style="margin-bottom: var(--s-3); background: rgba(217, 119, 6, 0.1); color: #D97706;">
+        {% include 'partials/icons.html' with name="file-plus" size=18 %}
+      </div>
+      <div style="font-size: var(--text-sm); font-weight: 700; color: var(--ink-900);">Generate Invoices</div>
+      <div style="font-size: var(--text-xs); color: var(--ink-500); margin-top: 2px;">Bulk by class</div>
+    </a>
+
+    <a href="{% url 'accountant_students' %}?status=unpaid" class="card card-hover" style="text-decoration: none; padding: var(--s-4);">
+      <div class="stat-icon" style="margin-bottom: var(--s-3); background: rgba(5, 150, 105, 0.1); color: #059669;">
+        {% include 'partials/icons.html' with name="credit-card" size=18 %}
+      </div>
+      <div style="font-size: var(--text-sm); font-weight: 700; color: var(--ink-900);">Record Payment</div>
+      <div style="font-size: var(--text-xs); color: var(--ink-500); margin-top: 2px;">Unpaid students</div>
+    </a>
+
+    <a href="{% url 'expenditure_list' %}" class="card card-hover" style="text-decoration: none; padding: var(--s-4);">
+      <div class="stat-icon" style="margin-bottom: var(--s-3); background: rgba(220, 38, 38, 0.1); color: #DC2626;">
+        {% include 'partials/icons.html' with name="trending-down" size=18 %}
+      </div>
+      <div style="font-size: var(--text-sm); font-weight: 700; color: var(--ink-900);">Expenditures</div>
+      <div style="font-size: var(--text-xs); color: var(--ink-500); margin-top: 2px;">Track expenses</div>
+    </a>
+
+    <a href="{% url 'accountant_students' %}" class="card card-hover" style="text-decoration: none; padding: var(--s-4);">
+      <div class="stat-icon" style="margin-bottom: var(--s-3); background: rgba(124, 58, 237, 0.1); color: #7C3AED;">
+        {% include 'partials/icons.html' with name="graduation-cap" size=18 %}
+      </div>
+      <div style="font-size: var(--text-sm); font-weight: 700; color: var(--ink-900);">Students & Fees</div>
+      <div style="font-size: var(--text-xs); color: var(--ink-500); margin-top: 2px;">View balances</div>
+    </a>
+
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+(function() {
+  const canvas = document.getElementById('collectionsChart');
+  if (!canvas) return;
+
+  const labels = {{ chart_labels|safe }};
+  const values = {{ chart_values|safe }};
+
+  new Chart(canvas, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Collections',
+        data: values,
+        borderColor: '#0A8A5F',
+        backgroundColor: 'rgba(10, 138, 95, 0.08)',
+        borderWidth: 2.5,
+        fill: true,
+        tension: 0.4,
+        pointBackgroundColor: '#0A8A5F',
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2,
+        pointRadius: 4,
+        pointHoverRadius: 6,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#0F172A',
+          titleFont: { family: 'Inter', size: 12, weight: '600' },
+          bodyFont: { family: 'Inter', size: 12 },
+          padding: 12,
+          cornerRadius: 8,
+          displayColors: false,
+          callbacks: {
+            label: function(ctx) {
+              return 'KES ' + Number(ctx.parsed.y).toLocaleString();
+            }
+          }
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          grid: { color: '#F1F5F9', drawBorder: false },
+          ticks: {
+            font: { family: 'Inter', size: 11 },
+            color: '#94A3B8',
+            callback: function(v) {
+              if (v >= 1000000) return (v/1000000).toFixed(1) + 'M';
+              if (v >= 1000)    return (v/1000).toFixed(0) + 'K';
+              return v;
+            }
+          }
+        },
+        x: {
+          grid: { display: false },
+          ticks: { font: { family: 'Inter', size: 11 }, color: '#94A3B8' }
+        }
+      }
+    }
+  });
+})();
+</script>
+{% endblock %}

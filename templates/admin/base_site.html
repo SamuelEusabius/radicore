@@ -1,0 +1,137 @@
+{% extends "admin/base.html" %}
+{% load i18n static %}
+
+{% block title %}{{ title }} | School MS Admin{% endblock %}
+
+{% block extrastyle %}
+  {{ block.super }}
+  <link rel="stylesheet" href="{% static 'admin/css/custom_admin.css' %}">
+  <link rel="stylesheet" href="{% static 'css/loader.css' %}">
+  <script src="https://cdn.tailwindcss.com"></script>
+{% endblock %}
+
+{% block bodyclass %}school-ms-admin{% endblock %}
+
+{% block header %}{% endblock %}
+{% block nav-global %}{% endblock %}
+{% block breadcrumbs %}{% endblock %}
+{% block content_title %}{% endblock %}
+{% block content_subtitle %}{% endblock %}
+
+{% block content %}
+
+<!-- ==================== PAGE LOADER ==================== -->
+<div id="page-loader">
+  <div class="loader-spinner"></div>
+  <div class="loader-brand">
+    <div class="loader-logo">SM</div>
+    <div>
+      <div class="loader-text">School MS</div>
+      <div class="loader-subtext">Loading admin...</div>
+    </div>
+  </div>
+  <div class="loader-progress">
+    <div class="loader-progress-bar"></div>
+  </div>
+</div>
+
+<!-- ==================== MAIN LAYOUT ==================== -->
+<div class="admin-layout">
+
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="admin-sidebar">
+
+    <!-- Brand -->
+    <div class="sidebar-brand">
+      <div class="sidebar-logo">SM</div>
+      <div>
+        <div class="sidebar-brand-title">School MS</div>
+        <div class="sidebar-brand-sub">Admin Panel</div>
+      </div>
+    </div>
+
+    <!-- Nav -->
+    <nav class="sidebar-nav">
+
+      <div class="sidebar-section">Overview</div>
+      <a href="/dashboard/">🏠 <span>Back to Dashboard</span></a>
+      <a href="/admin/">⚙️ <span>Admin Home</span></a>
+
+      <div class="sidebar-section">Schools</div>
+      <a href="/admin/schools/school/">🏫 <span>Schools</span></a>
+      <a href="/admin/schools/subscriptionplan/">💳 <span>Subscription Plans</span></a>
+      <a href="/admin/schools/boardmember/">👔 <span>Board Members</span></a>
+
+      <div class="sidebar-section">People</div>
+      <a href="/admin/accounts/user/">👥 <span>User Accounts</span></a>
+      <a href="/admin/students/student/">👨‍🎓 <span>Students</span></a>
+      <a href="/admin/students/cocurricularactivity/">🎯 <span>Co-Curricular</span></a>
+      <a href="/admin/teachers/teacher/">👨‍🏫 <span>Teachers</span></a>
+      <a href="/admin/parents/parent/">👨‍👩‍👧 <span>Parents</span></a>
+      <a href="/admin/staff/nonteachingstaff/">🧑‍🔧 <span>Non-Teaching Staff</span></a>
+
+      <div class="sidebar-section">Academics</div>
+      <a href="/admin/academics/classlevel/">🎓 <span>Classes</span></a>
+      <a href="/admin/academics/subject/">📚 <span>Subjects</span></a>
+      <a href="/admin/academics/timetable/">🗓️ <span>Timetables</span></a>
+      <a href="/admin/grades/exam/">📝 <span>Exams</span></a>
+      <a href="/admin/grades/grade/">💯 <span>Grades</span></a>
+      <a href="/admin/attendance/attendance/">📋 <span>Attendance</span></a>
+
+      <div class="sidebar-section">Finance</div>
+      <a href="/admin/finance/feestructure/">💵 <span>Fee Structures</span></a>
+      <a href="/admin/finance/invoice/">📄 <span>Invoices</span></a>
+      <a href="/admin/finance/payment/">💰 <span>Payments</span></a>
+
+      <div class="sidebar-section">System</div>
+      <a href="/admin/auth/group/">🔐 <span>Groups & Permissions</span></a>
+
+    </nav>
+
+    <!-- Footer -->
+    <div class="sidebar-footer">
+      <div class="sidebar-user-label">Logged in as</div>
+      <div class="sidebar-user-email">{{ request.user.email|truncatechars:20 }}</div>
+      <a href="/accounts/logout/" class="sidebar-logout">Logout</a>
+    </div>
+
+  </aside>
+
+  <!-- ============ MAIN CONTENT ============ -->
+  <main class="admin-main">
+
+    <!-- Top bar -->
+    <header class="admin-topbar">
+      <div>
+        <h2 class="admin-topbar-title">🏫 School MS — Administration</h2>
+        <p class="admin-topbar-sub">
+          {% block header_sub %}Manage every school record from here{% endblock %}
+        </p>
+      </div>
+      <div class="admin-topbar-right">
+        <a href="/dashboard/" class="admin-topbar-link">← Dashboard</a>
+        <div class="admin-avatar">{{ request.user.email|first|upper }}</div>
+      </div>
+    </header>
+
+    <!-- Messages -->
+    {% if messages %}
+    <div class="admin-messages">
+      {% for m in messages %}
+        <div class="admin-message {% if m.tags == 'error' %}error{% else %}success{% endif %}">{{ m }}</div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Page content -->
+    <div class="admin-content">
+      {% block admin_content %}{% endblock %}
+    </div>
+
+  </main>
+
+</div>
+
+<script src="{% static 'js/loader.js' %}"></script>
+
+{% endblock %}

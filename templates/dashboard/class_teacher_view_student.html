@@ -1,0 +1,259 @@
+{% extends 'base.html' %}
+{% block title %}{{ student.full_name }}{% endblock %}
+{% block header_title %}Student Details{% endblock %}
+{% block header_sub %}{{ cls.name }} — {{ student.admission_number }}{% endblock %}
+
+{% block content %}
+
+<!-- ============ BACK LINK ============ -->
+<a href="{% url 'class_teacher_dashboard' %}"
+   class="inline-flex items-center gap-1 text-sm text-teal-700 hover:underline mb-4">
+  ← Back to My Class
+</a>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+  <!-- ============ LEFT COLUMN — STUDENT CARD ============ -->
+  <div class="lg:col-span-1 space-y-6">
+
+    <!-- Student bio card -->
+    <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-6 text-center">
+
+      {% if student.photo %}
+        <img src="{{ student.photo.url }}"
+             class="w-24 h-24 rounded-full object-cover mx-auto mb-4">
+      {% else %}
+        <div class="w-24 h-24 rounded-full bg-teal-100 text-teal-700 flex items-center justify-center text-2xl font-bold mx-auto mb-4">
+          {{ student.first_name|first|upper }}{{ student.last_name|first|upper }}
+        </div>
+      {% endif %}
+
+      <h2 class="text-lg font-bold text-gray-900">{{ student.full_name }}</h2>
+      <p class="text-xs text-gray-500 mt-1">{{ student.admission_number }}</p>
+
+      {% if student.is_active %}
+        <span class="inline-block mt-2 px-2 py-0.5 text-xs font-semibold rounded bg-green-100 text-green-700">
+          Active
+        </span>
+      {% else %}
+        <span class="inline-block mt-2 px-2 py-0.5 text-xs font-semibold rounded bg-gray-100 text-gray-700">
+          Inactive
+        </span>
+      {% endif %}
+
+      <div class="mt-6 pt-6 border-t border-gray-100 text-left space-y-3 text-sm">
+        <div>
+          <div class="text-xs text-gray-500 uppercase tracking-wide">Class</div>
+          <div class="text-gray-800 font-medium">{{ student.class_level|default:"—" }}</div>
+        </div>
+        <div>
+          <div class="text-xs text-gray-500 uppercase tracking-wide">Gender</div>
+          <div class="text-gray-800">{{ student.get_gender_display|default:"—" }}</div>
+        </div>
+        <div>
+          <div class="text-xs text-gray-500 uppercase tracking-wide">UPI / NEMIS</div>
+          <div class="text-gray-800 tabular-nums">{{ student.upi|default:"—" }}</div>
+        </div>
+        <div>
+          <div class="text-xs text-gray-500 uppercase tracking-wide">Date of Birth</div>
+          <div class="text-gray-800">{{ student.date_of_birth|date:"d M Y"|default:"—" }}</div>
+        </div>
+        <div>
+          <div class="text-xs text-gray-500 uppercase tracking-wide">Admission Date</div>
+          <div class="text-gray-800">{{ student.admission_date|date:"d M Y"|default:"—" }}</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Fees snapshot -->
+    <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+      <h3 class="text-sm font-semibold text-gray-800 mb-3">Fees Snapshot</h3>
+      <div class="space-y-2 text-sm">
+        <div class="flex justify-between">
+          <span class="text-gray-500">Invoiced</span>
+          <span class="font-semibold tabular-nums">KES {{ total_due|floatformat:0 }}</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-gray-500">Paid</span>
+          <span class="font-semibold text-green-600 tabular-nums">KES {{ total_paid|floatformat:0 }}</span>
+        </div>
+        <div class="flex justify-between border-t border-gray-100 pt-2">
+          <span class="text-gray-700 font-semibold">Balance</span>
+          <span class="font-bold tabular-nums {% if outstanding > 0 %}text-red-600{% else %}text-green-600{% endif %}">
+            KES {{ outstanding|floatformat:0 }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick links -->
+    <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+      <h3 class="text-sm font-semibold text-gray-800 mb-3">Quick Links</h3>
+      <div class="space-y-2">
+        <a href="{% url 'class_teacher_attendance' %}?date={{ today|date:'Y-m-d' }}"
+           class="block text-sm text-teal-700 hover:text-teal-800 hover:underline">
+          → Mark Attendance
+        </a>
+        <a href="{% url 'class_teacher_grades' %}"
+           class="block text-sm text-teal-700 hover:text-teal-800 hover:underline">
+          → Enter Grades
+        </a>
+        <a href="{% url 'class_teacher_rankings' %}"
+           class="block text-sm text-teal-700 hover:text-teal-800 hover:underline">
+          → View Class Rankings
+        </a>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ============ RIGHT COLUMN — DETAILS ============ -->
+  <div class="lg:col-span-2 space-y-6">
+
+    <!-- Attendance summary -->
+    <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-sm font-semibold text-gray-800">Attendance — Last 30 Days</h3>
+        <span class="text-xs text-gray-500">
+          {{ attendance_days }} day{{ attendance_days|pluralize }} recorded
+        </span>
+      </div>
+      <div class="grid grid-cols-3 gap-4 text-center">
+        <div class="p-4 bg-green-50 rounded-lg">
+          <div class="text-2xl font-bold text-green-600 tabular-nums">{{ present }}</div>
+          <div class="text-xs text-green-700 font-medium mt-1">Present</div>
+        </div>
+        <div class="p-4 bg-red-50 rounded-lg">
+          <div class="text-2xl font-bold text-red-600 tabular-nums">{{ absent }}</div>
+          <div class="text-xs text-red-700 font-medium mt-1">Absent</div>
+        </div>
+        <div class="p-4 bg-yellow-50 rounded-lg">
+          <div class="text-2xl font-bold text-yellow-600 tabular-nums">{{ late }}</div>
+          <div class="text-xs text-yellow-700 font-medium mt-1">Late</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Parents / Guardians -->
+    <div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+      <div class="p-5 border-b border-gray-100">
+        <h3 class="text-sm font-semibold text-gray-800">
+          Parents / Guardians ({{ parents|length }})
+        </h3>
+        <p class="text-xs text-gray-500 mt-0.5">
+          Contact information for this student
+        </p>
+      </div>
+      <div class="divide-y divide-gray-50">
+        {% for p in parents %}
+        <div class="p-5 flex items-center gap-4">
+          <div class="w-10 h-10 rounded-full bg-teal-100 text-teal-700 flex items-center justify-center text-xs font-bold flex-shrink-0">
+            {{ p.first_name|first|upper }}{{ p.last_name|first|upper }}
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="font-medium text-gray-900">
+              {{ p.first_name }} {{ p.last_name }}
+            </div>
+            <div class="text-xs text-gray-500 truncate">
+              {{ p.get_relationship_display }}
+              {% if p.phone %} · {{ p.phone }}{% endif %}
+              {% if p.user.email %} · {{ p.user.email }}{% endif %}
+            </div>
+          </div>
+          <a href="{% url 'class_teacher_view_parent' p.id %}"
+             class="text-xs px-3 py-1.5 bg-teal-50 hover:bg-teal-100 text-teal-700 rounded transition flex-shrink-0">
+            View Parent
+          </a>
+        </div>
+        {% empty %}
+        <div class="p-8 text-center">
+          <div class="text-3xl mb-2 opacity-30">👤</div>
+          <p class="text-sm text-gray-500">No parents linked to this student.</p>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Recent grades -->
+    <div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+      <div class="p-5 border-b border-gray-100 flex items-center justify-between">
+        <div>
+          <h3 class="text-sm font-semibold text-gray-800">Recent Grades</h3>
+          <p class="text-xs text-gray-500 mt-0.5">Latest 10 grade entries</p>
+        </div>
+        <a href="{% url 'class_teacher_rankings' %}"
+           class="text-xs text-teal-700 hover:underline">
+          View rankings →
+        </a>
+      </div>
+      <div class="divide-y divide-gray-50">
+        {% for g in recent_grades %}
+        <div class="px-5 py-3 flex items-center justify-between">
+          <div class="min-w-0 flex-1">
+            <div class="text-sm font-medium text-gray-900">{{ g.subject.name }}</div>
+            <div class="text-xs text-gray-500">
+              {{ g.exam.name }}
+              {% if g.exam.term %} · {{ g.exam.term }}{% endif %}
+              {% if g.exam.year %} {{ g.exam.year }}{% endif %}
+            </div>
+          </div>
+          <div class="text-right ml-3 flex-shrink-0">
+            <div class="font-bold tabular-nums
+              {% if g.percentage >= 80 %}text-green-600
+              {% elif g.percentage >= 65 %}text-blue-600
+              {% elif g.percentage >= 50 %}text-yellow-600
+              {% else %}text-red-600{% endif %}">
+              {{ g.percentage|floatformat:0 }}%
+            </div>
+            <div class="text-xs text-gray-400 tabular-nums">
+              {{ g.marks|floatformat:0 }}/{{ g.out_of|floatformat:0 }}
+            </div>
+          </div>
+        </div>
+        {% empty %}
+        <div class="p-8 text-center">
+          <div class="text-3xl mb-2 opacity-30">📊</div>
+          <p class="text-sm text-gray-500">No grades recorded yet.</p>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Co-curricular activities -->
+    {% if activities %}
+    <div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+      <div class="p-5 border-b border-gray-100">
+        <h3 class="text-sm font-semibold text-gray-800">
+          Co-Curricular Activities ({{ activities|length }})
+        </h3>
+      </div>
+      <div class="divide-y divide-gray-50">
+        {% for a in activities %}
+        <div class="px-5 py-3 flex items-center gap-3">
+          <div class="w-8 h-8 rounded-full bg-purple-100 text-purple-700 flex items-center justify-center flex-shrink-0">
+            {% if a.category == 'sports' %}⚽
+            {% elif a.category == 'clubs' %}🎭
+            {% elif a.category == 'music' %}🎵
+            {% elif a.category == 'leadership' %}👑
+            {% elif a.category == 'arts' %}🎨
+            {% else %}⭐{% endif %}
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="text-sm font-medium text-gray-900">{{ a.name }}</div>
+            <div class="text-xs text-gray-500">
+              {{ a.get_category_display }}
+              {% if a.role %} · {{ a.role }}{% endif %}
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+
+</div>
+
+{% endblock %}

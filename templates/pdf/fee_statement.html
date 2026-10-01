@@ -1,0 +1,371 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  @page { size: A5 portrait; margin: 8mm; }
+  * { box-sizing: border-box; }
+  body { font-family: 'DejaVu Sans', Arial, sans-serif; color: #1a1a1a; font-size: 9pt; margin: 0; line-height: 1.4; }
+
+  /* ---------- HEADER ---------- */
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    border-bottom: 3px solid #00695c;
+    padding-bottom: 8px;
+    margin-bottom: 10px;
+  }
+  .header-left h1 {
+    color: #00695c;
+    font-size: 14pt;
+    margin: 0 0 2px 0;
+    font-weight: 700;
+  }
+  .header-left p {
+    margin: 1px 0;
+    color: #6b7280;
+    font-size: 7.5pt;
+  }
+  .header-right {
+    text-align: right;
+  }
+  .header-right .badge {
+    background: #1a2332;
+    color: #fff;
+    padding: 4px 10px;
+    font-weight: 700;
+    font-size: 8pt;
+    letter-spacing: 0.05em;
+    display: inline-block;
+    margin-bottom: 4px;
+  }
+  .header-right p {
+    margin: 2px 0;
+    font-size: 7.5pt;
+    color: #6b7280;
+  }
+
+  /* ---------- SECTION TITLE ---------- */
+  h2 {
+    color: #00695c;
+    font-size: 10pt;
+    margin: 10px 0 5px 0;
+    border-bottom: 1px solid #ccfbf1;
+    padding-bottom: 3px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 700;
+  }
+
+  /* ---------- STUDENT INFO TABLE ---------- */
+  .info-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 8px;
+  }
+  .info-table td {
+    padding: 4px 6px;
+    border-bottom: 1px solid #e5e7eb;
+    font-size: 8.5pt;
+  }
+  .info-table .label {
+    color: #6b7280;
+    font-size: 7.5pt;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    width: 35%;
+  }
+
+  /* ---------- SUMMARY BOXES ---------- */
+  .summary-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 4px 0;
+    margin-bottom: 10px;
+  }
+  .summary-box {
+    padding: 8px 6px;
+    text-align: center;
+    width: 33.33%;
+  }
+  .summary-box .label {
+    font-size: 7pt;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 3px;
+    font-weight: 600;
+  }
+  .summary-box .value {
+    font-size: 13pt;
+    font-weight: 700;
+  }
+  .box-invoiced { background: #f0fdfa; border: 1.5px solid #14b8a6; }
+  .box-invoiced .label { color: #0f766e; }
+  .box-invoiced .value { color: #00695c; }
+
+  .box-paid { background: #ecfdf5; border: 1.5px solid #10b981; }
+  .box-paid .label { color: #047857; }
+  .box-paid .value { color: #059669; }
+
+  .box-balance { background: #fef2f2; border: 1.5px solid #ef4444; }
+  .box-balance .label { color: #991b1b; }
+  .box-balance .value { color: #dc2626; }
+
+  /* ---------- DATA TABLES ---------- */
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    border: 1px solid #e5e7eb;
+    margin-bottom: 10px;
+  }
+  .data-table thead {
+    background: #00695c;
+    color: #fff;
+  }
+  .data-table th {
+    padding: 5px 6px;
+    text-align: left;
+    font-size: 7pt;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 700;
+  }
+  .data-table td {
+    padding: 5px 6px;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 8pt;
+  }
+  .data-table tr:last-child td { border-bottom: none; }
+  .data-table .right { text-align: right; }
+  .data-table .center { text-align: center; }
+  .data-table tfoot td {
+    background: #f0fdfa;
+    font-weight: 700;
+    font-size: 8pt;
+    border-top: 2px solid #00695c;
+  }
+
+  /* ---------- STATUS BADGES ---------- */
+  .status {
+    display: inline-block;
+    padding: 2px 6px;
+    font-size: 7pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  .status-paid { background: #d1fae5; color: #065f46; }
+  .status-unpaid { background: #f1f5f9; color: #475569; }
+  .status-partial { background: #fef3c7; color: #92400e; }
+  .status-overdue { background: #fee2e2; color: #991b1b; }
+
+  /* ---------- ALERTS ---------- */
+  .alert {
+    padding: 6px 10px;
+    margin-bottom: 10px;
+    font-size: 8pt;
+    border-left: 3px solid;
+  }
+  .alert-outstanding {
+    background: #fef3c7;
+    border-color: #f59e0b;
+    color: #92400e;
+  }
+  .alert-cleared {
+    background: #d1fae5;
+    border-color: #059669;
+    color: #065f46;
+  }
+
+  /* ---------- SIGNATURES ---------- */
+  .signatures {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+  }
+  .signature-line {
+    border-top: 1.5px dashed #cbd5e1;
+    padding-top: 4px;
+    width: 45%;
+    text-align: center;
+    color: #6b7280;
+    font-size: 7.5pt;
+  }
+
+  /* ---------- FOOTER ---------- */
+  .footer {
+    margin-top: 14px;
+    padding-top: 6px;
+    border-top: 1px solid #e5e7eb;
+    text-align: center;
+    color: #6b7280;
+    font-size: 7pt;
+  }
+  .footer strong { color: #00695c; }
+
+  .nowrap { white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<!-- ============ HEADER ============ -->
+<div class="header">
+  <div class="header-left">
+    <h1>{{ school.name }}</h1>
+    {% if school.motto %}<p><em>{{ school.motto }}</em></p>{% endif %}
+    {% if school.physical_address %}<p>{{ school.physical_address }}</p>{% endif %}
+    {% if school.phone %}<p>Tel: {{ school.phone }}</p>{% endif %}
+    {% if school.email %}<p>Email: {{ school.email }}</p>{% endif %}
+    {% if school.nemis_code %}<p>NEMIS: {{ school.nemis_code }}</p>{% endif %}
+  </div>
+  <div class="header-right">
+    <div class="badge">FEE STATEMENT</div>
+    <p><strong>Generated:</strong> {% now "d M Y H:i" %}</p>
+  </div>
+</div>
+
+<!-- ============ STUDENT INFO ============ -->
+<h2>Student Information</h2>
+<table class="info-table">
+  <tr>
+    <td class="label">Student Name</td>
+    <td><strong>{{ student.full_name }}</strong></td>
+  </tr>
+  <tr>
+    <td class="label">Admission Number</td>
+    <td>{{ student.admission_number }}</td>
+  </tr>
+  {% if student.upi %}
+  <tr>
+    <td class="label">UPI (NEMIS)</td>
+    <td>{{ student.upi }}</td>
+  </tr>
+  {% endif %}
+  <tr>
+    <td class="label">Level / Class</td>
+    <td>{{ student.get_cbc_level_display|default:"—" }}{% if student.class_level %} · {{ student.class_level }}{% endif %}</td>
+  </tr>
+</table>
+
+<!-- ============ FINANCIAL SUMMARY ============ -->
+<h2>Financial Summary</h2>
+<table class="summary-table">
+  <tr>
+    <td class="summary-box box-invoiced">
+      <div class="label">Total Invoiced</div>
+      <div class="value">KES {{ total_invoiced|floatformat:0 }}</div>
+    </td>
+    <td class="summary-box box-paid">
+      <div class="label">Total Paid</div>
+      <div class="value">KES {{ total_paid|floatformat:0 }}</div>
+    </td>
+    <td class="summary-box box-balance">
+      <div class="label">Balance</div>
+      <div class="value">KES {{ total_balance|floatformat:0 }}</div>
+    </td>
+  </tr>
+</table>
+
+{% if total_balance > 0 %}
+<div class="alert alert-outstanding">
+  <strong>Outstanding Balance:</strong> KES {{ total_balance|floatformat:2 }} —
+  {{ outstanding_invoices|length }} unpaid invoice{{ outstanding_invoices|length|pluralize }}.
+</div>
+{% else %}
+<div class="alert alert-cleared">
+  <strong>Account Fully Cleared</strong> — Thank you!
+</div>
+{% endif %}
+
+<!-- ============ INVOICES ============ -->
+<h2>Invoices Breakdown</h2>
+{% if invoices %}
+<table class="data-table">
+  <thead>
+    <tr>
+      <th>Fee Item</th>
+      <th class="nowrap">Due Date</th>
+      <th class="right">Invoiced</th>
+      <th class="right">Paid</th>
+      <th class="right">Balance</th>
+      <th class="center">Status</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for inv in invoices %}
+    <tr>
+      <td>{{ inv.fee_structure.name|truncatechars:24 }}</td>
+      <td class="nowrap">{{ inv.due_date|date:"d M Y" }}</td>
+      <td class="right">KES {{ inv.amount_due|floatformat:0 }}</td>
+      <td class="right" style="color: #059669;">KES {{ inv.amount_paid|floatformat:0 }}</td>
+      <td class="right" style="font-weight: 700; {% if inv.balance > 0 %}color: #dc2626;{% endif %}">
+        KES {{ inv.balance|floatformat:0 }}
+      </td>
+      <td class="center">
+        <span class="status status-{{ inv.status }}">{{ inv.get_status_display }}</span>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+  <tfoot>
+    <tr>
+      <td colspan="2" class="right">TOTALS</td>
+      <td class="right">KES {{ total_invoiced|floatformat:0 }}</td>
+      <td class="right" style="color: #059669;">KES {{ total_paid|floatformat:0 }}</td>
+      <td class="right" style="color: #dc2626;">KES {{ total_balance|floatformat:0 }}</td>
+      <td></td>
+    </tr>
+  </tfoot>
+</table>
+{% else %}
+<p style="color: #6b7280; text-align: center; padding: 10px; font-size: 8pt;">No invoices on record.</p>
+{% endif %}
+
+<!-- ============ PAYMENT HISTORY ============ -->
+<h2>Payment History</h2>
+{% if payments %}
+<table class="data-table">
+  <thead>
+    <tr>
+      <th class="nowrap">Date</th>
+      <th>Reference</th>
+      <th>Method</th>
+      <th class="right">Amount</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for p in payments %}
+    <tr>
+      <td class="nowrap">{{ p.paid_at|date:"d M Y" }}</td>
+      <td style="font-family: 'DejaVu Sans Mono', monospace; font-size: 7.5pt;">{{ p.reference }}</td>
+      <td>{{ p.get_method_display }}</td>
+      <td class="right" style="color: #059669; font-weight: 700;">KES {{ p.amount_kes|floatformat:2 }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+  <tfoot>
+    <tr>
+      <td colspan="3" class="right">TOTAL PAID</td>
+      <td class="right" style="color: #059669;">KES {{ total_paid|floatformat:2 }}</td>
+    </tr>
+  </tfoot>
+</table>
+{% else %}
+<p style="color: #6b7280; text-align: center; padding: 10px; font-size: 8pt;">No payments recorded yet.</p>
+{% endif %}
+
+<!-- ============ SIGNATURES ============ -->
+<div class="signatures">
+  <div class="signature-line">Bursar / Accountant</div>
+  <div class="signature-line">Parent / Guardian</div>
+</div>
+
+<!-- ============ FOOTER ============ -->
+<div class="footer">
+  <p style="margin: 2px 0;"><strong>{{ school.name }}</strong> · Fee Statement · Generated by {% if generated_by %}{{ generated_by.get_full_name|default:generated_by.email }}{% else %}School MS{% endif %}</p>
+  <p style="margin: 2px 0;">This is a computer-generated statement. For questions, contact the school office.</p>
+</div>
+
+</body>
+</html>

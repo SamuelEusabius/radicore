@@ -1,0 +1,88 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls %}
+
+{% block header_sub %}{{ cl.opts.verbose_name_plural|capfirst }}{% endblock %}
+
+{% block admin_content %}
+
+<div id="content-main" class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+
+  <!-- HEADER: Title + Add Button -->
+  <div class="flex justify-between items-center mb-6 flex-wrap gap-3">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-800">
+        {{ cl.opts.verbose_name_plural|capfirst }}
+      </h1>
+      <p class="text-sm text-gray-500 mt-1">
+        {{ cl.result_count }} record{{ cl.result_count|pluralize }}
+      </p>
+    </div>
+    <div>
+      {% if has_add_permission %}
+        <a href="{% url cl.opts|admin_urlname:'add' %}"
+           class="bg-teal-600 hover:bg-teal-700 text-white px-5 py-2.5 rounded-lg text-sm font-semibold inline-block whitespace-nowrap">
+          ＋ Add {{ cl.opts.verbose_name|capfirst }}
+        </a>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- SEARCH -->
+  {% if cl.search_fields %}
+  <form method="get" class="mb-4 flex gap-2">
+    <input type="text" name="{{ search_var }}" value="{{ cl.query }}"
+           placeholder="Search..."
+           class="flex-1 border border-gray-300 p-2 rounded-lg text-sm">
+    <button type="submit" class="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg text-sm">
+      🔍 Search
+    </button>
+  </form>
+  {% endif %}
+
+  <!-- MAIN FORM: Action + Table -->
+  <form id="changelist-form" method="post" novalidate>
+    {% csrf_token %}
+
+    {% if action_form and actions_on_top and cl.show_admin_actions %}
+      {% include "admin/actions.html" %}
+    {% endif %}
+
+    <!-- RESULTS TABLE -->
+    {% block result_list %}
+      {% if cl.result_count %}
+        {% include "admin/change_list_results.html" %}
+      {% else %}
+        <p class="text-gray-500 text-center py-8">
+          No {{ cl.opts.verbose_name_plural }} found.
+          {% if has_add_permission %}
+            <a href="{% url cl.opts|admin_urlname:'add' %}" class="text-teal-600 underline ml-1">
+              Add one now →
+            </a>
+          {% endif %}
+        </p>
+      {% endif %}
+    {% endblock %}
+
+    <!-- PAGINATION -->
+    {% block pagination %}
+      {% if cl.result_count and cl.paginator.num_pages > 1 %}
+      <div class="mt-6 flex justify-center gap-2">
+        {% for p in cl.paginator.page_range %}
+          {% if p == cl.page_num %}
+            <span class="bg-teal-600 text-white px-4 py-2 rounded">{{ p }}</span>
+          {% else %}
+            <a href="?p={{ p }}" class="border border-gray-300 hover:bg-gray-50 px-4 py-2 rounded">{{ p }}</a>
+          {% endif %}
+        {% endfor %}
+      </div>
+      {% endif %}
+    {% endblock %}
+
+    {% if action_form and actions_on_bottom and cl.show_admin_actions %}
+      {% include "admin/actions.html" %}
+    {% endif %}
+  </form>
+
+</div>
+
+{% endblock %}

@@ -1,0 +1,43 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block header_sub %}Overview of all admin modules{% endblock %}
+
+{% block admin_content %}
+
+<h2 class="text-2xl font-bold text-gray-800 mb-6">📊 Modules Overview</h2>
+
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+
+  {% for app in app_list %}
+  <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
+
+    <div class="bg-teal-600 text-white px-5 py-3">
+      <h3 class="font-bold text-sm uppercase tracking-wider">
+        {{ app.name }}
+      </h3>
+    </div>
+
+    <ul class="divide-y flex-1">
+      {% for model in app.models %}
+      <li class="flex items-center justify-between px-5 py-3 hover:bg-teal-50 transition">
+        <a href="{{ model.admin_url }}"
+           class="text-sm font-medium text-gray-800 hover:text-teal-700 flex-1">
+          {{ model.name }}
+        </a>
+        {% if model.add_url %}
+          <a href="{{ model.add_url }}"
+             class="ml-2 text-xs font-semibold text-teal-600 hover:text-teal-800 border border-teal-200 hover:border-teal-400 hover:bg-teal-50 px-2.5 py-1 rounded whitespace-nowrap">
+            ＋ Add
+          </a>
+        {% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+
+  </div>
+  {% endfor %}
+
+</div>
+
+{% endblock %}

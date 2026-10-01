@@ -1,0 +1,280 @@
+{% extends 'base.html' %}
+{% block title %}My Class{% endblock %}
+{% block header_title %}Class Teacher Dashboard{% endblock %}
+{% block header_sub %}
+  {% if cls %}{{ cls.name }} · {{ teacher.user.get_full_name|default:teacher.user.email }}{% else %}No class assigned{% endif %}
+{% endblock %}
+
+{% block content %}
+
+{% if no_class %}
+
+<!-- ============ NO CLASS ASSIGNED ============ -->
+<div class="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center max-w-2xl mx-auto">
+  <div class="text-6xl mb-4">🎓</div>
+  <h2 class="text-xl font-bold text-gray-800 mb-3">Not assigned as a class teacher</h2>
+  <p class="text-gray-500 mb-6">
+    You're currently not assigned as the class teacher of any class.
+    Contact the school administrator to be assigned.
+  </p>
+  <a href="{% url 'dashboard_home' %}"
+     class="inline-block bg-teal-600 hover:bg-teal-700 text-white font-medium px-6 py-3 rounded-lg">
+    Back to Dashboard
+  </a>
+</div>
+
+{% else %}
+
+<!-- ============ KPI ROW ============ -->
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+
+  <div class="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
+    <div class="flex items-center justify-between mb-2">
+      <span class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Students</span>
+      <div class="w-8 h-8 rounded-lg bg-teal-50 flex items-center justify-center">
+        {% include 'partials/icons.html' with name="users" size=16 %}
+      </div>
+    </div>
+    <div class="text-2xl font-bold text-gray-900 tabular-nums">{{ total_students }}</div>
+    <div class="text-xs text-gray-500 mt-1">{{ parent_count }} parents linked</div>
+  </div>
+
+  <div class="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
+    <div class="flex items-center justify-between mb-2">
+      <span class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Present Today</span>
+      <div class="w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center">
+        {% include 'partials/icons.html' with name="check" size=16 %}
+      </div>
+    </div>
+    <div class="text-2xl font-bold text-green-600 tabular-nums">{{ present_today }}</div>
+    <div class="text-xs text-gray-500 mt-1">
+      {{ absent_today }} absent · {{ not_marked }} not marked
+    </div>
+  </div>
+
+  <div class="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
+    <div class="flex items-center justify-between mb-2">
+      <span class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Class Avg</span>
+      <div class="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
+        {% include 'partials/icons.html' with name="bar-chart" size=16 %}
+      </div>
+    </div>
+    <div class="text-2xl font-bold text-gray-900 tabular-nums">{{ class_average }}%</div>
+    <div class="text-xs text-gray-500 mt-1">All exams so far</div>
+  </div>
+
+  <div class="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
+    <div class="flex items-center justify-between mb-2">
+      <span class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Fees Owed</span>
+      <div class="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center">
+        {% include 'partials/icons.html' with name="alert-triangle" size=16 %}
+      </div>
+    </div>
+    <div class="text-2xl font-bold text-red-600 tabular-nums">
+      KES {{ outstanding|floatformat:0 }}
+    </div>
+    <div class="text-xs text-gray-500 mt-1">of KES {{ total_due|floatformat:0 }} invoiced</div>
+  </div>
+
+</div>
+
+<!-- ============ QUICK ACTIONS ============ -->
+<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
+
+  <a href="{% url 'class_teacher_attendance' %}"
+     class="group bg-white p-4 rounded-xl border border-gray-100 shadow-sm hover:border-teal-500 hover:shadow-md transition">
+    <div class="w-10 h-10 rounded-lg bg-teal-50 flex items-center justify-center mb-3 group-hover:bg-teal-100 transition">
+      {% include 'partials/icons.html' with name="clipboard" size=18 %}
+    </div>
+    <div class="text-sm font-semibold text-gray-900">Attendance</div>
+    <div class="text-xs text-gray-500 mt-0.5">Mark today</div>
+  </a>
+
+  <a href="{% url 'class_teacher_grades' %}"
+     class="group bg-white p-4 rounded-xl border border-gray-100 shadow-sm hover:border-teal-500 hover:shadow-md transition">
+    <div class="w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center mb-3 group-hover:bg-purple-100 transition">
+      {% include 'partials/icons.html' with name="edit" size=18 %}
+    </div>
+    <div class="text-sm font-semibold text-gray-900">Grades</div>
+    <div class="text-xs text-gray-500 mt-0.5">Enter marks</div>
+  </a>
+
+  <a href="{% url 'class_teacher_rankings' %}"
+     class="group bg-white p-4 rounded-xl border border-gray-100 shadow-sm hover:border-teal-500 hover:shadow-md transition">
+    <div class="w-10 h-10 rounded-lg bg-yellow-50 flex items-center justify-center mb-3 group-hover:bg-yellow-100 transition">
+      {% include 'partials/icons.html' with name="bar-chart" size=18 %}
+    </div>
+    <div class="text-sm font-semibold text-gray-900">Rankings</div>
+    <div class="text-xs text-gray-500 mt-0.5">Class positions</div>
+  </a>
+
+  <a href="{% url 'class_teacher_results_sheet_pdf' %}"
+     target="_blank"
+     class="group bg-white p-4 rounded-xl border border-gray-100 shadow-sm hover:border-teal-500 hover:shadow-md transition">
+    <div class="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center mb-3 group-hover:bg-blue-100 transition">
+      {% include 'partials/icons.html' with name="file-text" size=18 %}
+    </div>
+    <div class="text-sm font-semibold text-gray-900">Results Sheet</div>
+    <div class="text-xs text-gray-500 mt-0.5">Class PDF</div>
+  </a>
+
+  <a href="{% url 'class_teacher_all_report_cards_merged' %}"
+     target="_blank"
+     class="group bg-white p-4 rounded-xl border border-gray-100 shadow-sm hover:border-teal-500 hover:shadow-md transition">
+    <div class="w-10 h-10 rounded-lg bg-pink-50 flex items-center justify-center mb-3 group-hover:bg-pink-100 transition">
+      {% include 'partials/icons.html' with name="file-text" size=18 %}
+    </div>
+    <div class="text-sm font-semibold text-gray-900">All Reports</div>
+    <div class="text-xs text-gray-500 mt-0.5">Merged PDF</div>
+  </a>
+
+  <a href="{% url 'class_teacher_parents' %}"
+     class="group bg-white p-4 rounded-xl border border-gray-100 shadow-sm hover:border-teal-500 hover:shadow-md transition">
+    <div class="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center mb-3 group-hover:bg-green-100 transition">
+      {% include 'partials/icons.html' with name="users" size=18 %}
+    </div>
+    <div class="text-sm font-semibold text-gray-900">Parents</div>
+    <div class="text-xs text-gray-500 mt-0.5">Contact list</div>
+  </a>
+
+</div>
+
+<!-- ============ CLASS ROSTER ============ -->
+<div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden mb-6">
+
+  <div class="p-5 border-b border-gray-100 flex items-center justify-between flex-wrap gap-3">
+    <div>
+      <h3 class="text-sm font-semibold text-gray-800">Class Roster — {{ cls.name }}</h3>
+      <p class="text-xs text-gray-500 mt-0.5">
+        {{ total_students }} students · {{ marked_today }} marked today · {{ not_marked }} pending
+      </p>
+    </div>
+    <a href="{% url 'class_teacher_attendance' %}"
+       class="text-xs px-3 py-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-md transition">
+      Mark Attendance →
+    </a>
+  </div>
+
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="text-left px-4 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">Student</th>
+          <th class="text-left px-4 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">Adm No</th>
+          <th class="text-left px-4 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">Class</th>
+          <th class="text-center px-4 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">Today</th>
+          <th class="text-right px-4 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">Fees</th>
+          <th class="text-right px-4 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in students %}
+        <tr class="border-t border-gray-50 {% if s.gender == 'F' %}gender-girl{% else %}gender-boy{% endif %}">
+          <td class="px-4 py-3">
+            <div class="flex items-center gap-3">
+              {% if s.photo %}
+                <img src="{{ s.photo.url }}" class="w-9 h-9 rounded-full object-cover flex-shrink-0">
+              {% else %}
+                <div class="w-9 h-9 rounded-full bg-teal-100 text-teal-700 flex items-center justify-center text-xs font-bold flex-shrink-0">
+                  {{ s.first_name|first|upper }}{{ s.last_name|first|upper }}
+                </div>
+              {% endif %}
+              <div class="min-w-0">
+                <div class="font-medium text-gray-900 truncate">{{ s.full_name }}</div>
+                <div class="text-xs text-gray-500 truncate">
+                  UPI: {{ s.upi|default:"—" }}
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="px-4 py-3 text-xs text-gray-700">{{ s.admission_number }}</td>
+          <td class="px-4 py-3 text-xs text-gray-700">{{ s.class_level|default:"—" }}</td>
+          <td class="px-4 py-3 text-center">
+            {% with att=attendance_map|default_if_none:'' %}
+              {% if s.id in attendance_map %}
+                {% with a=attendance_map|default_if_none:'' %}{% endwith %}
+              {% endif %}
+            {% endwith %}
+            {% for sid, a in attendance_map.items %}{% if sid == s.id %}
+              <span class="inline-block px-2 py-0.5 rounded text-xs font-semibold
+                {% if a.status == 'P' %}bg-green-100 text-green-700
+                {% elif a.status == 'A' %}bg-red-100 text-red-700
+                {% elif a.status == 'L' %}bg-yellow-100 text-yellow-700
+                {% else %}bg-gray-100 text-gray-700{% endif %}">
+                {{ a.get_status_display }}
+              </span>
+            {% endif %}{% endfor %}
+          </td>
+          <td class="px-4 py-3 text-right">
+            {% with bal=balance_map|default_if_none:'' %}{% endwith %}
+            {% for sid, b in balance_map.items %}{% if sid == s.id %}
+              <span class="text-xs font-semibold {% if b > 0 %}text-red-600{% else %}text-green-600{% endif %} tabular-nums">
+                {% if b > 0 %}KES {{ b|floatformat:0 }}{% else %}Cleared{% endif %}
+              </span>
+            {% endif %}{% endfor %}
+          </td>
+          <td class="px-4 py-3 text-right">
+            <a href="{% url 'class_teacher_view_student' s.id %}"
+               class="text-xs px-2 py-1 bg-teal-50 hover:bg-teal-100 text-teal-700 rounded transition">
+              View
+            </a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="6" class="p-12 text-center">
+            <div class="text-4xl mb-2 opacity-30">👥</div>
+            <p class="text-sm text-gray-500">No students in this class yet.</p>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<!-- ============ RECENT GRADES ============ -->
+<div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden mb-6">
+  <div class="p-5 border-b border-gray-100">
+    <h3 class="text-sm font-semibold text-gray-800">Recent Grades</h3>
+    <p class="text-xs text-gray-500 mt-0.5">Latest grade entries for your class</p>
+  </div>
+
+  {% if recent_grades %}
+  <div class="divide-y divide-gray-50 max-h-96 overflow-y-auto">
+    {% for g in recent_grades %}
+    <div class="px-5 py-3 flex items-center gap-3 hover:bg-gray-50/50">
+      <div class="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-600 flex-shrink-0">
+        {{ g.student.first_name|first|upper }}{{ g.student.last_name|first|upper }}
+      </div>
+      <div class="flex-1 min-w-0">
+        <div class="text-sm font-medium text-gray-900 truncate">{{ g.student.full_name }}</div>
+        <div class="text-xs text-gray-500 truncate">
+          {{ g.subject.name }} · {{ g.exam.name }}
+        </div>
+      </div>
+      <div class="text-right flex-shrink-0">
+        <div class="text-sm font-bold
+          {% if g.percentage >= 80 %}text-green-600
+          {% elif g.percentage >= 65 %}text-blue-600
+          {% elif g.percentage >= 50 %}text-yellow-600
+          {% else %}text-red-600{% endif %} tabular-nums">
+          {{ g.percentage|floatformat:0 }}%
+        </div>
+        <div class="text-xs text-gray-400">{{ g.marks }}/{{ g.out_of }}</div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="p-12 text-center">
+    <div class="text-4xl mb-2 opacity-30">📊</div>
+    <p class="text-sm text-gray-500">No grades recorded yet.</p>
+  </div>
+  {% endif %}
+</div>
+
+{% endif %}
+
+{% endblock %}

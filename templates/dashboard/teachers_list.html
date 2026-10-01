@@ -1,0 +1,255 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Teachers{% endblock %}
+{% block header_title %}Teachers{% endblock %}
+{% block header_sub %}{{ stats.total }} teacher{{ stats.total|pluralize }} · {{ stats.class_teachers }} class teacher{{ stats.class_teachers|pluralize }}{% endblock %}
+
+{% block content %}
+
+<!-- ============================================ -->
+<!-- STATS CARDS                                  -->
+<!-- ============================================ -->
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Total Teachers</span>
+      <div class="stat-icon" style="background: rgba(10, 138, 95, 0.1); color: var(--primary);">
+        {% include 'partials/icons.html' with name="teacher" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value">{{ stats.total }}</div>
+    <div class="stat-meta">{{ stats.active }} active</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Class Teachers</span>
+      <div class="stat-icon" style="background: rgba(37, 99, 235, 0.1); color: #2563EB;">
+        {% include 'partials/icons.html' with name="award" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: #2563EB;">{{ stats.class_teachers }}</div>
+    <div class="stat-meta">Assigned to a class</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">TSC Employed</span>
+      <div class="stat-icon" style="background: rgba(5, 150, 105, 0.1); color: var(--success);">
+        {% include 'partials/icons.html' with name="check-circle" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--success);">{{ stats.tsc }}</div>
+    <div class="stat-meta">Government teachers</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">BOM / Other</span>
+      <div class="stat-icon" style="background: rgba(217, 119, 6, 0.1); color: var(--warning);">
+        {% include 'partials/icons.html' with name="briefcase" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--warning);">{{ stats.bom }}</div>
+    <div class="stat-meta">Board-employed</div>
+  </div>
+
+</div>
+
+<!-- ============================================ -->
+<!-- FILTERS + ADD BUTTON                         -->
+<!-- ============================================ -->
+<div class="card mb-6">
+  <form method="get" style="display: flex; flex-wrap: wrap; gap: var(--s-3); align-items: flex-end;">
+
+    <div style="flex: 1; min-width: 240px;">
+      <label style="display: block; font-size: var(--text-xs); font-weight: 600; color: var(--ink-600); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: var(--s-1);">
+        Search
+      </label>
+      <input name="q" value="{{ search }}" placeholder="Name, TSC number, email, specialty..." class="input">
+    </div>
+
+    <div style="min-width: 180px;">
+      <label style="display: block; font-size: var(--text-xs); font-weight: 600; color: var(--ink-600); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: var(--s-1);">
+        Employment
+      </label>
+      <select name="employment" class="select">
+        <option value="">All Types</option>
+        {% for value, label in employment_types %}
+          <option value="{{ value }}" {% if emp_filter == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div style="min-width: 160px;">
+      <label style="display: block; font-size: var(--text-xs); font-weight: 600; color: var(--ink-600); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: var(--s-1);">
+        Status
+      </label>
+      <select name="status" class="select">
+        <option value="">All Statuses</option>
+        <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active</option>
+        <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>Inactive</option>
+        <option value="class_teacher" {% if status_filter == 'class_teacher' %}selected{% endif %}>Class Teachers</option>
+      </select>
+    </div>
+
+    <div style="display: flex; gap: var(--s-2); align-items: flex-end;">
+      <button type="submit" class="btn btn-primary">
+        {% include 'partials/icons.html' with name="search" size=15 %}
+        <span>Filter</span>
+      </button>
+      {% if search or emp_filter or status_filter %}
+        <a href="{% url 'teachers_list' %}" class="btn btn-secondary">Clear</a>
+      {% endif %}
+    </div>
+
+  </form>
+
+  <div style="margin-top: var(--s-4); padding-top: var(--s-4); border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--s-3);">
+    <div style="font-size: var(--text-xs); color: var(--ink-500);">
+      {% if total_filtered %}{{ total_filtered }} teacher{{ total_filtered|pluralize }} matched{% endif %}
+    </div>
+    <a href="{% url 'add_teacher' %}" class="btn btn-primary">
+      {% include 'partials/icons.html' with name="plus" size=15 %}
+      <span>Add Teacher</span>
+    </a>
+  </div>
+</div>
+
+<!-- ============================================ -->
+<!-- TEACHERS TABLE                               -->
+<!-- ============================================ -->
+<div class="card" style="padding: 0; overflow: hidden;">
+  {% if teachers %}
+    <div style="overflow-x: auto;">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Teacher</th>
+            <th>Employee No</th>
+            <th>TSC No</th>
+            <th>Specialty</th>
+            <th>Class</th>
+            <th>Status</th>
+            <th style="text-align: right;">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for t in teachers %}
+          <tr>
+            <td>
+              <div style="display: flex; align-items: center; gap: var(--s-3);">
+                {% if t.photo %}
+                  <img src="{{ t.photo.url }}" alt="{{ t.user.get_full_name }}" class="avatar avatar-sm" style="object-fit: cover;">
+                {% else %}
+                  <div class="avatar avatar-sm" style="background: var(--primary);">
+                    {{ t.user.first_name|first|upper|default:"T" }}{{ t.user.last_name|first|upper }}
+                  </div>
+                {% endif %}
+                <div style="min-width: 0;">
+                  <div style="font-weight: 600; color: var(--ink-900);">
+                    {{ t.user.get_full_name|default:t.user.email }}
+                  </div>
+                  <div style="font-size: var(--text-xs); color: var(--ink-500); overflow: hidden; text-overflow: ellipsis;">
+                    {{ t.user.email }}
+                  </div>
+                </div>
+              </div>
+            </td>
+
+            <td>
+              <span class="font-mono" style="font-weight: 600; color: var(--ink-700);">
+                {{ t.employee_number }}
+              </span>
+            </td>
+
+            <td>
+              <span class="font-mono" style="font-size: var(--text-xs); color: var(--ink-600);">
+                {{ t.tsc_number|default:"—" }}
+              </span>
+            </td>
+
+            <td style="font-size: var(--text-sm); color: var(--ink-700);">
+              {{ t.subject_specialty|default:"—" }}
+            </td>
+
+            <td>
+              {% if t.current_class %}
+                <span class="badge badge-primary">{{ t.current_class.name }}</span>
+              {% elif t.is_class_teacher %}
+                <span class="badge badge-warning">No class</span>
+              {% else %}
+                <span style="color: var(--ink-400);">—</span>
+              {% endif %}
+            </td>
+
+            <td>
+              {% if t.is_active %}
+                <span class="badge badge-success">Active</span>
+              {% else %}
+                <span class="badge badge-neutral">Inactive</span>
+              {% endif %}
+            </td>
+
+            <td>
+              <div class="table-actions" style="flex-wrap: wrap;">
+                <a href="{% url 'delete_teacher' t.id %}"
+                   class="btn btn-sm btn-danger"
+                   onclick="return confirm('Delete {{ t.user.get_full_name|default:t.user.email|escapejs }}? This will remove their account.');">
+                  {% include 'partials/icons.html' with name="trash" size=13 %}
+                </a>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% if page_obj.has_other_pages %}
+    <div style="padding: var(--s-5) var(--s-6); border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--s-3);">
+      <div style="font-size: var(--text-sm); color: var(--ink-500);">
+        Showing <strong>{{ page_obj.start_index }}</strong> – <strong>{{ page_obj.end_index }}</strong> of <strong>{{ paginator.count }}</strong>
+      </div>
+      <div style="display: flex; gap: var(--s-1);">
+        {% if page_obj.has_previous %}
+          <a href="?{% if search %}q={{ search }}&{% endif %}{% if emp_filter %}employment={{ emp_filter }}&{% endif %}{% if status_filter %}status={{ status_filter }}&{% endif %}page={{ page_obj.previous_page_number }}" class="btn btn-sm btn-secondary">← Prev</a>
+        {% endif %}
+        {% for num in page_obj.paginator.page_range %}
+          {% if num == page_obj.number %}
+            <span class="btn btn-sm btn-primary" style="cursor: default;">{{ num }}</span>
+          {% elif num > page_obj.number|add:"-3" and num < page_obj.number|add:"3" %}
+            <a href="?{% if search %}q={{ search }}&{% endif %}{% if emp_filter %}employment={{ emp_filter }}&{% endif %}{% if status_filter %}status={{ status_filter }}&{% endif %}page={{ num }}" class="btn btn-sm btn-secondary">{{ num }}</a>
+          {% endif %}
+        {% endfor %}
+        {% if page_obj.has_next %}
+          <a href="?{% if search %}q={{ search }}&{% endif %}{% if emp_filter %}employment={{ emp_filter }}&{% endif %}{% if status_filter %}status={{ status_filter }}&{% endif %}page={{ page_obj.next_page_number }}" class="btn btn-sm btn-secondary">Next →</a>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+  {% else %}
+    <div class="empty" style="border: none; border-radius: 0;">
+      {% include 'partials/icons.html' with name="teacher" size=56 %}
+      <h3>No teachers {% if search or emp_filter or status_filter %}matched{% else %}yet{% endif %}</h3>
+      <p>
+        {% if search or emp_filter or status_filter %}
+          Try changing your filters or clear them.
+        {% else %}
+          Add teaching staff to manage your school's academic team.
+        {% endif %}
+      </p>
+      {% if search or emp_filter or status_filter %}
+        <a href="{% url 'teachers_list' %}" class="btn btn-secondary" style="margin-right: var(--s-2);">Clear filters</a>
+      {% endif %}
+      <a href="{% url 'add_teacher' %}" class="btn btn-primary">
+        {% include 'partials/icons.html' with name="plus" size=15 %}
+        <span>Add Teacher</span>
+      </a>
+    </div>
+  {% endif %}
+</div>
+
+{% endblock %}

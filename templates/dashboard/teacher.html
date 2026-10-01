@@ -1,0 +1,213 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Teacher Dashboard{% endblock %}
+{% block header_title %}Teacher Dashboard{% endblock %}
+{% block header_sub %}{{ current_school.name|default:"Your School" }} · {{ today|date:"D, d M Y" }}{% endblock %}
+
+{% block content %}
+
+<!-- ============================================ -->
+<!-- WELCOME BANNER                                -->
+<!-- ============================================ -->
+<div class="page-header">
+  <div class="page-header-info">
+    <h1 class="page-title">Good {% now "H" as hour %}{% if hour < "12" %}morning{% elif hour < "17" %}afternoon{% else %}evening{% endif %}, {{ user.get_full_name|default:user.email|truncatechars:20 }}</h1>
+    <p class="page-subtitle">Here's your teaching schedule for today.</p>
+  </div>
+
+  {% if is_class_teacher %}
+    <a href="{% url 'class_teacher_dashboard' %}" class="btn btn-primary">
+      {% include 'partials/icons.html' with name="award" size=15 %}
+      <span>My Class — {{ current_class.name }}</span>
+    </a>
+  {% endif %}
+</div>
+
+<!-- ============================================ -->
+<!-- KPI ROW                                       -->
+<!-- ============================================ -->
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">My Classes</span>
+      <div class="stat-icon" style="background: rgba(10, 138, 95, 0.1); color: var(--primary);">
+        {% include 'partials/icons.html' with name="book" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value">{{ class_count }}</div>
+    <div class="stat-meta">Across your teaching load</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Total Students</span>
+      <div class="stat-icon" style="background: rgba(37, 99, 235, 0.1); color: #2563EB;">
+        {% include 'partials/icons.html' with name="graduation-cap" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value">{{ student_count }}</div>
+    <div class="stat-meta">In your classes</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Marked Today</span>
+      <div class="stat-icon" style="background: rgba(5, 150, 105, 0.1); color: #059669;">
+        {% include 'partials/icons.html' with name="check-circle" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--success);">{{ marked_today }}</div>
+    <div class="stat-meta">Attendance recorded</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Completion</span>
+      <div class="stat-icon" style="background: rgba(217, 119, 6, 0.1); color: var(--warning);">
+        {% include 'partials/icons.html' with name="bar-chart" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value">{{ completion }}%</div>
+    <div style="width: 100%; height: 6px; background: var(--ink-100); border-radius: var(--radius-full); margin-top: var(--s-3); overflow: hidden;">
+      <div style="height: 100%; background: var(--primary); border-radius: var(--radius-full); width: {{ completion }}%; transition: width 0.6s ease;"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ============================================ -->
+<!-- TIMETABLE + QUICK ACTIONS                    -->
+<!-- ============================================ -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+
+  <!-- Today's timetable -->
+  <div class="lg:col-span-2 card" style="padding: 0; overflow: hidden;">
+    <div style="display: flex; align-items: center; justify-content: space-between; padding: var(--s-5) var(--s-6); border-bottom: 1px solid var(--border);">
+      <div style="display: flex; align-items: center; gap: var(--s-2);">
+        {% include 'partials/icons.html' with name="calendar" size=18 %}
+        <h3 style="font-size: var(--text-md); font-weight: 700; color: var(--ink-900); margin: 0;">
+          Today's Timetable
+        </h3>
+      </div>
+      <span style="font-size: var(--text-xs); color: var(--ink-500);">{{ today|date:"l" }}</span>
+    </div>
+
+    {% if today_classes %}
+      <div style="display: flex; flex-direction: column;">
+        {% for entry in today_classes %}
+          <div style="padding: var(--s-4) var(--s-6); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: var(--s-4); {% if forloop.last %}border-bottom: none;{% endif %}">
+            <div style="min-width: 90px;">
+              <div style="font-size: var(--text-sm); font-weight: 700; color: var(--ink-900); font-variant-numeric: tabular-nums;">
+                {{ entry.start_time|time:"H:i" }}
+              </div>
+              <div style="font-size: var(--text-xs); color: var(--ink-500); font-variant-numeric: tabular-nums;">
+                {{ entry.end_time|time:"H:i" }}
+              </div>
+            </div>
+            <div style="width: 4px; height: 40px; background: var(--primary); border-radius: var(--radius-full);"></div>
+            <div style="flex: 1; min-width: 0;">
+              <div style="font-size: var(--text-sm); font-weight: 600; color: var(--ink-900);">{{ entry.subject.name }}</div>
+              <div style="font-size: var(--text-xs); color: var(--ink-500); margin-top: 2px;">
+                {{ entry.class_level.name }}
+              </div>
+            </div>
+            <div>
+              <a href="{% url 'teacher_attendance' %}?class={{ entry.class_level.id }}"
+                 class="btn btn-sm btn-secondary">
+                Mark
+              </a>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div style="text-align: center; padding: var(--s-10) var(--s-6);">
+        <div style="font-size: 48px; opacity: 0.3; margin-bottom: var(--s-3);">📅</div>
+        <p style="font-size: var(--text-md); font-weight: 600; color: var(--ink-800); margin: 0;">No classes today</p>
+        <p style="font-size: var(--text-sm); color: var(--ink-500); margin: var(--s-1) 0 0;">Enjoy your free day!</p>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Quick actions -->
+  <div class="card">
+    <div class="card-title">
+      {% include 'partials/icons.html' with name="activity" size=18 %}
+      Quick Actions
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: var(--s-2);">
+      <a href="{% url 'teacher_attendance' %}" class="btn btn-secondary" style="justify-content: flex-start; width: 100%;">
+        {% include 'partials/icons.html' with name="clipboard" size=16 %}
+        <span>Mark Attendance</span>
+      </a>
+
+      <a href="{% url 'enter_grades' %}" class="btn btn-secondary" style="justify-content: flex-start; width: 100%;">
+        {% include 'partials/icons.html' with name="edit" size=16 %}
+        <span>Enter Grades</span>
+      </a>
+
+      <a href="{% url 'teacher_timetable' %}" class="btn btn-secondary" style="justify-content: flex-start; width: 100%;">
+        {% include 'partials/icons.html' with name="calendar" size=16 %}
+        <span>My Full Timetable</span>
+      </a>
+
+      <a href="{% url 'class_results' %}" class="btn btn-secondary" style="justify-content: flex-start; width: 100%;">
+        {% include 'partials/icons.html' with name="bar-chart" size=16 %}
+        <span>Class Results</span>
+      </a>
+
+      <a href="{% url 'messages_inbox' %}" class="btn btn-secondary" style="justify-content: flex-start; width: 100%;">
+        {% include 'partials/icons.html' with name="mail" size=16 %}
+        <span>Inbox</span>
+      </a>
+    </div>
+  </div>
+
+</div>
+
+<!-- ============================================ -->
+<!-- MY CLASSES                                   -->
+<!-- ============================================ -->
+<div class="card mb-6" style="padding: 0; overflow: hidden;">
+  <div style="display: flex; align-items: center; justify-content: space-between; padding: var(--s-5) var(--s-6); border-bottom: 1px solid var(--border);">
+    <div style="display: flex; align-items: center; gap: var(--s-2);">
+      {% include 'partials/icons.html' with name="book" size=18 %}
+      <h3 style="font-size: var(--text-md); font-weight: 700; color: var(--ink-900); margin: 0;">My Classes</h3>
+    </div>
+    <span style="font-size: var(--text-xs); color: var(--ink-500);">{{ my_classes|length }} class{{ my_classes|length|pluralize:"es" }}</span>
+  </div>
+
+  {% if my_classes %}
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 0;">
+      {% for c in my_classes %}
+        <div style="padding: var(--s-5) var(--s-6); border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: var(--s-3);">
+          <div style="min-width: 0;">
+            <div style="display: flex; align-items: center; gap: var(--s-2); flex-wrap: wrap;">
+              <span style="font-size: var(--text-sm); font-weight: 700; color: var(--ink-900);">{{ c.name }}</span>
+              {% if c.is_class_teacher %}
+                <span class="badge badge-primary" style="font-size: 9px;">Class Teacher</span>
+              {% endif %}
+            </div>
+            <div style="font-size: var(--text-xs); color: var(--ink-500); margin-top: 2px;">
+              {{ c.count }} student{{ c.count|pluralize }}
+            </div>
+          </div>
+          <a href="{% url 'teacher_attendance' %}?class={{ c.name|urlencode }}"
+             class="btn btn-sm btn-secondary">
+            Mark
+          </a>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div style="text-align: center; padding: var(--s-10) var(--s-6);">
+      <div style="font-size: 48px; opacity: 0.3; margin-bottom: var(--s-3);">📚</div>
+      <p style="font-size: var(--text-md); font-weight: 600; color: var(--ink-800); margin: 0;">No classes assigned</p>
+      <p style="font-size: var(--text-sm); color: var(--ink-500); margin: var(--s-1) 0 0;">Contact your school admin to be assigned.</p>
+    </div>
+  {% endif %}
+</div>
+
+{% endblock %}

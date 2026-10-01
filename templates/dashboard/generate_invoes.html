@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block title %}Generate Invoices{% endblock %}
+{% block header_title %}Generate Invoices{% endblock %}
+{% block header_sub %}Bulk-generate by class{% endblock %}
+
+{% block content %}
+
+<div class="max-w-lg mx-auto bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+  <h2 class="font-bold text-lg mb-4">Generate Invoices</h2>
+
+  <form method="post" class="space-y-4">
+    {% csrf_token %}
+
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-1">Fee Structure</label>
+      <select name="fee_structure" required
+              class="w-full border border-gray-300 p-3 rounded-lg">
+        <option value="">— Select fee structure —</option>
+        {% for fs in fee_structures %}
+          <option value="{{ fs.id }}">{{ fs.name }} — {{ fs.class_level }} (KES {{ fs.amount_kes }})</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <button class="w-full bg-teal-600 hover:bg-teal-700 text-white py-2.5 rounded-lg font-medium">
+      Generate Invoices
+    </button>
+  </form>
+</div>
+
+{% endblock %}

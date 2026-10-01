@@ -1,0 +1,139 @@
+{% extends 'public/base_public.html' %}
+{% load static %}
+{% block title %}About · School MS{% endblock %}
+
+{% block extra_css %}
+<style>
+  .page-hero {
+    padding: var(--s-10) var(--s-6) var(--s-8);
+    text-align: center;
+    background: linear-gradient(180deg, var(--primary-soft) 0%, var(--bg) 100%);
+  }
+  .page-hero h1 {
+    font-family: var(--font-heading);
+    font-size: 44px;
+    font-weight: 800;
+    color: var(--ink-900);
+    letter-spacing: -0.03em;
+    margin: 0 0 var(--s-4);
+  }
+  .page-hero p {
+    font-size: var(--text-md);
+    color: var(--ink-600);
+    max-width: 640px;
+    margin: 0 auto;
+    line-height: 1.7;
+  }
+  .content-wrap {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: var(--s-10) var(--s-6);
+  }
+  .content-wrap h2 {
+    font-family: var(--font-heading);
+    font-size: var(--text-2xl);
+    font-weight: 700;
+    color: var(--ink-900);
+    margin: var(--s-8) 0 var(--s-4);
+  }
+  .content-wrap h2:first-child { margin-top: 0; }
+  .content-wrap p {
+    font-size: var(--text-base);
+    color: var(--ink-700);
+    line-height: 1.8;
+    margin-bottom: var(--s-5);
+  }
+  .value-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--s-5);
+    margin: var(--s-8) 0;
+  }
+  .value-card {
+    padding: var(--s-5);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+  }
+  .value-card h3 {
+    font-family: var(--font-heading);
+    font-size: var(--text-md);
+    font-weight: 700;
+    color: var(--ink-900);
+    margin: 0 0 var(--s-2);
+  }
+  .value-card p {
+    font-size: var(--text-sm);
+    color: var(--ink-600);
+    line-height: 1.6;
+    margin: 0;
+  }
+  @media (max-width: 900px) {
+    .page-hero h1 { font-size: 32px; }
+    .value-grid { grid-template-columns: 1fr; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<section class="page-hero">
+  <h1>About School MS</h1>
+  <p>
+    Building the digital foundation for every Kenyan school — empowering administrators,
+    teachers, and parents with technology designed for our local reality.
+  </p>
+</section>
+
+<div class="content-wrap">
+
+  <h2>Our Vision</h2>
+  <p>
+    To become the most trusted digital partner for schools across East Africa — enabling every
+    institution, from rural primary schools to urban academies, to run efficiently with
+    modern, affordable, locally-built software.
+  </p>
+
+  <h2>Our Mission</h2>
+  <p>
+    To deliver a complete, affordable school management platform that handles fees, students,
+    staff, grades, and communication — so schools can focus on teaching and learning, not
+    paperwork.
+  </p>
+
+  <div class="value-grid">
+    <div class="value-card">
+      <h3>Built for Kenya</h3>
+      <p>Every feature, from M-Pesa integration to NEMIS support, is designed for how Kenyan schools actually operate.</p>
+    </div>
+    <div class="value-card">
+      <h3>Affordable</h3>
+      <p>Enterprise-grade features at a fraction of what imported solutions cost — so every school can afford them.</p>
+    </div>
+    <div class="value-card">
+      <h3>Reliable</h3>
+      <p>Secure multi-tenant architecture with strict data isolation, daily backups, and 99.9% uptime.</p>
+    </div>
+  </div>
+
+  <h2>Why We Built This</h2>
+  <p>
+    Kenyan schools spend hours every term on manual record-keeping — paper registers, Excel sheets,
+    handwritten receipts, and phone calls to parents. This wastes time, loses money, and frustrates
+    everyone involved.
+  </p>
+  <p>
+    We built School MS to change that. One platform that handles every administrative task your
+    school faces, accessible from any phone or computer, at a price every school can afford.
+  </p>
+
+  <h2>Our Commitment</h2>
+  <p>
+    Your school's data belongs to your school — always. We built strict data isolation into
+    the core of our system, meaning no one — not even our own team — can access your
+    students' records.
+  </p>
+
+</div>
+
+{% endblock %}

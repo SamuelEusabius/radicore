@@ -1,0 +1,30 @@
+<header class="topbar">
+  <div class="topbar-left">
+
+    <button type="button" class="topbar-toggle" id="sidebarToggle" aria-label="Toggle sidebar">
+      {% include 'partials/icons.html' with name="menu" size=20 %}
+    </button>
+
+    <div class="topbar-page">
+      <h2 class="topbar-title">{% block header_title %}Dashboard{% endblock %}</h2>
+      <p class="topbar-sub">{% block header_sub %}{{ current_school.name|default:"" }}{% endblock %}</p>
+    </div>
+
+  </div>
+
+  <div class="topbar-right">
+
+    <a href="{% url 'notifications_list' %}" class="topbar-icon-btn" aria-label="Notifications">
+      {% include 'partials/icons.html' with name="bell" size=20 %}
+      {% if unread_notifications %}
+        <span class="topbar-badge">{{ unread_notifications }}</span>
+      {% endif %}
+    </a>
+
+    <div class="topbar-user">
+      <div class="topbar-user-avatar">{{ user.email|first|upper }}</div>
+      <span class="topbar-user-email">{{ user.email }}</span>
+    </div>
+
+  </div>
+</header>

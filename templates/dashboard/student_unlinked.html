@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% block title %}Profile Not Linked{% endblock %}
+{% block header_title %}Profile Not Linked{% endblock %}
+
+{% block content %}
+
+<div class="max-w-lg mx-auto bg-white shadow-sm border border-gray-200 p-8 text-center" style="margin-top: 60px;">
+
+  <div class="pro-stat-icon pro-icon-bg-yellow" style="margin: 0 auto 16px; width: 64px; height: 64px;">
+    {% include 'partials/icons.html' with name="alert-triangle" size=32 %}
+  </div>
+
+  <h2 style="font-size: 20px; font-weight: 700; color: #1a1a1a; margin-bottom: 8px; font-family: 'Poppins', sans-serif;">
+    Your Student Profile Isn't Linked
+  </h2>
+
+  <p style="font-size: 14px; color: #6b7280; line-height: 1.6; margin-bottom: 24px;">
+    Your account has the <strong>student</strong> role, but it's not yet linked to a student record in the system.
+    Please contact your school administrator to link your account.
+  </p>
+
+  <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+    <a href="/accounts/logout/" class="pro-btn pro-btn-secondary">
+      {% include 'partials/icons.html' with name="log-out" size=15 %}
+      <span>Log Out</span>
+    </a>
+    <a href="{% url 'change_password' %}" class="pro-btn pro-btn-secondary">
+      {% include 'partials/icons.html' with name="lock" size=15 %}
+      <span>Change Password</span>
+    </a>
+  </div>
+
+</div>
+
+{% endblock %}

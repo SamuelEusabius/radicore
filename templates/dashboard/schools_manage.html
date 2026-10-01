@@ -1,0 +1,218 @@
+{% extends 'base.html' %}
+{% block title %}Manage Schools{% endblock %}
+{% block header_title %}Schools{% endblock %}
+{% block header_sub %}{{ total }} school{{ total|pluralize }} in the system{% endblock %}
+
+{% block content %}
+
+<!-- ============ TOOLBAR ============ -->
+<div class="bg-white shadow-sm border border-gray-200 p-4 mb-6" style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between;">
+
+  <form method="get" style="display: flex; gap: 12px; align-items: center; flex: 1; min-width: 300px;">
+    <input name="q" value="{{ search }}" placeholder="Search by name, code, NEMIS, or county..."
+           style="flex: 1; border: 1px solid #d1d5db; padding: 8px 12px; font-size: 13px;">
+    <button type="submit" class="pro-btn pro-btn-primary">
+      {% include 'partials/icons.html' with name="search" size=15 %}
+      <span>Search</span>
+    </button>
+    {% if search %}
+      <a href="{% url 'schools_manage' %}" class="pro-btn pro-btn-secondary">Clear</a>
+    {% endif %}
+  </form>
+
+  <a href="{% url 'school_add' %}" class="pro-btn pro-btn-orange">
+    {% include 'partials/icons.html' with name="plus" size=15 %}
+    <span>Add School</span>
+  </a>
+
+</div>
+
+<!-- ============ MESSAGES ============ -->
+{% if messages %}
+  {% for m in messages %}
+    <div style="padding: 12px 16px; margin-bottom: 16px; font-size: 13px; {% if m.tags == 'error' %}background: #fee2e2; color: #991b1b; border-left: 4px solid #dc2626;{% else %}background: #d1fae5; color: #065f46; border-left: 4px solid #059669;{% endif %}">
+      {{ m }}
+    </div>
+  {% endfor %}
+{% endif %}
+
+<!-- ============ SCHOOLS TABLE ============ -->
+<div class="bg-white shadow-sm border border-gray-200 overflow-hidden">
+
+  <table class="pro-table">
+    <thead>
+      <tr>
+        <th style="width: 60px;">Logo</th>
+        <th style="width: 100px;">Code</th>
+        <th>School</th>
+        <th style="width: 100px;">NEMIS</th>
+        <th style="width: 160px;">Category</th>
+        <th style="width: 120px;">County</th>
+        <th style="width: 100px;">Status</th>
+        <th style="width: 220px; text-align: center;">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for school in schools %}
+      <tr>
+        <!-- Logo -->
+        <td>
+          {% if school.logo %}
+            <img src="{{ school.logo.url }}" alt="{{ school.name }}" style="width: 40px; height: 40px; object-fit: contain; border: 1px solid #e5e7eb; background: #f9fafb; padding: 2px;">
+          {% else %}
+            <div style="width: 40px; height: 40px; background: #00695c; color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px; font-family: 'Poppins', sans-serif;">
+              {{ school.name|slice:":2"|upper }}
+            </div>
+          {% endif %}
+        </td>
+
+        <!-- Code -->
+        <td>
+          <span style="font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 12px; background: #f1f5f9; padding: 3px 8px;">
+            {{ school.code|default:"—" }}
+          </span>
+        </td>
+
+        <!-- School name + email -->
+        <td>
+          <div style="font-weight: 600; color: #1a1a1a; font-family: 'Poppins', sans-serif; font-size: 13px;">
+            {{ school.name }}
+          </div>
+          <div style="font-size: 11px; color: #6b7280; margin-top: 2px;">
+            {{ school.email|default:"No email" }}
+          </div>
+        </td>
+
+        <!-- NEMIS -->
+        <td style="font-size: 12px;">{{ school.nemis_code|default:"—" }}</td>
+
+        <!-- Category -->
+        <td>
+          <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+            <span class="pro-badge pro-badge-info" style="font-size: 10px;">
+              {% if school.school_type == 'public' %}Public{% else %}Private{% endif %}
+            </span>
+            <span class="pro-badge pro-badge-teal" style="font-size: 10px;">
+              {% if school.gender == 'boys' %}Boys
+              {% elif school.gender == 'girls' %}Girls
+              {% else %}Mixed{% endif %}
+            </span>
+          </div>
+        </td>
+
+        <!-- County -->
+        <td style="font-size: 12px;">{{ school.county|default:"—" }}</td>
+
+        <!-- Status -->
+        <td>
+          {% if school.is_active %}
+            <span class="pro-badge pro-badge-success" style="font-size: 10px;">
+              <span style="display: inline-block; width: 6px; height: 6px; background: #059669; border-radius: 3px; margin-right: 4px;"></span>
+              Active
+            </span>
+          {% else %}
+            <span class="pro-badge pro-badge-danger" style="font-size: 10px;">
+              <span style="display: inline-block; width: 6px; height: 6px; background: #dc2626; border-radius: 3px; margin-right: 4px;"></span>
+              Inactive
+            </span>
+          {% endif %}
+        </td>
+
+        <!-- Actions -->
+        <td>
+          <div style="display: flex; align-items: center; justify-content: center; gap: 6px; flex-wrap: wrap;">
+            <!-- Subscription -->
+<a href="{% url 'subscription_edit_admin' school.id %}"
+   title="Manage subscription"
+   style="background: #7c3aed; color: white; padding: 6px 10px; font-size: 11px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+  {% include 'partials/icons.html' with name="credit-card" size=13 %}
+  <span>Subscription</span>
+</a>
+
+            <!-- Edit -->
+            <a href="{% url 'school_edit' school.id %}"
+               title="Edit school details & logo"
+               style="background: #00695c; color: white; padding: 6px 10px; font-size: 11px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+              {% include 'partials/icons.html' with name="edit" size=13 %}
+              <span>Edit</span>
+            </a>
+
+            <!-- Toggle active -->
+            <form method="post" action="{% url 'school_toggle_active' school.id %}" style="display: inline;">
+              {% csrf_token %}
+              <button type="submit"
+                      title="{% if school.is_active %}Deactivate{% else %}Activate{% endif %}"
+                      style="{% if school.is_active %}background: #ea580c;{% else %}background: #059669;{% endif %} color: white; padding: 6px 10px; font-size: 11px; font-weight: 600; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
+                {% if school.is_active %}
+                  {% include 'partials/icons.html' with name="x-circle" size=13 %}
+                  <span>Deactivate</span>
+                {% else %}
+                  {% include 'partials/icons.html' with name="check-circle" size=13 %}
+                  <span>Activate</span>
+                {% endif %}
+              </button>
+            </form>
+
+            <!-- Change password -->
+            <a href="{% url 'school_change_admin_password' school.id %}"
+               title="Change school admin password"
+               style="background: #d97706; color: white; padding: 6px 10px; font-size: 11px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+              {% include 'partials/icons.html' with name="key" size=13 %}
+              <span>Password</span>
+            </a>
+
+            <!-- Delete -->
+            <a href="{% url 'school_delete' school.id %}"
+               title="Delete school permanently"
+               style="background: #dc2626; color: white; padding: 6px 10px; font-size: 11px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+              {% include 'partials/icons.html' with name="trash" size=13 %}
+              <span>Delete</span>
+            </a>
+
+          </div>
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="8">
+          <div class="pro-empty">
+            {% include 'partials/icons.html' with name="school" size=64 %}
+            <h3>No schools yet</h3>
+            <p>Register your first school to get started with the platform.</p>
+            <a href="{% url 'school_add' %}" class="pro-btn pro-btn-primary" style="display: inline-flex;">
+              {% include 'partials/icons.html' with name="plus" size=15 %}
+              <span>Add School</span>
+            </a>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+</div>
+
+<!-- ============ STATS BAR (bottom) ============ -->
+{% if schools %}
+<div style="margin-top: 24px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+
+  <div class="pro-stat">
+    <div class="pro-stat-label">Total Schools</div>
+    <div class="pro-stat-value">{{ total }}</div>
+    <div class="pro-stat-label" style="text-transform: none; letter-spacing: 0; margin-top: 4px;">Registered on platform</div>
+  </div>
+
+  <div class="pro-stat">
+    <div class="pro-stat-label">Active</div>
+    <div class="pro-stat-value" style="color: #059669;">
+      {% with active_count=0 %}{% endwith %}
+      {% for s in schools %}{% if s.is_active %}{% endif %}{% endfor %}
+      {{ schools|length }}
+    </div>
+    <div class="pro-stat-label" style="text-transform: none; letter-spacing: 0; margin-top: 4px;">Currently active schools</div>
+  </div>
+
+</div>
+{% endif %}
+
+{% endblock %}

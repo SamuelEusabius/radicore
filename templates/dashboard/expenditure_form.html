@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+{% block title %}{% if action == 'edit' %}Edit{% else %}Add{% endif %} Expenditure{% endblock %}
+{% block header_title %}{% if action == 'edit' %}Edit{% else %}Add{% endif %} Expenditure{% endblock %}
+
+{% block content %}
+
+<div class="max-w-2xl mx-auto bg-white shadow-sm border border-gray-200 p-8">
+
+  <form method="post" style="display: flex; flex-direction: column; gap: 16px;">
+    {% csrf_token %}
+
+    <div>
+      <label style="display: block; font-size: 13px; font-weight: 500; color: #374151; margin-bottom: 6px;">
+        Category <span style="color: #dc2626;">*</span>
+      </label>
+      <select name="category" required
+              style="width: 100%; border: 1px solid #d1d5db; padding: 10px; font-size: 14px;">
+        <option value="">— Select category —</option>
+        {% for value, label in categories %}
+          <option value="{{ value }}" {% if expenditure and expenditure.category == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div>
+      <label style="display: block; font-size: 13px; font-weight: 500; color: #374151; margin-bottom: 6px;">
+        Description <span style="color: #dc2626;">*</span>
+      </label>
+      <input type="text" name="description" required value="{{ expenditure.description|default:'' }}"
+             placeholder="e.g. January staff salaries"
+             style="width: 100%; border: 1px solid #d1d5db; padding: 10px; font-size: 14px;">
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+      <div>
+        <label style="display: block; font-size: 13px; font-weight: 500; color: #374151; margin-bottom: 6px;">
+          Amount (KES) <span style="color: #dc2626;">*</span>
+        </label>
+        <input type="number" name="amount_kes" step="0.01" min="1" required
+               value="{{ expenditure.amount_kes|default:'' }}"
+               style="width: 100%; border: 1px solid #d1d5db; padding: 10px; font-size: 14px;">
+      </div>
+      <div>
+        <label style="display: block; font-size: 13px; font-weight: 500; color: #374151; margin-bottom: 6px;">
+          Date <span style="color: #dc2626;">*</span>
+        </label>
+        <input type="date" name="spent_on" required
+               value="{{ expenditure.spent_on|date:'Y-m-d' }}"
+               style="width: 100%; border: 1px solid #d1d5db; padding: 10px; font-size: 14px;">
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+      <div>
+        <label style="display: block; font-size: 13px; font-weight: 500; color: #374151; margin-bottom: 6px;">Paid To</label>
+        <input type="text" name="paid_to" value="{{ expenditure.paid_to|default:'' }}"
+               style="width: 100%; border: 1px solid #d1d5db; padding: 10px; font-size: 14px;">
+      </div>
+      <div>
+        <label style="display: block; font-size: 13px; font-weight: 500; color: #374151; margin-bottom: 6px;">Payment Method</label>
+        <select name="payment_method" style="width: 100%; border: 1px solid #d1d5db; padding: 10px; font-size: 14px;">
+          <option value="cash" {% if expenditure and expenditure.payment_method == 'cash' %}selected{% endif %}>Cash</option>
+          <option value="mpesa" {% if expenditure and expenditure.payment_method == 'mpesa' %}selected{% endif %}>M-Pesa</option>
+          <option value="bank" {% if expenditure and expenditure.payment_method == 'bank' %}selected{% endif %}>Bank Transfer</option>
+          <option value="cheque" {% if expenditure and expenditure.payment_method == 'cheque' %}selected{% endif %}>Cheque</option>
+        </select>
+      </div>
+    </div>
+
+    <div>
+      <label style="display: block; font-size: 13px; font-weight: 500; color: #374151; margin-bottom: 6px;">Reference (optional)</label>
+      <input type="text" name="reference" value="{{ expenditure.reference|default:'' }}"
+             style="width: 100%; border: 1px solid #d1d5db; padding: 10px; font-size: 14px; font-family: 'JetBrains Mono', monospace;">
+    </div>
+
+    <div>
+      <label style="display: block; font-size: 13px; font-weight: 500; color: #374151; margin-bottom: 6px;">Notes</label>
+      <textarea name="notes" rows="3"
+                style="width: 100%; border: 1px solid #d1d5db; padding: 10px; font-size: 14px;">{{ expenditure.notes|default:'' }}</textarea>
+    </div>
+
+    <div style="display: flex; gap: 12px; justify-content: flex-end; padding-top: 12px; border-top: 1px solid #e5e7eb;">
+      <a href="{% url 'expenditure_list' %}" class="pro-btn pro-btn-secondary">Cancel</a>
+      <button type="submit" class="pro-btn pro-btn-primary">
+        {% include 'partials/icons.html' with name="save" size=15 %}
+        <span>{% if action == 'edit' %}Update{% else %}Save{% endif %} Expenditure</span>
+      </button>
+    </div>
+
+  </form>
+
+</div>
+
+{% endblock %}

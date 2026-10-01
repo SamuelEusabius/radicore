@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+{% block title %}Enter Grades{% endblock %}
+{% block header_title %}Enter Grades{% endblock %}
+{% block header_sub %}Record marks per exam & subject{% endblock %}
+
+{% block content %}
+
+<form method="get" class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-6 flex flex-wrap gap-3 items-end">
+  <div>
+    <label class="block text-xs font-medium text-gray-600 mb-1">Exam</label>
+    <select name="exam" class="border border-gray-300 p-2.5 rounded-lg" required>
+      <option value="">— Select exam —</option>
+      {% for e in exams %}
+        <option value="{{ e.id }}" {% if selected_exam.id == e.id %}selected{% endif %}>
+          {{ e.name }}
+        </option>
+      {% endfor %}
+    </select>
+  </div>
+  <div>
+    <label class="block text-xs font-medium text-gray-600 mb-1">Subject</label>
+    <select name="subject" class="border border-gray-300 p-2.5 rounded-lg" required>
+      <option value="">— Select subject —</option>
+      {% for s in subjects %}
+        <option value="{{ s.id }}" {% if selected_subject.id == s.id %}selected{% endif %}>
+          {{ s.name }}
+        </option>
+      {% endfor %}
+    </select>
+  </div>
+  <button class="bg-teal-600 hover:bg-teal-700 text-white px-5 py-2.5 rounded-lg font-medium">
+    Load Students
+  </button>
+</form>
+
+{% if rows %}
+<form method="post">
+  {% csrf_token %}
+  <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+    <table class="w-full text-sm">
+      <thead class="bg-teal-600 text-white text-left">
+        <tr>
+          <th class="p-3">Student</th>
+          <th class="p-3">Adm No</th>
+          <th class="p-3">Marks</th>
+          <th class="p-3">Out of</th>
+          <th class="p-3">Remarks</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+        <tr class="border-t">
+          <td class="p-3 font-medium">{{ row.student.first_name }} {{ row.student.last_name }}</td>
+          <td class="p-3 text-gray-500">{{ row.student.admission_number }}</td>
+          <td class="p-3">
+            <input name="marks_{{ row.student.id }}" type="number" step="0.01" value="{{ row.marks }}"
+                   class="border border-gray-300 p-1.5 rounded w-24">
+          </td>
+          <td class="p-3">
+            <input name="out_of_{{ row.student.id }}" type="number" step="0.01" value="{{ row.out_of }}"
+                   class="border border-gray-300 p-1.5 rounded w-24">
+          </td>
+          <td class="p-3">
+            <input name="remarks_{{ row.student.id }}" value="{{ row.remarks }}"
+                   class="border border-gray-300 p-1.5 rounded w-full">
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <button class="mt-4 bg-teal-600 hover:bg-teal-700 text-white px-6 py-2.5 rounded-lg font-medium">
+    Save Grades
+  </button>
+</form>
+{% elif selected_exam and selected_subject %}
+  <p class="text-gray-500 text-center py-8">No students to grade.</p>
+{% else %}
+  <p class="text-gray-500 text-center py-8">Select an exam and subject above to enter grades.</p>
+{% endif %}
+
+{% endblock %}

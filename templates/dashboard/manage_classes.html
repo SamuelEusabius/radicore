@@ -1,0 +1,350 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Manage Classes{% endblock %}
+{% block header_title %}Classes{% endblock %}
+{% block header_sub %}{{ stats.total_classes }} class{{ stats.total_classes|pluralize:"es" }} · {{ stats.total_students }} active student{{ stats.total_students|pluralize }}{% endblock %}
+
+{% block content %}
+
+<!-- ============================================ -->
+<!-- STATS CARDS                                  -->
+<!-- ============================================ -->
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Total Classes</span>
+      <div class="stat-icon" style="background: rgba(10, 138, 95, 0.1); color: var(--primary);">
+        {% include 'partials/icons.html' with name="book" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value">{{ stats.total_classes }}</div>
+    <div class="stat-meta">Across all levels</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Active Students</span>
+      <div class="stat-icon" style="background: rgba(37, 99, 235, 0.1); color: #2563EB;">
+        {% include 'partials/icons.html' with name="graduation-cap" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value">{{ stats.total_students }}</div>
+    <div class="stat-meta">Currently enrolled</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Levels</span>
+      <div class="stat-icon" style="background: rgba(124, 58, 237, 0.1); color: #7C3AED;">
+        {% include 'partials/icons.html' with name="bar-chart" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value">{{ stats.levels }}</div>
+    <div class="stat-meta">Distinct grade levels</div>
+  </div>
+
+</div>
+
+<!-- ============================================ -->
+<!-- FILTERS + ADD BUTTON                         -->
+<!-- ============================================ -->
+<div class="card mb-6">
+  <form method="get" style="display: flex; flex-wrap: wrap; gap: var(--s-3); align-items: flex-end;">
+
+    <div style="flex: 1; min-width: 240px;">
+      <label style="display: block; font-size: var(--text-xs); font-weight: 600; color: var(--ink-600); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: var(--s-1);">
+        Search
+      </label>
+      <input name="q" value="{{ search }}" placeholder="Class name..." class="input">
+    </div>
+
+    <div style="display: flex; gap: var(--s-2); align-items: flex-end;">
+      <button type="submit" class="btn btn-primary">
+        {% include 'partials/icons.html' with name="search" size=15 %}
+        <span>Search</span>
+      </button>
+      {% if search %}
+        <a href="{% url 'manage_classes' %}" class="btn btn-secondary">Clear</a>
+      {% endif %}
+    </div>
+
+  </form>
+
+  <div style="margin-top: var(--s-4); padding-top: var(--s-4); border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--s-3);">
+    <div style="font-size: var(--text-xs); color: var(--ink-500);">
+      {% if search %}
+        {{ classes_with_counts|length }} class{{ classes_with_counts|length|pluralize:"es" }} matched
+      {% endif %}
+    </div>
+    <button type="button" onclick="openAddModal()" class="btn btn-primary">
+      {% include 'partials/icons.html' with name="plus" size=15 %}
+      <span>Add Class</span>
+    </button>
+  </div>
+</div>
+
+<!-- ============================================ -->
+<!-- CLASSES TABLE                                -->
+<!-- ============================================ -->
+<div class="card" style="padding: 0; overflow: hidden;">
+  {% if classes_with_counts %}
+    <div style="overflow-x: auto;">
+      <table class="table">
+        <thead>
+          <tr>
+            <th style="width: 60px;">#</th>
+            <th>Class Name</th>
+            <th style="text-align: center;">Students</th>
+            <th style="text-align: center;">Order</th>
+            <th>Class Teacher</th>
+            <th style="text-align: right;">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in classes_with_counts %}
+          <tr>
+            <td>
+              <span class="font-mono" style="font-size: var(--text-xs); color: var(--ink-500);">
+                {{ forloop.counter }}
+              </span>
+            </td>
+
+            <td>
+              <div style="font-weight: 600; color: var(--ink-900);">{{ row.class.name }}</div>
+            </td>
+
+            <td style="text-align: center;">
+              <span class="badge
+                {% if row.student_count > 0 %}badge-primary{% else %}badge-neutral{% endif %}">
+                {{ row.student_count }}
+              </span>
+            </td>
+
+            <td style="text-align: center;">
+              <span class="font-mono" style="font-size: var(--text-xs); color: var(--ink-600);">
+                #{{ row.class.order }}
+              </span>
+            </td>
+
+            <td>
+              {% if row.class_teacher %}
+                <div style="font-size: var(--text-sm); color: var(--ink-800);">
+                  {{ row.class_teacher.user.get_full_name|default:row.class_teacher.user.email }}
+                </div>
+              {% else %}
+                <span style="font-size: var(--text-xs); color: var(--ink-400);">Not assigned</span>
+              {% endif %}
+            </td>
+
+            <td>
+              <div class="table-actions">
+                <button type="button"
+                        onclick="openEditModal({{ row.class.id }}, '{{ row.class.name|escapejs }}', {{ row.class.order }})"
+                        class="btn btn-sm btn-secondary">
+                  {% include 'partials/icons.html' with name="edit" size=13 %}
+                  <span>Edit</span>
+                </button>
+
+                <button type="button"
+                        onclick="openDeleteModal({{ row.class.id }}, '{{ row.class.name|escapejs }}', {{ row.student_count }})"
+                        class="btn btn-sm btn-danger">
+                  {% include 'partials/icons.html' with name="trash" size=13 %}
+                </button>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="empty" style="border: none; border-radius: 0;">
+      {% include 'partials/icons.html' with name="book" size=56 %}
+      <h3>No classes {% if search %}matched{% else %}yet{% endif %}</h3>
+      <p>
+        {% if search %}
+          Try a different search term or clear the filter.
+        {% else %}
+          Add your first class to start organizing your school.
+        {% endif %}
+      </p>
+      {% if search %}
+        <a href="{% url 'manage_classes' %}" class="btn btn-secondary" style="margin-right: var(--s-2);">Clear search</a>
+      {% endif %}
+      <button type="button" onclick="openAddModal()" class="btn btn-primary">
+        {% include 'partials/icons.html' with name="plus" size=15 %}
+        <span>Add Class</span>
+      </button>
+    </div>
+  {% endif %}
+</div>
+
+<!-- ============================================ -->
+<!-- ADD MODAL                                    -->
+<!-- ============================================ -->
+<div id="add-modal" class="modal-backdrop">
+  <div class="modal">
+    <form method="post" action="">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="add">
+      <div class="modal-header">
+        <h3 class="modal-title">Add Class</h3>
+        <button type="button" onclick="closeModal('add-modal')" class="btn btn-sm btn-ghost">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Class Name <span class="required">*</span></label>
+          <input type="text" name="name" required class="input" placeholder="e.g. GRADE 5 EAST" autofocus>
+          <p class="form-hint">Convention: use uppercase (e.g. GRADE 5 EAST)</p>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Order</label>
+          <input type="number" name="order" value="0" class="input">
+          <p class="form-hint">Lower numbers appear first</p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" onclick="closeModal('add-modal')" class="btn btn-secondary">Cancel</button>
+        <button type="submit" class="btn btn-primary">
+          {% include 'partials/icons.html' with name="plus" size=15 %}
+          <span>Add Class</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ============================================ -->
+<!-- EDIT MODAL                                   -->
+<!-- ============================================ -->
+<div id="edit-modal" class="modal-backdrop">
+  <div class="modal">
+    <form method="post" action="">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="edit">
+      <input type="hidden" name="class_id" id="edit-class-id">
+      <div class="modal-header">
+        <h3 class="modal-title">Edit Class</h3>
+        <button type="button" onclick="closeModal('edit-modal')" class="btn btn-sm btn-ghost">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Class Name <span class="required">*</span></label>
+          <input type="text" name="name" id="edit-name" required class="input">
+          <p class="form-hint">Renaming will update all students in this class</p>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Order</label>
+          <input type="number" name="order" id="edit-order" class="input">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" onclick="closeModal('edit-modal')" class="btn btn-secondary">Cancel</button>
+        <button type="submit" class="btn btn-primary">
+          {% include 'partials/icons.html' with name="save" size=15 %}
+          <span>Save Changes</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ============================================ -->
+<!-- DELETE MODAL                                 -->
+<!-- ============================================ -->
+<div id="delete-modal" class="modal-backdrop">
+  <div class="modal">
+    <form method="post" action="">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="delete">
+      <input type="hidden" name="class_id" id="delete-class-id">
+      <div class="modal-header">
+        <h3 class="modal-title">Delete Class</h3>
+        <button type="button" onclick="closeModal('delete-modal')" class="btn btn-sm btn-ghost">✕</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size: var(--text-sm); color: var(--ink-700); margin: 0;">
+          Are you sure you want to delete <strong id="delete-name"></strong>?
+        </p>
+        <div id="delete-warning" style="margin-top: var(--s-3); padding: var(--s-3); background: var(--danger-light); border-left: 3px solid var(--danger); border-radius: var(--radius-sm); display: none;">
+          <p style="font-size: var(--text-xs); color: #991B1B; margin: 0; font-weight: 600;">
+            <span id="delete-count"></span> student(s) are in this class. Reassign them before deleting.
+          </p>
+        </div>
+        <p style="font-size: var(--text-xs); color: var(--ink-500); margin: var(--s-3) 0 0;">
+          This action cannot be undone.
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" onclick="closeModal('delete-modal')" class="btn btn-secondary">Cancel</button>
+        <button type="submit" id="delete-submit" class="btn btn-danger">
+          {% include 'partials/icons.html' with name="trash" size=15 %}
+          <span>Delete Class</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  function openModal(id) {
+    document.getElementById(id).classList.add('open');
+  }
+
+  function closeModal(id) {
+    document.getElementById(id).classList.remove('open');
+  }
+
+  function openAddModal() {
+    openModal('add-modal');
+  }
+
+  function openEditModal(id, name, order) {
+    document.getElementById('edit-class-id').value = id;
+    document.getElementById('edit-name').value = name;
+    document.getElementById('edit-order').value = order;
+    openModal('edit-modal');
+  }
+
+  function openDeleteModal(id, name, count) {
+    document.getElementById('delete-class-id').value = id;
+    document.getElementById('delete-name').textContent = name;
+
+    const warning = document.getElementById('delete-warning');
+    const submit = document.getElementById('delete-submit');
+
+    if (count > 0) {
+      document.getElementById('delete-count').textContent = count;
+      warning.style.display = 'block';
+      submit.disabled = true;
+      submit.style.opacity = '0.5';
+      submit.style.cursor = 'not-allowed';
+    } else {
+      warning.style.display = 'none';
+      submit.disabled = false;
+      submit.style.opacity = '1';
+      submit.style.cursor = 'pointer';
+    }
+
+    openModal('delete-modal');
+  }
+
+  // Close on backdrop click
+  document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
+    backdrop.addEventListener('click', (e) => {
+      if (e.target === backdrop) {
+        backdrop.classList.remove('open');
+      }
+    });
+  });
+
+  // Close on escape
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      document.querySelectorAll('.modal-backdrop.open').forEach(b => b.classList.remove('open'));
+    }
+  });
+</script>
+
+{% endblock %}

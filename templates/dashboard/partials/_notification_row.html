@@ -1,0 +1,68 @@
+{% load static %}
+
+<div style="padding: var(--s-4) var(--s-5); border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; gap: var(--s-4); {% if not n.is_read %}background: var(--primary-soft);{% endif %} transition: background var(--t-fast);"
+     onmouseover="this.style.background='var(--surface-hover)'"
+     onmouseout="this.style.background='{% if not n.is_read %}var(--primary-soft){% else %}transparent{% endif %}'">
+
+  <!-- Icon -->
+  <div class="stat-icon" style="width: 36px; height: 36px; flex-shrink: 0;
+    {% if n.channel == 'email' %}background: rgba(37, 99, 235, 0.1); color: #2563EB;
+    {% elif n.channel == 'sms' %}background: rgba(124, 58, 237, 0.1); color: #7C3AED;
+    {% else %}background: rgba(10, 138, 95, 0.1); color: var(--primary);{% endif %}">
+    {% if n.channel == 'email' %}
+      {% include 'partials/icons.html' with name="mail" size=16 %}
+    {% elif n.channel == 'sms' %}
+      {% include 'partials/icons.html' with name="message-square" size=16 %}
+    {% else %}
+      {% include 'partials/icons.html' with name="bell" size=16 %}
+    {% endif %}
+  </div>
+
+  <!-- Content -->
+  <div style="flex: 1; min-width: 0;">
+    <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: var(--s-3); margin-bottom: 4px;">
+      <div style="font-weight: {% if not n.is_read %}700{% else %}600{% endif %}; color: var(--ink-900); font-size: var(--text-sm);">
+        {% if not n.is_read %}
+          <span style="display: inline-block; width: 6px; height: 6px; background: var(--primary); border-radius: 50%; margin-right: 6px; vertical-align: middle;"></span>
+        {% endif %}
+        {{ n.title|default:"Notification" }}
+      </div>
+      <div style="font-size: var(--text-xs); color: var(--ink-500); white-space: nowrap; flex-shrink: 0;">
+        {{ n.created_at|timesince }} ago
+      </div>
+    </div>
+
+    {% if n.message or n.description %}
+      <p style="font-size: var(--text-sm); color: var(--ink-600); margin: 0; line-height: 1.5;">
+        {{ n.message|default:n.description|truncatechars:200 }}
+      </p>
+    {% endif %}
+
+    <div style="display: flex; align-items: center; gap: var(--s-3); margin-top: var(--s-3); flex-wrap: wrap;">
+      <span class="badge badge-neutral" style="font-size: 9px;">
+        {{ n.get_channel_display }}
+      </span>
+      {% if n.sent_at %}
+        <span style="font-size: var(--text-xs); color: var(--ink-400);">
+          Sent {{ n.sent_at|date:"d M, H:i" }}
+        </span>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Actions -->
+  <div style="display: flex; gap: var(--s-1); flex-shrink: 0;">
+    {% if not n.is_read %}
+      <a href="{% url 'mark_notification_read' n.id %}"
+         class="btn btn-sm btn-ghost"
+         title="Mark as read">
+        {% include 'partials/icons.html' with name="check-circle" size=14 %}
+      </a>
+    {% else %}
+      <span class="btn btn-sm btn-ghost" style="opacity: 0.3; cursor: default;">
+        {% include 'partials/icons.html' with name="check-circle" size=14 %}
+      </span>
+    {% endif %}
+  </div>
+
+</div>

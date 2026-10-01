@@ -1,0 +1,373 @@
+{% extends 'base.html' %}
+{% block title %}Edit School{% endblock %}
+{% block header_title %}Edit School{% endblock %}
+{% block header_sub %}{{ school.name }} · {{ school.code }}{% endblock %}
+
+{% block content %}
+
+<form method="post" enctype="multipart/form-data" class="max-w-5xl mx-auto">
+  {% csrf_token %}
+
+  {% if messages %}
+    {% for m in messages %}
+      <div style="padding: 12px 16px; margin-bottom: 16px; font-size: 13px; {% if m.tags == 'error' %}background: #fee2e2; color: #991b1b; border-left: 4px solid #dc2626;{% else %}background: #d1fae5; color: #065f46; border-left: 4px solid #059669;{% endif %}">
+        {{ m }}
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  <!-- ============ HEADER BAR ============ -->
+  <div class="bg-white shadow-sm border border-gray-200 p-4 mb-6" style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between;">
+    <div>
+      <div style="font-weight: 600; color: #1a1a1a; font-family: 'Poppins', sans-serif; font-size: 15px;">
+        {{ school.name }}
+      </div>
+      <div style="font-size: 12px; color: #6b7280; margin-top: 2px;">
+        Code: <span style="font-family: 'JetBrains Mono', monospace;">{{ school.code }}</span>
+        {% if school.nemis_code %} · NEMIS: {{ school.nemis_code }}{% endif %}
+      </div>
+    </div>
+    <div style="display: flex; gap: 8px;">
+      <a href="{% url 'schools_manage' %}" class="pro-btn pro-btn-secondary">Cancel</a>
+      <button type="submit" class="pro-btn pro-btn-primary">
+        {% include 'partials/icons.html' with name="save" size=15 %}
+        <span>Save Changes</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+    <!-- ============ LEFT: LOGO + STATUS ============ -->
+    <div class="lg:col-span-1" style="display: flex; flex-direction: column; gap: 16px;">
+
+      <!-- Logo card -->
+      <div class="pro-card">
+        <div class="pro-card-title">
+          {% include 'partials/icons.html' with name="upload" size=18 %}
+          <span>School Logo</span>
+        </div>
+
+        <!-- Current logo preview -->
+        <div style="text-align: center; margin-bottom: 16px;">
+          {% if school.logo %}
+            <img id="logo-preview" src="{{ school.logo.url }}" alt="{{ school.name }}" style="width: 140px; height: 140px; object-fit: contain; border: 1px solid #e5e7eb; background: #f9fafb; padding: 8px;">
+          {% else %}
+            <div id="logo-preview" style="width: 140px; height: 140px; margin: 0 auto; background: #00695c; color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 32px; font-family: 'Poppins', sans-serif;">
+              {{ school.name|slice:":2"|upper }}
+            </div>
+          {% endif %}
+        </div>
+
+        <!-- Upload input -->
+        <label style="display: block; font-size: 12px; font-weight: 500; color: #374151; margin-bottom: 6px;">
+          {% if school.logo %}Replace logo{% else %}Upload logo{% endif %}
+        </label>
+        <input type="file" name="logo" accept="image/*" id="logo-input"
+               style="width: 100%; border: 1px solid #d1d5db; padding: 8px; font-size: 12px;">
+
+        <p style="font-size: 11px; color: #6b7280; margin-top: 8px;">
+          Recommended: PNG or JPG, transparent background, 300×300 px or larger.
+        </p>
+
+        {% if school.logo %}
+        <label style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #dc2626; margin-top: 12px; cursor: pointer;">
+          <input type="checkbox" name="remove_logo">
+          Remove current logo
+        </label>
+        {% endif %}
+
+        <!-- Live preview JS -->
+        <script>
+          document.getElementById('logo-input').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(ev) {
+              const preview = document.getElementById('logo-preview');
+              if (preview.tagName === 'IMG') {
+                preview.src = ev.target.result;
+              } else {
+                // Replace placeholder with img
+                const img = document.createElement('img');
+                img.id = 'logo-preview';
+                img.src = ev.target.result;
+                img.style.width = '140px';
+                img.style.height = '140px';
+                img.style.objectFit = 'contain';
+                img.style.border = '1px solid #e5e7eb';
+                img.style.background = '#f9fafb';
+                img.style.padding = '8px';
+                preview.replaceWith(img);
+              }
+            };
+            reader.readAsDataURL(file);
+          });
+        </script>
+      </div>
+
+      <!-- Status card -->
+      <div class="pro-card">
+        <div class="pro-card-title">
+          {% include 'partials/icons.html' with name="settings" size=18 %}
+          <span>Status &amp; Plan</span>
+        </div>
+
+        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; margin-bottom: 16px;">
+          <input type="checkbox" name="is_active" {% if school.is_active %}checked{% endif %} style="width: 16px; height: 16px;">
+          <span style="font-size: 13px; font-weight: 500; color: #1a1a1a;">School is active</span>
+        </label>
+
+        <div style="margin-top: 12px;">
+          <label style="display: block; font-size: 12px; font-weight: 500; color: #374151; margin-bottom: 6px;">
+            Subscription plan
+          </label>
+          <select name="plan" style="width: 100%; border: 1px solid #d1d5db; padding: 8px; font-size: 13px;">
+            <option value="">— No plan —</option>
+            {% for p in plans %}
+              <<option value="{{ p.id }}">{{ p.name }} — KES {{ p.term_price }}</option>
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ============ RIGHT: DETAILS ============ -->
+    <div class="lg:col-span-2" style="display: flex; flex-direction: column; gap: 16px;">
+
+      <!-- Basic info -->
+      <div class="pro-card">
+        <div class="pro-card-title">
+          {% include 'partials/icons.html' with name="school" size=18 %}
+          <span>Basic Information</span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+          <div class="md:col-span-2">
+            <label style="display: block; font-size: 12px; font-weight: 500; color: #374151; margin-bottom: 6px;">
+              School Name <span style="color: #dc2626;">*</span>
+            </label>
+            <input type="text" name="name" value="{{ school.name }}" required
+                   style="width: 100%; border: 1px solid #d1d5db; padding: 8px; font-size: 13px;">
+          </div>
+
+          <div>
+            <label style="display: block; font-size: 12px; font-weight: 500; color: #374151; margin-bottom: 6px;">School Email</label>
+            <input type="email" name="email" value="{{ school.email|default:'' }}"
+                   style="width: 100%; border: 1px solid #d1d5db; padding: 8px; font-size: 13px;">
+          </div>
+
+          <div>
+            <label style="display: block; font-size: 12px; font-weight: 500; color: #374151; margin-bottom: 6px;">Phone</label>
+            <input type="tel" name="phone" value="{{ school.phone|default:'' }}"
+                   style="width: 100%; border: 1px solid #d1d5db; padding: 8px; font-size: 13px;">
+          </div>
+
+          <div class="md:col-span-2">
+            <label style="display: block; font-size: 12px; font-weight: 500; color: #374151; margin-bottom: 6px;">Motto</label>
+            <input type="text" name="motto" value="{{ school.motto|default:'' }}"
+                   style="width: 100%; border: 1px solid #d1d5db; padding: 8px; font-size: 13px;">
+          </div>
+
+          <div>
+            <label style="display: block; font-size: 12px; font-weight: 500; color: #374151; margin-bottom: 6px;">County</label>
+            <input type="text" name="county" value="{{ school.county|default:'' }}"
+                   style="width: 100%; border: 1px solid #d1d5db; padding: 8px; font-size: 13px;">
+          </div>
+
+          <div>
+            <label style="display: block; font-size: 12px; font-weight: 500; color: #374151; margin-bottom: 6px;">Sub-County</label>
+            <input type="text" name="sub_county" value="{{ school.sub_county|default:'' }}"
+                   style="width: 100%; border: 1px solid #d1d5db; padding: 8px; font-size: 13px;">
+          </div>
+
+          <div>
+            <label style="display: block; font-size: 12px; font-weight: 500; color: #374151; margin-bottom: 6px;">Ward</label>
+            <input type="text" name="ward" value="{{ school.ward|default:'' }}"
+                   style="width: 100%; border: 1px solid #d1d5db; padding: 8px; font-size: 13px;">
+          </div>
+
+          <div>
+            <label style="display: block; font-size: 12px; font-weight: 500; color: #374151; margin-bottom: 6px;">NEMIS Code</label>
+            <input type="text" name="nemis_code" value="{{ school.nemis_code|default:'' }}"
+                   style="width: 100%; border: 1px solid #d1d5db; padding: 8px; font-size: 13px;">
+          </div>
+
+          <div class="md:col-span-2">
+            <label style="display: block; font-size: 12px; font-weight: 500; color: #374151; margin-bottom: 6px;">Physical Address</label>
+            <input type="text" name="physical_address" value="{{ school.physical_address|default:'' }}"
+                   style="width: 100%; border: 1px solid #d1d5db; padding: 8px; font-size: 13px;">
+          </div>
+
+          <div class="md:col-span-2">
+            <label style="display: block; font-size: 12px; font-weight: 500; color: #374151; margin-bottom: 6px;">Postal Address</label>
+            <input type="text" name="postal_address" value="{{ school.postal_address|default:'' }}"
+                   style="width: 100%; border: 1px solid #d1d5db; padding: 8px; font-size: 13px;">
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Classification -->
+      <div class="pro-card">
+        <div class="pro-card-title">
+          {% include 'partials/icons.html' with name="book" size=18 %}
+          <span>Classification</span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label style="display: block; font-size: 12px; font-weight: 500; color: #374151; margin-bottom: 6px;">Type</label>
+            <select name="school_type" style="width: 100%; border: 1px solid #d1d5db; padding: 8px; font-size: 13px;">
+              <option value="private" {% if school.school_type == 'private' %}selected{% endif %}>Private</option>
+              <option value="public" {% if school.school_type == 'public' %}selected{% endif %}>Public</option>
+            </select>
+          </div>
+          <div>
+            <label style="display: block; font-size: 12px; font-weight: 500; color: #374151; margin-bottom: 6px;">Gender</label>
+            <select name="gender" style="width: 100%; border: 1px solid #d1d5db; padding: 8px; font-size: 13px;">
+              <option value="mixed" {% if school.gender == 'mixed' %}selected{% endif %}>Mixed</option>
+              <option value="boys" {% if school.gender == 'boys' %}selected{% endif %}>Boys Only</option>
+              <option value="girls" {% if school.gender == 'girls' %}selected{% endif %}>Girls Only</option>
+            </select>
+          </div>
+          <div>
+            <label style="display: block; font-size: 12px; font-weight: 500; color: #374151; margin-bottom: 6px;">Level</label>
+            <select name="level" style="width: 100%; border: 1px solid #d1d5db; padding: 8px; font-size: 13px;">
+              <option value="primary" {% if school.level == 'primary' %}selected{% endif %}>Primary</option>
+              <option value="jss" {% if school.level == 'jss' %}selected{% endif %}>Junior Secondary</option>
+              <option value="senior" {% if school.level == 'senior' %}selected{% endif %}>Senior School</option>
+              <option value="primary_jss" {% if school.level == 'primary_jss' %}selected{% endif %}>Primary + JSS</option>
+              <option value="all" {% if school.level == 'all' %}selected{% endif %}>Full School (1–12)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Leadership -->
+      <div class="pro-card">
+        <div class="pro-card-title">
+          {% include 'partials/icons.html' with name="users" size=18 %}
+          <span>Leadership</span>
+        </div>
+
+        <!-- Principal -->
+        <h4 style="font-size: 13px; font-weight: 700; color: #00695c; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 10px;">Principal</h4>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3" style="margin-bottom: 20px;">
+          <input type="text" name="principal_name" value="{{ school.principal_name|default:'' }}" placeholder="Full name"
+                 style="border: 1px solid #d1d5db; padding: 8px; font-size: 13px;">
+          <input type="text" name="principal_id" value="{{ school.principal_id|default:'' }}" placeholder="National ID"
+                 style="border: 1px solid #d1d5db; padding: 8px; font-size: 13px;">
+          <input type="tel" name="principal_phone" value="{{ school.principal_phone|default:'' }}" placeholder="Phone"
+                 style="border: 1px solid #d1d5db; padding: 8px; font-size: 13px;">
+          <input type="email" name="principal_email" value="{{ school.principal_email|default:'' }}" placeholder="Email"
+                 style="border: 1px solid #d1d5db; padding: 8px; font-size: 13px;">
+        </div>
+
+        <!-- Deputy -->
+        <h4 style="font-size: 13px; font-weight: 700; color: #00695c; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 10px;">Deputy Principal</h4>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3" style="margin-bottom: 20px;">
+          <input type="text" name="deputy_name" value="{{ school.deputy_name|default:'' }}" placeholder="Full name"
+                 style="border: 1px solid #d1d5db; padding: 8px; font-size: 13px;">
+          <input type="text" name="deputy_id" value="{{ school.deputy_id|default:'' }}" placeholder="National ID"
+                 style="border: 1px solid #d1d5db; padding: 8px; font-size: 13px;">
+          <input type="tel" name="deputy_phone" value="{{ school.deputy_phone|default:'' }}" placeholder="Phone"
+                 style="border: 1px solid #d1d5db; padding: 8px; font-size: 13px;">
+          <input type="email" name="deputy_email" value="{{ school.deputy_email|default:'' }}" placeholder="Email"
+                 style="border: 1px solid #d1d5db; padding: 8px; font-size: 13px;">
+        </div>
+
+        <!-- Senior Teacher -->
+        <h4 style="font-size: 13px; font-weight: 700; color: #00695c; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 10px;">Senior Teacher</h4>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3" style="margin-bottom: 20px;">
+          <input type="text" name="senior_teacher_name" value="{{ school.senior_teacher_name|default:'' }}" placeholder="Full name"
+                 style="border: 1px solid #d1d5db; padding: 8px; font-size: 13px;">
+          <input type="text" name="senior_teacher_id" value="{{ school.senior_teacher_id|default:'' }}" placeholder="National ID"
+                 style="border: 1px solid #d1d5db; padding: 8px; font-size: 13px;">
+          <input type="tel" name="senior_teacher_phone" value="{{ school.senior_teacher_phone|default:'' }}" placeholder="Phone"
+                 style="border: 1px solid #d1d5db; padding: 8px; font-size: 13px;">
+          <input type="email" name="senior_teacher_email" value="{{ school.senior_teacher_email|default:'' }}" placeholder="Email"
+                 style="border: 1px solid #d1d5db; padding: 8px; font-size: 13px;">
+        </div>
+
+        <!-- Accountant -->
+        <h4 style="font-size: 13px; font-weight: 700; color: #00695c; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 10px;">Accountant</h4>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <input type="text" name="accountant_name" value="{{ school.accountant_name|default:'' }}" placeholder="Full name"
+                 style="border: 1px solid #d1d5db; padding: 8px; font-size: 13px;">
+          <input type="text" name="accountant_id" value="{{ school.accountant_id|default:'' }}" placeholder="National ID"
+                 style="border: 1px solid #d1d5db; padding: 8px; font-size: 13px;">
+          <input type="tel" name="accountant_phone" value="{{ school.accountant_phone|default:'' }}" placeholder="Phone"
+                 style="border: 1px solid #d1d5db; padding: 8px; font-size: 13px;">
+          <input type="email" name="accountant_email" value="{{ school.accountant_email|default:'' }}" placeholder="Email"
+                 style="border: 1px solid #d1d5db; padding: 8px; font-size: 13px;">
+        </div>
+      </div>
+
+      <!-- Board Members -->
+      <div class="pro-card">
+        <div class="pro-card-title">
+          {% include 'partials/icons.html' with name="award" size=18 %}
+          <span>Board of Management</span>
+          <a href="{% url 'board_member_add' school.id %}" class="pro-btn pro-btn-primary" style="margin-left: auto; font-size: 11px; padding: 6px 12px;">
+            {% include 'partials/icons.html' with name="plus" size=13 %}
+            <span>Add Member</span>
+          </a>
+        </div>
+
+        {% if board_members %}
+          <table class="pro-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Role</th>
+                <th>ID Number</th>
+                <th>Phone</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for m in board_members %}
+              <tr>
+                <td>{{ m.full_name }}</td>
+                <td><span class="pro-badge pro-badge-teal">{{ m.get_role_display }}</span></td>
+                <td style="font-family: 'JetBrains Mono', monospace; font-size: 12px;">{{ m.id_number }}</td>
+                <td>{{ m.phone|default:"—" }}</td>
+                <td>
+                  <a href="{% url 'board_member_delete' m.id %}" class="pro-action-delete"
+                     onclick="return confirm('Remove {{ m.full_name }}?');">
+                    {% include 'partials/icons.html' with name="trash" size=13 %}
+                  </a>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% else %}
+          <p style="font-size: 13px; color: #9ca3af; text-align: center; padding: 16px;">
+            No board members added yet.
+          </p>
+        {% endif %}
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- ============ SAVE BAR (sticky at bottom) ============ -->
+  <div style="position: sticky; bottom: 16px; margin-top: 24px;">
+    <div class="bg-white shadow-lg border border-gray-200 p-4" style="display: flex; justify-content: flex-end; gap: 12px;">
+      <a href="{% url 'schools_manage' %}" class="pro-btn pro-btn-secondary">Cancel</a>
+      <button type="submit" class="pro-btn pro-btn-primary">
+        {% include 'partials/icons.html' with name="save" size=15 %}
+        <span>Save All Changes</span>
+      </button>
+    </div>
+  </div>
+
+</form>
+
+{% endblock %}

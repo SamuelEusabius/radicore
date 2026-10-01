@@ -1,0 +1,116 @@
+/* ==========================================================
+   SCHOOL MS — Global Page Loader
+   ========================================================== */
+
+#page-loader {
+  position: fixed;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.95);
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 20px;
+  transition: opacity 0.4s ease, visibility 0.4s ease;
+}
+
+#page-loader.hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* Spinner */
+.loader-spinner {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: 4px solid #ccfbf1;
+  border-top-color: #14b8a6;
+  border-right-color: #0d9488;
+  animation: loader-spin 1s linear infinite;
+  position: relative;
+}
+
+.loader-spinner::after {
+  content: '';
+  position: absolute;
+  inset: 6px;
+  border-radius: 50%;
+  border: 3px solid transparent;
+  border-top-color: #5eead4;
+  animation: loader-spin-reverse 1.4s linear infinite;
+}
+
+@keyframes loader-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes loader-spin-reverse {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(-360deg); }
+}
+
+/* Brand text under spinner */
+.loader-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  animation: loader-fade 1.6s ease-in-out infinite;
+}
+
+.loader-logo {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #14b8a6;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.loader-text {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a2332;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+.loader-subtext {
+  font-size: 12px;
+  color: #6b7280;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+@keyframes loader-fade {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+/* Progress bar under the loader (optional) */
+.loader-progress {
+  width: 200px;
+  height: 3px;
+  background: #e5e7eb;
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+
+.loader-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #14b8a6, #0d9488);
+  width: 0%;
+  animation: loader-progress 2s ease-in-out infinite;
+}
+
+@keyframes loader-progress {
+  0% { width: 5%; }
+  50% { width: 85%; }
+  100% { width: 95%; }
+}

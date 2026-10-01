@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% block title %}Student{% endblock %}
+{% block header_title %}Welcome, {{ student.first_name|default:"Student" }}{% endblock %}
+{% block header_sub %}{{ student.admission_number }} — {{ student.class_level }}{% endblock %}
+
+{% block content %}
+
+<h2 class="text-xl font-bold text-gray-800 mb-6">My Overview</h2>
+
+<div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+  <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 text-center">
+    <p class="text-4xl font-bold text-teal-600">{{ avg_percentage }}%</p>
+    <p class="text-gray-500 mt-2">Average Grade</p>
+  </div>
+  <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 text-center">
+    <p class="text-4xl font-bold text-teal-600">{{ attendance_rate }}%</p>
+    <p class="text-gray-500 mt-2">Attendance</p>
+  </div>
+  <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 text-center">
+    <p class="text-4xl font-bold text-teal-600">{{ grades|length }}</p>
+    <p class="text-gray-500 mt-2">Subjects</p>
+  </div>
+  <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 text-center">
+    <p class="text-2xl font-bold text-red-600">KES {{ total_due|floatformat:0 }}</p>
+    <p class="text-gray-500 mt-2">Fees Due</p>
+  </div>
+</div>
+
+<h2 class="text-xl font-bold text-gray-800 mt-10 mb-4">My Grades</h2>
+
+<div class="flex justify-end mb-3">
+  {% for g in grades|slice:":1" %}
+    <a href="{% url 'report_card_pdf' student.id g.exam.id %}"
+       target="_blank"
+       class="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg text-sm font-medium">
+      📄 Download Report Card ({{ g.exam.name }})
+    </a>
+  {% endfor %}
+</div>
+
+<div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+  <table class="w-full text-sm">
+    <thead class="bg-teal-600 text-white text-left">
+      <tr>
+        <th class="p-3">Exam</th>
+        <th class="p-3">Subject</th>
+        <th class="p-3">Marks</th>
+        <th class="p-3">%</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for g in grades %}
+      <tr class="border-t hover:bg-gray-50">
+        <td class="p-3">{{ g.exam.name }}</td>
+        <td class="p-3">{{ g.subject.name }}</td>
+        <td class="p-3">{{ g.marks }}/{{ g.out_of }}</td>
+        <td class="p-3 font-bold">{{ g.percentage|floatformat:1 }}%</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="4" class="p-6 text-center text-gray-500">No grades yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% endblock %}

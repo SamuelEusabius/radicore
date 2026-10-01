@@ -1,0 +1,690 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Subscription & Billing{% endblock %}
+{% block header_title %}Subscription & Billing{% endblock %}
+{% block header_sub %}{{ current_school.name }} · Choose a plan to continue{% endblock %}
+
+{% block content %}
+
+<div style="max-width: 1280px; margin: 0 auto;">
+
+  <!-- ============================================ -->
+  <!-- STATUS BANNER                                -->
+  <!-- ============================================ -->
+  {% if is_trial %}
+    <div class="card mb-6" style="border-left: 4px solid var(--warning); background: var(--warning-light);">
+      <div style="display: flex; align-items: flex-start; gap: var(--s-4);">
+        <div class="stat-icon" style="background: rgba(217, 119, 6, 0.2); color: var(--warning); flex-shrink: 0;">
+          {% include 'partials/icons.html' with name="alert-triangle" size=20 %}
+        </div>
+        <div style="flex: 1;">
+          <div style="font-family: var(--font-heading); font-weight: 700; font-size: var(--text-md); color: #92400E; margin-bottom: 4px;">
+            You're on a free trial — {{ days_left }} day{{ days_left|pluralize }} remaining
+          </div>
+          <p style="font-size: var(--text-sm); color: #92400E; margin: 0; opacity: 0.9;">
+            Trial period ends on <strong>{{ trial_end|date:"jS F Y" }}</strong>. Upgrade anytime to continue without interruption.
+            Trial limit: {{ trial_student_cap }} students.
+          </p>
+        </div>
+      </div>
+    </div>
+  {% elif subscription and subscription.status == 'pending_payment' %}
+    <div class="card mb-6" style="border-left: 4px solid var(--info); background: var(--info-light);">
+      <div style="display: flex; align-items: flex-start; gap: var(--s-4);">
+        <div class="stat-icon" style="background: rgba(37, 99, 235, 0.2); color: #2563EB; flex-shrink: 0;">
+          {% include 'partials/icons.html' with name="info" size=20 %}
+        </div>
+        <div style="flex: 1;">
+          <div style="font-family: var(--font-heading); font-weight: 700; font-size: var(--text-md); color: #1E40AF; margin-bottom: 4px;">
+            Pending payment — {{ current_plan.name }}
+          </div>
+          <p style="font-size: var(--text-sm); color: #1E40AF; margin: 0; opacity: 0.9;">
+            Your subscription is awaiting payment. Choose a plan below to continue or
+            <a href="{% url 'subscription_payment' %}" style="color: #1E40AF; text-decoration: underline; font-weight: 600;">go to payment</a>.
+          </p>
+        </div>
+      </div>
+    </div>
+  {% endif %}
+
+  <!-- ============================================ -->
+  <!-- SECTION 1: BILLING CYCLE                     -->
+  <!-- ============================================ -->
+  <div class="card mb-6">
+    <div class="card-title">
+      <span style="display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; background: var(--primary); color: #FFFFFF; border-radius: 50%; font-family: var(--font-heading); font-weight: 700; font-size: var(--text-xs);">1</span>
+      Choose Billing Cycle
+    </div>
+
+    <div class="cycle-grid" id="cycleGrid">
+
+      <button type="button" class="cycle-card" data-cycle="monthly" onclick="selectCycle('monthly')">
+        <div class="cycle-icon">{% include 'partials/icons.html' with name="calendar" size=24 %}</div>
+        <div class="cycle-name">Monthly</div>
+        <div class="cycle-desc">Pay every month — flexible</div>
+        <div class="cycle-badge">Standard rate</div>
+      </button>
+
+      <button type="button" class="cycle-card active" data-cycle="term" onclick="selectCycle('term')">
+        <div class="cycle-icon">{% include 'partials/icons.html' with name="book" size=24 %}</div>
+        <div class="cycle-name">Per Term</div>
+        <div class="cycle-desc">3 months — standard Kenyan term</div>
+        <div class="cycle-badge cycle-badge-primary">POPULAR</div>
+      </button>
+
+      <button type="button" class="cycle-card" data-cycle="contract_1y" onclick="selectCycle('contract_1y')">
+        <div class="cycle-icon">{% include 'partials/icons.html' with name="file-text" size=24 %}</div>
+        <div class="cycle-name">Contract (1 Year)</div>
+        <div class="cycle-desc">12 months — best for growing schools</div>
+        <div class="cycle-badge cycle-badge-success">SAVE UP TO 12%</div>
+      </button>
+
+      <button type="button" class="cycle-card" data-cycle="contract_2y" onclick="selectCycle('contract_2y')">
+        <div class="cycle-icon">{% include 'partials/icons.html' with name="award" size=24 %}</div>
+        <div class="cycle-name">Contract (2 Years)</div>
+        <div class="cycle-desc">24 months — max savings</div>
+        <div class="cycle-badge cycle-badge-success">SAVE UP TO 20%</div>
+      </button>
+
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- SECTION 2: PLAN CARDS                        -->
+  <!-- ============================================ -->
+  <div class="card mb-6">
+    <div class="card-title">
+      <span style="display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; background: var(--primary); color: #FFFFFF; border-radius: 50%; font-family: var(--font-heading); font-weight: 700; font-size: var(--text-xs);">2</span>
+      Choose Your Plan
+    </div>
+
+    <div style="font-size: var(--text-sm); color: var(--ink-600); margin-bottom: var(--s-4);">
+      Your school has <strong style="color: var(--primary);">{{ student_count }} active students</strong>.
+      {% if matched_plan_id %}The highlighted plan matches your school size.{% endif %}
+    </div>
+
+    <div class="plan-grid">
+
+      {% for plan in plans %}
+      <div class="plan-card {% if plan.id == matched_plan_id %}plan-recommended{% endif %}"
+           data-plan-id="{{ plan.id }}"
+           data-monthly="{{ plan.monthly_price|floatformat:0 }}"
+           data-term="{{ plan.term_price|floatformat:0 }}"
+           data-contract_1y="{{ plan.contract_1y_price|floatformat:0 }}"
+           data-contract_2y="{{ plan.contract_2y_price|floatformat:0 }}"
+           onclick="selectPlan({{ plan.id }})">
+
+        {% if plan.id == matched_plan_id %}
+          <div class="plan-ribbon">RECOMMENDED FOR YOU</div>
+        {% endif %}
+
+        <div class="plan-name">{{ plan.name }}</div>
+
+        <div class="plan-price-block">
+          <span class="plan-price" id="price-{{ plan.id }}">KES {{ plan.term_price|floatformat:0 }}</span>
+          <span class="plan-cycle" id="cycle-label-{{ plan.id }}">per term</span>
+        </div>
+
+        <div class="plan-range">
+          {{ plan.min_students }}{% if plan.max_students >= 99999 %}+{% else %} – {{ plan.max_students }}{% endif %} students
+        </div>
+
+        <ul class="plan-features">
+          {% for feature in plan.feature_list %}
+            <li>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+              <span>{{ feature }}</span>
+            </li>
+          {% empty %}
+            <li style="color: var(--ink-400); font-style: italic;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+              <span>Feature details coming soon</span>
+            </li>
+          {% endfor %}
+        </ul>
+
+        <button type="button" class="plan-select-btn" onclick="event.stopPropagation(); selectPlan({{ plan.id }})">
+          Select {{ plan.name }}
+        </button>
+
+      </div>
+      {% endfor %}
+
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- SECTION 3: PAYMENT METHOD (hidden until plan selected) -->
+  <!-- ============================================ -->
+  <div class="card mb-6" id="paymentSection" style="display: none;">
+    <div class="card-title">
+      <span style="display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; background: var(--primary); color: #FFFFFF; border-radius: 50%; font-family: var(--font-heading); font-weight: 700; font-size: var(--text-xs);">3</span>
+      Choose Payment Method
+    </div>
+
+    <div class="pay-grid">
+      <label class="pay-card">
+        <input type="radio" name="payment_method" value="mpesa" checked>
+        <div class="pay-icon" style="background: #00A651;">M</div>
+        <div>
+          <div class="pay-name">Pay via M-Pesa</div>
+          <div class="pay-desc">Receive an STK push on your phone</div>
+        </div>
+      </label>
+
+      <label class="pay-card">
+        <input type="radio" name="payment_method" value="bank">
+        <div class="pay-icon" style="background: #1A237E;">B</div>
+        <div>
+          <div class="pay-name">Bank Transfer</div>
+          <div class="pay-desc">Details sent after selection</div>
+        </div>
+      </label>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- SECTION 4: TERMS (hidden until plan selected) -->
+  <!-- ============================================ -->
+  <form method="post" action="{% url 'subscription_confirm' %}" id="subscriptionForm">
+    {% csrf_token %}
+    <input type="hidden" name="plan_id" id="formPlanId">
+    <input type="hidden" name="cycle" id="formCycle" value="term">
+
+    <div class="card mb-6" id="termsSection" style="display: none;">
+
+      <label style="display: flex; align-items: flex-start; gap: var(--s-3); cursor: pointer;">
+        <input type="checkbox" name="agree_terms" id="agreeTerms" onchange="checkAgree()"
+               style="width: 18px; height: 18px; margin-top: 2px; accent-color: var(--primary);">
+        <div style="font-size: var(--text-sm); color: var(--ink-700); line-height: 1.6;">
+          I agree to the
+          <a href="javascript:void(0)" onclick="openTermsModal()" style="color: var(--primary); font-weight: 600; text-decoration: underline;">
+            Terms &amp; Conditions
+          </a>
+          and
+          <a href="javascript:void(0)" onclick="openPrivacyModal()" style="color: var(--primary); font-weight: 600; text-decoration: underline;">
+            Privacy Policy
+          </a>
+          of School MS.
+        </div>
+      </label>
+
+    </div>
+
+    <!-- ============================================ -->
+    <!-- SECTION 5: CONTINUE BUTTON                   -->
+    <!-- ============================================ -->
+    <div class="card" id="continueSection" style="display: none; padding: var(--s-5);">
+      <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--s-3);">
+        <div>
+          <div style="font-size: var(--text-xs); color: var(--ink-500); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600;">
+            Selected
+          </div>
+          <div id="selectionSummary" style="font-family: var(--font-heading); font-weight: 700; font-size: var(--text-md); color: var(--ink-900); margin-top: 2px;">
+            —
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary" id="continueBtn" disabled
+                style="padding: 14px 32px; font-size: var(--text-md);">
+          {% include 'partials/icons.html' with name="check-circle" size=16 %}
+          <span>Continue to Payment</span>
+        </button>
+      </div>
+    </div>
+
+  </form>
+
+</div>
+
+<!-- ============================================ -->
+<!-- TERMS MODAL                                  -->
+<!-- ============================================ -->
+<div id="termsModal" class="modal-backdrop">
+  <div class="modal" style="max-width: 720px;">
+    <div class="modal-header">
+      <h3 class="modal-title">Terms &amp; Conditions</h3>
+      <button type="button" onclick="closeModal('termsModal')" class="btn btn-sm btn-ghost">✕</button>
+    </div>
+    <div class="modal-body" id="termsScrollArea" onscroll="checkTermsScroll()"
+         style="max-height: 60vh; overflow-y: auto; font-size: var(--text-sm); line-height: 1.7; color: var(--ink-700);">
+      {% include 'dashboard/partials/_terms_content.html' %}
+    </div>
+    <div class="modal-footer">
+      <div id="scrollHint" style="flex: 1; font-size: var(--text-xs); color: var(--ink-500); font-style: italic;">
+        Scroll to read all terms before accepting.
+      </div>
+      <button type="button" onclick="closeModal('termsModal')" class="btn btn-secondary">Cancel</button>
+      <button type="button" id="termsAcceptBtn" onclick="acceptTerms()" class="btn btn-primary" disabled>
+        I Agree to Terms
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================ -->
+<!-- PRIVACY MODAL                                -->
+<!-- ============================================ -->
+<div id="privacyModal" class="modal-backdrop">
+  <div class="modal" style="max-width: 720px;">
+    <div class="modal-header">
+      <h3 class="modal-title">Privacy Policy</h3>
+      <button type="button" onclick="closeModal('privacyModal')" class="btn btn-sm btn-ghost">✕</button>
+    </div>
+    <div class="modal-body" id="privacyScrollArea" onscroll="checkPrivacyScroll()"
+         style="max-height: 60vh; overflow-y: auto; font-size: var(--text-sm); line-height: 1.7; color: var(--ink-700);">
+      {% include 'dashboard/partials/_privacy_content.html' %}
+    </div>
+    <div class="modal-footer">
+      <div id="privacyHint" style="flex: 1; font-size: var(--text-xs); color: var(--ink-500); font-style: italic;">
+        Scroll to read all terms before accepting.
+      </div>
+      <button type="button" onclick="closeModal('privacyModal')" class="btn btn-secondary">Cancel</button>
+      <button type="button" id="privacyAcceptBtn" onclick="acceptPrivacy()" class="btn btn-primary" disabled>
+        I Agree to Privacy Policy
+      </button>
+    </div>
+  </div>
+</div>
+
+<style>
+  /* Cycle cards */
+  .cycle-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: var(--s-3);
+  }
+  .cycle-card {
+    position: relative;
+    text-align: center;
+    padding: var(--s-5) var(--s-4);
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    transition: all var(--t-fast);
+  }
+  .cycle-card:hover { border-color: var(--primary); background: var(--primary-soft); }
+  .cycle-card.active {
+    border-color: var(--primary);
+    background: var(--primary-soft);
+    box-shadow: var(--shadow-sm);
+  }
+  .cycle-icon {
+    width: 48px; height: 48px;
+    margin: 0 auto var(--s-3);
+    background: var(--primary-soft);
+    color: var(--primary);
+    border-radius: var(--radius);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .cycle-card.active .cycle-icon {
+    background: var(--primary);
+    color: #FFFFFF;
+  }
+  .cycle-name {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: var(--text-md);
+    color: var(--ink-900);
+    margin-bottom: 4px;
+  }
+  .cycle-desc {
+    font-size: var(--text-xs);
+    color: var(--ink-500);
+  }
+  .cycle-badge {
+    display: inline-block;
+    margin-top: var(--s-3);
+    padding: 3px 10px;
+    border-radius: var(--radius-full);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    background: var(--surface-muted);
+    color: var(--ink-600);
+  }
+  .cycle-badge-primary { background: var(--primary); color: #FFFFFF; }
+  .cycle-badge-success { background: var(--success-light); color: var(--success); }
+
+  /* Plan cards — equal height, buttons pinned to bottom */
+  .plan-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: var(--s-4);
+    align-items: stretch;
+  }
+  .plan-card {
+    position: relative;
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: var(--s-5);
+    cursor: pointer;
+    transition: all var(--t-base);
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+  }
+  .plan-card:hover {
+    border-color: var(--primary);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+  }
+  .plan-card.selected {
+    border-color: var(--primary);
+    background: var(--primary-soft);
+    box-shadow: 0 0 0 3px var(--primary-light);
+  }
+  .plan-recommended {
+    border-color: var(--primary);
+  }
+  .plan-ribbon {
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--primary);
+    color: #FFFFFF;
+    padding: 4px 12px;
+    border-radius: var(--radius-full);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .plan-name {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: var(--text-md);
+    color: var(--ink-900);
+    margin-bottom: var(--s-3);
+  }
+  .plan-price-block {
+    margin-bottom: var(--s-2);
+  }
+  .plan-price {
+    font-family: var(--font-heading);
+    font-weight: 800;
+    font-size: 24pt;
+    color: var(--primary);
+    line-height: 1;
+  }
+  .plan-cycle {
+    display: block;
+    font-size: var(--text-xs);
+    color: var(--ink-500);
+    margin-top: 2px;
+  }
+  .plan-range {
+    display: inline-block;
+    padding: 3px 10px;
+    background: var(--surface-muted);
+    color: var(--ink-700);
+    border-radius: var(--radius-full);
+    font-size: var(--text-xs);
+    font-weight: 600;
+    margin-bottom: var(--s-4);
+    align-self: flex-start;
+  }
+  .plan-features {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 var(--s-5);
+    flex: 1;
+  }
+  .plan-features li {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 5px 0;
+    font-size: var(--text-xs);
+    color: var(--ink-600);
+    line-height: 1.4;
+  }
+  .plan-features li svg {
+    flex-shrink: 0;
+    margin-top: 2px;
+    color: var(--success);
+  }
+  .plan-select-btn {
+    width: 100%;
+    padding: 10px;
+    background: var(--surface);
+    color: var(--primary);
+    border: 1.5px solid var(--primary);
+    border-radius: var(--radius);
+    font-family: var(--font-sans);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--t-fast);
+    margin-top: auto;
+  }
+  .plan-select-btn:hover {
+    background: var(--primary);
+    color: #FFFFFF;
+  }
+  .plan-card.selected .plan-select-btn {
+    background: var(--primary);
+    color: #FFFFFF;
+  }
+
+  /* Payment methods */
+  .pay-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: var(--s-3);
+  }
+  .pay-card {
+    display: flex;
+    align-items: center;
+    gap: var(--s-3);
+    padding: var(--s-4);
+    border: 2px solid var(--border);
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    transition: all var(--t-fast);
+  }
+  .pay-card:hover { border-color: var(--primary); background: var(--primary-soft); }
+  .pay-card input { display: none; }
+  .pay-card:has(input:checked) {
+    border-color: var(--primary);
+    background: var(--primary-soft);
+  }
+  .pay-icon {
+    width: 44px; height: 44px;
+    border-radius: var(--radius);
+    display: flex; align-items: center; justify-content: center;
+    color: #FFFFFF;
+    font-family: var(--font-heading);
+    font-weight: 800;
+    font-size: var(--text-lg);
+    flex-shrink: 0;
+  }
+  .pay-name {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: var(--text-sm);
+    color: var(--ink-900);
+  }
+  .pay-desc {
+    font-size: var(--text-xs);
+    color: var(--ink-500);
+    margin-top: 2px;
+  }
+
+  @media (max-width: 700px) {
+    .cycle-grid, .plan-grid, .pay-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<script>
+  // ---------- State ----------
+  let state = {
+    cycle: 'term',
+    planId: null,
+    planName: null,
+    price: 0,
+    termsAccepted: false,
+    privacyAccepted: false,
+  };
+
+  // ---------- Cycle selection ----------
+  function selectCycle(cycle) {
+    state.cycle = cycle;
+
+    document.querySelectorAll('.cycle-card').forEach(c => {
+      c.classList.toggle('active', c.dataset.cycle === cycle);
+    });
+
+    const cycleLabels = {
+      'monthly': 'per month',
+      'term': 'per term',
+      'contract_1y': 'per year',
+      'contract_2y': 'for 2 years',
+    };
+
+    document.querySelectorAll('.plan-card').forEach(card => {
+      const planId = card.dataset.planId;
+      const price = card.dataset[cycle];
+      const priceEl = document.getElementById('price-' + planId);
+      const cycleEl = document.getElementById('cycle-label-' + planId);
+      if (priceEl) priceEl.textContent = 'KES ' + parseInt(price).toLocaleString();
+      if (cycleEl) cycleEl.textContent = cycleLabels[cycle];
+    });
+
+    document.getElementById('formCycle').value = cycle;
+    updateSummary();
+  }
+
+  // ---------- Plan selection ----------
+  function selectPlan(planId) {
+    state.planId = planId;
+
+    document.querySelectorAll('.plan-card').forEach(c => {
+      c.classList.toggle('selected', parseInt(c.dataset.planId) === planId);
+    });
+
+    const card = document.querySelector(`.plan-card[data-plan-id="${planId}"]`);
+    state.planName = card.querySelector('.plan-name').textContent.trim();
+    state.price = parseInt(card.dataset[state.cycle] || 0);
+
+    document.getElementById('formPlanId').value = planId;
+
+    document.getElementById('paymentSection').style.display = 'block';
+    document.getElementById('termsSection').style.display = 'block';
+    document.getElementById('continueSection').style.display = 'block';
+
+    setTimeout(() => {
+      document.getElementById('paymentSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+
+    updateSummary();
+  }
+
+  // ---------- Summary ----------
+  function updateSummary() {
+    if (!state.planId) return;
+    const card = document.querySelector(`.plan-card[data-plan-id="${state.planId}"]`);
+    state.price = parseInt(card.dataset[state.cycle] || 0);
+
+    const cycleLabels = {
+      'monthly': 'Monthly',
+      'term': 'Per Term',
+      'contract_1y': 'Contract (1 Year)',
+      'contract_2y': 'Contract (2 Years)',
+    };
+
+    document.getElementById('selectionSummary').textContent =
+      state.planName + ' · ' + cycleLabels[state.cycle] + ' · KES ' + state.price.toLocaleString();
+  }
+
+  // ---------- Checkbox gating ----------
+  function checkAgree() {
+    state.termsAccepted = true;
+    const cb = document.getElementById('agreeTerms');
+    document.getElementById('continueBtn').disabled = !cb.checked;
+  }
+
+  // ---------- Modals ----------
+  function openModal(id) {
+    document.getElementById(id).classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeModal(id) {
+    document.getElementById(id).classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  function openTermsModal() {
+    openModal('termsModal');
+    const el = document.getElementById('termsScrollArea');
+    el.scrollTop = 0;
+    document.getElementById('termsAcceptBtn').disabled = true;
+    document.getElementById('scrollHint').style.color = 'var(--ink-500)';
+  }
+  function openPrivacyModal() {
+    openModal('privacyModal');
+    const el = document.getElementById('privacyScrollArea');
+    el.scrollTop = 0;
+    document.getElementById('privacyAcceptBtn').disabled = true;
+    document.getElementById('privacyHint').style.color = 'var(--ink-500)';
+  }
+
+  // ---------- Scroll detection ----------
+  function checkTermsScroll() {
+    const el = document.getElementById('termsScrollArea');
+    const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 20;
+    if (atBottom) {
+      document.getElementById('termsAcceptBtn').disabled = false;
+      document.getElementById('scrollHint').style.color = 'var(--success)';
+      document.getElementById('scrollHint').textContent = '✓ You can now accept the terms.';
+    }
+  }
+  function checkPrivacyScroll() {
+    const el = document.getElementById('privacyScrollArea');
+    const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 20;
+    if (atBottom) {
+      document.getElementById('privacyAcceptBtn').disabled = false;
+      document.getElementById('privacyHint').style.color = 'var(--success)';
+      document.getElementById('privacyHint').textContent = '✓ You can now accept the privacy policy.';
+    }
+  }
+
+  // ---------- Accept terms ----------
+  function acceptTerms() {
+    closeModal('termsModal');
+    document.getElementById('agreeTerms').checked = true;
+    document.getElementById('continueBtn').disabled = false;
+  }
+  function acceptPrivacy() {
+    closeModal('privacyModal');
+  }
+
+  // Close modal on Escape + backdrop click
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      document.querySelectorAll('.modal-backdrop.open').forEach(m => m.classList.remove('open'));
+      document.body.style.overflow = '';
+    }
+  });
+  document.querySelectorAll('.modal-backdrop').forEach(m => {
+    m.addEventListener('click', (e) => {
+      if (e.target === m) {
+        m.classList.remove('open');
+        document.body.style.overflow = '';
+      }
+    });
+  });
+</script>
+
+{% endblock %}

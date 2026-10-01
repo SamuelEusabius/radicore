@@ -1,0 +1,41 @@
+/* ============================================================
+   PUBLIC NAVIGATION — supplemental styles
+   (Main brand-mark styles live inline in base_public.html)
+   ============================================================ */
+
+/* Fallback for any brand marks rendered outside base_public.html */
+.pub-logo-mark,
+.pub-mobile-brand-mark,
+.pub-footer-brand-mark,
+.login-brand-logo-mark,
+.logout-brand-logo-mark,
+.reset-brand-logo-mark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.pub-logo-mark img,
+.pub-mobile-brand-mark img,
+.pub-footer-brand-mark img,
+.login-brand-logo-mark img,
+.logout-brand-logo-mark img,
+.reset-brand-logo-mark img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+/* Auth page brand marks — slightly bigger */
+.login-brand-logo-mark,
+.logout-brand-logo-mark,
+.reset-brand-logo-mark {
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  min-height: 48px;
+  border-radius: 10px;
+}

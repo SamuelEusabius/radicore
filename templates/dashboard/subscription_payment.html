@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Complete Payment{% endblock %}
+{% block header_title %}Complete Payment{% endblock %}
+{% block header_sub %}{{ current_school.name }}{% endblock %}
+
+{% block content %}
+
+<div style="max-width: 640px; margin: 0 auto;">
+
+  <div class="card mb-6" style="border-left: 4px solid var(--primary); background: var(--primary-soft);">
+    <div style="display: flex; align-items: center; gap: var(--s-4);">
+      <div class="stat-icon" style="width: 48px; height: 48px; background: var(--primary); color: #FFFFFF;">
+        {% include 'partials/icons.html' with name="check-circle" size=22 %}
+      </div>
+      <div>
+        <div style="font-family: var(--font-heading); font-weight: 700; font-size: var(--text-md); color: var(--primary-dark);">
+          Plan selected
+        </div>
+        <div style="font-size: var(--text-sm); color: var(--primary-dark); opacity: 0.85;">
+          Complete payment to activate your subscription.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Summary -->
+  <div class="card mb-6">
+    <div class="card-title">
+      {% include 'partials/icons.html' with name="file-text" size=18 %}
+      Order Summary
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: var(--s-3); font-size: var(--text-sm);">
+      <div style="display: flex; justify-content: space-between; padding-bottom: var(--s-3); border-bottom: 1px solid var(--border);">
+        <span style="color: var(--ink-500);">Plan</span>
+        <strong style="color: var(--ink-900);">{{ pending.plan_name }}</strong>
+      </div>
+      <div style="display: flex; justify-content: space-between; padding-bottom: var(--s-3); border-bottom: 1px solid var(--border);">
+        <span style="color: var(--ink-500);">Billing cycle</span>
+        <strong style="color: var(--ink-900);">{{ pending.cycle }}</strong>
+      </div>
+      <div style="display: flex; justify-content: space-between; padding-top: var(--s-2);">
+        <span style="color: var(--ink-700); font-weight: 600;">Total</span>
+        <strong style="color: var(--primary); font-size: var(--text-lg);">KES {{ pending.price|floatformat:0 }}</strong>
+      </div>
+    </div>
+  </div>
+
+  <!-- Payment Instructions -->
+  <div class="card mb-6">
+    <div class="card-title">
+      {% include 'partials/icons.html' with name="credit-card" size=18 %}
+      Pay via M-Pesa
+    </div>
+
+    <div style="background: #F0FDF4; border-left: 4px solid #22C55E; padding: var(--s-4); border-radius: 0 var(--radius) var(--radius) 0; margin-bottom: var(--s-4); font-size: var(--text-sm); color: #166534;">
+      <strong>To complete payment:</strong><br>
+      1. Go to <strong>M-Pesa → Lipa na M-Pesa → Pay Bill</strong><br>
+      2. Business Number: <strong>XXXXXX</strong><br>
+      3. Account Number: <strong>{{ current_school.code|default:current_school.id }}</strong><br>
+      4. Amount: <strong>KES {{ pending.price|floatformat:0 }}</strong><br>
+      <br>
+      Your subscription activates automatically within 2 minutes of payment.
+    </div>
+
+    <p style="font-size: var(--text-xs); color: var(--ink-500); margin: 0;">
+      M-Pesa STK Push integration is being finalized. Once live, you'll receive a payment prompt on your phone.
+    </p>
+  </div>
+
+  <div style="display: flex; justify-content: center;">
+    <a href="{% url 'subscription_plans' %}" class="btn btn-secondary">← Back to Plans</a>
+  </div>
+
+</div>
+
+{% endblock %}

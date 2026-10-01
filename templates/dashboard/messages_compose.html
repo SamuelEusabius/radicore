@@ -1,0 +1,190 @@
+{% extends 'base.html' %}
+{% block title %}Compose Message{% endblock %}
+{% block header_title %}Compose Message{% endblock %}
+{% block header_sub %}Send internal message to teachers &amp; staff{% endblock %}
+
+{% block content %}
+
+<div class="max-w-3xl mx-auto">
+
+  {% if messages %}
+    {% for m in messages %}
+      <div style="padding: 12px 16px; margin-bottom: 16px; font-size: 13px; {% if m.tags == 'error' %}background: #fee2e2; color: #991b1b; border-left: 4px solid #dc2626;{% else %}background: #d1fae5; color: #065f46; border-left: 4px solid #059669;{% endif %}">
+        {{ m }}
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  <form method="post" class="bg-white shadow-sm border border-gray-200 p-8">
+
+    {% csrf_token %}
+
+    <!-- Recipients -->
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; font-size: 13px; font-weight: 600; color: #1a1a1a; margin-bottom: 10px;">
+        Send To
+      </label>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px;">
+
+        <label class="recipient-option">
+          <input type="radio" name="recipient_group" value="teachers" class="hidden" checked onchange="toggleSpecific()">
+          <div class="recipient-card">
+            {% include 'partials/icons.html' with name="teacher" size=20 %}
+            <div>
+              <div style="font-weight: 600; font-size: 13px;">All Teachers</div>
+              <div style="font-size: 11px; color: #6b7280;">{{ counts.teachers }} recipient{{ counts.teachers|pluralize }}</div>
+            </div>
+          </div>
+        </label>
+
+        <label class="recipient-option">
+          <input type="radio" name="recipient_group" value="staff" class="hidden" onchange="toggleSpecific()">
+          <div class="recipient-card">
+            {% include 'partials/icons.html' with name="briefcase" size=20 %}
+            <div>
+              <div style="font-weight: 600; font-size: 13px;">All Staff</div>
+              <div style="font-size: 11px; color: #6b7280;">{{ counts.staff }} recipient{{ counts.staff|pluralize }}</div>
+            </div>
+          </div>
+        </label>
+
+        <label class="recipient-option">
+          <input type="radio" name="recipient_group" value="class_teachers" class="hidden" onchange="toggleSpecific()">
+          <div class="recipient-card">
+            {% include 'partials/icons.html' with name="award" size=20 %}
+            <div>
+              <div style="font-weight: 600; font-size: 13px;">Class Teachers</div>
+              <div style="font-size: 11px; color: #6b7280;">{{ counts.class_teachers }} recipient{{ counts.class_teachers|pluralize }}</div>
+            </div>
+          </div>
+        </label>
+
+        <label class="recipient-option">
+          <input type="radio" name="recipient_group" value="all" class="hidden" onchange="toggleSpecific()">
+          <div class="recipient-card">
+            {% include 'partials/icons.html' with name="users" size=20 %}
+            <div>
+              <div style="font-weight: 600; font-size: 13px;">Everyone</div>
+              <div style="font-size: 11px; color: #6b7280;">{{ counts.all }} recipient{{ counts.all|pluralize }}</div>
+            </div>
+          </div>
+        </label>
+
+        <label class="recipient-option">
+          <input type="radio" name="recipient_group" value="specific" class="hidden" onchange="toggleSpecific()">
+          <div class="recipient-card">
+            {% include 'partials/icons.html' with name="user" size=20 %}
+            <div>
+              <div style="font-weight: 600; font-size: 13px;">Specific Person</div>
+              <div style="font-size: 11px; color: #6b7280;">Choose one</div>
+            </div>
+          </div>
+        </label>
+
+      </div>
+
+      <div id="specific-wrapper" style="display: none; margin-top: 12px;">
+        <label style="display: block; font-size: 13px; font-weight: 500; color: #374151; margin-bottom: 6px;">
+          Choose Recipient
+        </label>
+        <select name="specific_recipient" style="width: 100%; border: 1px solid #d1d5db; padding: 10px; font-size: 14px;">
+          <option value="">— Select —</option>
+          {% for u in all_recipients %}
+            <option value="{{ u.id }}">{{ u.get_full_name|default:u.email }} ({{ u.get_role_display }})</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+
+    <!-- Priority + Category -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4" style="margin-bottom: 20px;">
+      <div>
+        <label style="display: block; font-size: 13px; font-weight: 500; color: #374151; margin-bottom: 6px;">
+          Priority
+        </label>
+        <select name="priority" style="width: 100%; border: 1px solid #d1d5db; padding: 10px; font-size: 14px;">
+          <option value="normal">Normal</option>
+          <option value="high">High</option>
+          <option value="urgent">Urgent</option>
+        </select>
+      </div>
+      <div>
+        <label style="display: block; font-size: 13px; font-weight: 500; color: #374151; margin-bottom: 6px;">
+          Category
+        </label>
+        <select name="category" style="width: 100%; border: 1px solid #d1d5db; padding: 10px; font-size: 14px;">
+          <option value="general">General</option>
+          <option value="announcement">Announcement</option>
+          <option value="meeting">Meeting Invitation</option>
+          <option value="task">Task Assignment</option>
+          <option value="urgent">Urgent</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Subject -->
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; font-size: 13px; font-weight: 500; color: #374151; margin-bottom: 6px;">
+        Subject <span style="color: #dc2626;">*</span>
+      </label>
+      <input type="text" name="subject" required maxlength="200"
+             placeholder="e.g. Staff Meeting on Monday 10 AM"
+             style="width: 100%; border: 1px solid #d1d5db; padding: 10px; font-size: 14px;">
+    </div>
+
+    <!-- Body -->
+    <div style="margin-bottom: 24px;">
+      <label style="display: block; font-size: 13px; font-weight: 500; color: #374151; margin-bottom: 6px;">
+        Message <span style="color: #dc2626;">*</span>
+      </label>
+      <textarea name="body" rows="8" required
+                placeholder="Type your message here..."
+                style="width: 100%; border: 1px solid #d1d5db; padding: 12px; font-size: 14px; line-height: 1.6; font-family: 'Inter', sans-serif; resize: vertical;"></textarea>
+    </div>
+
+    <!-- Actions -->
+    <div style="display: flex; gap: 12px; justify-content: flex-end; padding-top: 16px; border-top: 1px solid #e5e7eb;">
+      <a href="{% url 'messages_inbox' %}" class="pro-btn pro-btn-secondary">Cancel</a>
+      <button type="submit" class="pro-btn pro-btn-primary">
+        {% include 'partials/icons.html' with name="send" size=15 %}
+        <span>Send Message</span>
+      </button>
+    </div>
+
+  </form>
+
+</div>
+
+<style>
+  .recipient-option { display: block; cursor: pointer; }
+  .recipient-option input { position: absolute; opacity: 0; pointer-events: none; }
+  .recipient-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px;
+    border: 2px solid #e5e7eb;
+    background: #ffffff;
+    transition: all 0.15s;
+  }
+  .recipient-card:hover { border-color: #00695c; }
+  .recipient-option input:checked ~ .recipient-card {
+    border-color: #00695c;
+    background: #e0f2f1;
+  }
+</style>
+
+<script>
+function toggleSpecific() {
+  const selected = document.querySelector('input[name="recipient_group"]:checked');
+  const wrapper = document.getElementById('specific-wrapper');
+  if (selected && selected.value === 'specific') {
+    wrapper.style.display = 'block';
+  } else {
+    wrapper.style.display = 'none';
+  }
+}
+</script>
+
+{% endblock %}

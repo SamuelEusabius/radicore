@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+{% block title %}Bulk Fee Draft{% endblock %}
+{% block header_title %}Bulk Fee Draft{% endblock %}
+{% block header_sub %}Apply one fee to multiple classes at once{% endblock %}
+
+{% block content %}
+
+<div class="max-w-3xl mx-auto bg-white shadow-sm border border-gray-200 p-8">
+
+  <div style="background: #ecfeff; border-left: 4px solid #0e7490; padding: 14px 16px; margin-bottom: 24px;">
+    <div style="display: flex; gap: 10px; align-items: flex-start;">
+      {% include 'partials/icons.html' with name="info" size=18 %}
+      <div style="font-size: 13px; color: #155e75;">
+        <strong>How it works:</strong> This creates one FeeStructure record per selected class.
+        Use this when the same fee (e.g. "Term 1 2026 — Lunch") applies to many classes.
+        For per-item per-class amounts, use <strong>Matrix Draft</strong> instead.
+      </div>
+    </div>
+  </div>
+
+  <form method="post" style="display: flex; flex-direction: column; gap: 20px;">
+    {% csrf_token %}
+
+    <!-- ================= FEE NAME ================= -->
+    <div>
+      <label style="display: block; font-size: 13px; font-weight: 500; color: #374151; margin-bottom: 6px;">
+        Fee Name <span style="color: #dc2626;">*</span>
+      </label>
+      <input type="text" name="name" required
+             value="{% if form_data and form_data.name %}{{ form_data.name }}{% endif %}"
+             placeholder="e.g. Term 1 2026 — Lunch"
+             style="width: 100%; border: 1px solid #d1d5db; padding: 10px; font-size: 14px;">
+      <p style="font-size: 11px; color: #6b7280; margin-top: 4px;">
+        The class name will be appended automatically per class.
+      </p>
+    </div>
+
+    <!-- ================= AMOUNT + DUE DATE ================= -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+      <div>
+        <label style="display: block; font-size: 13px; font-weight: 500; color: #374151; margin-bottom: 6px;">
+          Amount (KES) <span style="color: #dc2626;">*</span>
+        </label>
+        <input type="number" name="amount_kes" step="1" min="1" required
+               value="{% if form_data and form_data.amount_kes %}{{ form_data.amount_kes }}{% endif %}"
+               style="width: 100%; border: 1px solid #d1d5db; padding: 10px; font-size: 14px;">
+      </div>
+      <div>
+        <label style="display: block; font-size: 13px; font-weight: 500; color: #374151; margin-bottom: 6px;">
+          Due Date <span style="color: #dc2626;">*</span>
+        </label>
+        <input type="date" name="due_date" required
+               value="{% if form_data and form_data.due_date %}{{ form_data.due_date }}{% endif %}"
+               style="width: 100%; border: 1px solid #d1d5db; padding: 10px; font-size: 14px;">
+      </div>
+    </div>
+
+    <!-- ================= CLASS SELECTION ================= -->
+    <div>
+      <label style="display: block; font-size: 13px; font-weight: 500; color: #374151; margin-bottom: 10px;">
+        Apply to classes <span style="color: #dc2626;">*</span>
+      </label>
+
+      <div style="display: flex; gap: 12px; margin-bottom: 12px;">
+        <button type="button" onclick="selectAll(true)"
+                class="pro-btn pro-btn-secondary" style="font-size: 12px; padding: 6px 12px;">
+          Select all
+        </button>
+        <button type="button" onclick="selectAll(false)"
+                class="pro-btn pro-btn-secondary" style="font-size: 12px; padding: 6px 12px;">
+          Clear all
+        </button>
+      </div>
+
+      <div style="border: 1px solid #e5e7eb; max-height: 320px; overflow-y: auto; padding: 12px;">
+        {% for c in classes %}
+          <label style="display: flex; align-items: center; gap: 10px; padding: 8px 6px; cursor: pointer; border-bottom: 1px solid #f3f4f6;">
+            <input type="checkbox" name="classes" value="{{ c.id }}"
+                   class="class-checkbox"
+                   {% if form_data and c.id|stringformat:"s" in form_data.getlist.classes %}checked{% endif %}>
+            <span style="font-size: 14px;">{{ c.name }}</span>
+          </label>
+        {% empty %}
+          <p style="color: #6b7280; font-size: 13px; padding: 12px;">
+            No classes defined yet. <a href="{% url 'manage_classes' %}" style="color: #0f766e;">Add classes</a>
+          </p>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- ================= ACTIONS ================= -->
+    <div style="display: flex; gap: 12px; justify-content: flex-end; padding-top: 12px; border-top: 1px solid #e5e7eb;">
+      <a href="{% url 'fee_structure_list' %}" class="pro-btn pro-btn-secondary">Cancel</a>
+      <button type="submit" class="pro-btn pro-btn-primary">
+        {% include 'partials/icons.html' with name="file-plus" size=15 %}
+        <span>Create Bulk Fees</span>
+      </button>
+    </div>
+
+  </form>
+
+</div>
+
+<script>
+function selectAll(state) {
+  document.querySelectorAll('.class-checkbox').forEach(cb => cb.checked = state);
+}
+</script>
+
+{% endblock %}

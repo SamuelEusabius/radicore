@@ -1,0 +1,129 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Create User{% endblock %}
+{% block header_title %}Create User{% endblock %}
+{% block header_sub %}Add a new user to the system{% endblock %}
+
+{% block content %}
+
+<div style="max-width: 720px; margin: 0 auto;">
+
+  <a href="{% url 'manage_users' %}" class="btn btn-ghost btn-sm" style="margin-bottom: var(--s-4);">
+    ← Back to Users
+  </a>
+
+  <form method="post" class="card" style="padding: var(--s-6);">
+    {% csrf_token %}
+
+    <!-- School (super admin only) -->
+    {% if schools %}
+    <div class="form-group">
+      <label class="form-label">School <span class="required">*</span></label>
+      <select name="school_id" required class="select">
+        <option value="">— Select school —</option>
+        {% for s in schools %}
+          <option value="{{ s.id }}">{{ s.name }} ({{ s.code }})</option>
+        {% endfor %}
+      </select>
+    </div>
+    {% endif %}
+
+    <h3 style="font-size: var(--text-md); font-weight: 700; color: var(--ink-900); margin: var(--s-5) 0 var(--s-4); padding-bottom: var(--s-3); border-bottom: 1px solid var(--border);">
+      Basic Information
+    </h3>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="form-group">
+        <label class="form-label">First Name</label>
+        <input type="text" name="first_name" class="input" placeholder="John">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Last Name</label>
+        <input type="text" name="last_name" class="input" placeholder="Doe">
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Email Address <span class="required">*</span></label>
+      <input type="email" name="email" required class="input" placeholder="john@school.ac.ke">
+      <p class="form-hint">This will be the user's login username</p>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Phone Number</label>
+      <input type="text" name="phone" class="input" placeholder="0712345678">
+    </div>
+
+    <h3 style="font-size: var(--text-md); font-weight: 700; color: var(--ink-900); margin: var(--s-5) 0 var(--s-4); padding-bottom: var(--s-3); border-bottom: 1px solid var(--border);">
+      Role
+    </h3>
+
+    <div class="form-group">
+      <label class="form-label">Role <span class="required">*</span></label>
+      <select name="role" required class="select">
+        <option value="">— Select role —</option>
+        {% for value, label in roles %}
+          <option value="{{ value }}">{{ label }}</option>
+        {% endfor %}
+      </select>
+      {% if user.role != 'super_admin' %}
+        <p class="form-hint">Note: Only the Super Admin can create School Admin accounts.</p>
+      {% endif %}
+    </div>
+
+    <h3 style="font-size: var(--text-md); font-weight: 700; color: var(--ink-900); margin: var(--s-5) 0 var(--s-4); padding-bottom: var(--s-3); border-bottom: 1px solid var(--border);">
+      Password
+    </h3>
+
+    <div class="form-group">
+      <label class="form-label">Password <span class="required">*</span></label>
+      <input type="text" name="password" id="password-input" class="input font-mono" minlength="6"
+             placeholder="Leave blank to auto-generate">
+      <p class="form-hint">The user will use this to log in. Share it with them securely.</p>
+
+      <div style="display: flex; gap: var(--s-2); margin-top: var(--s-3);">
+        <button type="button" onclick="generatePassword()" class="btn btn-sm btn-secondary">
+          {% include 'partials/icons.html' with name="key" size=14 %}
+          <span>Generate Password</span>
+        </button>
+        <button type="button" onclick="copyPassword()" class="btn btn-sm btn-secondary">
+          <span>Copy</span>
+        </button>
+      </div>
+    </div>
+
+    <div style="display: flex; justify-content: flex-end; gap: var(--s-3); margin-top: var(--s-6); padding-top: var(--s-5); border-top: 1px solid var(--border);">
+      <a href="{% url 'manage_users' %}" class="btn btn-secondary">Cancel</a>
+      <button type="submit" class="btn btn-primary">
+        {% include 'partials/icons.html' with name="user-plus" size=15 %}
+        <span>Create User</span>
+      </button>
+    </div>
+
+  </form>
+
+</div>
+
+<script>
+  function generatePassword() {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
+    let pwd = '';
+    for (let i = 0; i < 10; i++) {
+      pwd += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    document.getElementById('password-input').value = pwd;
+  }
+
+  function copyPassword() {
+    const input = document.getElementById('password-input');
+    if (!input.value) {
+      if (typeof toast === 'function') toast('Nothing to copy — generate first', 'warning');
+      return;
+    }
+    input.select();
+    document.execCommand('copy');
+    if (typeof toast === 'function') toast('Password copied to clipboard', 'success');
+  }
+</script>
+
+{% endblock %}

@@ -1,0 +1,313 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Students{% endblock %}
+{% block header_title %}Students{% endblock %}
+{% block header_sub %}{{ stats.total }} student{{ stats.total|pluralize }} enrolled · {{ stats.active }} active{% endblock %}
+
+{% block content %}
+
+<!-- ============================================ -->
+<!-- STATS ROW                                    -->
+<!-- ============================================ -->
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Total Students</span>
+      <div class="stat-icon" style="background: rgba(10, 138, 95, 0.1); color: var(--primary);">
+        {% include 'partials/icons.html' with name="graduation-cap" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value">{{ stats.total }}</div>
+    <div class="stat-meta">{{ stats.active }} active</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Boys</span>
+      <div class="stat-icon" style="background: rgba(37, 99, 235, 0.1); color: #2563EB;">
+        {% include 'partials/icons.html' with name="user" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: #2563EB;">{{ stats.boys }}</div>
+    <div class="stat-meta">
+      {% if stats.total %}{% widthratio stats.boys stats.total 100 %}% of total{% endif %}
+    </div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Girls</span>
+      <div class="stat-icon" style="background: rgba(236, 72, 153, 0.1); color: #EC4899;">
+        {% include 'partials/icons.html' with name="user" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: #EC4899;">{{ stats.girls }}</div>
+    <div class="stat-meta">
+      {% if stats.total %}{% widthratio stats.girls stats.total 100 %}% of total{% endif %}
+    </div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">In View</span>
+      <div class="stat-icon" style="background: rgba(124, 58, 237, 0.1); color: #7C3AED;">
+        {% include 'partials/icons.html' with name="search" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value">{{ total }}</div>
+    <div class="stat-meta">
+      {% if search or level or class_filter or status_filter %}
+        matched filters
+      {% else %}
+        all students
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+
+<!-- ============================================ -->
+<!-- FILTERS + ADD BUTTON                         -->
+<!-- ============================================ -->
+<div class="card mb-6">
+  <form method="get" style="display: flex; flex-wrap: wrap; gap: var(--s-3); align-items: flex-end;">
+
+    <div style="flex: 1; min-width: 240px;">
+      <label style="display: block; font-size: var(--text-xs); font-weight: 600; color: var(--ink-600); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: var(--s-1);">
+        Search
+      </label>
+      <input name="q" value="{{ search }}" placeholder="Name, admission no, or UPI..."
+             class="input">
+    </div>
+
+    <div style="min-width: 160px;">
+      <label style="display: block; font-size: var(--text-xs); font-weight: 600; color: var(--ink-600); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: var(--s-1);">
+        CBC Level
+      </label>
+      <select name="level" class="select">
+        <option value="">All Levels</option>
+        {% for value, label in cbc_levels %}
+          <option value="{{ value }}" {% if level == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div style="min-width: 160px;">
+      <label style="display: block; font-size: var(--text-xs); font-weight: 600; color: var(--ink-600); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: var(--s-1);">
+        Class
+      </label>
+      <select name="class" class="select">
+        <option value="">All Classes</option>
+        {% for c in classes %}
+          <option value="{{ c.name }}" {% if class_filter == c.name %}selected{% endif %}>{{ c.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div style="min-width: 140px;">
+      <label style="display: block; font-size: var(--text-xs); font-weight: 600; color: var(--ink-600); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: var(--s-1);">
+        Status
+      </label>
+      <select name="status" class="select">
+        <option value="">All Statuses</option>
+        <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active</option>
+        <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>Inactive</option>
+        <option value="cleared" {% if status_filter == 'cleared' %}selected{% endif %}>Cleared</option>
+      </select>
+    </div>
+
+    <div style="display: flex; gap: var(--s-2); align-items: flex-end;">
+      <button type="submit" class="btn btn-primary">
+        {% include 'partials/icons.html' with name="search" size=15 %}
+        <span>Filter</span>
+      </button>
+      {% if search or level or class_filter or status_filter %}
+        <a href="{% url 'students_list' %}" class="btn btn-secondary">Clear</a>
+      {% endif %}
+    </div>
+
+  </form>
+
+  <!-- Add Student row -->
+  <div style="margin-top: var(--s-4); padding-top: var(--s-4); border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--s-3);">
+    <div style="font-size: var(--text-xs); color: var(--ink-500);">
+      {% if total %}{{ total }} student{{ total|pluralize }} matched{% endif %}
+    </div>
+    <a href="{% url 'add_student' %}" class="btn btn-primary">
+      {% include 'partials/icons.html' with name="plus" size=15 %}
+      <span>Add Student</span>
+    </a>
+  </div>
+</div>
+
+<!-- ============================================ -->
+<!-- STUDENTS TABLE                               -->
+<!-- ============================================ -->
+<div class="card" style="padding: 0; overflow: hidden;">
+  {% if students %}
+    <div style="overflow-x: auto;">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Student</th>
+            <th>Admission No</th>
+            <th>UPI</th>
+            <th>Level</th>
+            <th>Class</th>
+            <th>Gender</th>
+            <th style="text-align: right;">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in students %}
+          <tr class="{% if s.gender == 'M' %}gender-boy{% else %}gender-girl{% endif %}">
+            <td>
+              <div style="display: flex; align-items: center; gap: var(--s-3);">
+                {% if s.photo %}
+                  <img src="{{ s.photo.url }}" alt="{{ s.full_name }}" class="avatar avatar-sm" style="object-fit: cover;">
+                {% else %}
+                  <div class="avatar avatar-sm" style="{% if s.gender == 'F' %}background: #EC4899;{% else %}background: #2563EB;{% endif %}">
+                    {{ s.initials }}
+                  </div>
+                {% endif %}
+                <div>
+                  <div style="font-weight: 600; color: var(--ink-900);">
+                    <a href="{% url 'student_detail' s.id %}"
+                       style="color: var(--ink-900); text-decoration: none;">
+                      {{ s.full_name }}
+                    </a>
+                    {% if s.is_cleared %}
+                      <span class="badge badge-neutral" style="margin-left: 6px; font-size: 9px;">Cleared</span>
+                    {% endif %}
+                  </div>
+                  {% if s.date_of_birth %}
+                    <div style="font-size: var(--text-xs); color: var(--ink-500); margin-top: 2px;">
+                      DOB: {{ s.date_of_birth|date:"M d, Y" }}
+                    </div>
+                  {% endif %}
+                </div>
+              </div>
+            </td>
+            <td>
+              <span class="font-mono" style="font-weight: 600; color: var(--ink-700);">{{ s.admission_number }}</span>
+            </td>
+            <td>
+              <span class="font-mono" style="font-size: var(--text-xs); color: var(--ink-500);">
+                {{ s.upi|default:"—" }}
+              </span>
+            </td>
+            <td>
+              {% if s.cbc_level %}
+                <span class="badge badge-primary">{{ s.get_cbc_level_display }}</span>
+              {% else %}
+                <span style="color: var(--ink-400);">—</span>
+              {% endif %}
+            </td>
+            <td style="color: var(--ink-700);">{{ s.class_level|default:"—" }}</td>
+            <td>
+              {% if s.gender == 'M' %}
+                <span class="badge badge-info">Boy</span>
+              {% else %}
+                <span class="badge badge-warning">Girl</span>
+              {% endif %}
+            </td>
+            <td>
+              <div class="table-actions" style="flex-wrap: wrap;">
+                <a href="{% url 'student_detail' s.id %}" class="btn btn-sm btn-primary">
+                  {% include 'partials/icons.html' with name="eye" size=13 %}
+                  <span>View</span>
+                </a>
+
+                <a href="{% url 'student_biodata_pdf' s.id %}" target="_blank"
+                   class="btn btn-sm btn-secondary" title="Download Bio Data">
+                  {% include 'partials/icons.html' with name="file-text" size=13 %}
+                  <span>Bio</span>
+                </a>
+
+                {% if s.is_cleared %}
+                  <a href="{% url 'leaving_certificate' s.id %}"
+                     class="btn btn-sm btn-success" title="Certificate">
+                    {% include 'partials/icons.html' with name="award" size=13 %}
+                  </a>
+                {% else %}
+                  <a href="{% url 'clear_student' s.id %}"
+                     class="btn btn-sm btn-secondary" title="Clear Student">
+                    {% include 'partials/icons.html' with name="award" size=13 %}
+                  </a>
+                {% endif %}
+
+                <a href="{% url 'delete_student' s.id %}"
+                   class="btn btn-sm btn-danger"
+                   onclick="return confirm('Delete {{ s.full_name|escapejs }}? This cannot be undone.');"
+                   title="Delete Student">
+                  {% include 'partials/icons.html' with name="trash" size=13 %}
+                </a>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- PAGINATION                                   -->
+    <!-- ============================================ -->
+    {% if page_obj.has_other_pages %}
+    <div style="padding: var(--s-5) var(--s-6); border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--s-3);">
+      <div style="font-size: var(--text-sm); color: var(--ink-500);">
+        Showing
+        <strong style="color: var(--ink-800);">{{ page_obj.start_index }}</strong>
+        –
+        <strong style="color: var(--ink-800);">{{ page_obj.end_index }}</strong>
+        of
+        <strong style="color: var(--ink-800);">{{ paginator.count }}</strong>
+      </div>
+
+      <div style="display: flex; gap: var(--s-1);">
+        {% if page_obj.has_previous %}
+          <a href="?{% if search %}q={{ search }}&{% endif %}{% if level %}level={{ level }}&{% endif %}{% if class_filter %}class={{ class_filter }}&{% endif %}{% if status_filter %}status={{ status_filter }}&{% endif %}page={{ page_obj.previous_page_number }}"
+             class="btn btn-sm btn-secondary">← Prev</a>
+        {% endif %}
+
+        {% for num in page_obj.paginator.page_range %}
+          {% if num == page_obj.number %}
+            <span class="btn btn-sm btn-primary" style="cursor: default;">{{ num }}</span>
+          {% elif num > page_obj.number|add:"-3" and num < page_obj.number|add:"3" %}
+            <a href="?{% if search %}q={{ search }}&{% endif %}{% if level %}level={{ level }}&{% endif %}{% if class_filter %}class={{ class_filter }}&{% endif %}{% if status_filter %}status={{ status_filter }}&{% endif %}page={{ num }}"
+               class="btn btn-sm btn-secondary">{{ num }}</a>
+          {% endif %}
+        {% endfor %}
+
+        {% if page_obj.has_next %}
+          <a href="?{% if search %}q={{ search }}&{% endif %}{% if level %}level={{ level }}&{% endif %}{% if class_filter %}class={{ class_filter }}&{% endif %}{% if status_filter %}status={{ status_filter }}&{% endif %}page={{ page_obj.next_page_number }}"
+             class="btn btn-sm btn-secondary">Next →</a>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+  {% else %}
+    <div class="empty" style="border: none; border-radius: 0;">
+      {% include 'partials/icons.html' with name="graduation-cap" size=56 %}
+      <h3>No students found</h3>
+      <p>
+        {% if search or level or class_filter or status_filter %}
+          Try changing your filters or clear them to see all students.
+        {% else %}
+          Add your first student to get started.
+        {% endif %}
+      </p>
+      {% if search or level or class_filter or status_filter %}
+        <a href="{% url 'students_list' %}" class="btn btn-secondary" style="margin-right: var(--s-2);">Clear filters</a>
+      {% endif %}
+      <a href="{% url 'add_student' %}" class="btn btn-primary">
+        {% include 'partials/icons.html' with name="plus" size=15 %}
+        <span>Add Student</span>
+      </a>
+    </div>
+  {% endif %}
+</div>
+
+{% endblock %}

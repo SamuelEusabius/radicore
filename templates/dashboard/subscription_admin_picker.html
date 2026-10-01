@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Subscriptions — Manage Schools{% endblock %}
+{% block header_title %}Subscriptions{% endblock %}
+{% block header_sub %}Select a school to manage its subscription{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-info">
+    <h1 class="page-title">Manage School Subscriptions</h1>
+    <p class="page-subtitle">Select a school below to view, edit, or renew its subscription.</p>
+  </div>
+</div>
+
+{% if school_rows %}
+<div class="card" style="padding: 0; overflow: hidden;">
+  <div style="overflow-x: auto;">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>School</th>
+          <th>Code</th>
+          <th>Students</th>
+          <th>Current Plan</th>
+          <th>Status</th>
+          <th>Trial / Paid Until</th>
+          <th style="text-align: right;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in school_rows %}
+        <tr>
+          <td>
+            <div style="font-weight: 600; color: var(--ink-900);">{{ row.school.name }}</div>
+            {% if row.school.email %}
+              <div style="font-size: var(--text-xs); color: var(--ink-500);">{{ row.school.email }}</div>
+            {% endif %}
+          </td>
+          <td>
+            <span class="font-mono" style="font-weight: 600; color: var(--ink-700);">
+              {{ row.school.code|default:"—" }}
+            </span>
+          </td>
+          <td>
+            <span class="badge badge-info">{{ row.student_count }}</span>
+          </td>
+          <td>
+            {% if row.subscription and row.subscription.plan %}
+              <strong style="color: var(--primary);">{{ row.subscription.plan.name }}</strong>
+            {% else %}
+              <span style="color: var(--ink-400); font-style: italic;">No plan</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if row.subscription %}
+              {% if row.subscription.status == 'active' %}
+                <span class="badge" style="background: #d1fae5; color: #065f46;">Active</span>
+              {% elif row.subscription.status == 'trial' %}
+                <span class="badge" style="background: #fef3c7; color: #92400e;">Trial</span>
+              {% elif row.subscription.status == 'pending_payment' %}
+                <span class="badge" style="background: #dbeafe; color: #1e40af;">Pending Payment</span>
+              {% elif row.subscription.status == 'expired' %}
+                <span class="badge" style="background: #fee2e2; color: #991b1b;">Expired</span>
+              {% else %}
+                <span class="badge" style="background: #f1f5f9; color: #475569;">{{ row.subscription.get_status_display }}</span>
+              {% endif %}
+            {% else %}
+              <span class="badge" style="background: #f1f5f9; color: #475569;">No subscription</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if row.subscription %}
+              {% if row.subscription.status == 'trial' and row.subscription.trial_ends_at %}
+                <span style="color: var(--warning); font-size: var(--text-xs);">
+                  {{ row.subscription.trial_ends_at|date:"j M Y" }}
+                </span>
+              {% elif row.subscription.paid_until %}
+                <span style="color: var(--success); font-size: var(--text-xs);">
+                  {{ row.subscription.paid_until|date:"j M Y" }}
+                </span>
+              {% else %}
+                <span style="color: var(--ink-400);">—</span>
+              {% endif %}
+            {% else %}
+              <span style="color: var(--ink-400);">—</span>
+            {% endif %}
+          </td>
+          <td style="text-align: right;">
+            <a href="{% url 'subscription_edit_admin' row.school.id %}" class="btn btn-primary btn-sm">
+              {% include 'partials/icons.html' with name="edit" size=14 %}
+              <span>Manage</span>
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div style="margin-top: var(--s-4); font-size: var(--text-sm); color: var(--ink-500);">
+  Showing <strong>{{ total_schools }}</strong> school{{ total_schools|pluralize }}.
+</div>
+
+{% else %}
+<div class="empty">
+  {% include 'partials/icons.html' with name="school" size=48 %}
+  <h3>No schools yet</h3>
+  <p>Add a school first to manage its subscription.</p>
+  <a href="{% url 'school_add' %}" class="btn btn-primary">
+    {% include 'partials/icons.html' with name="plus" size=15 %}
+    <span>Add School</span>
+  </a>
+</div>
+{% endif %}
+
+{% endblock %}

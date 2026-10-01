@@ -1,0 +1,516 @@
+{% extends 'base.html' %}
+{% block title %}Performance Report{% endblock %}
+{% block header_title %}Platform Performance{% endblock %}
+{% block header_sub %}Last 3 months · Super Admin Overview{% endblock %}
+
+{% block content %}
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<style>
+  /* Africa's Talking palette — compact layout */
+  .perf-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    height: calc(100vh - 130px);
+    overflow: hidden;
+  }
+
+  .perf-row { display: flex; gap: 8px; }
+
+  .perf-hero {
+    display: flex;
+    gap: 8px;
+    flex: 0 0 90px;
+  }
+
+  .perf-score-card {
+    flex: 1;
+    background: linear-gradient(135deg, #004d40 0%, #00695c 100%);
+    color: white;
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    gap: 28px;
+  }
+
+  .perf-score-value {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 800;
+    font-size: 42px;
+    line-height: 1;
+    color: #ffffff;
+  }
+
+  .perf-score-value span {
+    font-size: 20px;
+    opacity: 0.8;
+  }
+
+  .perf-score-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #4db6ac;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+
+  .perf-score-desc {
+    font-size: 11px;
+    line-height: 1.5;
+    color: rgba(255,255,255,0.85);
+    max-width: 280px;
+  }
+
+  .perf-mini-stat {
+    width: 130px;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    padding: 12px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .perf-mini-stat::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: #00695c;
+  }
+
+  .perf-mini-stat.orange::before { background: #ff6f00; }
+
+  .perf-mini-label {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #6b7280;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+
+  .perf-mini-value {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 800;
+    font-size: 22px;
+    line-height: 1;
+    color: #00695c;
+  }
+
+  .perf-mini-value.orange { color: #ff6f00; }
+
+  .perf-mini-sub {
+    font-size: 10px;
+    color: #6b7280;
+    margin-top: 4px;
+  }
+
+  /* Stat strip */
+  .perf-strip {
+    display: flex;
+    gap: 8px;
+    flex: 0 0 60px;
+  }
+
+  .perf-stat-box {
+    flex: 1;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    padding: 10px 12px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .perf-stat-box::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; bottom: 0;
+    width: 3px;
+    background: #00695c;
+  }
+
+  .perf-stat-box.teal-mid::before { background: #00897b; }
+  .perf-stat-box.teal-light::before { background: #4db6ac; }
+  .perf-stat-box.orange::before { background: #ff6f00; }
+
+  .perf-stat-label {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #6b7280;
+    font-weight: 700;
+  }
+
+  .perf-stat-value {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 800;
+    font-size: 20px;
+    color: #004d40;
+    line-height: 1.1;
+    margin-top: 2px;
+  }
+
+  .perf-stat-value.orange { color: #ff6f00; }
+
+  .perf-stat-sub {
+    font-size: 10px;
+    color: #6b7280;
+    margin-top: 2px;
+  }
+
+  /* Charts row */
+  .perf-charts {
+    display: flex;
+    gap: 8px;
+    flex: 1;
+    min-height: 0;
+  }
+
+  .perf-chart-card {
+    flex: 1;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .perf-chart-title {
+    font-family: 'Poppins', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin-bottom: 6px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #e5e7eb;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .perf-chart-body {
+    flex: 1;
+    position: relative;
+    min-height: 0;
+  }
+
+  /* Score bars card */
+  .perf-bars {
+    padding: 10px 12px;
+  }
+
+  .score-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 4px 0;
+  }
+
+  .score-label {
+    flex: 0 0 130px;
+    font-size: 11px;
+    color: #374151;
+    font-weight: 500;
+  }
+
+  .score-bar-track {
+    flex: 1;
+    height: 7px;
+    background: #f1f5f9;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .score-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #00695c, #4db6ac);
+  }
+
+  .score-bar-fill.orange {
+    background: linear-gradient(90deg, #ff6f00, #ffb74d);
+  }
+
+  .score-value {
+    flex: 0 0 45px;
+    text-align: right;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    font-size: 11px;
+    color: #00695c;
+  }
+
+  /* Insights strip */
+  .perf-insights {
+    display: flex;
+    gap: 8px;
+    flex: 0 0 54px;
+  }
+
+  .insight-box {
+    flex: 1;
+    padding: 10px 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .insight-box.teal {
+    background: #e0f2f1;
+    border-left: 4px solid #00695c;
+  }
+
+  .insight-box.orange {
+    background: #fff3e0;
+    border-left: 4px solid #ff6f00;
+  }
+
+  .insight-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 700;
+  }
+
+  .insight-box.teal .insight-label { color: #00695c; }
+  .insight-box.orange .insight-label { color: #ff6f00; }
+
+  .insight-value {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 800;
+    font-size: 18px;
+    line-height: 1;
+    color: #004d40;
+  }
+
+  .insight-box.orange .insight-value { color: #e65100; }
+
+  .insight-desc {
+    font-size: 10px;
+    color: #4b5563;
+    margin-top: 2px;
+  }
+</style>
+
+<div class="perf-wrap">
+
+  <!-- ============ HERO ROW ============ -->
+  <div class="perf-hero">
+
+    <div class="perf-score-card">
+      <div>
+        <div class="perf-score-label">Overall Platform Score</div>
+        <div class="perf-score-value">{{ overall_score }}<span>%</span></div>
+      </div>
+      <div class="perf-score-desc">
+        Composite of 5 indicators — activation, data richness, financial activity, system health, and user engagement.
+      </div>
+    </div>
+
+    <div class="perf-mini-stat orange">
+      <div class="perf-mini-label">Critical Alerts</div>
+      <div class="perf-mini-value orange">{{ critical_alerts }}</div>
+      <div class="perf-mini-sub">Unresolved in 3M</div>
+    </div>
+
+  </div>
+
+  <!-- ============ STAT STRIP ============ -->
+  <div class="perf-strip">
+    <div class="perf-stat-box">
+      <div class="perf-stat-label">Total Schools</div>
+      <div class="perf-stat-value">{{ total_schools }}</div>
+      <div class="perf-stat-sub">{{ active_schools }} active · {{ schools_3m }} new</div>
+    </div>
+
+    <div class="perf-stat-box teal-mid">
+      <div class="perf-stat-label">Total Users</div>
+      <div class="perf-stat-value">{{ total_users }}</div>
+      <div class="perf-stat-sub">{{ users_3m }} new in 3M</div>
+    </div>
+
+    <div class="perf-stat-box teal-light">
+      <div class="perf-stat-label">Total Students</div>
+      <div class="perf-stat-value">{{ total_students }}</div>
+      <div class="perf-stat-sub">Across active schools</div>
+    </div>
+
+    <div class="perf-stat-box orange">
+      <div class="perf-stat-label">Fees Collected (3M)</div>
+      <div class="perf-stat-value orange">KES {{ payments_3m|floatformat:0 }}</div>
+      <div class="perf-stat-sub">From {{ invoices_3m|floatformat:0 }} invoiced</div>
+    </div>
+  </div>
+
+  <!-- ============ CHARTS ROW ============ -->
+  <div class="perf-charts">
+
+    <div class="perf-chart-card">
+      <div class="perf-chart-title">Growth — Schools &amp; Users</div>
+      <div class="perf-chart-body">
+        <canvas id="growthChart"></canvas>
+      </div>
+    </div>
+
+    <div class="perf-chart-card">
+      <div class="perf-chart-title">Fees Collected per Month</div>
+      <div class="perf-chart-body">
+        <canvas id="paymentsChart"></canvas>
+      </div>
+    </div>
+
+    <div class="perf-chart-card">
+      <div class="perf-chart-title">Service Performance</div>
+      <div class="perf-bars" style="flex: 1; overflow-y: auto;">
+        <div class="score-row">
+          <span class="score-label">School Activation</span>
+          <div class="score-bar-track"><div class="score-bar-fill" style="width: {{ activation_rate }}%;"></div></div>
+          <span class="score-value">{{ activation_rate }}%</span>
+        </div>
+        <div class="score-row">
+          <span class="score-label">Data Richness</span>
+          <div class="score-bar-track"><div class="score-bar-fill" style="width: {{ student_score }}%;"></div></div>
+          <span class="score-value">{{ student_score }}%</span>
+        </div>
+        <div class="score-row">
+          <span class="score-label">Financial Activity</span>
+          <div class="score-bar-track"><div class="score-bar-fill orange" style="width: {{ financial_score }}%;"></div></div>
+          <span class="score-value" style="color: #ff6f00;">{{ financial_score }}%</span>
+        </div>
+        <div class="score-row">
+          <span class="score-label">System Health</span>
+          <div class="score-bar-track"><div class="score-bar-fill" style="width: {{ health_score }}%;"></div></div>
+          <span class="score-value">{{ health_score }}%</span>
+        </div>
+        <div class="score-row">
+          <span class="score-label">User Engagement</span>
+          <div class="score-bar-track"><div class="score-bar-fill" style="width: {{ engagement_score }}%;"></div></div>
+          <span class="score-value">{{ engagement_score }}%</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ============ INSIGHTS STRIP ============ -->
+  <div class="perf-insights">
+
+    <div class="insight-box teal">
+      <div>
+        <div class="insight-label">Growth</div>
+        <div class="insight-value">+{{ schools_3m }} schools</div>
+        <div class="insight-desc">joined the platform in 3 months</div>
+      </div>
+    </div>
+
+    <div class="insight-box teal">
+      <div>
+        <div class="insight-label">Engagement</div>
+        <div class="insight-value">{{ users_3m }} new users</div>
+        <div class="insight-desc">registered across all roles</div>
+      </div>
+    </div>
+
+    <div class="insight-box orange">
+      <div>
+        <div class="insight-label">Attention</div>
+        <div class="insight-value">{{ critical_alerts }} critical</div>
+        <div class="insight-desc">alerts need review</div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- ============ CHART.JS INIT ============ -->
+<script>
+Chart.defaults.font.family = "'Inter', sans-serif";
+Chart.defaults.font.size = 10;
+Chart.defaults.color = '#6b7280';
+
+const AT_TEAL_DEEP = '#004d40';
+const AT_TEAL = '#00695c';
+const AT_TEAL_MID = '#00897b';
+const AT_TEAL_LIGHT = '#4db6ac';
+const AT_ORANGE = '#ff6f00';
+
+// ---------- Growth Chart ----------
+new Chart(document.getElementById('growthChart'), {
+  type: 'bar',
+  data: {
+    labels: {{ month_labels|safe }},
+    datasets: [
+      {
+        label: 'Schools',
+        data: {{ month_schools_data|safe }},
+        backgroundColor: AT_TEAL,
+        barPercentage: 0.75,
+      },
+      {
+        label: 'Users',
+        data: {{ month_users_data|safe }},
+        backgroundColor: AT_ORANGE,
+        barPercentage: 0.75,
+      },
+    ],
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'bottom',
+        labels: { boxWidth: 10, padding: 8, font: { size: 10 } },
+      },
+    },
+    scales: {
+      y: { beginAtZero: true, grid: { color: '#f1f5f9' }, ticks: { precision: 0, font: { size: 9 } } },
+      x: { grid: { display: false }, ticks: { font: { size: 9 } } },
+    },
+  },
+});
+
+// ---------- Payments Chart ----------
+new Chart(document.getElementById('paymentsChart'), {
+  type: 'line',
+  data: {
+    labels: {{ month_labels|safe }},
+    datasets: [{
+      label: 'KES',
+      data: {{ month_payments_data|safe }},
+      borderColor: AT_ORANGE,
+      backgroundColor: 'rgba(255, 111, 0, 0.1)',
+      borderWidth: 2.5,
+      fill: true,
+      tension: 0.35,
+      pointBackgroundColor: AT_ORANGE,
+      pointBorderColor: '#fff',
+      pointBorderWidth: 2,
+      pointRadius: 4,
+      pointHoverRadius: 6,
+    }],
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: { callbacks: { label: (ctx) => 'KES ' + Number(ctx.raw).toLocaleString() } },
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        grid: { color: '#f1f5f9' },
+        ticks: { callback: (v) => 'KES ' + (v / 1000) + 'K', font: { size: 9 } },
+      },
+      x: { grid: { display: false }, ticks: { font: { size: 9 } } },
+    },
+  },
+});
+</script>
+
+{% endblock %}

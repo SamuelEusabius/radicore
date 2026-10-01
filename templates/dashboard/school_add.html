@@ -1,0 +1,165 @@
+{% extends 'base.html' %}
+{% block title %}Add School{% endblock %}
+{% block header_title %}➕ Add New School{% endblock %}
+{% block header_sub %}Register a new school and its admin account{% endblock %}
+
+{% block content %}
+
+<form method="post" class="max-w-4xl mx-auto">
+
+  {% csrf_token %}
+
+  {% if messages %}
+    {% for m in messages %}
+      <div class="p-3 rounded mb-4 text-sm {% if m.tags == 'error' %}bg-red-100 text-red-700{% else %}bg-green-100 text-green-700{% endif %}">
+        {{ m }}
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  <!-- SCHOOL INFO -->
+  <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
+    <h3 class="font-bold text-teal-700 uppercase text-sm tracking-wider mb-4">🏫 School Information</h3>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="md:col-span-2">
+        <label class="block text-sm font-medium text-gray-700 mb-1">School Name <span class="text-red-500">*</span></label>
+        <input type="text" name="name" required value="{{ form_data.name|default:'' }}"
+               class="w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-teal-500">
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">School Email</label>
+        <input type="email" name="email" value="{{ form_data.email|default:'' }}"
+               class="w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-teal-500">
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+        <input type="tel" name="phone" value="{{ form_data.phone|default:'' }}"
+               class="w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-teal-500">
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">NEMIS Code</label>
+        <input type="text" name="nemis_code" value="{{ form_data.nemis_code|default:'' }}"
+               class="w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-teal-500">
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Motto</label>
+        <input type="text" name="motto" value="{{ form_data.motto|default:'' }}"
+               class="w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-teal-500">
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">County</label>
+        <input type="text" name="county" value="{{ form_data.county|default:'' }}"
+               placeholder="e.g. Bungoma"
+               class="w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-teal-500">
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Sub-County</label>
+        <input type="text" name="sub_county" value="{{ form_data.sub_county|default:'' }}"
+               class="w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-teal-500">
+      </div>
+
+           <div class="md:col-span-2">
+        <label class="block text-sm font-medium text-gray-700 mb-1">Physical Address</label>
+        <input type="text" name="physical_address" value="{{ form_data.physical_address|default:'' }}"
+               class="w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-teal-500">
+      </div>
+
+      <div class="md:col-span-2">
+        <label class="block text-sm font-medium text-gray-700 mb-1">Message Shown When Deactivated (optional)</label>
+        <textarea name="blocked_message" rows="2"
+                  class="w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-teal-500"
+                  placeholder="e.g., Your subscription has expired. Kindly renew to regain access.">{{ form_data.blocked_message|default:'' }}</textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- CATEGORY -->
+  <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
+    <h3 class="font-bold text-teal-700 uppercase text-sm tracking-wider mb-4">🏷️ Category</h3>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Type</label>
+        <select name="school_type" class="w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-teal-500">
+          <option value="private" {% if form_data.school_type == 'private' %}selected{% endif %}>💼 Private</option>
+          <option value="public" {% if form_data.school_type == 'public' %}selected{% endif %}>🏛️ Public</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Gender</label>
+        <select name="gender" class="w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-teal-500">
+          <option value="mixed" {% if form_data.gender == 'mixed' %}selected{% endif %}>👥 Mixed (Boys & Girls)</option>
+          <option value="boys" {% if form_data.gender == 'boys' %}selected{% endif %}>👦 Boys Only</option>
+          <option value="girls" {% if form_data.gender == 'girls' %}selected{% endif %}>👧 Girls Only</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Level</label>
+        <select name="level" class="w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-teal-500">
+          <option value="primary" {% if form_data.level == 'primary' %}selected{% endif %}>Primary</option>
+          <option value="jss" {% if form_data.level == 'jss' %}selected{% endif %}>Junior Secondary</option>
+          <option value="primary_jss" {% if form_data.level == 'primary_jss' %}selected{% endif %}>Primary + JSS</option>
+          <option value="senior" {% if form_data.level == 'senior' %}selected{% endif %}>Senior School</option>
+          <option value="all" {% if form_data.level == 'all' %}selected{% endif %}>Full School (1–12)</option>
+        </select>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ADMIN ACCOUNT -->
+  <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
+    <h3 class="font-bold text-teal-700 uppercase text-sm tracking-wider mb-4">👤 School Admin Account</h3>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Admin First Name</label>
+        <input type="text" name="admin_first_name" value="{{ form_data.admin_first_name|default:'' }}"
+               class="w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-teal-500">
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Admin Last Name</label>
+        <input type="text" name="admin_last_name" value="{{ form_data.admin_last_name|default:'' }}"
+               class="w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-teal-500">
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Admin Email <span class="text-red-500">*</span></label>
+        <input type="email" name="admin_email" required value="{{ form_data.admin_email|default:'' }}"
+               class="w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-teal-500">
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Admin Password <span class="text-red-500">*</span></label>
+        <input type="text" name="admin_password" required value="{{ form_data.admin_password|default:'changeme123' }}"
+               class="w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-teal-500">
+      </div>
+    </div>
+  </div>
+
+  <!-- ACTIONS -->
+  <div class="flex justify-end gap-3 mb-10">
+    <a href="{% url 'schools_manage' %}"
+       class="border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium px-6 py-3 rounded-lg">
+      Cancel
+    </a>
+    <button type="submit"
+            class="bg-teal-600 hover:bg-teal-700 text-white font-semibold px-8 py-3 rounded-lg">
+      ✅ Create School
+    </button>
+  </div>
+
+</form>
+
+{% endblock %}

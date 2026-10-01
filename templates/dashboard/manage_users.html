@@ -1,0 +1,249 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Users{% endblock %}
+{% block header_title %}User Accounts{% endblock %}
+{% block header_sub %}{{ stats.total }} user{{ stats.total|pluralize }} in your {% if is_super_admin %}platform{% else %}school{% endif %}{% endblock %}
+
+{% block content %}
+
+<!-- ============================================ -->
+<!-- STATS CARDS                                  -->
+<!-- ============================================ -->
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Total Users</span>
+      <div class="stat-icon" style="background: rgba(10, 138, 95, 0.1); color: var(--primary);">
+        {% include 'partials/icons.html' with name="users" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value">{{ stats.total }}</div>
+    <div class="stat-meta">Across all roles</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Teachers</span>
+      <div class="stat-icon" style="background: rgba(37, 99, 235, 0.1); color: #2563EB;">
+        {% include 'partials/icons.html' with name="teacher" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: #2563EB;">{{ stats.teachers }}</div>
+    <div class="stat-meta">Teaching staff</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Admins</span>
+      <div class="stat-icon" style="background: rgba(124, 58, 237, 0.1); color: #7C3AED;">
+        {% include 'partials/icons.html' with name="user-plus" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: #7C3AED;">{{ stats.school_admins }}</div>
+    <div class="stat-meta">School admins</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Accountants</span>
+      <div class="stat-icon" style="background: rgba(5, 150, 105, 0.1); color: var(--success);">
+        {% include 'partials/icons.html' with name="credit-card" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--success);">{{ stats.accountants }}</div>
+    <div class="stat-meta">Finance staff</div>
+  </div>
+
+</div>
+
+<!-- ============================================ -->
+<!-- FILTERS + ADD BUTTON                         -->
+<!-- ============================================ -->
+<div class="card mb-6">
+  <form method="get" style="display: flex; flex-wrap: wrap; gap: var(--s-3); align-items: flex-end;">
+
+    <div style="flex: 1; min-width: 240px;">
+      <label style="display: block; font-size: var(--text-xs); font-weight: 600; color: var(--ink-600); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: var(--s-1);">
+        Search
+      </label>
+      <input name="q" value="{{ search }}" placeholder="Email, name, phone..." class="input">
+    </div>
+
+    <div style="min-width: 180px;">
+      <label style="display: block; font-size: var(--text-xs); font-weight: 600; color: var(--ink-600); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: var(--s-1);">
+        Role
+      </label>
+      <select name="role" class="select">
+        <option value="">All Roles</option>
+        {% for value, label in role_choices %}
+          <option value="{{ value }}" {% if role_filter == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div style="min-width: 150px;">
+      <label style="display: block; font-size: var(--text-xs); font-weight: 600; color: var(--ink-600); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: var(--s-1);">
+        Status
+      </label>
+      <select name="status" class="select">
+        <option value="">All Statuses</option>
+        <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active</option>
+        <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>Inactive</option>
+      </select>
+    </div>
+
+    <div style="display: flex; gap: var(--s-2); align-items: flex-end;">
+      <button type="submit" class="btn btn-primary">
+        {% include 'partials/icons.html' with name="search" size=15 %}
+        <span>Filter</span>
+      </button>
+      {% if search or role_filter or status_filter %}
+        <a href="{% url 'manage_users' %}" class="btn btn-secondary">Clear</a>
+      {% endif %}
+    </div>
+
+  </form>
+
+  <div style="margin-top: var(--s-4); padding-top: var(--s-4); border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--s-3);">
+    <div style="font-size: var(--text-xs); color: var(--ink-500);">
+      {% if total_filtered %}{{ total_filtered }} user{{ total_filtered|pluralize }} matched{% endif %}
+    </div>
+    <a href="{% url 'create_user' %}" class="btn btn-primary">
+      {% include 'partials/icons.html' with name="user-plus" size=15 %}
+      <span>Create User</span>
+    </a>
+  </div>
+</div>
+
+<!-- ============================================ -->
+<!-- USERS TABLE                                  -->
+<!-- ============================================ -->
+<div class="card" style="padding: 0; overflow: hidden;">
+  {% if users %}
+    <div style="overflow-x: auto;">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>User</th>
+            <th>Role</th>
+            <th>Phone</th>
+            {% if is_super_admin %}<th>School</th>{% endif %}
+            <th style="text-align: center;">Status</th>
+            <th style="text-align: right;">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for u in users %}
+          <tr>
+            <td>
+              <div style="display: flex; align-items: center; gap: var(--s-3);">
+                <div class="avatar avatar-sm" style="background: {% if u.role == 'school_admin' %}#7C3AED{% elif u.role == 'teacher' %}#2563EB{% elif u.role == 'accountant' %}#059669{% elif u.role == 'super_admin' %}#0A8A5F{% else %}#64748B{% endif %};">
+                  {{ u.email|first|upper }}
+                </div>
+                <div style="min-width: 0;">
+                  <div style="font-weight: 600; color: var(--ink-900);">
+                    {% if u.get_full_name %}{{ u.get_full_name }}{% else %}{{ u.email|truncatechars:30 }}{% endif %}
+                  </div>
+                  <div style="font-size: var(--text-xs); color: var(--ink-500); overflow: hidden; text-overflow: ellipsis;">
+                    {{ u.email }}
+                  </div>
+                </div>
+              </div>
+            </td>
+            <td>
+              <span class="badge
+                {% if u.role == 'super_admin' %}badge-primary
+                {% elif u.role == 'school_admin' %}badge-primary
+                {% elif u.role == 'teacher' %}badge-info
+                {% elif u.role == 'accountant' %}badge-success
+                {% elif u.role == 'staff' %}badge-neutral
+                {% elif u.role == 'parent' %}badge-warning
+                {% else %}badge-neutral{% endif %}">
+                {{ u.get_role_display }}
+              </span>
+            </td>
+            <td>
+              <span class="font-mono" style="font-size: var(--text-xs); color: var(--ink-600);">
+                {{ u.phone|default:"—" }}
+              </span>
+            </td>
+            {% if is_super_admin %}
+              <td style="font-size: var(--text-sm); color: var(--ink-700);">
+                {{ u.school.name|default:"—" }}
+              </td>
+            {% endif %}
+            <td style="text-align: center;">
+              {% if u.is_active %}
+                <span class="badge badge-success">Active</span>
+              {% else %}
+                <span class="badge badge-neutral">Inactive</span>
+              {% endif %}
+            </td>
+            <td>
+              <div class="table-actions">
+                <a href="{% url 'user_change_role' u.id %}" class="btn btn-sm btn-secondary" title="Change role">
+                  {% include 'partials/icons.html' with name="edit" size=13 %}
+                </a>
+
+                <form method="post" action="{% url 'user_deactivate' u.id %}" style="display: inline;">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="{% if u.is_active %}deactivate{% else %}activate{% endif %}">
+                  <button type="submit" class="btn btn-sm {% if u.is_active %}btn-secondary{% else %}btn-success{% endif %}"
+                          title="{% if u.is_active %}Deactivate{% else %}Activate{% endif %}">
+                    {% if u.is_active %}
+                      {% include 'partials/icons.html' with name="lock" size=13 %}
+                    {% else %}
+                      {% include 'partials/icons.html' with name="check-circle" size=13 %}
+                    {% endif %}
+                  </button>
+                </form>
+
+                <a href="{% url 'user_delete' u.id %}" class="btn btn-sm btn-danger" title="Delete">
+                  {% include 'partials/icons.html' with name="trash" size=13 %}
+                </a>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% if page_obj.has_other_pages %}
+    <div style="padding: var(--s-5) var(--s-6); border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--s-3);">
+      <div style="font-size: var(--text-sm); color: var(--ink-500);">
+        Showing <strong>{{ page_obj.start_index }}</strong> – <strong>{{ page_obj.end_index }}</strong> of <strong>{{ paginator.count }}</strong>
+      </div>
+      <div style="display: flex; gap: var(--s-1);">
+        {% if page_obj.has_previous %}
+          <a href="?{% if search %}q={{ search }}&{% endif %}{% if role_filter %}role={{ role_filter }}&{% endif %}{% if status_filter %}status={{ status_filter }}&{% endif %}page={{ page_obj.previous_page_number }}" class="btn btn-sm btn-secondary">← Prev</a>
+        {% endif %}
+        {% for num in page_obj.paginator.page_range %}
+          {% if num == page_obj.number %}
+            <span class="btn btn-sm btn-primary" style="cursor: default;">{{ num }}</span>
+          {% elif num > page_obj.number|add:"-3" and num < page_obj.number|add:"3" %}
+            <a href="?{% if search %}q={{ search }}&{% endif %}{% if role_filter %}role={{ role_filter }}&{% endif %}{% if status_filter %}status={{ status_filter }}&{% endif %}page={{ num }}" class="btn btn-sm btn-secondary">{{ num }}</a>
+          {% endif %}
+        {% endfor %}
+        {% if page_obj.has_next %}
+          <a href="?{% if search %}q={{ search }}&{% endif %}{% if role_filter %}role={{ role_filter }}&{% endif %}{% if status_filter %}status={{ status_filter }}&{% endif %}page={{ page_obj.next_page_number }}" class="btn btn-sm btn-secondary">Next →</a>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+  {% else %}
+    <div class="empty" style="border: none; border-radius: 0;">
+      {% include 'partials/icons.html' with name="users" size=56 %}
+      <h3>No users found</h3>
+      <p>Create your first user account to get started.</p>
+      <a href="{% url 'create_user' %}" class="btn btn-primary">
+        {% include 'partials/icons.html' with name="user-plus" size=15 %}
+        <span>Create User</span>
+      </a>
+    </div>
+  {% endif %}
+</div>
+
+{% endblock %}

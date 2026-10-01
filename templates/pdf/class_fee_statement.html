@@ -1,0 +1,269 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  @page { size: A4 landscape; margin: 10mm; }
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'DejaVu Sans', Arial, sans-serif;
+    color: #1a1a1a;
+    font-size: 9.5pt;
+    margin: 0;
+    line-height: 1.4;
+  }
+
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    border-bottom: 2.5pt solid #00695c;
+    padding-bottom: 10px;
+    margin-bottom: 14px;
+  }
+  .header-left h1 {
+    color: #00695c;
+    font-size: 16pt;
+    margin: 0 0 4px 0;
+  }
+  .header-left p {
+    margin: 2px 0;
+    color: #6b7280;
+    font-size: 8.5pt;
+  }
+  .header-right { text-align: right; }
+  .header-right .badge {
+    background: #00695c;
+    color: white;
+    padding: 6px 12px;
+    font-size: 10pt;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    display: inline-block;
+    margin-bottom: 4px;
+  }
+  .header-right p { margin: 2px 0; font-size: 8.5pt; color: #6b7280; }
+
+  h2 {
+    font-size: 12pt;
+    color: #00695c;
+    margin: 12px 0 8px 0;
+    border-bottom: 1px solid #ccfbf1;
+    padding-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  /* Summary boxes */
+  .summary-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 6px 0;
+    margin-bottom: 12px;
+  }
+  .summary-box {
+    padding: 10px 6px;
+    text-align: center;
+    width: 25%;
+  }
+  .summary-box .label {
+    font-size: 7.5pt;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 3px;
+    font-weight: 600;
+  }
+  .summary-box .value { font-size: 14pt; font-weight: 700; }
+
+  .box-teal { background: #f0fdfa; border: 1.5pt solid #14b8a6; }
+  .box-teal .label { color: #0f766e; }
+  .box-teal .value { color: #00695c; }
+
+  .box-blue { background: #eff6ff; border: 1.5pt solid #3b82f6; }
+  .box-blue .label { color: #1e40af; }
+  .box-blue .value { color: #2563eb; }
+
+  .box-green { background: #ecfdf5; border: 1.5pt solid #10b981; }
+  .box-green .label { color: #047857; }
+  .box-green .value { color: #059669; }
+
+  .box-red { background: #fef2f2; border: 1.5pt solid #ef4444; }
+  .box-red .label { color: #991b1b; }
+  .box-red .value { color: #dc2626; }
+
+  /* Students table */
+  table.data {
+    width: 100%;
+    border-collapse: collapse;
+    border: 1px solid #e5e7eb;
+    margin-bottom: 8px;
+  }
+  table.data thead { background: #00695c; color: white; }
+  table.data th {
+    padding: 6px 8px;
+    text-align: left;
+    font-size: 8pt;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 700;
+  }
+  table.data td {
+    padding: 6px 8px;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 8.5pt;
+  }
+  table.data .right { text-align: right; }
+  table.data .center { text-align: center; }
+  table.data tfoot td {
+    background: #f0fdfa;
+    font-weight: 700;
+    font-size: 9pt;
+    border-top: 2pt solid #00695c;
+  }
+
+  /* Status pills */
+  .pill {
+    display: inline-block;
+    padding: 2px 8px;
+    font-size: 7.5pt;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+  .pill-paid { background: #d1fae5; color: #065f46; }
+  .pill-partial { background: #fef3c7; color: #92400e; }
+  .pill-unpaid { background: #dbeafe; color: #1e40af; }
+  .pill-overdue { background: #fee2e2; color: #991b1b; }
+  .pill-none { background: #f1f5f9; color: #6b7280; }
+
+  /* Row shading */
+  tr.boy td { background: #dbeafe; }
+  tr.girl td { background: #fef3c7; }
+
+  .footer {
+    text-align: center;
+    margin-top: 14px;
+    padding-top: 8px;
+    border-top: 0.5pt solid #e5e7eb;
+    font-size: 8pt;
+    color: #6b7280;
+    font-style: italic;
+  }
+
+  .signatures {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 30px;
+  }
+  .signature-line {
+    border-top: 1.5pt dashed #6b7280;
+    padding-top: 4px;
+    width: 40%;
+    text-align: center;
+    font-size: 8.5pt;
+    color: #6b7280;
+  }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="header-left">
+    <h1>{{ school.name }}</h1>
+    {% if school.motto %}<p><em>{{ school.motto }}</em></p>{% endif %}
+    {% if school.physical_address %}<p>{{ school.physical_address }}</p>{% endif %}
+    {% if school.phone %}<p>Tel: {{ school.phone }}</p>{% endif %}
+    {% if school.nemis_code %}<p>NEMIS: {{ school.nemis_code }}</p>{% endif %}
+  </div>
+  <div class="header-right">
+    <div class="badge">CLASS FEE STATEMENT</div>
+    <p><strong>{{ selected_class.name }}</strong></p>
+    <p>Generated: {% now "d M Y H:i" %}</p>
+  </div>
+</div>
+
+<!-- Summary -->
+<h2>Class Summary</h2>
+<table class="summary-table">
+  <tr>
+    <td class="summary-box box-teal">
+      <div class="label">Students</div>
+      <div class="value">{{ total_students }}</div>
+    </td>
+    <td class="summary-box box-blue">
+      <div class="label">Total Invoiced</div>
+      <div class="value">KES {{ class_invoiced|floatformat:0 }}</div>
+    </td>
+    <td class="summary-box box-green">
+      <div class="label">Collected</div>
+      <div class="value">KES {{ class_paid|floatformat:0 }}</div>
+    </td>
+    <td class="summary-box box-red">
+      <div class="label">Outstanding</div>
+      <div class="value">KES {{ class_balance|floatformat:0 }}</div>
+    </td>
+  </tr>
+</table>
+
+<!-- Students table -->
+<h2>Per-Student Breakdown</h2>
+<table class="data">
+  <thead>
+    <tr>
+      <th style="width: 40px;">#</th>
+      <th>Student</th>
+      <th style="width: 90px;">Adm No</th>
+      <th class="right" style="width: 100px;">Invoiced</th>
+      <th class="right" style="width: 100px;">Paid</th>
+      <th class="right" style="width: 100px;">Balance</th>
+      <th class="center" style="width: 90px;">Status</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in students_data %}
+    <tr class="{% if row.student.gender == 'M' %}boy{% else %}girl{% endif %}">
+      <td>{{ forloop.counter }}</td>
+      <td>{{ row.student.full_name }}</td>
+      <td>{{ row.student.admission_number }}</td>
+      <td class="right">KES {{ row.invoiced|floatformat:0 }}</td>
+      <td class="right">KES {{ row.paid|floatformat:0 }}</td>
+      <td class="right"><strong>KES {{ row.balance|floatformat:0 }}</strong></td>
+      <td class="center">
+        {% if row.status == 'paid' %}<span class="pill pill-paid">Paid</span>
+        {% elif row.status == 'partial' %}<span class="pill pill-partial">Partial</span>
+        {% elif row.status == 'unpaid' %}<span class="pill pill-unpaid">Unpaid</span>
+        {% elif row.status == 'overdue' %}<span class="pill pill-overdue">Overdue</span>
+        {% else %}<span class="pill pill-none">—</span>{% endif %}
+      </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="7" class="center" style="padding: 20px;">No students in this class.</td></tr>
+    {% endfor %}
+  </tbody>
+  {% if students_data %}
+  <tfoot>
+    <tr>
+      <td colspan="3" class="right">CLASS TOTALS:</td>
+      <td class="right">KES {{ class_invoiced|floatformat:0 }}</td>
+      <td class="right">KES {{ class_paid|floatformat:0 }}</td>
+      <td class="right">KES {{ class_balance|floatformat:0 }}</td>
+      <td></td>
+    </tr>
+  </tfoot>
+  {% endif %}
+</table>
+
+<!-- Signatures -->
+<div class="signatures">
+  <div class="signature-line">Bursar / Accountant</div>
+  <div class="signature-line">Principal</div>
+</div>
+
+<!-- Footer -->
+<div class="footer">
+  Generated by School MS · {{ school.name }} · {% now "d M Y" %}
+  <br>By: {% if printed_by %}{{ printed_by.get_full_name|default:printed_by.email }}{% endif %}
+</div>
+
+</body>
+</html>

@@ -1,0 +1,106 @@
+{% extends 'base.html' %}
+{% block title %}Payment Status{% endblock %}
+{% block header_title %}Payment Status{% endblock %}
+{% block header_sub %}{{ school.name }}{% endblock %}
+
+{% block content %}
+
+<div class="max-w-2xl mx-auto">
+
+  {% if subscription.status == 'active' %}
+
+    <!-- ACTIVE -->
+    <div class="pro-card" style="text-align: center; padding: 40px; border-left: 4px solid #059669;">
+      <div class="pro-stat-icon pro-icon-bg-green" style="margin: 0 auto 16px; width: 64px; height: 64px;">
+        {% include 'partials/icons.html' with name="check-circle" size=32 %}
+      </div>
+      <h2 style="font-size: 22px; font-weight: 700; color: #065f46; font-family: 'Poppins', sans-serif; margin: 0 0 8px 0;">
+        ✓ Subscription Active
+      </h2>
+      <p style="font-size: 14px; color: #4b5563; margin-bottom: 16px;">
+        Your payment has been confirmed. You now have full access.
+      </p>
+      <div style="background: #f0fdfa; padding: 16px; border-radius: 4px;">
+        <div style="font-size: 13px; color: #6b7280;">Active until</div>
+        <div style="font-weight: 700; color: #00695c; font-family: 'Poppins', sans-serif; font-size: 16px; margin-top: 4px;">
+          {{ subscription.paid_until|date:"d M Y" }}
+        </div>
+        <div style="font-size: 12px; color: #6b7280; margin-top: 4px;">
+          {{ subscription.days_remaining }} day{{ subscription.days_remaining|pluralize }} remaining
+        </div>
+      </div>
+    </div>
+
+  {% elif subscription.status == 'pending_payment' %}
+
+    <!-- PENDING -->
+    <div class="pro-card" style="text-align: center; padding: 40px; border-left: 4px solid #d97706;">
+      <div class="pro-stat-icon pro-icon-bg-yellow" style="margin: 0 auto 16px; width: 64px; height: 64px;">
+        {% include 'partials/icons.html' with name="activity" size=32 %}
+      </div>
+      <h2 style="font-size: 22px; font-weight: 700; color: #92400e; font-family: 'Poppins', sans-serif; margin: 0 0 8px 0;">
+        Payment Pending
+      </h2>
+      <p style="font-size: 14px; color: #4b5563; margin-bottom: 20px;">
+        We haven't received your payment yet. Please complete the transfer using the reference below.
+      </p>
+
+      <div style="background: #fef3c7; padding: 16px; border-radius: 4px; margin-bottom: 20px;">
+        <div style="font-size: 11px; color: #92400e; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700;">Reference</div>
+        <div style="font-weight: 700; color: #00695c; font-family: 'JetBrains Mono', monospace; font-size: 16px; margin-top: 4px;">
+          {{ subscription.last_payment_reference }}
+        </div>
+        <div style="font-size: 11px; color: #92400e; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700; margin-top: 12px;">Amount</div>
+        <div style="font-weight: 700; color: #ff6f00; font-family: 'Poppins', sans-serif; font-size: 16px; margin-top: 4px;">
+          KES {{ subscription.total_paid_kes|floatformat:0 }}
+        </div>
+      </div>
+
+      <a href="{% url 'subscription_payment_pending' school.id %}" class="pro-btn pro-btn-primary">
+        {% include 'partials/icons.html' with name="file-text" size=15 %}
+        <span>View Payment Instructions</span>
+      </a>
+    </div>
+
+  {% elif subscription.status == 'trial' %}
+
+    <!-- TRIAL -->
+    <div class="pro-card" style="text-align: center; padding: 40px; border-left: 4px solid #4db6ac;">
+      <div class="pro-stat-icon pro-icon-bg-teal" style="margin: 0 auto 16px; width: 64px; height: 64px;">
+        {% include 'partials/icons.html' with name="activity" size=32 %}
+      </div>
+      <h2 style="font-size: 22px; font-weight: 700; color: #00695c; font-family: 'Poppins', sans-serif; margin: 0 0 8px 0;">
+        Free Trial
+      </h2>
+      <p style="font-size: 14px; color: #4b5563;">
+        You have {{ subscription.days_remaining }} day{{ subscription.days_remaining|pluralize }} remaining in your trial.
+      </p>
+      <a href="{% url 'subscription_view' %}?school={{ school.id }}" class="pro-btn pro-btn-primary" style="margin-top: 20px;">
+        Choose a Plan
+      </a>
+    </div>
+
+  {% else %}
+
+    <!-- OTHER -->
+    <div class="pro-card" style="text-align: center; padding: 40px; border-left: 4px solid #6b7280;">
+      <div class="pro-stat-icon pro-icon-bg-gray" style="margin: 0 auto 16px; width: 64px; height: 64px;">
+        {% include 'partials/icons.html' with name="info" size=32 %}
+      </div>
+      <h2 style="font-size: 22px; font-weight: 700; color: #1a1a1a; font-family: 'Poppins', sans-serif; margin: 0 0 8px 0;">
+        {{ subscription.get_status_display }}
+      </h2>
+      <p style="font-size: 14px; color: #4b5563;">
+        Contact support if you need assistance.
+      </p>
+    </div>
+
+  {% endif %}
+
+  <div style="text-align: center; margin-top: 24px;">
+    <a href="{% url 'dashboard_home' %}" class="pro-btn pro-btn-secondary">Back to Dashboard</a>
+  </div>
+
+</div>
+
+{% endblock %}

@@ -1,0 +1,137 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  @page { size: A4 landscape; margin: 8mm; }
+  * { box-sizing: border-box; }
+  body { font-family: 'DejaVu Sans', Arial, sans-serif; color: #1a1a1a; font-size: 9pt; margin: 0; }
+
+  .tt-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    border-bottom: 3px solid #00695c;
+    padding-bottom: 8px;
+    margin-bottom: 10px;
+  }
+  .tt-header-left { display: flex; align-items: center; gap: 12px; flex: 1; }
+  .tt-logo { width: 50px; height: 50px; object-fit: contain; }
+  .tt-logo-placeholder {
+    width: 50px; height: 50px; background: #00695c; color: white;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 16pt;
+  }
+  .tt-school-name { font-size: 14pt; font-weight: 700; color: #1a1a1a; margin-bottom: 2px; }
+  .tt-school-motto { font-size: 8pt; font-style: italic; color: #6b7280; margin-bottom: 2px; }
+  .tt-school-address { font-size: 8pt; color: #6b7280; }
+  .tt-header-right { text-align: right; }
+  .tt-title { font-size: 10pt; font-weight: 700; color: #00695c; letter-spacing: 0.1em; margin-bottom: 4px; }
+  .tt-class-name { font-size: 13pt; font-weight: 700; color: #1a1a1a; }
+  .tt-class-teacher, .tt-printed { font-size: 8pt; color: #6b7280; margin-top: 2px; }
+
+  table.tt-table { width: 100%; border-collapse: collapse; font-size: 8pt; margin-bottom: 8px; }
+  .tt-table th { background: #00695c; color: #fff; padding: 4px 3px; text-align: center; border: 1px solid #004d40; font-weight: 700; }
+  .tt-day-col { background: #1a2332 !important; color: #fff !important; width: 60px; }
+  .tt-period-name { font-size: 8pt; font-weight: 700; }
+  .tt-period-time { font-size: 7pt; font-weight: 400; opacity: 0.9; margin-top: 1px; }
+  .tt-break-header { font-size: 7pt; font-weight: 700; text-transform: uppercase; }
+  .tt-break-header.short { background: #d97706 !important; border-color: #92400e !important; }
+  .tt-break-header.long  { background: #ea580c !important; border-color: #9a3412 !important; }
+  .tt-break-header.lunch { background: #7c3aed !important; border-color: #5b21b6 !important; }
+  .tt-break-header.games { background: #0891b2 !important; border-color: #0e7490 !important; }
+  .tt-day-cell { background: #1a2332; color: #fff; font-weight: 700; padding: 5px 3px; text-align: center; border: 1px solid #334155; font-size: 9pt; }
+  .tt-lesson-cell { padding: 3px 2px; text-align: center; border: 1px solid #e5e7eb; background: #fff; height: 28px; vertical-align: middle; }
+  .tt-lesson-subject { font-weight: 700; color: #1a1a1a; font-size: 8pt; line-height: 1.2; }
+  .tt-lesson-teacher { font-size: 6.5pt; color: #6b7280; margin-top: 1px; font-style: italic; }
+  .tt-break-cell { text-align: center; font-weight: 700; font-size: 7pt; padding: 3px; vertical-align: middle; border: 1px solid #e5e7eb; }
+  .tt-break-cell.short { background: #fef3c7; color: #92400e; }
+  .tt-break-cell.long  { background: #fed7aa; color: #9a3412; }
+  .tt-break-cell.lunch { background: #ede9fe; color: #5b21b6; }
+  .tt-break-cell.games { background: #cffafe; color: #155e75; }
+  .tt-empty { border: 1px solid #e5e7eb; background: #f9fafb; text-align: center; color: #d1d5db; }
+
+  .tt-footer { margin-top: 10px; padding-top: 6px; border-top: 2px solid #00695c; text-align: center; font-size: 7pt; color: #6b7280; }
+</style>
+</head>
+<body>
+
+<div class="tt-header">
+  <div class="tt-header-left">
+    {% if school.logo %}
+      <img src="{{ school.logo.path }}" alt="logo" class="tt-logo">
+    {% else %}
+      <div class="tt-logo-placeholder">{{ school.name|slice:":2"|upper }}</div>
+    {% endif %}
+    <div>
+      <div class="tt-school-name">{{ school.name }}</div>
+      {% if school.motto %}<div class="tt-school-motto">{{ school.motto }}</div>{% endif %}
+      <div class="tt-school-address">
+        {{ school.postal_address|default:school.physical_address }}
+        {% if school.phone %} · Tel: {{ school.phone }}{% endif %}
+      </div>
+    </div>
+  </div>
+  <div class="tt-header-right">
+    <div class="tt-title">WEEKLY TIMETABLE</div>
+    <div class="tt-class-name">{{ selected_class.name }}</div>
+    {% if class_teacher %}
+      <div class="tt-class-teacher">Class Teacher: {{ class_teacher.user.get_full_name|default:class_teacher.user.email }}</div>
+    {% else %}
+      <div class="tt-class-teacher">Class Teacher: —</div>
+    {% endif %}
+    <div class="tt-printed">Printed: {% now "d M Y H:i" %}</div>
+  </div>
+</div>
+
+<table class="tt-table">
+  <thead>
+    <tr>
+      <th class="tt-day-col">Day</th>
+      {% for period in periods %}
+        {% if period.2 == 'short_break' %}<th class="tt-break-header short">{{ period.3 }}</th>
+        {% elif period.2 == 'long_break' %}<th class="tt-break-header long">{{ period.3 }}</th>
+        {% elif period.2 == 'lunch' %}<th class="tt-break-header lunch">{{ period.3 }}</th>
+        {% elif period.2 == 'games' %}<th class="tt-break-header games">{{ period.3 }}</th>
+        {% else %}
+          <th><div class="tt-period-name">{{ period.3 }}</div><div class="tt-period-time">{{ period.0 }}–{{ period.1 }}</div></th>
+        {% endif %}
+      {% endfor %}
+    </tr>
+  </thead>
+  <tbody>
+    {% for day_code, day_name in days %}
+    <tr>
+      <td class="tt-day-cell">{{ day_name }}</td>
+      {% for period in periods %}
+        {% if period.2 == 'short_break' %}<td class="tt-break-cell short">SHORT<br>BREAK</td>
+        {% elif period.2 == 'long_break' %}<td class="tt-break-cell long">LONG<br>BREAK</td>
+        {% elif period.2 == 'lunch' %}<td class="tt-break-cell lunch">LUNCH<br>BREAK</td>
+        {% elif period.2 == 'games' %}
+          {% if day_code != 'SAT' %}<td class="tt-break-cell games">GAMES</td>{% else %}<td class="tt-empty">—</td>{% endif %}
+        {% else %}
+          <td class="tt-lesson-cell">
+            {% for day_key, day_row in grid.items %}
+              {% if day_key == day_code %}
+                {% for start, entry in day_row.items %}
+                  {% if start == period.0 %}
+                    <div class="tt-lesson-subject">{{ entry.subject.name|truncatechars:18 }}</div>
+                    {% if entry.teacher %}<div class="tt-lesson-teacher">{{ entry.teacher.get_full_name|default:entry.teacher.email|truncatechars:14 }}</div>{% endif %}
+                  {% endif %}
+                {% endfor %}
+              {% endif %}
+            {% endfor %}
+          </td>
+        {% endif %}
+      {% endfor %}
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<div class="tt-footer">
+  © {% now "Y" %} {{ school.name }} · All Rights Reserved · Generated by School MS
+</div>
+
+</body>
+</html>

@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  @page {
+    size: A4 portrait;
+    margin: 12mm 10mm 15mm 10mm;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: Helvetica, Arial, sans-serif;
+    font-size: 9pt;
+    color: #1a1a1a;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Header */
+  .header {
+    border-bottom: 2px solid #00695c;
+    padding-bottom: 8px;
+    margin-bottom: 12px;
+  }
+  .header-table { width: 100%; border-collapse: collapse; }
+  .header-table td { vertical-align: top; padding: 0; }
+  .logo-cell { width: 70px; }
+  .logo-cell img { width: 60px; height: auto; }
+
+  .school-name { font-size: 15pt; font-weight: bold; color: #00695c; margin: 0; }
+  .school-motto { font-size: 8pt; font-style: italic; color: #6b7280; margin: 2px 0 0 0; }
+  .school-meta { font-size: 8pt; color: #4b5563; margin: 3px 0 0 0; line-height: 1.4; }
+
+  /* Title block */
+  .title-block { text-align: center; margin: 10px 0 12px 0; }
+  .title-main {
+    font-size: 13pt; font-weight: bold; color: #111827;
+    margin: 0; letter-spacing: 1px; text-transform: uppercase;
+  }
+  .title-sub { font-size: 9.5pt; color: #4b5563; margin: 4px 0 0 0; }
+  .teacher-line { font-size: 9pt; color: #374151; margin: 6px 0 0 0; }
+
+  /* Attendance table */
+  .att-table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
+  .att-table th {
+    background: #00695c; color: white;
+    font-size: 8pt; padding: 6px 4px;
+    text-align: center; font-weight: bold;
+    border: 1px solid #004d40;
+  }
+  .att-table th.name-col { text-align: left; width: 45%; }
+  .att-table th.idx-col { width: 8%; }
+  .att-table th.adm-col { width: 22%; }
+  .att-table th.status-col { width: 25%; }
+
+  .att-table td {
+    padding: 5px 4px;
+    font-size: 8.5pt;
+    border: 1px solid #d1d5db;
+    text-align: center;
+    vertical-align: middle;
+  }
+  .att-table td.name-cell { text-align: left; }
+  .att-table td.adm-cell { text-align: left; font-family: monospace; }
+  .att-table tr.girl-row td { background: #fdf2f8; }
+  .att-table tr.boy-row td { background: #eff6ff; }
+  .att-table td.status-P { color: #059669; font-weight: bold; }
+  .att-table td.status-A { color: #dc2626; font-weight: bold; }
+  .att-table td.status-L { color: #d97706; font-weight: bold; }
+  .att-table td.status-E { color: #6b7280; font-weight: bold; }
+  .att-table td.status-empty { color: #d1d5db; }
+
+  /* Summary */
+  .summary {
+    background: #e6f5ef;
+    padding: 8px 12px;
+    margin-bottom: 15px;
+    border-left: 3px solid #00695c;
+    font-size: 8.5pt;
+    color: #004d40;
+  }
+  .summary strong { color: #111827; }
+
+  /* Signatures */
+  .signature-table { width: 100%; border-collapse: collapse; margin-top: 25px; }
+  .signature-table td { padding: 6px 0; vertical-align: bottom; width: 50%; }
+  .signature-line { border-bottom: 1px solid #4b5563; height: 24px; margin-bottom: 3px; }
+  .signature-label { color: #6b7280; font-size: 8pt; }
+
+  .footer {
+    margin-top: 15px;
+    padding-top: 6px;
+    border-top: 1px solid #d1d5db;
+    font-size: 7.5pt;
+    color: #6b7280;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <table class="header-table">
+    <tr>
+      {% if school.logo %}
+      <td class="logo-cell">
+        <img src="{{ school.logo.path }}" alt="Logo">
+      </td>
+      {% endif %}
+      <td>
+        <p class="school-name">{{ school.name }}</p>
+        {% if school.motto %}
+          <p class="school-motto">"{{ school.motto }}"</p>
+        {% endif %}
+        <p class="school-meta">
+          {% if school.code %}Code: {{ school.code }}{% endif %}
+          {% if school.nemis_code %} · NEMIS: {{ school.nemis_code }}{% endif %}
+          <br>
+          {% if school.postal_address %}{{ school.postal_address }}{% endif %}
+          {% if school.phone %} · Tel: {{ school.phone }}{% endif %}
+        </p>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<!-- TITLE -->
+<div class="title-block">
+  <p class="title-main">Attendance Sheet</p>
+  <p class="title-sub">{{ cls.name }} · {{ selected_date|date:"D, d M Y" }}</p>
+  {% if teacher.user.get_full_name %}
+    <p class="teacher-line">Class Teacher: {{ teacher.user.get_full_name }}</p>
+  {% elif teacher.user.email %}
+    <p class="teacher-line">Class Teacher: {{ teacher.user.email }}</p>
+  {% endif %}
+</div>
+
+<!-- ATTENDANCE TABLE -->
+<table class="att-table">
+  <thead>
+    <tr>
+      <th class="idx-col">#</th>
+      <th class="name-col">Student Name</th>
+      <th class="adm-col">Adm No</th>
+      <th class="status-col">Status</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for r in rows %}
+    <tr class="{% if r.student.gender == 'F' %}girl-row{% else %}boy-row{% endif %}">
+      <td>{{ r.index }}</td>
+      <td class="name-cell">{{ r.student.full_name }}</td>
+      <td class="adm-cell">{{ r.student.admission_number }}</td>
+      <td class="status-{% if r.status %}{{ r.status }}{% else %}empty{% endif %}">
+        {% if r.status == 'P' %}✓ Present
+        {% elif r.status == 'A' %}✗ Absent
+        {% elif r.status == 'L' %}⏰ Late
+        {% elif r.status == 'E' %}— Excused
+        {% else %}·  Not marked
+        {% endif %}
+      </td>
+    </tr>
+    {% empty %}
+    <tr>
+      <td colspan="4" style="padding: 20px; text-align: center; color: #6b7280;">
+        No students in this class.
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<!-- SUMMARY -->
+<div class="summary">
+  <strong>Summary:</strong>
+  {{ total_students }} students total ·
+  {{ present }} present ·
+  {{ absent }} absent ·
+  {{ late }} late ·
+  {{ excused }} excused
+  {% if not_marked > 0 %} · <strong style="color: #d97706;">{{ not_marked }} not marked</strong>{% endif %}
+</div>
+
+<!-- SIGNATURES -->
+<table class="signature-table">
+  <tr>
+    <td style="padding-right: 15px;">
+      <div class="signature-line"></div>
+      <div class="signature-label">Class Teacher Signature &amp; Date</div>
+    </td>
+    <td style="padding-left: 15px;">
+      <div class="signature-line"></div>
+      <div class="signature-label">
+        {% if school.principal_name %}Principal: {{ school.principal_name }}{% else %}Principal / School Admin{% endif %}
+      </div>
+    </td>
+  </tr>
+</table>
+
+<!-- FOOTER -->
+<div class="footer">
+  {{ school.name }} · {{ school.code }} · Printed {{ generated_at|date:"d M Y H:i" }}
+</div>
+
+</body>
+</html>

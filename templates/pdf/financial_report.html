@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  @page { size: A4 portrait; margin: 12mm 12mm 15mm 12mm; }
+  * { box-sizing: border-box; }
+  body { font-family: Helvetica, Arial, sans-serif; font-size: 9.5pt; color: #1a1a1a; margin: 0; padding: 0; }
+
+  .header { border-bottom: 2px solid #00695c; padding-bottom: 8px; margin-bottom: 14px; }
+  .header-table { width: 100%; border-collapse: collapse; }
+  .header-table td { vertical-align: top; padding: 0; }
+  .logo-cell { width: 70px; }
+  .logo-cell img { width: 60px; height: auto; }
+
+  .school-name { font-size: 15pt; font-weight: bold; color: #00695c; margin: 0; }
+  .school-motto { font-size: 8pt; font-style: italic; color: #6b7280; margin: 2px 0 0 0; }
+  .school-meta { font-size: 8pt; color: #4b5563; margin: 3px 0 0 0; line-height: 1.4; }
+
+  .title-block { text-align: center; margin: 10px 0 14px 0; }
+  .title-main { font-size: 14pt; font-weight: bold; color: #111827; margin: 0; letter-spacing: 1px; text-transform: uppercase; }
+  .title-sub { font-size: 10pt; color: #4b5563; margin: 4px 0 0 0; }
+
+  .kpi-row { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+  .kpi-row td { width: 25%; padding: 8px; }
+  .kpi-card {
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    padding: 10px 12px;
+    text-align: center;
+  }
+  .kpi-label { font-size: 8pt; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; }
+  .kpi-value { font-size: 14pt; font-weight: bold; margin: 4px 0; font-family: monospace; }
+  .kpi-value.green { color: #059669; }
+  .kpi-value.red { color: #dc2626; }
+
+  .section { margin-bottom: 16px; page-break-inside: avoid; }
+  .section-title {
+    font-size: 11pt;
+    font-weight: bold;
+    color: #00695c;
+    border-bottom: 1px solid #00695c;
+    padding-bottom: 4px;
+    margin-bottom: 8px;
+  }
+
+  .data-table { width: 100%; border-collapse: collapse; }
+  .data-table th {
+    background: #00695c;
+    color: white;
+    font-size: 8.5pt;
+    padding: 6px 6px;
+    text-align: left;
+    font-weight: bold;
+    border: 1px solid #004d40;
+  }
+  .data-table th.right { text-align: right; }
+  .data-table th.center { text-align: center; }
+  .data-table td {
+    padding: 5px 6px;
+    font-size: 9pt;
+    border: 1px solid #d1d5db;
+  }
+  .data-table td.right { text-align: right; font-family: monospace; font-weight: 600; }
+  .data-table td.center { text-align: center; }
+  .data-table tr.total-row td {
+    background: #e6f5ef;
+    font-weight: bold;
+    color: #004d40;
+    border-top: 2px solid #00695c;
+  }
+
+  .footer {
+    margin-top: 20px;
+    padding-top: 8px;
+    border-top: 1px solid #d1d5db;
+    font-size: 8pt;
+    color: #6b7280;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <table class="header-table">
+    <tr>
+      {% if school.logo %}
+      <td class="logo-cell">
+        <img src="{{ school.logo.path }}" alt="Logo">
+      </td>
+      {% endif %}
+      <td>
+        <p class="school-name">{{ school.name }}</p>
+        {% if school.motto %}<p class="school-motto">"{{ school.motto }}"</p>{% endif %}
+        <p class="school-meta">
+          {% if school.code %}Code: {{ school.code }}{% endif %}
+          {% if school.nemis_code %} · NEMIS: {{ school.nemis_code }}{% endif %}
+          {% if school.postal_address %} · {{ school.postal_address }}{% endif %}
+          {% if school.phone %} · Tel: {{ school.phone }}{% endif %}
+        </p>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<!-- TITLE -->
+<div class="title-block">
+  <p class="title-main">Financial Report</p>
+  <p class="title-sub">Period: {{ period_label }}</p>
+</div>
+
+<!-- KPI SUMMARY -->
+<table class="kpi-row">
+  <tr>
+    <td>
+      <div class="kpi-card">
+        <div class="kpi-label">Collected</div>
+        <div class="kpi-value green">{{ total_collected|floatformat:0 }}</div>
+        <div class="kpi-label">KES</div>
+      </div>
+    </td>
+    <td>
+      <div class="kpi-card">
+        <div class="kpi-label">Expenditure</div>
+        <div class="kpi-value red">{{ total_expenditure|floatformat:0 }}</div>
+        <div class="kpi-label">KES</div>
+      </div>
+    </td>
+    <td>
+      <div class="kpi-card">
+        <div class="kpi-label">Outstanding</div>
+        <div class="kpi-value red">{{ total_outstanding|floatformat:0 }}</div>
+        <div class="kpi-label">KES</div>
+      </div>
+    </td>
+    <td>
+      <div class="kpi-card">
+        <div class="kpi-label">Net Position</div>
+        <div class="kpi-value {% if net_position >= 0 %}green{% else %}red{% endif %}">
+          {{ net_position|floatformat:0 }}
+        </div>
+        <div class="kpi-label">KES</div>
+      </div>
+    </td>
+  </tr>
+</table>
+
+<!-- COLLECTIONS BY METHOD -->
+{% if method_breakdown %}
+<div class="section">
+  <div class="section-title">Collections by Payment Method</div>
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Method</th>
+        <th class="right">Amount (KES)</th>
+        <th class="right">% of Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for method, amount in method_breakdown.items %}
+      <tr>
+        <td>{{ method }}</td>
+        <td class="right">{{ amount|floatformat:2 }}</td>
+        <td class="right">
+          {% if total_collected %}{% widthratio amount total_collected 100 %}%{% else %}—{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+      <tr class="total-row">
+        <td>Total Collections</td>
+        <td class="right">{{ total_collected|floatformat:2 }}</td>
+        <td class="right">100%</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+<!-- EXPENDITURE BY CATEGORY -->
+{% if category_breakdown %}
+<div class="section">
+  <div class="section-title">Expenditure by Category</div>
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Category</th>
+        <th class="right">Amount (KES)</th>
+        <th class="right">% of Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for category, amount in category_breakdown.items %}
+      <tr>
+        <td>{{ category }}</td>
+        <td class="right">{{ amount|floatformat:2 }}</td>
+        <td class="right">
+          {% if total_expenditure %}{% widthratio amount total_expenditure 100 %}%{% else %}—{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+      <tr class="total-row">
+        <td>Total Expenditure</td>
+        <td class="right">{{ total_expenditure|floatformat:2 }}</td>
+        <td class="right">100%</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+<!-- COLLECTIONS BY CLASS -->
+{% if class_breakdown %}
+<div class="section">
+  <div class="section-title">Collections by Class</div>
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Class</th>
+        <th class="center">Students</th>
+        <th class="right">Collected (KES)</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in class_breakdown %}
+      <tr>
+        <td>{{ row.class_name }}</td>
+        <td class="center">{{ row.students }}</td>
+        <td class="right">{{ row.collected|floatformat:2 }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+<!-- PERIOD COMPARISON -->
+<div class="section">
+  <div class="section-title">Comparison vs Previous Period</div>
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Metric</th>
+        <th class="right">Previous</th>
+        <th class="right">Current</th>
+        <th class="right">Change</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Collected</td>
+        <td class="right">{{ prev_collected|floatformat:2 }}</td>
+        <td class="right">{{ total_collected|floatformat:2 }}</td>
+        <td class="right">
+          {% with change=total_collected|add:"-0" %}{{ total_collected|floatformat:0 }}{% endwith %}
+          - {{ prev_collected|floatformat:0 }}
+        </td>
+      </tr>
+      <tr>
+        <td>Expenditure</td>
+        <td class="right">{{ prev_expenditure|floatformat:2 }}</td>
+        <td class="right">{{ total_expenditure|floatformat:2 }}</td>
+        <td class="right">
+          {{ total_expenditure|floatformat:0 }} - {{ prev_expenditure|floatformat:0 }}
+        </td>
+      </tr>
+      <tr class="total-row">
+        <td>Net Position</td>
+        <td class="right">
+          {% widthratio prev_collected 1 1 as _ %}{{ prev_collected|floatformat:0 }}
+        </td>
+        <td class="right">{{ net_position|floatformat:0 }}</td>
+        <td class="right">—</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+  {{ school.name }} · {{ school.code }} · Generated {{ generated_at|date:"d M Y H:i" }}
+  by {{ generated_by.get_full_name|default:generated_by.email }}
+</div>
+
+</body>
+</html>

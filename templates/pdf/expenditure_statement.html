@@ -1,0 +1,175 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  @page { size: A4 portrait; margin: 12mm; }
+  * { box-sizing: border-box; }
+  body { font-family: 'DejaVu Sans', Arial, sans-serif; color: #1a1a1a; font-size: 9.5pt; margin: 0; line-height: 1.4; }
+
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    border-bottom: 2.5pt solid #00695c;
+    padding-bottom: 10px;
+    margin-bottom: 14px;
+  }
+  .header-left h1 { color: #00695c; font-size: 16pt; margin: 0 0 4px 0; }
+  .header-left p { margin: 2px 0; color: #6b7280; font-size: 8.5pt; }
+  .header-right { text-align: right; }
+  .header-right .badge {
+    background: #00695c; color: white; padding: 6px 12px;
+    font-size: 10pt; font-weight: 700; letter-spacing: 0.05em;
+    display: inline-block; margin-bottom: 4px;
+  }
+  .header-right p { margin: 2px 0; font-size: 8.5pt; color: #6b7280; }
+  .school-logo { width: 55px; height: 55px; object-fit: contain; }
+
+  h2 {
+    font-size: 12pt; color: #00695c; margin: 12px 0 8px 0;
+    border-bottom: 1px solid #ccfbf1; padding-bottom: 4px;
+    text-transform: uppercase; letter-spacing: 0.05em;
+  }
+
+  .summary {
+    background: #fef2f2;
+    border-left: 3pt solid #dc2626;
+    padding: 10px 14px;
+    margin-bottom: 12px;
+  }
+  .summary .label { font-size: 8pt; color: #991b1b; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700; }
+  .summary .value { font-size: 16pt; font-weight: 700; color: #dc2626; margin-top: 2px; }
+
+  table.data {
+    width: 100%; border-collapse: collapse;
+    border: 1px solid #e5e7eb; margin-bottom: 8px;
+  }
+  table.data thead { background: #00695c; color: white; }
+  table.data th {
+    padding: 6px 8px; text-align: left; font-size: 8pt;
+    text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700;
+  }
+  table.data td { padding: 6px 8px; border-bottom: 1px solid #f1f5f9; font-size: 8.5pt; }
+  table.data .right { text-align: right; }
+  table.data tfoot td { background: #fef2f2; font-weight: 700; font-size: 9pt; border-top: 2pt solid #00695c; }
+
+  .signatures { display: flex; justify-content: space-between; margin-top: 30px; }
+  .signature-line { border-top: 1.5pt dashed #6b7280; padding-top: 4px; width: 40%; text-align: center; font-size: 8.5pt; color: #6b7280; }
+
+  .footer { text-align: center; margin-top: 14px; padding-top: 8px; border-top: 0.5pt solid #e5e7eb; font-size: 8pt; color: #6b7280; font-style: italic; }
+
+  .filters-info { font-size: 8.5pt; color: #6b7280; margin-bottom: 8px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left" style="display: flex; align-items: center; gap: 12px;">
+    {% if school.logo %}
+      <img src="{{ school.logo.path }}" class="school-logo">
+    {% else %}
+      <div style="width: 55px; height: 55px; background: #00695c; color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14pt;">
+        {{ school.name|slice:":2"|upper }}
+      </div>
+    {% endif %}
+    <div>
+      <h1>{{ school.name }}</h1>
+      {% if school.motto %}<p><em>{{ school.motto }}</em></p>{% endif %}
+      {% if school.postal_address %}<p>{{ school.postal_address }}</p>{% endif %}
+      {% if school.physical_address %}<p>{{ school.physical_address }}</p>{% endif %}
+      {% if school.phone %}<p>Tel: {{ school.phone }}</p>{% endif %}
+      {% if school.email %}<p>Email: {{ school.email }}</p>{% endif %}
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="badge">EXPENDITURE STATEMENT</div>
+    <p><strong>Printed:</strong> {% now "d M Y H:i" %}</p>
+  </div>
+</div>
+
+{% if category_filter or date_from or date_to %}
+<div class="filters-info">
+  {% if category_filter %}<strong>Category:</strong> {{ category_filter }} · {% endif %}
+  {% if date_from %}<strong>From:</strong> {{ date_from }} · {% endif %}
+  {% if date_to %}<strong>To:</strong> {{ date_to }}{% endif %}
+</div>
+{% endif %}
+
+<h2>Summary</h2>
+<div class="summary">
+  <div class="label">Total Expenditure</div>
+  <div class="value">KES {{ total|floatformat:2 }}</div>
+  <div style="font-size: 9pt; color: #991b1b; margin-top: 4px;">
+    {{ count }} entr{{ count|pluralize:"y,ies" }}
+  </div>
+</div>
+
+{% if category_totals %}
+<h2>Breakdown by Category</h2>
+<table class="data">
+  <thead>
+    <tr>
+      <th>Category</th>
+      <th class="right">Amount</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for cat, amount in category_totals.items %}
+    <tr>
+      <td>{{ cat }}</td>
+      <td class="right">KES {{ amount|floatformat:2 }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+<h2>Detailed Expenditures</h2>
+<table class="data">
+  <thead>
+    <tr>
+      <th style="width: 40px;">#</th>
+      <th style="width: 80px;">Date</th>
+      <th style="width: 110px;">Category</th>
+      <th>Description</th>
+      <th style="width: 100px;">Paid To</th>
+      <th class="right" style="width: 100px;">Amount</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for e in expenditures %}
+    <tr>
+      <td>{{ forloop.counter }}</td>
+      <td>{{ e.spent_on|date:"d M Y" }}</td>
+      <td>{{ e.get_category_display }}</td>
+      <td>{{ e.description }}</td>
+      <td>{{ e.paid_to|default:"—" }}</td>
+      <td class="right">KES {{ e.amount_kes|floatformat:2 }}</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="6" style="text-align:center; padding: 20px;">No expenditures recorded.</td></tr>
+    {% endfor %}
+  </tbody>
+  {% if expenditures %}
+  <tfoot>
+    <tr>
+      <td colspan="5" class="right">TOTAL:</td>
+      <td class="right">KES {{ total|floatformat:2 }}</td>
+    </tr>
+  </tfoot>
+  {% endif %}
+</table>
+
+<div class="signatures">
+  <div class="signature-line">Accountant</div>
+  <div class="signature-line">Principal</div>
+</div>
+
+<div class="footer">
+  Generated by School MS · {{ school.name }} · {% now "d M Y" %}
+  {% if printed_by %}<br>By: {{ printed_by.get_full_name|default:printed_by.email }}{% endif %}
+</div>
+
+</body>
+</html>

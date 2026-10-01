@@ -1,0 +1,200 @@
+{% extends 'base.html' %}
+{% block title %}My Profile{% endblock %}
+{% block header_title %}My Profile{% endblock %}
+{% block header_sub %}Super Admin Account{% endblock %}
+
+{% block content %}
+
+<div class="max-w-4xl mx-auto">
+
+  <!-- Messages -->
+  {% if messages %}
+    {% for m in messages %}
+      <div style="padding: 12px 16px; margin-bottom: 16px; font-size: 13px; {% if m.tags == 'error' %}background: #fee2e2; color: #991b1b; border-left: 4px solid #dc2626;{% else %}background: #d1fae5; color: #065f46; border-left: 4px solid #059669;{% endif %}">
+        {{ m }}
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  <!-- ============ PROFILE HEADER ============ -->
+  <div class="pro-card mb-6">
+    <div style="display: flex; align-items: center; gap: 24px; flex-wrap: wrap;">
+
+      <!-- Avatar -->
+      <div>
+        {% if profile_user.avatar %}
+          <img src="{{ profile_user.avatar.url }}" alt="{{ profile_user.get_full_name }}"
+               style="width: 100px; height: 100px; object-fit: cover; border: 3px solid #00695c;">
+        {% else %}
+          <div style="width: 100px; height: 100px; background: #00695c; color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 36px; font-family: 'Poppins', sans-serif; border: 3px solid #004d40;">
+            {{ profile_user.first_name|first|upper }}{{ profile_user.last_name|first|upper|default:"" }}
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- Basic info -->
+      <div style="flex: 1; min-width: 200px;">
+        <h1 style="font-size: 22px; font-weight: 700; color: #1a1a1a; font-family: 'Poppins', sans-serif; margin: 0;">
+          {{ profile_user.get_full_name|default:"Super Admin" }}
+        </h1>
+        <div style="font-size: 14px; color: #6b7280; margin-top: 4px;">
+          {{ profile_user.email }}
+        </div>
+        <div style="display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap;">
+          <span class="pro-badge pro-badge-teal">Super Admin</span>
+          <span class="pro-badge pro-badge-info">
+            Joined {{ profile_user.date_joined|date:"M Y" }}
+          </span>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <a href="{% url 'change_password' %}" class="pro-btn pro-btn-secondary" style="text-align: center;">
+          {% include 'partials/icons.html' with name="lock" size=15 %}
+          <span>Change Password</span>
+        </a>
+        <a href="{% url 'super_admin_performance' %}" class="pro-btn pro-btn-primary" style="text-align: center;">
+          {% include 'partials/icons.html' with name="bar-chart" size=15 %}
+          <span>Performance</span>
+        </a>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ============ QUICK STATS ============ -->
+  <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+
+    <div class="pro-stat" style="text-align: center;">
+      <div class="pro-stat-value">{{ stats.total_schools }}</div>
+      <div class="pro-stat-label">Schools</div>
+    </div>
+
+    <div class="pro-stat" style="text-align: center;">
+      <div class="pro-stat-value" style="color: #059669;">{{ stats.active_schools }}</div>
+      <div class="pro-stat-label">Active</div>
+    </div>
+
+    <div class="pro-stat" style="text-align: center;">
+      <div class="pro-stat-value">{{ stats.total_users }}</div>
+      <div class="pro-stat-label">Users</div>
+    </div>
+
+    <div class="pro-stat" style="text-align: center;">
+      <div class="pro-stat-value">{{ stats.total_students }}</div>
+      <div class="pro-stat-label">Students</div>
+    </div>
+
+    <div class="pro-stat" style="text-align: center;">
+      <div class="pro-stat-value">{{ stats.total_payments }}</div>
+      <div class="pro-stat-label">Payments</div>
+    </div>
+
+  </div>
+
+  <!-- ============ EDIT PROFILE ============ -->
+  <form method="post" enctype="multipart/form-data" class="pro-card">
+    {% csrf_token %}
+
+    <div class="pro-card-title">
+      {% include 'partials/icons.html' with name="user" size=18 %}
+      <span>Edit Profile Information</span>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+      <div>
+        <label style="display: block; font-size: 13px; font-weight: 500; color: #374151; margin-bottom: 6px;">
+          First Name
+        </label>
+        <input type="text" name="first_name" value="{{ profile_user.first_name|default:'' }}"
+               style="width: 100%; border: 1px solid #d1d5db; padding: 10px; font-size: 14px;">
+      </div>
+
+      <div>
+        <label style="display: block; font-size: 13px; font-weight: 500; color: #374151; margin-bottom: 6px;">
+          Last Name
+        </label>
+        <input type="text" name="last_name" value="{{ profile_user.last_name|default:'' }}"
+               style="width: 100%; border: 1px solid #d1d5db; padding: 10px; font-size: 14px;">
+      </div>
+
+      <div>
+        <label style="display: block; font-size: 13px; font-weight: 500; color: #374151; margin-bottom: 6px;">
+          Email Address
+        </label>
+        <input type="email" name="email" value="{{ profile_user.email }}"
+               style="width: 100%; border: 1px solid #d1d5db; padding: 10px; font-size: 14px;">
+      </div>
+
+      <div>
+        <label style="display: block; font-size: 13px; font-weight: 500; color: #374151; margin-bottom: 6px;">
+          Phone Number
+        </label>
+        <input type="tel" name="phone" value="{{ profile_user.phone|default:'' }}"
+               placeholder="+254..."
+               style="width: 100%; border: 1px solid #d1d5db; padding: 10px; font-size: 14px;">
+      </div>
+
+      <div class="md:col-span-2">
+        <label style="display: block; font-size: 13px; font-weight: 500; color: #374151; margin-bottom: 6px;">
+          Profile Picture
+        </label>
+        <input type="file" name="avatar" accept="image/*"
+               style="width: 100%; border: 1px solid #d1d5db; padding: 8px; font-size: 13px;">
+        <p style="font-size: 11px; color: #6b7280; margin-top: 6px;">
+          Upload a square image (PNG or JPG, recommended 400×400 px).
+        </p>
+      </div>
+
+    </div>
+
+    <!-- Save bar -->
+    <div style="display: flex; justify-content: flex-end; gap: 12px; padding-top: 20px; margin-top: 20px; border-top: 1px solid #e5e7eb;">
+      <a href="{% url 'dashboard_home' %}" class="pro-btn pro-btn-secondary">Cancel</a>
+      <button type="submit" class="pro-btn pro-btn-primary">
+        {% include 'partials/icons.html' with name="save" size=15 %}
+        <span>Save Changes</span>
+      </button>
+    </div>
+
+  </form>
+
+  <!-- ============ ACCOUNT INFO ============ -->
+  <div class="pro-card" style="margin-top: 24px;">
+    <div class="pro-card-title">
+      {% include 'partials/icons.html' with name="info" size=18 %}
+      <span>Account Information</span>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px;">
+
+      <div>
+        <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #6b7280; font-weight: 600;">Role</div>
+        <div style="font-size: 14px; font-weight: 500; color: #1a1a1a; margin-top: 2px;">Super Admin</div>
+      </div>
+
+      <div>
+        <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #6b7280; font-weight: 600;">Username</div>
+        <div style="font-size: 14px; font-weight: 500; color: #1a1a1a; margin-top: 2px; font-family: 'JetBrains Mono', monospace;">{{ profile_user.username }}</div>
+      </div>
+
+      <div>
+        <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #6b7280; font-weight: 600;">Date Joined</div>
+        <div style="font-size: 14px; font-weight: 500; color: #1a1a1a; margin-top: 2px;">{{ profile_user.date_joined|date:"d M Y" }}</div>
+      </div>
+
+      <div>
+        <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #6b7280; font-weight: 600;">Last Login</div>
+        <div style="font-size: 14px; font-weight: 500; color: #1a1a1a; margin-top: 2px;">
+          {{ profile_user.last_login|date:"d M Y H:i"|default:"—" }}
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}

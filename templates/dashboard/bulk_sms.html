@@ -1,0 +1,301 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Bulk SMS{% endblock %}
+{% block header_title %}Send Bulk SMS{% endblock %}
+{% block header_sub %}{{ current_school.name|default:"School" }} · message groups of parents{% endblock %}
+
+{% block content %}
+
+<div style="display: grid; grid-template-columns: 1fr; gap: var(--s-6); max-width: 1200px; margin: 0 auto;">
+
+  <form method="post" id="bulk-sms-form">
+    {% csrf_token %}
+
+    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: var(--s-4); align-items: start;">
+
+      <!-- ============================================ -->
+      <!-- LEFT: COMPOSE                                -->
+      <!-- ============================================ -->
+      <div>
+
+        <!-- ============================================ -->
+        <!-- STEP 1: RECIPIENTS                          -->
+        <!-- ============================================ -->
+        <div class="card mb-6">
+          <div class="card-title">
+            {% include 'partials/icons.html' with name="users" size=18 %}
+            Step 1 · Choose Recipients
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: var(--s-3);">
+
+            <!-- All parents -->
+            <label class="recipient-option">
+              <input type="radio" name="group" value="all" checked onchange="toggleGroup()">
+              <div style="flex: 1;">
+                <div style="font-weight: 600; color: var(--ink-900); font-size: var(--text-sm);">All Parents</div>
+                <div style="font-size: var(--text-xs); color: var(--ink-500); margin-top: 2px;">Send to every parent in your school</div>
+                <div style="font-size: var(--text-xs); font-weight: 700; color: var(--primary); margin-top: 6px;">
+                  {{ counts.all }} recipient{{ counts.all|pluralize }} with phones
+                </div>
+              </div>
+            </label>
+
+            <!-- Parents with unpaid fees -->
+            <label class="recipient-option">
+              <input type="radio" name="group" value="unpaid" onchange="toggleGroup()">
+              <div style="flex: 1;">
+                <div style="font-weight: 600; color: var(--ink-900); font-size: var(--text-sm);">Parents with Unpaid Fees</div>
+                <div style="font-size: var(--text-xs); color: var(--ink-500); margin-top: 2px;">Perfect for fee reminders</div>
+                <div style="font-size: var(--text-xs); font-weight: 700; color: var(--danger); margin-top: 6px;">
+                  {{ counts.unpaid }} parent{{ counts.unpaid|pluralize }} with balances
+                </div>
+              </div>
+            </label>
+
+            <!-- Parents of a specific class -->
+            <label class="recipient-option">
+              <input type="radio" name="group" value="class" onchange="toggleGroup()">
+              <div style="flex: 1;">
+                <div style="font-weight: 600; color: var(--ink-900); font-size: var(--text-sm);">Parents of a Specific Class</div>
+                <div style="font-size: var(--text-xs); color: var(--ink-500); margin-top: 2px; margin-bottom: var(--s-2);">Target a single grade or stream</div>
+                <select name="class_id" id="class_select" disabled class="select">
+                  <option value="">— Select a class —</option>
+                  {% for c in classes %}<option value="{{ c.id }}">{{ c.name }}</option>{% endfor %}
+                </select>
+              </div>
+            </label>
+
+            <!-- Custom numbers -->
+            <label class="recipient-option">
+              <input type="radio" name="group" value="custom" onchange="toggleGroup()">
+              <div style="flex: 1;">
+                <div style="font-weight: 600; color: var(--ink-900); font-size: var(--text-sm);">Custom Numbers</div>
+                <div style="font-size: var(--text-xs); color: var(--ink-500); margin-top: 2px; margin-bottom: var(--s-2);">Paste phone numbers (comma or newline separated)</div>
+                <textarea name="custom_numbers" id="custom_numbers" rows="3" disabled
+                          placeholder="0712345678, 0723456789, +254734567890"
+                          class="textarea" style="min-height: 70px;"></textarea>
+              </div>
+            </label>
+
+          </div>
+        </div>
+
+        <!-- ============================================ -->
+        <!-- STEP 2: COMPOSE                              -->
+        <!-- ============================================ -->
+        <div class="card mb-6">
+          <div class="card-title">
+            {% include 'partials/icons.html' with name="message-square" size=18 %}
+            Step 2 · Compose Message
+          </div>
+
+          <!-- Templates -->
+          <div style="margin-bottom: var(--s-4);">
+            <div style="font-size: var(--text-xs); color: var(--ink-500); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; margin-bottom: var(--s-2);">
+              Quick templates
+            </div>
+            <div style="display: flex; flex-wrap: wrap; gap: var(--s-2);">
+              <button type="button" onclick="useTemplate('fee')" class="btn btn-sm btn-secondary">
+                {% include 'partials/icons.html' with name="dollar" size=13 %}
+                <span>Fee Reminder</span>
+              </button>
+              <button type="button" onclick="useTemplate('meeting')" class="btn btn-sm btn-secondary">
+                {% include 'partials/icons.html' with name="calendar" size=13 %}
+                <span>Meeting Notice</span>
+              </button>
+              <button type="button" onclick="useTemplate('holiday')" class="btn btn-sm btn-secondary">
+                {% include 'partials/icons.html' with name="calendar" size=13 %}
+                <span>Holiday Notice</span>
+              </button>
+              <button type="button" onclick="useTemplate('exam')" class="btn btn-sm btn-secondary">
+                {% include 'partials/icons.html' with name="file-text" size=13 %}
+                <span>Exam Notice</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Message Body <span class="required">*</span></label>
+            <textarea name="message" id="sms_message" rows="6" required
+                      class="textarea" style="min-height: 140px; font-family: var(--font-sans);"
+                      placeholder="Type your message here..."
+                      oninput="updateCounter()">{{ request.POST.message|default:'' }}</textarea>
+
+            <div style="display: flex; justify-content: space-between; margin-top: var(--s-2);">
+              <span style="font-size: var(--text-xs); color: var(--ink-500);">
+                <span id="char-count">0</span>/160 characters
+              </span>
+              <span id="sms-count" style="font-size: var(--text-xs); font-weight: 600; color: var(--primary);">
+                1 SMS
+              </span>
+            </div>
+            <p class="form-hint" style="margin-top: var(--s-2);">
+              Messages longer than 160 characters will be sent as multiple SMS parts (153 chars each).
+            </p>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- ============================================ -->
+      <!-- RIGHT: SIDEBAR                               -->
+      <!-- ============================================ -->
+      <div style="position: sticky; top: var(--s-6);">
+
+        <!-- Recipient summary -->
+        <div class="card mb-4">
+          <div class="card-title">
+            {% include 'partials/icons.html' with name="users" size=18 %}
+            Summary
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: var(--s-3); font-size: var(--text-sm);">
+            <div style="display: flex; justify-content: space-between;">
+              <span style="color: var(--ink-500);">Recipients</span>
+              <strong style="color: var(--ink-900);" id="recipient-count">{{ counts.all }}</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+              <span style="color: var(--ink-500);">SMS per recipient</span>
+              <strong style="color: var(--ink-900);" id="sms-per-recipient">1</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding-top: var(--s-3); border-top: 1px solid var(--border);">
+              <span style="color: var(--ink-500);">Est. cost</span>
+              <strong style="color: var(--primary);" id="estimated-cost">KES {{ estimated_cost|floatformat:0 }}</strong>
+            </div>
+          </div>
+
+          <p style="font-size: var(--text-xs); color: var(--ink-500); margin-top: var(--s-3); margin-bottom: 0; line-height: 1.5;">
+            Cost assumes KES {{ sms_unit_cost }} per SMS. Actual cost depends on message length.
+          </p>
+        </div>
+
+        <!-- Send button -->
+        <button type="submit" class="btn btn-primary" style="width: 100%; padding: 14px; font-size: var(--text-md);">
+          {% include 'partials/icons.html' with name="send" size=16 %}
+          <span>Send SMS</span>
+        </button>
+
+        <p style="font-size: var(--text-xs); color: var(--ink-500); margin-top: var(--s-3); text-align: center;">
+          You'll be asked to confirm before sending.
+        </p>
+
+      </div>
+
+    </div>
+
+  </form>
+
+  <!-- ============================================ -->
+  <!-- RECENT MESSAGES                              -->
+  <!-- ============================================ -->
+  {% if recent_sms %}
+  <div class="card mb-6">
+    <div class="card-title">
+      {% include 'partials/icons.html' with name="activity" size=18 %}
+      Recent SMS Sent
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: var(--s-2);">
+      {% for sms in recent_sms %}
+        <div style="padding: var(--s-3); background: var(--surface-muted); border-radius: var(--radius); font-size: var(--text-sm);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+            <strong style="color: var(--ink-800);">{{ sms.recipient.email|default:"—" }}</strong>
+            <span style="font-size: var(--text-xs); color: var(--ink-500);">{{ sms.created_at|timesince }} ago</span>
+          </div>
+          <div style="color: var(--ink-600); font-size: var(--text-xs);">
+            {{ sms.message|truncatechars:120 }}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+
+<style>
+  .recipient-option {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--s-3);
+    padding: var(--s-4);
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: all var(--t-fast);
+  }
+  .recipient-option:hover {
+    border-color: var(--primary);
+    background: var(--primary-soft);
+  }
+  .recipient-option input[type="radio"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--primary);
+    margin-top: 2px;
+    flex-shrink: 0;
+  }
+  .recipient-option input[type="radio"]:checked ~ div {
+    /* parent highlighting via :has */
+  }
+  .recipient-option:has(input[type="radio"]:checked) {
+    border-color: var(--primary);
+    background: var(--primary-soft);
+  }
+
+  @media (max-width: 900px) {
+    /* Stack the two-column layout */
+    div[style*="grid-template-columns: 2fr 1fr"] {
+      grid-template-columns: 1fr !important;
+    }
+  }
+</style>
+
+<script>
+  const templates = {
+    fee: "Dear Parent/Guardian, this is a friendly reminder that school fees for your child are still outstanding. Kindly clear the balance at your earliest convenience. Thank you. - {{ current_school.name|default:'The School' }}",
+    meeting: "Dear Parent/Guardian, you are invited to a parents' meeting on [DATE] at [TIME] at {{ current_school.name|default:'the school' }}. Your attendance is highly appreciated.",
+    holiday: "Dear Parent/Guardian, please note that {{ current_school.name|default:'the school' }} will close for the holidays on [DATE] and reopen on [DATE]. Thank you.",
+    exam: "Dear Parent/Guardian, end-of-term examinations will begin on [DATE]. Please ensure your child is well prepared. Thank you. - {{ current_school.name|default:'The School' }}"
+  };
+
+  function toggleGroup() {
+    const group = document.querySelector('input[name="group"]:checked').value;
+    const classSelect = document.getElementById('class_select');
+    const customNumbers = document.getElementById('custom_numbers');
+
+    classSelect.disabled = (group !== 'class');
+    customNumbers.disabled = (group !== 'custom');
+  }
+
+  function useTemplate(key) {
+    const textarea = document.getElementById('sms_message');
+    textarea.value = templates[key] || '';
+    textarea.focus();
+    updateCounter();
+  }
+
+  function updateCounter() {
+    const msg = document.getElementById('sms_message').value;
+    const count = msg.length;
+    document.getElementById('char-count').textContent = count;
+
+    // SMS parts: 160 for single, 153 per part beyond
+    let parts = 1;
+    if (count > 160) {
+      parts = Math.ceil(count / 153);
+    }
+    document.getElementById('sms-count').textContent = parts + ' SMS';
+    document.getElementById('sms-per-recipient').textContent = parts;
+  }
+
+  // Initialize on load
+  document.addEventListener('DOMContentLoaded', function() {
+    toggleGroup();
+    updateCounter();
+  });
+</script>
+
+{% endblock %}
