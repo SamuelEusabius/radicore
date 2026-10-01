@@ -45,6 +45,20 @@ from .parents import (
     parent_child_statement_pdf,
 )
 
+from .teachers import (
+    teachers_list,
+    teacher_dash,
+    teacher_timetable,
+    add_teacher,
+    delete_teacher,
+    class_teacher_dashboard,
+    class_teacher_parents,
+    class_teacher_view_parent,
+    class_teacher_view_student,
+    class_teacher_parents_download,
+    _ct_teacher_and_class,
+)
+
 
 # TEMPORARY: import remaining views from views_old.py
 from ..views_old import *  # noqa: F401, F403
