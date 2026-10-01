@@ -126,6 +126,21 @@ from .communication import (
     admin_alerts_list,
     admin_alert_resolve,
 )
-
+from .admin_schools import (
+    super_admin_dash,
+    manage_users,
+    create_user,
+    schools_manage,
+    school_add,
+    school_toggle_active,
+    school_change_admin_password,
+    school_delete,
+    school_edit,
+    school_remove_logo,
+    board_member_add,
+    board_member_delete,
+    super_admin_performance,
+    admin_student_detail,
+)
 # TEMPORARY: import remaining views from views_old.py
 from ..views_old import *  # noqa: F401, F403
