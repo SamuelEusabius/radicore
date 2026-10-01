@@ -34,6 +34,17 @@ from .students import (
     student_detail,
 )
 
+from .parents import (
+    parents_list,
+    parent_dash,
+    parent_children,
+    parent_child_detail,
+    add_parent,
+    delete_parent,
+    link_parent_children,
+    parent_child_statement_pdf,
+)
+
 
 # TEMPORARY: import remaining views from views_old.py
 from ..views_old import *  # noqa: F401, F403
