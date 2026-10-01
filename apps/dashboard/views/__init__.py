@@ -2,8 +2,6 @@
 Dashboard views package.
 
 Re-exports all views so that `from . import views` continues to work in urls.py.
-
-As we split views_old.py into modules, add new imports here.
 """
 
 from .core import (
@@ -12,12 +10,18 @@ from .core import (
     school_admin_dash,
 )
 
+from .subscription import (
+    subscription_view,
+    subscription_edit_admin,
+    subscription_admin_picker,
+    subscription_payment_pending,
+    subscription_payment_status,
+    confirm_subscription_payment,
+    subscription_plans,
+    subscription_confirm,
+    subscription_payment,
+)
 
-# ==========================================================
+
 # TEMPORARY: import remaining views from views_old.py
-# ==========================================================
-# This keeps urls.py working during the refactor.
-# As we move views into modules, we remove them from here.
-# When views_old.py is empty, delete this import.
-
 from ..views_old import *  # noqa: F401, F403
