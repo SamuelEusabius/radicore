@@ -1,0 +1,169 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}{{ school.name }} — Modules{% endblock %}
+{% block header_title %}Manage Modules{% endblock %}
+{% block header_sub %}{{ school.name }}{% endblock %}
+
+{% block content %}
+
+<div style="max-width: 1100px; margin: 0 auto;">
+
+  <!-- ============================================ -->
+  <!-- HEADER CARD                                  -->
+  <!-- ============================================ -->
+  <div class="card mb-6" style="padding: var(--s-5);">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--s-3);">
+      <div>
+        <div style="display: flex; align-items: center; gap: var(--s-3); margin-bottom: var(--s-2);">
+          <div style="width: 44px; height: 44px; border-radius: var(--radius); background: var(--primary); color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-family: var(--font-heading); font-weight: 700; font-size: 16px;">
+            {{ school.name|slice:":2"|upper }}
+          </div>
+          <div>
+            <h2 style="font-family: var(--font-heading); font-weight: 700; font-size: var(--text-lg); color: var(--ink-900); margin: 0;">
+              {{ school.name }}
+            </h2>
+            {% if school.code %}
+              <p style="font-size: var(--text-xs); color: var(--ink-500); margin: 2px 0 0;">{{ school.code }}</p>
+            {% endif %}
+          </div>
+        </div>
+        <p style="font-size: var(--text-sm); color: var(--ink-600); margin: var(--s-3) 0 0;">
+          Enable or disable modules for this school. Changes take effect immediately.
+        </p>
+      </div>
+      <a href="{% url 'school_edit' school.id %}" class="pro-btn pro-btn-secondary">
+        <span>← Back to School</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- SUMMARY BADGE                                -->
+  <!-- ============================================ -->
+  <div style="background: #fff4e5; border-left: 4px solid #ff6f00; padding: var(--s-4); margin-bottom: var(--s-6); display: flex; align-items: center; gap: var(--s-3);">
+    <div style="font-family: var(--font-heading); font-weight: 800; font-size: 22px; color: #ff6f00; min-width: 60px; text-align: center;">
+      {{ enabled_count }}/{{ total_count }}
+    </div>
+    <div style="font-size: var(--text-sm); color: var(--ink-700);">
+      <strong>{{ enabled_count }}</strong> of <strong>{{ total_count }}</strong> modules are enabled for this school.
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- MODULE TOGGLES FORM                          -->
+  <!-- ============================================ -->
+  <form method="post">
+    {% csrf_token %}
+
+    <div class="card mb-6" style="padding: 0; overflow: hidden;">
+      <div style="padding: var(--s-4) var(--s-5); border-bottom: 1px solid var(--border); background: var(--surface-muted);">
+        <div style="font-family: var(--font-heading); font-weight: 700; font-size: var(--text-sm); color: var(--ink-800); text-transform: uppercase; letter-spacing: 0.05em;">
+          Available Modules
+        </div>
+      </div>
+
+      <div style="padding: 0;">
+        {% for module in modules %}
+          <label for="module_{{ module.code }}"
+                 style="display: flex; align-items: center; gap: var(--s-4); padding: var(--s-4) var(--s-5); border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.15s;"
+                 onmouseover="this.style.background='#fafafa'"
+                 onmouseout="this.style.background='transparent'">
+
+            <!-- Toggle switch -->
+            <div class="module-switch {% if module.is_enabled %}on{% endif %}" id="switch_{{ module.code }}">
+              <div class="module-switch-knob"></div>
+            </div>
+            <input type="checkbox"
+                   id="module_{{ module.code }}"
+                   name="module_{{ module.code }}"
+                   {% if module.is_enabled %}checked{% endif %}
+                   style="position: absolute; opacity: 0; pointer-events: none;"
+                   onchange="toggleSwitch('{{ module.code }}')">
+
+            <!-- Module info -->
+            <div style="flex: 1;">
+              <div style="font-family: var(--font-heading); font-weight: 600; font-size: var(--text-md); color: var(--ink-900);">
+                {{ module.label }}
+                {% if module.is_default %}
+                  <span style="font-size: 9px; background: #e0f2f1; color: #00695c; padding: 2px 8px; border-radius: 999px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; margin-left: var(--s-2);">
+                    Default
+                  </span>
+                {% endif %}
+              </div>
+              {% if module.is_enabled and module.enabled_at %}
+                <div style="font-size: var(--text-xs); color: var(--ink-500); margin-top: 2px;">
+                  Enabled {{ module.enabled_at|date:"j M Y, H:i" }}
+                  {% if module.enabled_by %} by {{ module.enabled_by.get_full_name|default:module.enabled_by.email }}{% endif %}
+                </div>
+              {% endif %}
+            </div>
+
+          </label>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- SUBMIT                                       -->
+    <!-- ============================================ -->
+    <div class="card" style="padding: var(--s-5); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--s-3);">
+      <div style="font-size: var(--text-sm); color: var(--ink-600);">
+        Changes are logged automatically with your user account.
+      </div>
+      <div style="display: flex; gap: var(--s-3);">
+        <a href="{% url 'school_edit' school.id %}" class="pro-btn pro-btn-secondary">Cancel</a>
+        <button type="submit" class="pro-btn pro-btn-orange" style="padding: 12px 32px;">
+          <span>Save Module Settings</span>
+        </button>
+      </div>
+    </div>
+
+  </form>
+
+</div>
+
+<!-- ============================================ -->
+<!-- TOGGLE SWITCH STYLES                         -->
+<!-- ============================================ -->
+<style>
+  .module-switch {
+    width: 48px;
+    height: 26px;
+    background: #cbd5e1;
+    border-radius: 999px;
+    position: relative;
+    flex-shrink: 0;
+    transition: background 0.2s ease;
+  }
+  .module-switch.on {
+    background: #ff6f00;
+  }
+  .module-switch-knob {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 20px;
+    height: 20px;
+    background: #ffffff;
+    border-radius: 50%;
+    transition: transform 0.2s ease;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+  .module-switch.on .module-switch-knob {
+    transform: translateX(22px);
+  }
+</style>
+
+<script>
+  function toggleSwitch(code) {
+    const checkbox = document.getElementById('module_' + code);
+    const switchEl = document.getElementById('switch_' + code);
+    if (checkbox.checked) {
+      switchEl.classList.add('on');
+    } else {
+      switchEl.classList.remove('on');
+    }
+  }
+</script>
+
+{% endblock %}

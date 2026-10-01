@@ -1,5 +1,6 @@
 from django.contrib import admin
 from .models import School, SubscriptionPlan, BoardMember
+from .models import School, SubscriptionPlan, SchoolSubscription, SchoolModule
 
 
 @admin.register(School)
@@ -8,6 +9,19 @@ class SchoolAdmin(admin.ModelAdmin):
     list_filter = ['is_active', 'plan', 'school_type', 'gender', 'level', 'county']
     search_fields = ['name', 'nemis_code', 'county', 'principal_name']
     prepopulated_fields = {'slug': ('name',)}
+@admin.register(SchoolModule)
+class SchoolModuleAdmin(admin.ModelAdmin):
+    list_display = (
+        'school', 'module', 'is_enabled',
+        'enabled_at', 'enabled_by',
+        'disabled_at', 'disabled_by',
+    )
+    list_filter = ('module', 'is_enabled', 'school')
+    search_fields = ('school__name',)
+    list_editable = ('is_enabled',)
+    ordering = ('school', 'module')
+    readonly_fields = ('created_at', 'updated_at')
+    list_per_page = 50
 
 
 @admin.register(SubscriptionPlan)

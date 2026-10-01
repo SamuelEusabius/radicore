@@ -272,6 +272,8 @@ urlpatterns = [
     path('schools/<int:school_id>/board/add/', views.board_member_add, name='board_member_add'),
     path('schools/board/<int:member_id>/delete/', views.board_member_delete, name='board_member_delete'),
     path('subscriptions/<int:school_id>/edit/', views.subscription_edit_admin, name='subscription_edit_admin'),
+    path('schools/<int:school_id>/modules/', views.school_modules_manage,
+    name='school_modules_manage'),
     
         # Internal Messaging
     path('messages/', views.messages_inbox, name='messages_inbox'),

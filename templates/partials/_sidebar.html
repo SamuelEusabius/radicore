@@ -78,11 +78,12 @@
       <a href="{% url 'teachers_list' %}" class="sidebar-link">
         {% include 'partials/icons.html' with name="teacher" size=18 %}
         <span class="sidebar-link-text">Teachers</span>
-      </a>
-      <a href="{% url 'parents_list' %}" class="sidebar-link">
-        {% include 'partials/icons.html' with name="users" size=18 %}
-        <span class="sidebar-link-text">Parents</span>
-      </a>
+      {% if 'parent_portal' in enabled_modules %}
+<a href="{% url 'parents_list' %}" class="sidebar-link">
+  {% include 'partials/icons.html' with name="users" size=18 %}
+  <span class="sidebar-link-text">Parents</span>
+</a>
+{% endif %}
       <a href="{% url 'staff_list' %}" class="sidebar-link">
         {% include 'partials/icons.html' with name="briefcase" size=18 %}
         <span class="sidebar-link-text">Non-Teaching Staff</span>
@@ -119,10 +120,12 @@
         {% include 'partials/icons.html' with name="mail" size=18 %}
         <span class="sidebar-link-text">Inbox</span>
       </a>
-      <a href="{% url 'bulk_sms' %}" class="sidebar-link">
-        {% include 'partials/icons.html' with name="message-square" size=18 %}
-        <span class="sidebar-link-text">Bulk SMS</span>
-      </a>
+      {% if 'sms' in enabled_modules %}
+<a href="{% url 'bulk_sms' %}" class="sidebar-link">
+  {% include 'partials/icons.html' with name="message-square" size=18 %}
+  <span class="sidebar-link-text">Bulk SMS</span>
+</a>
+{% endif %}
       <a href="{% url 'admin_alerts_list' %}" class="sidebar-link">
         {% include 'partials/icons.html' with name="alert-triangle" size=18 %}
         <span class="sidebar-link-text">Smart Alerts</span>

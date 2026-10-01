@@ -87,6 +87,7 @@ TEMPLATES = [{
             'apps.schools.context_processors.current_school',
             'apps.schools.context_processors.notifications_context',
             'apps.notifications.context_processors.topbar_badge_count',
+            'apps.schools.context_processors.enabled_modules',
         ],
     },
 }]

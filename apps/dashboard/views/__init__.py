@@ -147,6 +147,7 @@ from .admin_schools import (
     board_member_delete,
     super_admin_performance,
     admin_student_detail,
+    school_modules_manage,
 )
 
 from .users import (

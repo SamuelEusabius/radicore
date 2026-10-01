@@ -136,6 +136,10 @@
               {% include 'partials/icons.html' with name="edit" size=13 %}
               <span>Edit</span>
             </a>
+            <a href="{% url 'school_modules_manage' school.id %}" class="btn btn-sm btn-secondary" title="Manage modules">
+  {% include 'partials/icons.html' with name="grid" size=14 %}
+  <span>Modules</span>
+</a>
 
             <!-- Toggle active -->
             <form method="post" action="{% url 'school_toggle_active' school.id %}" style="display: inline;">

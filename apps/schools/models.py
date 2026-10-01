@@ -330,6 +330,96 @@ class SchoolSubscription(models.Model):
 
     def __str__(self):
         return f"{self.school.name} — {self.get_status_display()}"
+    
+
+# ==========================================================
+# MODULAR FEATURE TOGGLES
+# ==========================================================
+
+class SchoolModule(models.Model):
+    """
+    Tracks which modules are enabled for each school.
+    One row per (school, module) pair.
+
+    Modules are toggled by Super Admins. Plan-based defaults are
+    applied at school creation; Super Admin can override per school.
+    """
+
+    class Module(models.TextChoices):
+        LIBRARY        = 'library',        'Library Management'
+        TRANSPORT      = 'transport',      'Transport & Routes'
+        HOSTEL         = 'hostel',         'Hostel / Dormitory'
+        WALLET         = 'wallet',         'Student Wallet'
+        CAFETERIA      = 'cafeteria',      'Cafeteria'
+        SMS            = 'sms',            'SMS Notifications'
+        MPESA          = 'mpesa',          'M-Pesa Payments'
+        ANALYTICS      = 'analytics',      'Advanced Analytics'
+        PARENT_PORTAL  = 'parent_portal',  'Parent Portal'
+        REPORTS        = 'reports',        'Custom Reports'
+
+    # Modules enabled by default for NEW schools
+    DEFAULT_ENABLED = {
+        Module.SMS,
+        Module.MPESA,
+        Module.PARENT_PORTAL,
+    }
+
+    school = models.ForeignKey(
+        School, on_delete=models.CASCADE, related_name='modules'
+    )
+    module = models.CharField(max_length=30, choices=Module.choices)
+
+    is_enabled = models.BooleanField(default=False)
+
+    # ----- Audit trail -----
+    enabled_at = models.DateTimeField(null=True, blank=True)
+    enabled_by = models.ForeignKey(
+        'accounts.User', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='modules_enabled',
+    )
+    disabled_at = models.DateTimeField(null=True, blank=True)
+    disabled_by = models.ForeignKey(
+        'accounts.User', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='modules_disabled',
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('school', 'module')
+        ordering = ['school', 'module']
+        indexes = [
+            models.Index(fields=['school', 'module', 'is_enabled']),
+        ]
+
+    def __str__(self):
+        status = 'ON' if self.is_enabled else 'OFF'
+        return f"{self.school.name} · {self.get_module_display()} [{status}]"
+
+
+# ==========================================================
+# HELPER FUNCTION
+# ==========================================================
+
+def school_has_module(school, module_code):
+    """
+    Check if a school has a module enabled.
+
+    Usage:
+        from apps.schools.models import school_has_module
+        if school_has_module(school, 'library'):
+            ...
+
+    Returns False if school is None or module doesn't exist.
+    """
+    if not school:
+        return False
+    return SchoolModule.objects.filter(
+        school=school,
+        module=module_code,
+        is_enabled=True,
+    ).exists()
 
     # ==========================================================
     # HELPERS

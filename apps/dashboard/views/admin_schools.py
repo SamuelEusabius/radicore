@@ -698,3 +698,85 @@ def admin_student_detail(request, student_id):
     return redirect('admin_attendance_overview')
 
 
+# ==========================================================
+# SCHOOL MODULE TOGGLES (Modular Feature Toggles)
+# ==========================================================
+
+@login_required
+def school_modules_manage(request, school_id):
+    """Super Admin: toggle modules for a specific school."""
+    if request.user.role != 'super_admin':
+        messages.error(request, 'Access denied.')
+        return redirect('dashboard_home')
+
+    from apps.schools.models import School, SchoolModule
+    from django.utils import timezone
+
+    school = get_object_or_404(School, id=school_id)
+
+    # Ensure all modules exist as rows (auto-create missing)
+    existing = {m.module: m for m in SchoolModule.objects.filter(school=school)}
+    for code, label in SchoolModule.Module.choices:
+        if code not in existing:
+            row = SchoolModule.objects.create(
+                school=school,
+                module=code,
+                is_enabled=(code in SchoolModule.DEFAULT_ENABLED),
+            )
+            existing[code] = row
+
+    if request.method == 'POST':
+        enabled_count = 0
+        disabled_count = 0
+        now = timezone.now()
+
+        for code, label in SchoolModule.Module.choices:
+            submitted = request.POST.get(f'module_{code}') == 'on'
+            row = existing[code]
+
+            if submitted and not row.is_enabled:
+                # Turning ON
+                row.is_enabled = True
+                row.enabled_at = now
+                row.enabled_by = request.user
+                row.save()
+                enabled_count += 1
+            elif not submitted and row.is_enabled:
+                # Turning OFF
+                row.is_enabled = False
+                row.disabled_at = now
+                row.disabled_by = request.user
+                row.save()
+                disabled_count += 1
+
+        messages.success(
+            request,
+            f'Module settings saved for {school.name}. '
+            f'{enabled_count} enabled, {disabled_count} disabled.'
+        )
+        return redirect('school_modules_manage', school_id=school.id)
+
+    # Build template context
+    modules = []
+    for code, label in SchoolModule.Module.choices:
+        row = existing[code]
+        modules.append({
+            'code': code,
+            'label': label,
+            'is_enabled': row.is_enabled,
+            'is_default': code in SchoolModule.DEFAULT_ENABLED,
+            'enabled_at': row.enabled_at,
+            'enabled_by': row.enabled_by,
+        })
+
+    # Sort: enabled first, then alphabetical
+    modules.sort(key=lambda m: (not m['is_enabled'], m['label']))
+
+    return render(request, 'dashboard/school_modules.html', {
+        'school': school,
+        'modules': modules,
+        'enabled_count': sum(1 for m in modules if m['is_enabled']),
+        'total_count': len(modules),
+    })
+
+
