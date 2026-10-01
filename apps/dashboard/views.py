@@ -24,20 +24,6 @@ User = get_user_model()
 # DASHBOARD ROUTER
 # ==========================================================
 
-@login_required
-def redirect_dashboard(request):
-    role = request.user.role
-    return redirect({
-        'super_admin': 'dash_super_admin',
-        'school_admin': 'dash_school_admin',
-        'teacher': 'dash_teacher',
-        'parent': 'dash_parent',
-        'accountant': 'dash_accountant',
-        'student': 'dash_student',
-    }.get(role, 'landing'))
-    
-    
-@login_required
 def redirect_to_own_dashboard(request):
     """Send the user to their OWN dashboard based on their role."""
     role = request.user.role
@@ -2333,134 +2319,6 @@ def mark_all_read(request):
 # ==========================================================
 
 @login_required
-def bulk_sms(request):
-    if request.user.role not in ('school_admin', 'super_admin'):
-        return redirect('dashboard_home')
-
-    from apps.parents.models import Parent
-    from apps.students.models import Student
-    from apps.academics.models import ClassLevel
-    from apps.finance.models import Invoice
-    from apps.notifications.services.sms import send_bulk_sms, normalize_phone
-
-    school = request.user.school
-
-    all_parents = Parent.objects.filter(user__school=school).select_related('user')
-
-    unpaid_student_ids = Invoice.objects.filter(
-        student__school=school,
-        status__in=['unpaid', 'partial', 'overdue'],
-    ).values_list('student_id', flat=True).distinct()
-
-    unpaid_parents = Parent.objects.filter(
-        user__school=school, students__id__in=unpaid_student_ids
-    ).distinct()
-
-    classes = ClassLevel.objects.filter(school=school).order_by('order', 'name')
-
-    def count_with_phones(qs):
-        n = 0
-        for p in qs:
-            phone = p.user.phone or p.phone
-            if phone and normalize_phone(phone):
-                n += 1
-        return n
-
-    counts = {
-        'all': count_with_phones(all_parents),
-        'unpaid': count_with_phones(unpaid_parents),
-    }
-
-    result = None
-    if request.method == 'POST':
-        group = request.POST.get('group', 'all')
-        class_id = request.POST.get('class_id')
-        custom_numbers = request.POST.get('custom_numbers', '').strip()
-        message = request.POST.get('message', '').strip()
-
-        if not message:
-            messages.error(request, 'Message cannot be empty.')
-        else:
-            phones = []
-
-            if group == 'custom':
-                raw = custom_numbers.replace('\n', ',').split(',')
-                for num in raw:
-                    num = num.strip()
-                    if num and normalize_phone(num):
-                        phones.append(num)
-            elif group == 'unpaid':
-                for p in unpaid_parents:
-                    phone = p.user.phone or p.phone
-                    if phone:
-                        phones.append(phone)
-            elif group == 'class' and class_id:
-                students = Student.objects.filter(
-                    school=school, class_level=class_id, is_active=True
-                ).values_list('id', flat=True)
-                parents = Parent.objects.filter(
-                    user__school=school, students__id__in=students
-                ).distinct()
-                for p in parents:
-                    phone = p.user.phone or p.phone
-                    if phone:
-                        phones.append(phone)
-            else:
-                for p in all_parents:
-                    phone = p.user.phone or p.phone
-                    if phone:
-                        phones.append(phone)
-
-            phones = list(set(phones))
-
-            if not phones:
-                messages.error(request, 'No valid recipients with phone numbers.')
-            else:
-                try:
-                    result = send_bulk_sms(phones, message)
-                    if result.get('success'):
-                        messages.success(
-                            request,
-                            f'Bulk SMS sent to {len(phones)} recipient{"" if len(phones) == 1 else "s"}.'
-                        )
-                    else:
-                        messages.error(request, f'Failed: {result.get("message")}')
-                except Exception as e:
-                    messages.error(request, f'Error: {e}')
-    SMS_UNIT_COST = 0.80 
-    estimated_cost = counts.get('all', 0) * SMS_UNIT_COST
-
-    recent_sms = []
-    try:
-        from apps.notifications.models import Notification
-        recent_sms = Notification.objects.filter(
-            recipient__school=school,
-            channel='sms',
-        ).order_by('-created_at')[:10]
-    except Exception:
-        pass
-
-    return render(request, 'dashboard/bulk_sms.html', {
-        'counts': counts,
-        'classes': classes,
-        'result': result,
-        'estimated_cost': estimated_cost,
-        'sms_unit_cost': SMS_UNIT_COST,
-        'recent_sms': recent_sms,
-    })
-
-    return render(request, 'dashboard/bulk_sms.html', {
-        'counts': counts,
-        'classes': classes,
-        'result': result,
-    })
-    
-
-
-# ==========================================================
-# CLASS RESULTS (RANKING)
-# ==========================================================
-
 @login_required
 def class_results(request):
     if request.user.role not in ('teacher', 'school_admin', 'super_admin'):
@@ -7137,49 +6995,6 @@ def admin_student_detail(request, student_id):
     """Placeholder — will show student detail for admin."""
     messages.info(request, 'Student detail view coming soon.')
     return redirect('admin_attendance_overview')
-
-
-@login_required
-def admin_attendance_export(request):
-    """Export school-wide attendance as CSV."""
-    if request.user.role not in ('school_admin', 'super_admin'):
-        return redirect('dashboard_home')
-
-    from apps.attendance.models import Attendance
-    from django.http import HttpResponse
-    from datetime import date, datetime
-    import csv
-
-    school = request.user.school
-    date_str = request.GET.get('date') or date.today().strftime('%Y-%m-%d')
-    try:
-        selected_date = datetime.strptime(date_str, '%Y-%m-%d').date()
-    except ValueError:
-        selected_date = date.today()
-
-    qs = Attendance.objects.filter(
-        student__school=school,
-        date=selected_date,
-    ).select_related('student').order_by('student__class_level', 'student__first_name')
-
-    response = HttpResponse(content_type='text/csv')
-    response['Content-Disposition'] = (
-        f'attachment; filename="attendance_all_{selected_date.isoformat()}.csv"'
-    )
-
-    writer = csv.writer(response)
-    writer.writerow(['Date', 'Admission No', 'Student Name', 'Class', 'Status'])
-
-    for a in qs:
-        writer.writerow([
-            selected_date.isoformat(),
-            a.student.admission_number,
-            a.student.full_name,
-            a.student.class_level or '—',
-            a.get_status_display(),
-        ])
-
-    return response
 
 
 @login_required
