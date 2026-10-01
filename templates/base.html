@@ -14,6 +14,9 @@
   <link rel="stylesheet" href="{% static 'css/utilities.css' %}">
   <link rel="stylesheet" href="{% static 'css/design_system.css' %}">
   <link rel="stylesheet" href="{% static 'css/loader.css' %}">
+  <style>
+  [x-cloak] { display: none !important; }
+</style>
 
   <script src="https://cdn.tailwindcss.com"></script>
 
@@ -64,6 +67,8 @@
 
 <script src="{% static 'js/loader.js' %}"></script>
 {% block extra_js %}{% endblock %}
+<!-- Alpine.js -->
+<script defer src="{% static 'js/alpine.min.js' %}"></script>
 
 </body>
 </html>
