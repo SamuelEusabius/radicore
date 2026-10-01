@@ -22,6 +22,18 @@ from .subscription import (
     subscription_payment,
 )
 
+from .students import (
+    students_list,
+    student_dash,
+    add_student,
+    delete_student,
+    clear_student,
+    leaving_certificate,
+    leaving_certificate_pdf,
+    student_biodata_pdf,
+    student_detail,
+)
+
 
 # TEMPORARY: import remaining views from views_old.py
 from ..views_old import *  # noqa: F401, F403
