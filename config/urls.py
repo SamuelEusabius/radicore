@@ -10,6 +10,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('accounts/password/change/', change_password, name='change_password'),
     path('accounts/profile/', profile_view, name='profile_view'),
+    path('departments/', include('apps.departments.urls')),
 
     # Blocked page (no auth required by middleware)
     path('school-blocked/', school_blocked, name='school_blocked'),

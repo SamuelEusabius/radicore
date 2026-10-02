@@ -99,7 +99,11 @@ def manage_users(request):
     from apps.accounts.models import User as U
     role_choices = list(U.Role.choices)
     if request.user.role != 'super_admin':
-        ALLOWED_FOR_SCHOOL_ADMIN = ('teacher', 'accountant', 'staff', 'parent', 'student')
+        ALLOWED_FOR_SUPER_ADMIN = ('school_admin',)
+        ALLOWED_FOR_SCHOOL_ADMIN = (
+           'teacher', 'accountant', 'parent', 'student',
+           'driver', 'librarian', 'lab_technician', 'nurse', 'chief_chef',
+)
         role_choices = [(v, l) for v, l in role_choices if v in ALLOWED_FOR_SCHOOL_ADMIN]
 
     return render(request, 'dashboard/manage_users.html', {
@@ -118,90 +122,112 @@ def manage_users(request):
 
 @login_required
 def create_user(request):
-    """Create a new user."""
+    """Create a new user. School Admin creates staff; Super Admin creates School Admins."""
     if not request.user.is_authenticated:
         return redirect('/accounts/login/')
 
     if getattr(request.user, 'role', None) not in ('school_admin', 'super_admin'):
         return redirect('dashboard_home')
 
-    ALLOWED_FOR_SCHOOL_ADMIN = ('teacher', 'accountant', 'staff', 'parent', 'student')
+    from apps.accounts.models import User
 
-    import secrets
-    import string
+    # ---------- Role lists ----------
+    ALLOWED_FOR_SCHOOL_ADMIN = (
+        'teacher', 'accountant', 'parent', 'student',
+        'driver', 'librarian', 'lab_technician', 'nurse', 'chief_chef',
+    )
+    ALLOWED_FOR_SUPER_ADMIN = ('school_admin',)
 
-    def generate_password(length=10):
-        alphabet = string.ascii_letters + string.digits
-        return ''.join(secrets.choice(alphabet) for _ in range(length))
+    # ---------- Build role_choices ALWAYS (no matter what) ----------
+    all_role_choices = list(User.Role.choices)
 
-    generated_password = None
+    if request.user.role == 'school_admin':
+        role_choices = [(v, l) for v, l in all_role_choices if v in ALLOWED_FOR_SCHOOL_ADMIN]
+    elif request.user.role == 'super_admin':
+        role_choices = [(v, l) for v, l in all_role_choices if v in ALLOWED_FOR_SUPER_ADMIN]
+    else:
+        role_choices = []
 
+    # ---------- POST ----------
     if request.method == 'POST':
         email = request.POST.get('email', '').strip().lower()
         first_name = request.POST.get('first_name', '').strip()
         last_name = request.POST.get('last_name', '').strip()
         role = request.POST.get('role', '').strip()
         phone = request.POST.get('phone', '').strip()
-        password = request.POST.get('password', '').strip()
+        school_id = request.POST.get('school', '').strip()
 
-        # If user clicked "Generate" — auto-create password
-        if request.POST.get('auto_password') == '1' or not password:
-            password = generate_password()
-            generated_password = password
+        errors = []
 
-        # Server-side role guard
-        if not email or not role:
-            messages.error(request, 'Email and role are required.')
-        elif request.user.role != 'super_admin' and role not in ALLOWED_FOR_SCHOOL_ADMIN:
-            messages.error(
-                request,
-                f'You are not allowed to create a "{role.replace("_", " ").title()}" account.'
-            )
+        if not email:
+            errors.append('Email is required.')
         elif User.objects.filter(email=email).exists():
-            messages.error(request, f'Email "{email}" is already registered.')
-        elif len(password) < 6:
-            messages.error(request, 'Password must be at least 6 characters.')
-        else:
-            # School assignment
+            errors.append(f'A user with email "{email}" already exists.')
+
+        if not first_name:
+            errors.append('First name is required.')
+
+        if not role:
+            errors.append('Role is required.')
+        elif role not in [v for v, _ in role_choices]:
+            errors.append('Invalid role for your permission level.')
+
+        # Determine school
+        assigned_school = None
+        if request.user.role == 'school_admin':
+            assigned_school = request.user.school
+        elif request.user.role == 'super_admin' and school_id:
+            from apps.schools.models import School
+            try:
+                assigned_school = School.objects.get(id=school_id)
+            except School.DoesNotExist:
+                errors.append('Invalid school selected.')
+
+        if errors:
+            for e in errors:
+                messages.error(request, e)
+            schools = None
             if request.user.role == 'super_admin':
-                school_id = request.POST.get('school_id')
-                if school_id:
-                    from apps.schools.models import School
-                    assigned_school = School.objects.filter(id=school_id).first() or request.user.school
-                else:
-                    assigned_school = request.user.school
-            else:
-                assigned_school = request.user.school
+                from apps.schools.models import School
+                schools = School.objects.filter(is_active=True).order_by('name')
+            return render(request, 'dashboard/create_user.html', {
+                'roles': role_choices,
+                'schools': schools,
+                'form_data': request.POST,
+            })
 
-            user = User.objects.create_user(
-                username=email,
-                email=email,
-                password=password,
-                first_name=first_name,
-                last_name=last_name,
-                role=role,
-                phone=phone,
-                school=assigned_school,
-            )
-            messages.success(
+        # ---------- Create user ----------
+        import secrets
+        import string
+        generated_password = ''.join(
+            secrets.choice(string.ascii_letters + string.digits) for _ in range(12)
+        )
+
+        user = User.objects.create_user(
+            username=email,
+            email=email,
+            password=generated_password,
+            first_name=first_name,
+            last_name=last_name,
+            role=role,
+            phone=phone,
+            school=assigned_school,
+        )
+
+        messages.success(
+            request,
+            f'{role.replace("_", " ").title()} "{email}" created successfully.'
+        )
+
+        if generated_password:
+            messages.info(
                 request,
-                f'{role.replace("_", " ").title()} "{email}" created successfully.'
+                f'Auto-generated password: {generated_password} — share this with the user securely.'
             )
 
-            if generated_password:
-                messages.info(
-                    request,
-                    f'Auto-generated password: {generated_password} — share this with the user securely.'
-                )
+        return redirect('manage_users')
 
-            return redirect('manage_users')
-
-    # Role choices
-    if request.user.role == 'super_admin':
-        role_choices = [r for r in User.Role.choices if r[0] != 'super_admin']
-    else:
-        role_choices = [r for r in User.Role.choices if r[0] in ALLOWED_FOR_SCHOOL_ADMIN]
-
+    # ---------- GET ----------
     schools = None
     if request.user.role == 'super_admin':
         from apps.schools.models import School

@@ -1,0 +1,6 @@
+{% extends 'departments/_base_dashboard.html' %}
+{% block content %}
+  {% with page_title="Lab Technician Dashboard" page_subtitle="Lab equipment and safety reports" greeting="Welcome" department="lab" %}
+    {{ block.super }}
+  {% endwith %}
+{% endblock %}

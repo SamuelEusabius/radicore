@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% block title %}New Report{% endblock %}
+{% block header_title %}New Report{% endblock %}
+{% block header_sub %}{{ department_name }}{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 720px; margin: 0 auto;">
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Title *</label>
+      <input type="text" name="title" required style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+    </div>
+    
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Report Date *</label>
+      <input type="date" name="report_date" required value="{% now 'Y-m-d' %}" style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+    </div>
+    
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Priority</label>
+      <select name="priority" style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+        <option value="low">Low</option>
+        <option value="normal" selected>Normal</option>
+        <option value="high">High</option>
+        <option value="urgent">Urgent</option>
+      </select>
+    </div>
+    
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Description *</label>
+      <textarea name="description" required rows="6" style="width: 100%; padding: 10px; border: 1px solid var(--border);"></textarea>
+    </div>
+    
+    <div style="margin-bottom: 24px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Attachment (optional)</label>
+      <input type="file" name="attachment">
+    </div>
+    
+    <div style="display: flex; gap: 12px; justify-content: flex-end;">
+      <a href="{% url 'dashboard_home' %}" class="btn btn-secondary">Cancel</a>
+      <button type="submit" class="btn btn-primary">Submit Report</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

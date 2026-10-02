@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block title %}{{ module_name }}{% endblock %}
+{% block header_title %}{{ module_name }}{% endblock %}
+{% block header_sub %}Coming soon{% endblock %}
+
+{% block content %}
+
+<div class="card" style="max-width: 600px; margin: 40px auto; padding: 60px 32px; text-align: center;">
+
+  <div style="font-size: 64px; margin-bottom: 20px; line-height: 1;">🚧</div>
+
+  <h2 style="font-family: var(--font-heading); font-size: 24px; font-weight: 800; color: var(--ink-900); margin: 0 0 12px;">
+    {{ module_name }}
+  </h2>
+
+  <p style="font-size: var(--text-sm); color: var(--ink-600); margin: 0 0 8px; line-height: 1.6;">
+    {{ module_description }}
+  </p>
+
+  <p style="font-size: var(--text-xs); color: var(--ink-400); margin: 0 0 28px;">
+    This module is enabled for your school. Features are being built.
+  </p>
+
+  <a href="{% url 'dashboard_home' %}" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 8px;">
+    ← Back to Dashboard
+  </a>
+
+</div>
+
+{% endblock %}

@@ -4,13 +4,19 @@ from django.db import models
 
 class User(AbstractUser):
     class Role(models.TextChoices):
-        SUPER_ADMIN  = 'super_admin',  'Super Admin'
-        SCHOOL_ADMIN = 'school_admin', 'School Admin'
-        TEACHER      = 'teacher',      'Teacher'
-        PARENT       = 'parent',       'Parent'
-        ACCOUNTANT   = 'accountant',   'Accountant'
-        STUDENT      = 'student',      'Student'
-
+        SUPER_ADMIN    = 'super_admin',    'Super Admin'
+        SCHOOL_ADMIN   = 'school_admin',   'School Admin'
+        TEACHER        = 'teacher',        'Teacher'
+        PARENT         = 'parent',         'Parent'
+        ACCOUNTANT     = 'accountant',     'Accountant'
+        STUDENT        = 'student',        'Student'
+        DRIVER         = 'driver',         'Driver'
+        LIBRARIAN      = 'librarian',      'Librarian'
+        LAB_TECHNICIAN = 'lab_technician', 'Lab Technician'
+        NURSE          = 'nurse',          'Nurse'
+        CHIEF_CHEF     = 'chief_chef',     'Chief Chef'
+        
+        
     email = models.EmailField(unique=True)
     role = models.CharField(max_length=20, choices=Role.choices, default=Role.STUDENT)
     phone = models.CharField(max_length=20, blank=True)

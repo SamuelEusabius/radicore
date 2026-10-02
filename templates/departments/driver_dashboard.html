@@ -1,0 +1,6 @@
+{% extends 'departments/_base_dashboard.html' %}
+{% block content %}
+  {% with page_title="Driver Dashboard" page_subtitle="Submit trip reports and view history" greeting="Good day" department="transport" %}
+    {{ block.super }}
+  {% endwith %}
+{% endblock %}

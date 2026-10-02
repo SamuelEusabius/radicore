@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% block title %}Department Reports{% endblock %}
+{% block header_title %}Department Reports{% endblock %}
+{% block header_sub %}All departments in one place{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-info">
+    <h1 class="page-title">Department Reports</h1>
+    <p class="page-subtitle">Reports from all departments.</p>
+  </div>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+  {% for code, data in counts.items %}
+  <a href="?department={{ code }}" class="card card-hover" style="text-decoration: none; color: inherit;">
+    <div class="stat-label">{{ data.label }}</div>
+    <div class="stat-value">{{ data.total }}</div>
+    <div class="stat-meta">
+      {% if data.pending %}
+        <span style="color: var(--warning);">{{ data.pending }} pending</span>
+      {% else %}All reviewed{% endif %}
+    </div>
+  </a>
+  {% endfor %}
+</div>
+
+<div class="card">
+  <h3 style="margin-bottom: 16px;">Recent Reports</h3>
+  {% if reports %}
+  <div style="overflow-x: auto;">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Department</th>
+          <th>Title</th>
+          <th>By</th>
+          <th>Priority</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in reports %}
+        <tr>
+          <td>{{ r.report_date|date:"j M" }}</td>
+          <td><span class="badge badge-info">{{ r.get_department_display }}</span></td>
+          <td>{{ r.title }}</td>
+          <td>{{ r.submitted_by.get_full_name|default:r.submitted_by.email|truncatechars:20 }}</td>
+          <td>
+            <span class="badge badge-{% if r.priority == 'urgent' %}danger{% elif r.priority == 'high' %}warning{% else %}gray{% endif %}">
+              {{ r.get_priority_display }}
+            </span>
+          </td>
+          <td>{{ r.get_status_display }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p style="text-align: center; color: var(--ink-500); padding: 40px;">No reports yet.</p>
+  {% endif %}
+</div>
+{% endblock %}

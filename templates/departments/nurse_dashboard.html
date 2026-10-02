@@ -1,0 +1,6 @@
+{% extends 'departments/_base_dashboard.html' %}
+{% block content %}
+  {% with page_title="Nurse Dashboard" page_subtitle="Student health and medical reports" greeting="Good day" department="health" %}
+    {{ block.super }}
+  {% endwith %}
+{% endblock %}

@@ -21,13 +21,24 @@ def redirect_to_own_dashboard(request):
     role = request.user.role
 
     redirect_map = {
-        'super_admin': 'dash_super_admin',
-        'school_admin': 'dash_school_admin',
-        'teacher': 'dash_teacher',
-        'parent': 'dash_parent',
-        'accountant': 'dash_accountant',
-        'student': 'dash_student',
+        'super_admin':    'dash_super_admin',
+        'school_admin':   'dash_school_admin',
+        'teacher':        'dash_teacher',
+        'parent':         'dash_parent',
+        'accountant':     'dash_accountant',
+        'student':        'dash_student',
+        'driver':         'driver_dashboard',
+        'librarian':      'librarian_dashboard',
+        'lab_technician': 'lab_technician_dashboard',
+        'nurse':          'nurse_dashboard',
+        'chief_chef':     'chief_chef_dashboard',
     }
+
+    target = redirect_map.get(role)
+    if target:
+        return redirect(target)
+
+    return redirect('landing')
 
     target = redirect_map.get(role)
     if target:
@@ -100,10 +111,15 @@ def redirect_dashboard(request):
     """Send user to their own dashboard based on role."""
     role = request.user.role
     return redirect({
-        'super_admin': 'dash_super_admin',
-        'school_admin': 'dash_school_admin',
-        'teacher': 'dash_teacher',
-        'parent': 'dash_parent',
-        'accountant': 'dash_accountant',
-        'student': 'dash_student',
+        'super_admin':    'dash_super_admin',
+        'school_admin':   'dash_school_admin',
+        'teacher':        'dash_teacher',
+        'parent':         'dash_parent',
+        'accountant':     'dash_accountant',
+        'student':        'dash_student',
+        'driver':         'driver_dashboard',
+        'librarian':      'librarian_dashboard',
+        'lab_technician': 'lab_technician_dashboard',
+        'nurse':          'nurse_dashboard',
+        'chief_chef':     'chief_chef_dashboard',
     }.get(role, 'landing'))

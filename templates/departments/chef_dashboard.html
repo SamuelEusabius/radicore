@@ -1,0 +1,6 @@
+{% extends 'departments/_base_dashboard.html' %}
+{% block content %}
+  {% with page_title="Chief Chef Dashboard" page_subtitle="Kitchen reports, stock, and meal planning" greeting="Good day" department="kitchen" %}
+    {{ block.super }}
+  {% endwith %}
+{% endblock %}

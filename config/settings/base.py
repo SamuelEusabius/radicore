@@ -48,6 +48,7 @@ LOCAL_APPS = [
     'apps.dashboard',
     'apps.staff',
     'apps.core',
+    'apps.departments',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -144,6 +145,10 @@ ACCOUNT_EMAIL_SUBJECT_PREFIX = '[School MS] '
 
 # Adapter for signup
 ACCOUNT_ADAPTER = 'allauth.account.adapter.DefaultAccountAdapter'
+
+ACCOUNT_ADAPTER = 'apps.accounts.adapters.CustomAccountAdapter'
+LOGIN_REDIRECT_URL = '/dashboard/'   # fallback
+ACCOUNT_LOGIN_REDIRECT_URL = '/dashboard/'
 
 # ==========================================================
 # PASSWORD VALIDATORS (relaxed for Kenya school context)

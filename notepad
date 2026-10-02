@@ -1,0 +1,13 @@
+import os
+import django
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings.dev')
+django.setup()
+
+from apps.schools.models import SchoolModule
+
+print("=" * 70)
+for m in SchoolModule.objects.all().order_by('school__name', 'module'):
+    print(f"{m.school.name[:30]:30} | {m.module:15} | enabled={m.is_enabled}")
+print("=" * 70)
+print(f"Total: {SchoolModule.objects.count()} rows")
+print(f"Enabled: {SchoolModule.objects.filter(is_enabled=True).count()} rows")

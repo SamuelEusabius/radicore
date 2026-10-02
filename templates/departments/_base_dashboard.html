@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+{% block title %}{{ page_title }}{% endblock %}
+{% block header_title %}{{ page_title }}{% endblock %}
+{% block header_sub %}{{ current_school.name }}{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-info">
+    <h1 class="page-title">{{ greeting }}, {{ user.get_full_name|default:user.email|truncatechars:22 }}</h1>
+    <p class="page-subtitle">{{ page_subtitle }}</p>
+  </div>
+  <a href="{% url 'department_report_create' department %}" class="btn btn-primary">
+    + New Report
+  </a>
+</div>
+
+<!-- Stats row -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+  <div class="card">
+    <div class="stat-label">Today</div>
+    <div class="stat-value">{{ today_reports }}</div>
+    <div class="stat-meta">Reports submitted</div>
+  </div>
+  <div class="card">
+    <div class="stat-label">This Week</div>
+    <div class="stat-value">{{ week_reports }}</div>
+    <div class="stat-meta">Reports</div>
+  </div>
+  <div class="card">
+    <div class="stat-label">Pending Review</div>
+    <div class="stat-value">{{ pending_reports }}</div>
+    <div class="stat-meta">Awaiting admin</div>
+  </div>
+  <div class="card">
+    <div class="stat-label">All Time</div>
+    <div class="stat-value">{{ total_reports }}</div>
+    <div class="stat-meta">Total</div>
+  </div>
+</div>
+
+<!-- Recent reports -->
+<div class="card">
+  <h3 style="margin-bottom: 16px;">My Recent Reports</h3>
+  
+  {% if my_reports %}
+  <div style="overflow-x: auto;">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Title</th>
+          <th>Priority</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in my_reports %}
+        <tr>
+          <td>{{ r.report_date|date:"j M Y" }}</td>
+          <td>{{ r.title }}</td>
+          <td>
+            <span class="badge badge-{% if r.priority == 'urgent' %}danger{% elif r.priority == 'high' %}warning{% else %}gray{% endif %}">
+              {{ r.get_priority_display }}
+            </span>
+          </td>
+          <td>{{ r.get_status_display }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="pro-empty" style="border: none; padding: 40px;">
+    <p style="color: var(--ink-500);">
+      No reports yet. Submit your first one to get started.
+    </p>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}

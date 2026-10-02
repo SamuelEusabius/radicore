@@ -177,3 +177,4 @@ from .core import (
     school_admin_dash,
     redirect_dashboard,
 )
+from .modules import *

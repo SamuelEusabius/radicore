@@ -11,6 +11,7 @@ from django.contrib.auth import get_user_model
 from django.http import HttpResponse, JsonResponse
 from django.db.models import Q, Count, Sum
 from django.utils import timezone
+from django.core.paginator import Paginator
 
 from apps.accounts.decorators import (
     role_required, school_staff_only, super_admin_only,
@@ -19,6 +20,10 @@ from apps.accounts.decorators import (
 User = get_user_model()
 
 
+# ============================================================
+# NON-TEACHING STAFF
+# ============================================================
+
 @login_required
 def staff_list(request):
     """List non-teaching staff with filters and stats."""
@@ -26,13 +31,10 @@ def staff_list(request):
         return redirect('dashboard_home')
 
     from apps.staff.models import NonTeachingStaff
-    from django.db.models import Q, Count
-    from django.core.paginator import Paginator
 
     school = request.user.school
     base_qs = NonTeachingStaff.objects.filter(school=school)
 
-    # ---------- Filters ----------
     search = request.GET.get('q', '').strip()
     role_filter = request.GET.get('role', '').strip()
     status_filter = request.GET.get('status', '').strip()
@@ -55,7 +57,6 @@ def staff_list(request):
     elif status_filter == 'inactive':
         qs = qs.filter(is_active=False)
 
-    # ---------- Stats ----------
     stats = {
         'total': base_qs.count(),
         'active': base_qs.filter(is_active=True).count(),
@@ -158,6 +159,10 @@ def delete_staff(request, staff_id):
     return render(request, 'dashboard/delete_staff.html', {'staff': staff})
 
 
+# ============================================================
+# USER MANAGEMENT
+# ============================================================
+
 @login_required
 def user_deactivate(request, user_id):
     """Toggle user is_active (deactivate or reactivate)."""
@@ -165,7 +170,6 @@ def user_deactivate(request, user_id):
         return redirect('dashboard_home')
 
     from apps.accounts.models import User
-    from django.views.decorators.http import require_POST
 
     if request.method != 'POST':
         return redirect('manage_users')
@@ -175,12 +179,10 @@ def user_deactivate(request, user_id):
     else:
         target = get_object_or_404(User, id=user_id, school=request.user.school)
 
-    # Cannot deactivate yourself
     if target.id == request.user.id:
         messages.error(request, 'You cannot deactivate your own account.')
         return redirect('manage_users')
 
-    # Cannot deactivate a super_admin unless you are one
     if target.role == 'super_admin' and request.user.role != 'super_admin':
         messages.error(request, 'You do not have permission to modify a Super Admin.')
         return redirect('manage_users')
@@ -196,7 +198,6 @@ def user_deactivate(request, user_id):
         target.save(update_fields=['is_active'])
         messages.success(request, f'{target.email} has been deactivated.')
     else:
-        # Toggle
         target.is_active = not target.is_active
         target.save(update_fields=['is_active'])
         status = 'activated' if target.is_active else 'deactivated'
@@ -218,12 +219,10 @@ def user_delete(request, user_id):
     else:
         target = get_object_or_404(User, id=user_id, school=request.user.school)
 
-    # Cannot delete yourself
     if target.id == request.user.id:
         messages.error(request, 'You cannot delete your own account.')
         return redirect('manage_users')
 
-    # Cannot delete super_admin unless you are one
     if target.role == 'super_admin' and request.user.role != 'super_admin':
         messages.error(request, 'You do not have permission to delete a Super Admin.')
         return redirect('manage_users')
@@ -261,14 +260,22 @@ def user_change_role(request, user_id):
         messages.error(request, 'You cannot change your own role.')
         return redirect('manage_users')
 
+    # Role lists
+    ALLOWED_FOR_SCHOOL_ADMIN = (
+        'teacher', 'accountant', 'parent', 'student',
+        'driver', 'librarian', 'lab_technician', 'nurse', 'chief_chef',
+    )
+    ALLOWED_FOR_SUPER_ADMIN = ('school_admin',)
+
     if request.method == 'POST':
         new_role = request.POST.get('role', '').strip()
 
-        # Allowed roles for school admin
-        ALLOWED_FOR_SCHOOL_ADMIN = ('teacher', 'accountant', 'staff', 'parent', 'student')
-
-        if request.user.role != 'super_admin' and new_role not in ALLOWED_FOR_SCHOOL_ADMIN:
+        if request.user.role == 'school_admin' and new_role not in ALLOWED_FOR_SCHOOL_ADMIN:
             messages.error(request, 'You are not allowed to assign that role.')
+            return redirect('manage_users')
+
+        if request.user.role == 'super_admin' and new_role not in ALLOWED_FOR_SUPER_ADMIN:
+            messages.error(request, 'Super Admin can only assign School Admin role.')
             return redirect('manage_users')
 
         if new_role not in dict(User.Role.choices):
@@ -278,6 +285,7 @@ def user_change_role(request, user_id):
         old_role = target.get_role_display()
         target.role = new_role
         target.save(update_fields=['role'])
+
         messages.success(
             request,
             f'{target.email} role changed from {old_role} to {target.get_role_display()}.'
@@ -286,13 +294,13 @@ def user_change_role(request, user_id):
 
     # GET — render role selection
     role_choices = list(User.Role.choices)
-    if request.user.role != 'super_admin':
-        ALLOWED_FOR_SCHOOL_ADMIN = ('teacher', 'accountant', 'staff', 'parent', 'student')
+
+    if request.user.role == 'school_admin':
         role_choices = [(v, l) for v, l in role_choices if v in ALLOWED_FOR_SCHOOL_ADMIN]
+    elif request.user.role == 'super_admin':
+        role_choices = [(v, l) for v, l in role_choices if v in ALLOWED_FOR_SUPER_ADMIN]
 
     return render(request, 'dashboard/user_change_role.html', {
         'target': target,
         'role_choices': role_choices,
     })
-
-

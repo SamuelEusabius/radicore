@@ -287,7 +287,7 @@ urlpatterns = [
     path('subscription/<int:school_id>/pending/', views.subscription_payment_pending, name='subscription_payment_pending'),
     path('subscription/<int:school_id>/status/', views.subscription_payment_status, name='subscription_payment_status'),
     path('subscription/<int:school_id>/confirm/', views.confirm_subscription_payment, name='confirm_subscription_payment'),
-
+    
     # Subscription
     path('subscribe/', RedirectView.as_view(
         url='/dashboard/subscriptions/',
@@ -298,4 +298,5 @@ urlpatterns = [
 
     # Test SMS
     path('tools/sms-test/', views.send_test_sms_view, name='send_test_sms'),
+    path('modules/<slug:module_code>/', views.school_module_placeholder, name='school_module_placeholder'),
 ]

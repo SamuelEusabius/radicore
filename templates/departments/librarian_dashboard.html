@@ -1,0 +1,6 @@
+{% extends 'departments/_base_dashboard.html' %}
+{% block content %}
+  {% with page_title="Librarian Dashboard" page_subtitle="Book circulation and library management" greeting="Welcome" department="library" %}
+    {{ block.super }}
+  {% endwith %}
+{% endblock %}
