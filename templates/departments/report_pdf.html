@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    @page { size: A4; margin: 1.5cm; }
+    body { font-family: Arial, sans-serif; color: #1a1a1a; font-size: 11px; }
+
+    .header {
+      border-bottom: 3px solid #00695c;
+      padding-bottom: 12px;
+      margin-bottom: 20px;
+    }
+    .header h1 { font-size: 20px; color: #00695c; margin-bottom: 4px; }
+    .header p { font-size: 11px; color: #666; line-height: 1.4; }
+
+    .doc-title {
+      text-align: center;
+      font-size: 16px;
+      font-weight: bold;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+      letter-spacing: 0.05em;
+    }
+    .doc-subtitle {
+      text-align: center;
+      font-size: 10px;
+      color: #666;
+      margin-bottom: 20px;
+    }
+
+    .info-table {
+      width: 100%;
+      margin-bottom: 20px;
+      background-color: #f8fafc;
+      border-left: 4px solid #00695c;
+      padding: 12px;
+    }
+    .info-table td {
+      padding: 4px 8px;
+      font-size: 11px;
+    }
+    .info-table .label {
+      color: #666;
+      font-weight: bold;
+      width: 30%;
+    }
+    .info-table .value { color: #1a1a1a; }
+
+    .badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 9px;
+      font-weight: bold;
+      text-transform: uppercase;
+    }
+    .badge-low { background-color: #dbeafe; color: #1e40af; }
+    .badge-normal { background-color: #f1f5f9; color: #475569; }
+    .badge-high { background-color: #fef3c7; color: #92400e; }
+    .badge-urgent { background-color: #fee2e2; color: #991b1b; }
+
+    .section-title {
+      font-size: 12px;
+      font-weight: bold;
+      color: #00695c;
+      border-bottom: 1px solid #e5e7eb;
+      padding-bottom: 6px;
+      margin-bottom: 10px;
+      margin-top: 20px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .description {
+      background-color: #f9fafb;
+      padding: 14px;
+      border-radius: 4px;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      font-size: 11px;
+      color: #374151;
+    }
+
+    .admin-notes {
+      background-color: #fef3c7;
+      border-left: 3px solid #d97706;
+      padding: 12px;
+      line-height: 1.6;
+      font-size: 11px;
+      color: #92400e;
+    }
+
+    .attachment-box {
+      background-color: #dbeafe;
+      border-left: 3px solid #2563eb;
+      padding: 12px;
+      font-size: 11px;
+      color: #1e40af;
+    }
+    .attachment-box a { color: #1e40af; text-decoration: underline; }
+
+    .footer {
+      margin-top: 40px;
+      padding-top: 12px;
+      border-top: 1px solid #ddd;
+      text-align: center;
+      font-size: 9px;
+      color: #999;
+    }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <h1>{{ school.name }}</h1>
+  <p>
+    {% if school.address %}{{ school.address }}<br>{% endif %}
+    {% if school.county %}{{ school.county }} County{% endif %}
+    {% if school.phone %} · Tel: {{ school.phone }}{% endif %}
+    {% if school.email %} · {{ school.email }}{% endif %}
+  </p>
+</div>
+
+<!-- TITLE -->
+<div class="doc-title">{{ report.get_department_display }} Department Report</div>
+<div class="doc-subtitle">Generated {{ printed_at|date:"j F Y, H:i" }}</div>
+
+<!-- INFO -->
+<table class="info-table">
+  <tr>
+    <td class="label">Report Date:</td>
+    <td class="value">{{ report.report_date|date:"l, j F Y" }}</td>
+  </tr>
+  <tr>
+    <td class="label">Submitted By:</td>
+    <td class="value">
+      {{ report.submitted_by.get_full_name|default:report.submitted_by.email|default:"Unknown" }}
+      {% if report.submitted_by.role %}({{ report.submitted_by.get_role_display }}){% endif %}
+    </td>
+  </tr>
+  <tr>
+    <td class="label">Priority:</td>
+    <td class="value">
+      <span class="badge badge-{{ report.priority }}">{{ report.get_priority_display }}</span>
+    </td>
+  </tr>
+  <tr>
+    <td class="label">Status:</td>
+    <td class="value">{{ report.get_status_display }}</td>
+  </tr>
+  {% if report.reviewed_by %}
+  <tr>
+    <td class="label">Reviewed By:</td>
+    <td class="value">{{ report.reviewed_by.get_full_name|default:report.reviewed_by.email }}</td>
+  </tr>
+  <tr>
+    <td class="label">Reviewed At:</td>
+    <td class="value">{{ report.reviewed_at|date:"j F Y, H:i" }}</td>
+  </tr>
+  {% endif %}
+</table>
+
+<!-- TITLE -->
+<div class="section-title">Report Title</div>
+<div style="font-size: 14px; font-weight: bold; margin-bottom: 16px;">
+  {{ report.title }}
+</div>
+
+<!-- DESCRIPTION -->
+<div class="section-title">Description</div>
+<div class="description">{{ report.description }}</div>
+
+<!-- ADMIN NOTES -->
+{% if report.admin_notes %}
+<div class="section-title">Admin Notes</div>
+<div class="admin-notes">{{ report.admin_notes }}</div>
+{% endif %}
+
+<!-- ATTACHMENT -->
+{% if report.attachment %}
+<div class="section-title">Supporting Document</div>
+<div class="attachment-box">
+  <strong>📎 File attached:</strong>
+  <a href="{{ request.scheme }}://{{ request.get_host }}{{ report.attachment.url }}" target="_blank">
+    {{ report.attachment.name }}
+  </a>
+  <div style="font-size: 10px; margin-top: 6px; color: #1e40af;">
+    Click the link above to open the attachment.
+  </div>
+</div>
+{% endif %}
+
+<!-- FOOTER -->
+<div class="footer">
+  {{ school.name }} · {{ report.get_department_display }} Report · Generated by School MS
+</div>
+
+</body>
+</html>

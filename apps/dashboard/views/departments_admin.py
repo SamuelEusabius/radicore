@@ -114,10 +114,11 @@ def departments_transport(request):
 
     vehicles = Vehicle.objects.filter(school=school).order_by('plate_number')
     routes = Route.objects.filter(school=school).order_by('name')
-    today_trips = Trip.objects.filter(school=school, date=today).select_related(
-        'route', 'vehicle', 'driver'
-    ).order_by('direction')
-
+    today_trips = Trip.objects.filter(
+        school=school,
+        date__gte=today,
+        date__lte=today + timedelta(days=30)
+    ).select_related('route', 'vehicle', 'driver').order_by('date', 'direction')[:30]
     # Fuel totals
     thirty_days_ago = today - timedelta(days=30)
     fuel_total = FuelLog.objects.filter(
@@ -552,3 +553,121 @@ def transport_fuel_delete(request, fuel_id):
         'object_type': 'Fuel Log',
         'cancel_url': 'departments_transport',
     })
+    
+
+# ============================================================
+# TRANSPORT — TRIP STUDENT ASSIGNMENT
+# ============================================================
+
+@login_required
+def transport_trip_students(request, trip_id):
+    """Manage which students are assigned to a trip."""
+    if not _school_admin_required(request):
+        return redirect('dashboard_home')
+
+    from apps.departments.models import Trip, TripStudent
+    from apps.students.models import Student
+
+    school = request.user.school
+    trip = get_object_or_404(Trip, id=trip_id, school=school)
+
+    # Currently assigned student IDs
+    assigned_ids = set(
+        TripStudent.objects.filter(trip=trip).values_list('student_id', flat=True)
+    )
+
+    # All active students in this school
+    all_students = Student.objects.filter(
+        school=school, is_active=True
+    ).order_by('class_level', 'first_name', 'last_name')
+
+    # Build rows
+    student_rows = []
+    for s in all_students:
+        existing = TripStudent.objects.filter(trip=trip, student=s).first()
+        student_rows.append({
+            'student': s,
+            'is_assigned': s.id in assigned_ids,
+            'stop_name': existing.stop_name if existing else '',
+        })
+
+    if request.method == 'POST':
+        selected_ids = set(
+            int(x) for x in request.POST.getlist('students') if x.isdigit()
+        )
+
+        # Remove students no longer selected
+        TripStudent.objects.filter(trip=trip).exclude(
+            student_id__in=selected_ids
+        ).delete()
+
+        # Add new students
+        for sid in selected_ids:
+            if sid not in assigned_ids:
+                # Find stop name for this student if provided
+                stop_name = request.POST.get(f'stop_{sid}', '').strip()
+                TripStudent.objects.create(
+                    trip=trip,
+                    student_id=sid,
+                    boarding_status='pending',
+                    stop_name=stop_name,
+                )
+            else:
+                # Update stop name for existing
+                stop_name = request.POST.get(f'stop_{sid}', '').strip()
+                TripStudent.objects.filter(
+                    trip=trip, student_id=sid
+                ).update(stop_name=stop_name)
+
+        messages.success(
+            request,
+            f'Trip roster updated: {len(selected_ids)} students assigned.'
+        )
+        return redirect('transport_trip_students', trip_id=trip.id)
+
+    return render(request, 'dashboard/departments/transport/trip_students.html', {
+        'trip': trip,
+        'student_rows': student_rows,
+        'assigned_count': len(assigned_ids),
+        'total_students': len(student_rows),
+    })
+
+
+@login_required
+def transport_trip_auto_assign(request, trip_id):
+    """Quick-add: assign ALL students in a specific class to this trip."""
+    if not _school_admin_required(request):
+        return redirect('dashboard_home')
+
+    from apps.departments.models import Trip, TripStudent
+    from apps.students.models import Student
+
+    school = request.user.school
+    trip = get_object_or_404(Trip, id=trip_id, school=school)
+
+    if request.method == 'POST':
+        class_level = request.POST.get('class_level', '').strip()
+        if not class_level:
+            messages.error(request, 'Please select a class.')
+            return redirect('transport_trip_students', trip_id=trip.id)
+
+        students = Student.objects.filter(
+            school=school, is_active=True, class_level=class_level
+        )
+
+        added = 0
+        for s in students:
+            _, created = TripStudent.objects.get_or_create(
+                trip=trip,
+                student=s,
+                defaults={'boarding_status': 'pending'},
+            )
+            if created:
+                added += 1
+
+        messages.success(
+            request,
+            f'Added {added} students from {class_level} to this trip.'
+        )
+
+    return redirect('transport_trip_students', trip_id=trip.id)

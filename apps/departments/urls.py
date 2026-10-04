@@ -24,6 +24,11 @@ urlpatterns = [
         # Trip manifest + PDF
     path('driver/trips/<int:trip_id>/manifest/', views_transport.trip_manifest, name='trip_manifest'),
     path('driver/trips/<int:trip_id>/manifest/pdf/', views_transport.trip_manifest_pdf, name='trip_manifest_pdf'),
+        # Report PDFs + Print
+    path('reports/<int:report_id>/pdf/', views.report_pdf, name='report_pdf'),
+    path('reports/bulk-pdf/', views.reports_bulk_pdf, name='reports_bulk_pdf'),
+    path('reports/print/', views.reports_print, name='reports_print'),
+    path('reports/<int:report_id>/review/', views.department_report_review, name='department_report_review'),
 
     # My students
     path('driver/students/', views_transport.my_students, name='my_students'),

@@ -32,9 +32,9 @@
     <div class="stat-meta">Configured routes</div>
   </div>
   <div class="card">
-    <div class="stat-label">Today's Trips</div>
+    <div class="stat-label">Upcoming Trips</div>
     <div class="stat-value">{{ trip_count }}</div>
-    <div class="stat-meta">Scheduled</div>
+    <div class="stat-meta">Next 30 days</div>
   </div>
   <div class="card">
     <div class="stat-label">Fuel (30 days)</div>
@@ -146,11 +146,16 @@
 </div>
 
 <!-- ============================================ -->
-<!-- TODAY'S TRIPS                                 -->
+<!-- TRIPS (Today & Upcoming)                      -->
 <!-- ============================================ -->
 <div class="card mb-6">
   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-    <h3 style="margin: 0; font-family: var(--font-heading);">Today's Trips</h3>
+    <div>
+      <h3 style="margin: 0; font-family: var(--font-heading);">Trips (Today & Upcoming)</h3>
+      <p style="margin: 4px 0 0; font-size: var(--text-xs); color: var(--ink-500);">
+        Next 30 days. Click <strong>Students</strong> to assign who travels on each trip.
+      </p>
+    </div>
     <a href="{% url 'transport_trip_add' %}" class="btn btn-sm btn-primary">+ Schedule Trip</a>
   </div>
 
@@ -159,10 +164,12 @@
     <table class="table">
       <thead>
         <tr>
+          <th>Date</th>
           <th>Direction</th>
           <th>Route</th>
           <th>Vehicle</th>
           <th>Driver</th>
+          <th>Students</th>
           <th>Status</th>
           <th style="text-align: right;">Actions</th>
         </tr>
@@ -170,6 +177,12 @@
       <tbody>
         {% for t in today_trips %}
         <tr>
+          <td>
+            <strong>{{ t.date|date:"j M" }}</strong>
+            {% if t.date == today %}
+              <span class="badge badge-primary" style="font-size: 9px;">TODAY</span>
+            {% endif %}
+          </td>
           <td>{{ t.get_direction_display }}</td>
           <td>{{ t.route.name }}</td>
           <td>{{ t.vehicle.plate_number|default:"—" }}</td>
@@ -181,11 +194,15 @@
             {% endif %}
           </td>
           <td>
+            <span class="badge badge-info">{{ t.student_count }}</span>
+          </td>
+          <td>
             <span class="badge badge-{% if t.status == 'in_progress' %}warning{% elif t.status == 'completed' %}success{% elif t.status == 'cancelled' %}danger{% else %}info{% endif %}">
               {{ t.get_status_display }}
             </span>
           </td>
-          <td style="text-align: right;">
+          <td style="text-align: right; white-space: nowrap;">
+            <a href="{% url 'transport_trip_students' t.id %}" class="btn btn-sm btn-primary">👥 Students</a>
             <a href="{% url 'transport_trip_edit' t.id %}" class="btn btn-sm btn-secondary">Edit</a>
             <a href="{% url 'transport_trip_delete' t.id %}" class="btn btn-sm" style="background: #fee2e2; color: #991b1b;">Delete</a>
           </td>
@@ -196,7 +213,7 @@
   </div>
   {% else %}
   <div class="pro-empty" style="border: none; padding: 40px;">
-    <p style="color: var(--ink-500);">No trips scheduled for today.</p>
+    <p style="color: var(--ink-500);">No trips scheduled in the next 30 days.</p>
     <a href="{% url 'transport_trip_add' %}" class="btn btn-primary" style="margin-top: 12px;">+ Schedule a trip</a>
   </div>
   {% endif %}
@@ -240,7 +257,7 @@
           <td><strong>KES {{ f.amount_kes|floatformat:0 }}</strong></td>
           <td><span class="badge badge-info">{{ f.get_payment_method_display }}</span></td>
           <td>{{ f.station_name|default:"—" }}</td>
-          <td style="text-align: right;">
+          <td style="text-align: right; white-space: nowrap;">
             <a href="{% url 'transport_fuel_edit' f.id %}" class="btn btn-sm btn-secondary">Edit</a>
             <a href="{% url 'transport_fuel_delete' f.id %}" class="btn btn-sm" style="background: #fee2e2; color: #991b1b;">Delete</a>
           </td>

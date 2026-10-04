@@ -1,0 +1,127 @@
+{% extends 'base.html' %}
+{% block title %}Assign Students — {{ trip.route.name }}{% endblock %}
+{% block header_title %}Assign Students to Trip{% endblock %}
+{% block header_sub %}{{ trip.route.name }} · {{ trip.date|date:"j M Y" }} · {{ trip.get_direction_display }}{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-info">
+    <h1 class="page-title">Assign Students</h1>
+    <p class="page-subtitle">
+      {{ assigned_count }} of {{ total_students }} students assigned to this trip.
+    </p>
+  </div>
+  <a href="{% url 'departments_transport' %}" class="btn btn-secondary">← Back to Transport</a>
+</div>
+
+<!-- Quick class assign -->
+<div class="card mb-6">
+  <h3 style="margin-bottom: 12px; font-family: var(--font-heading); font-size: var(--text-md);">
+    Quick Add — Assign All Students from a Class
+  </h3>
+  <form method="post" action="{% url 'transport_trip_auto_assign' trip.id %}" style="display: flex; gap: 12px; align-items: flex-end;">
+    {% csrf_token %}
+    <div style="flex: 1;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px; font-size: var(--text-sm);">
+        Class Level
+      </label>
+      <input type="text" name="class_level" placeholder="e.g. Form 1A, Grade 5"
+             style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+    </div>
+    <button type="submit" class="btn btn-secondary">Add All from Class</button>
+  </form>
+  <p style="font-size: var(--text-xs); color: var(--ink-500); margin-top: 8px;">
+    Students already assigned won't be duplicated.
+  </p>
+</div>
+
+<!-- Main form -->
+<form method="post">
+  {% csrf_token %}
+
+  <div class="card" style="padding: 0;">
+    <div style="padding: var(--s-5) var(--s-6); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+      <div>
+        <h3 style="margin: 0; font-family: var(--font-heading); font-size: var(--text-md);">Student Roster</h3>
+        <p style="margin: 4px 0 0; color: var(--ink-500); font-size: var(--text-xs);">
+          Check the students who will travel on this trip.
+        </p>
+      </div>
+      <div style="display: flex; gap: 8px;">
+        <button type="button" onclick="checkAll()" class="btn btn-sm btn-secondary">Select All</button>
+        <button type="button" onclick="uncheckAll()" class="btn btn-sm btn-secondary">Clear All</button>
+      </div>
+    </div>
+
+    {% if student_rows %}
+    <div style="overflow-x: auto;">
+      <table class="table">
+        <thead>
+          <tr>
+            <th style="width: 40px;">✓</th>
+            <th>Student</th>
+            <th>Admission No</th>
+            <th>Class</th>
+            <th>Parent Phone</th>
+            <th style="min-width: 180px;">Stop / Pickup Point</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in student_rows %}
+          <tr>
+            <td>
+              <input type="checkbox" name="students" value="{{ row.student.id }}"
+                     id="student_{{ row.student.id }}"
+                     {% if row.is_assigned %}checked{% endif %}
+                     style="width: 18px; height: 18px; accent-color: var(--primary); cursor: pointer;">
+            </td>
+            <td>
+              <label for="student_{{ row.student.id }}" style="cursor: pointer; font-weight: 600;">
+                {{ row.student.first_name }} {{ row.student.middle_name|default:"" }} {{ row.student.last_name }}
+              </label>
+            </td>
+            <td>{{ row.student.admission_number }}</td>
+            <td>{{ row.student.class_level|default:"—" }}</td>
+            <td>{{ row.student.guardian_phone|default:"—" }}</td>
+            <td>
+              <input type="text" name="stop_{{ row.student.id }}"
+                     value="{{ row.stop_name }}"
+                     placeholder="e.g. Westlands Roundabout"
+                     style="width: 100%; padding: 6px 8px; border: 1px solid var(--border); font-size: var(--text-xs);">
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="pro-empty" style="border: none; padding: 60px;">
+      <p style="color: var(--ink-500);">
+        No students enrolled in this school yet.
+        <a href="{% url 'add_student' %}" style="color: var(--primary);">Add students first →</a>
+      </p>
+    </div>
+    {% endif %}
+  </div>
+
+  <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: var(--s-5);">
+    <a href="{% url 'departments_transport' %}" class="btn btn-secondary">Cancel</a>
+    <button type="submit" class="btn btn-primary">
+      {% include 'partials/icons.html' with name="check-circle" size=16 %}
+      <span>Save Roster</span>
+    </button>
+  </div>
+
+</form>
+
+<script>
+  function checkAll() {
+    document.querySelectorAll('input[name="students"]').forEach(cb => cb.checked = true);
+  }
+  function uncheckAll() {
+    document.querySelectorAll('input[name="students"]').forEach(cb => cb.checked = false);
+  }
+</script>
+
+{% endblock %}

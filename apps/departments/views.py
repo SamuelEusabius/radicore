@@ -155,3 +155,180 @@ def department_reports_inbox(request):
         'counts': counts,
         'current_dept': dept_filter,
     })
+    
+
+# ============================================================
+# REPORT PDF + PRINT
+# ============================================================
+
+def _reports_queryset(request):
+    """Build filtered reports queryset for current user."""
+    from .models import DepartmentReport
+    school = request.user.school
+    qs = DepartmentReport.objects.filter(school=school).select_related(
+        'submitted_by', 'reviewed_by'
+    ).order_by('-report_date', '-created_at')
+
+    dept_filter = request.GET.get('department')
+    if dept_filter:
+        qs = qs.filter(department=dept_filter)
+
+    status_filter = request.GET.get('status')
+    if status_filter:
+        qs = qs.filter(status=status_filter)
+
+    return qs, dept_filter, status_filter
+
+
+@login_required
+def report_pdf(request, report_id):
+    """Download a single report as PDF."""
+    if request.user.role not in ('school_admin', 'super_admin'):
+        return redirect('dashboard_home')
+
+    from .models import DepartmentReport
+    from django.http import HttpResponse
+    from django.template.loader import render_to_string
+    from xhtml2pdf import pisa
+    import io
+
+    report = get_object_or_404(
+        DepartmentReport, id=report_id, school=request.user.school
+    )
+
+    html_string = render_to_string('departments/report_pdf.html', {
+        'report': report,
+        'school': request.user.school,
+        'printed_at': timezone.now(),
+    })
+
+    response = HttpResponse(content_type='application/pdf')
+    filename = f"report_{report.department}_{report.report_date}.pdf"
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+
+    result = pisa.CreatePDF(
+        src=io.StringIO(html_string),
+        dest=response,
+        encoding='utf-8',
+    )
+
+    if result.err:
+        messages.error(request, 'PDF generation failed.')
+        return redirect('department_reports_inbox')
+
+    return response
+
+
+@login_required
+def reports_bulk_pdf(request):
+    """Download all filtered reports as one PDF."""
+    if request.user.role not in ('school_admin', 'super_admin'):
+        return redirect('dashboard_home')
+
+    from django.http import HttpResponse
+    from django.template.loader import render_to_string
+    from xhtml2pdf import pisa
+    import io
+
+    reports, dept_filter, status_filter = _reports_queryset(request)
+
+    dept_label = 'All Departments'
+    if dept_filter:
+        from .models import DepartmentChoices
+        dept_label = dict(DepartmentChoices.choices).get(dept_filter, dept_filter)
+
+    html_string = render_to_string('departments/reports_bulk_pdf.html', {
+        'reports': reports,
+        'school': request.user.school,
+        'printed_at': timezone.now(),
+        'department_label': dept_label,
+        'status_filter': status_filter,
+        'total': reports.count(),
+    })
+
+    response = HttpResponse(content_type='application/pdf')
+    filename = f"reports_{dept_filter or 'all'}_{timezone.now().date()}.pdf"
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+
+    result = pisa.CreatePDF(
+        src=io.StringIO(html_string),
+        dest=response,
+        encoding='utf-8',
+    )
+
+    if result.err:
+        messages.error(request, 'PDF generation failed.')
+        return redirect('department_reports_inbox')
+
+    return response
+
+
+@login_required
+def reports_print(request):
+    """Print-friendly view of filtered reports."""
+    if request.user.role not in ('school_admin', 'super_admin'):
+        return redirect('dashboard_home')
+
+    reports, dept_filter, status_filter = _reports_queryset(request)
+
+    dept_label = 'All Departments'
+    if dept_filter:
+        from .models import DepartmentChoices
+        dept_label = dict(DepartmentChoices.choices).get(dept_filter, dept_filter)
+
+    return render(request, 'departments/reports_print.html', {
+        'reports': reports,
+        'school': request.user.school,
+        'printed_at': timezone.now(),
+        'department_label': dept_label,
+        'status_filter': status_filter,
+        'total': reports.count(),
+    })
+    
+
+# ============================================================
+# REPORT REVIEW (School Admin)
+# ============================================================
+
+@login_required
+def department_report_review(request, report_id):
+    """School Admin reviews a single department report."""
+    if request.user.role not in ('school_admin', 'super_admin'):
+        messages.error(request, 'Access denied.')
+        return redirect('dashboard_home')
+
+    from .models import DepartmentReport
+
+    report = get_object_or_404(
+        DepartmentReport, id=report_id, school=request.user.school
+    )
+
+    if request.method == 'POST':
+        action = request.POST.get('action', 'save')
+
+        if action == 'mark_reviewed':
+            report.status = 'reviewed'
+            report.reviewed_by = request.user
+            report.reviewed_at = timezone.now()
+            report.admin_notes = request.POST.get('admin_notes', '').strip()
+            report.save()
+            messages.success(request, 'Report marked as reviewed.')
+
+        elif action == 'mark_actioned':
+            report.status = 'actioned'
+            report.reviewed_by = request.user
+            report.reviewed_at = timezone.now()
+            report.admin_notes = request.POST.get('admin_notes', '').strip()
+            report.save()
+            messages.success(request, 'Report marked as actioned.')
+
+        elif action == 'save':
+            report.admin_notes = request.POST.get('admin_notes', '').strip()
+            report.save()
+            messages.success(request, 'Notes saved.')
+
+        return redirect('department_report_review', report_id=report.id)
+
+    return render(request, 'departments/report_review.html', {
+        'report': report,
+    })

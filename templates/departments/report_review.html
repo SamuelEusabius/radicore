@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+{% block title %}{{ report.title }}{% endblock %}
+{% block header_title %}Review Report{% endblock %}
+{% block header_sub %}{{ report.get_department_display }} · {{ report.report_date|date:"j M Y" }}{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-info">
+    <h1 class="page-title">{{ report.title }}</h1>
+    <p class="page-subtitle">
+      <span class="badge badge-info">{{ report.get_department_display }}</span>
+      · {{ report.report_date|date:"l, j F Y" }}
+      · Status: <strong>{{ report.get_status_display }}</strong>
+    </p>
+  </div>
+  <div style="display: flex; gap: 8px;">
+    <a href="{% url 'report_pdf' report.id %}" class="btn btn-secondary">📄 PDF</a>
+    <a href="{% url 'department_reports_inbox' %}" class="btn btn-secondary">← Back</a>
+  </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+  <!-- MAIN: Report content -->
+  <div class="lg:col-span-2">
+    <div class="card mb-6">
+      <h3 style="margin-bottom: 16px; font-family: var(--font-heading); font-size: var(--text-md);">Report Details</h3>
+
+      <div style="margin-bottom: 16px;">
+        <div style="font-size: var(--text-xs); color: var(--ink-500); text-transform: uppercase; font-weight: 600; margin-bottom: 4px;">Description</div>
+        <div style="background: var(--surface-muted); padding: 16px; line-height: 1.7; white-space: pre-wrap;">{{ report.description }}</div>
+      </div>
+
+      {% if report.attachment %}
+      <div>
+        <div style="font-size: var(--text-xs); color: var(--ink-500); text-transform: uppercase; font-weight: 600; margin-bottom: 4px;">Attachment</div>
+        <a href="{{ report.attachment.url }}" target="_blank" class="btn btn-secondary">📎 Open attachment</a>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- SIDEBAR: Meta + actions -->
+  <div>
+    <div class="card mb-6">
+      <h3 style="margin-bottom: 16px; font-family: var(--font-heading); font-size: var(--text-md);">Info</h3>
+
+      <div style="font-size: var(--text-sm); line-height: 2;">
+        <div><strong>Submitted by:</strong> {{ report.submitted_by.get_full_name|default:report.submitted_by.email|default:"—" }}</div>
+        <div><strong>Priority:</strong>
+          <span class="badge badge-{% if report.priority == 'urgent' %}danger{% elif report.priority == 'high' %}warning{% elif report.priority == 'low' %}info{% else %}gray{% endif %}">
+            {{ report.get_priority_display }}
+          </span>
+        </div>
+        <div><strong>Status:</strong> {{ report.get_status_display }}</div>
+        {% if report.reviewed_by %}
+          <div><strong>Reviewed by:</strong> {{ report.reviewed_by.get_full_name|default:report.reviewed_by.email }}</div>
+          <div><strong>Reviewed at:</strong> {{ report.reviewed_at|date:"j M Y, H:i" }}</div>
+        {% endif %}
+        <div><strong>Created:</strong> {{ report.created_at|date:"j M Y, H:i" }}</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-bottom: 16px; font-family: var(--font-heading); font-size: var(--text-md);">Action</h3>
+
+      <form method="post">
+        {% csrf_token %}
+
+        <div style="margin-bottom: 16px;">
+          <label style="display: block; font-size: var(--text-xs); font-weight: 600; color: var(--ink-700); margin-bottom: 6px;">
+            Admin Notes
+          </label>
+          <textarea name="admin_notes" rows="4"
+                    placeholder="Add your notes..."
+                    style="width: 100%; padding: 10px; border: 1px solid var(--border); font-size: var(--text-sm);">{{ report.admin_notes }}</textarea>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <button type="submit" name="action" value="save" class="btn btn-secondary">
+            💾 Save Notes Only
+          </button>
+          <button type="submit" name="action" value="mark_reviewed" class="btn btn-primary">
+            ✓ Mark as Reviewed
+          </button>
+          <button type="submit" name="action" value="mark_actioned"
+                  class="btn btn-primary" style="background: var(--success);">
+            ✓✓ Mark as Actioned
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}

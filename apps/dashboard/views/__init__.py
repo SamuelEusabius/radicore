@@ -196,3 +196,10 @@ from .departments_admin import (
     transport_fuel_form,
     transport_fuel_delete,
 )
+from .departments_admin import (
+    transport_vehicle_form, transport_vehicle_delete,
+    transport_route_form, transport_route_delete,
+    transport_trip_form, transport_trip_delete,
+    transport_fuel_form, transport_fuel_delete,
+    transport_trip_students, transport_trip_auto_assign,
+)

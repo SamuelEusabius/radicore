@@ -4,16 +4,38 @@
 {% block header_sub %}All departments in one place{% endblock %}
 
 {% block content %}
+
 <div class="page-header">
   <div class="page-header-info">
     <h1 class="page-title">Department Reports</h1>
     <p class="page-subtitle">Reports from all departments.</p>
   </div>
+  <div style="display: flex; gap: 8px;">
+    <a href="{% url 'reports_print' %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}"
+       target="_blank" class="btn btn-secondary">
+      🖨️ Print
+    </a>
+    <a href="{% url 'reports_bulk_pdf' %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}"
+       class="btn btn-primary">
+      📄 Download PDF
+    </a>
+  </div>
 </div>
 
+<!-- Department filter cards -->
 <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+  <a href="{% url 'department_reports_inbox' %}" class="card card-hover {% if not current_dept %}card-active{% endif %}" style="text-decoration: none; color: inherit;">
+    <div class="stat-label">All Departments</div>
+    <div class="stat-value">
+      {% with total=0 %}
+        {% for code, data in counts.items %}{% endfor %}
+      {% endwith %}
+      {{ reports|length }}
+    </div>
+    <div class="stat-meta">Total shown</div>
+  </a>
   {% for code, data in counts.items %}
-  <a href="?department={{ code }}" class="card card-hover" style="text-decoration: none; color: inherit;">
+  <a href="?department={{ code }}" class="card card-hover {% if current_dept == code %}card-active{% endif %}" style="text-decoration: none; color: inherit;">
     <div class="stat-label">{{ data.label }}</div>
     <div class="stat-value">{{ data.total }}</div>
     <div class="stat-meta">
@@ -38,14 +60,16 @@
           <th>By</th>
           <th>Priority</th>
           <th>Status</th>
+          <th>Attachment</th>
+          <th style="text-align: right;">Actions</th>
         </tr>
       </thead>
       <tbody>
         {% for r in reports %}
         <tr>
-          <td>{{ r.report_date|date:"j M" }}</td>
+          <td>{{ r.report_date|date:"j M Y" }}</td>
           <td><span class="badge badge-info">{{ r.get_department_display }}</span></td>
-          <td>{{ r.title }}</td>
+          <td><strong>{{ r.title }}</strong></td>
           <td>{{ r.submitted_by.get_full_name|default:r.submitted_by.email|truncatechars:20 }}</td>
           <td>
             <span class="badge badge-{% if r.priority == 'urgent' %}danger{% elif r.priority == 'high' %}warning{% else %}gray{% endif %}">
@@ -53,6 +77,17 @@
             </span>
           </td>
           <td>{{ r.get_status_display }}</td>
+          <td>
+            {% if r.attachment %}
+              <a href="{{ r.attachment.url }}" target="_blank" style="color: var(--primary);">📎 View</a>
+            {% else %}
+              <span style="color: var(--ink-400);">—</span>
+            {% endif %}
+          </td>
+          <td style="text-align: right; white-space: nowrap;">
+            <a href="{% url 'report_pdf' r.id %}" class="btn btn-sm btn-secondary" title="Download PDF">📄 PDF</a>
+            <a href="{% url 'department_report_review' r.id %}" class="btn btn-sm btn-primary">Review</a>
+          </td>
         </tr>
         {% endfor %}
       </tbody>
@@ -62,4 +97,12 @@
   <p style="text-align: center; color: var(--ink-500); padding: 40px;">No reports yet.</p>
   {% endif %}
 </div>
+
+<style>
+  .card-active {
+    border: 2px solid var(--primary);
+    background: var(--primary-soft);
+  }
+</style>
+
 {% endblock %}

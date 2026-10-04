@@ -313,6 +313,9 @@ urlpatterns = [
     path('departments/transport/fuel/add/', views.transport_fuel_form, name='transport_fuel_add'),
     path('departments/transport/fuel/<int:fuel_id>/edit/', views.transport_fuel_form, name='transport_fuel_edit'),
     path('departments/transport/fuel/<int:fuel_id>/delete/', views.transport_fuel_delete, name='transport_fuel_delete'),
+        # Transport — Trip student assignment
+    path('departments/transport/trips/<int:trip_id>/students/', views.transport_trip_students, name='transport_trip_students'),
+    path('departments/transport/trips/<int:trip_id>/auto-assign/', views.transport_trip_auto_assign, name='transport_trip_auto_assign'),
     
     # Subscription
     path('subscribe/', RedirectView.as_view(
