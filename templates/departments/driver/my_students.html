@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% block title %}My Students{% endblock %}
+{% block header_title %}My Students{% endblock %}
+{% block header_sub %}{{ total }} assigned{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-info">
+    <h1 class="page-title">My Students</h1>
+    <p class="page-subtitle">All students assigned to your trips.</p>
+  </div>
+  <div style="display: flex; gap: 8px;">
+    <a href="{% url 'my_students_pdf' %}" class="btn btn-secondary">📄 Download PDF</a>
+    <a href="{% url 'driver_dashboard' %}" class="btn btn-secondary">← Back</a>
+  </div>
+</div>
+
+<div class="card">
+  {% if students_data %}
+    <table class="table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Student Name</th>
+          <th>Admission No</th>
+          <th>Class</th>
+          <th>Parent / Guardian</th>
+          <th>Parent Phone</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in students_data %}
+        <tr>
+          <td>{{ forloop.counter }}</td>
+          <td><strong>{{ row.student.full_name }}</strong></td>
+          <td>{{ row.student.admission_number }}</td>
+          <td>{{ row.student.current_class.name|default:"—" }}</td>
+          <td>{{ row.parent_name|default:"—" }}</td>
+          <td>{{ row.parent_phone|default:"—" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <div class="pro-empty" style="border: none; padding: 60px;">
+      <p style="color: var(--ink-500); text-align: center;">
+        No students assigned to your trips yet. Contact your School Admin.
+      </p>
+    </div>
+  {% endif %}
+</div>
+
+{% endblock %}

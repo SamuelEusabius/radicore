@@ -80,8 +80,9 @@ def trip_detail(request, trip_id):
         school=request.user.school,
         driver=request.user,
     )
-    trip_students = trip.trip_students.select_related('student').order_by('student__full_name')
-
+    trip_students = trip.trip_students.select_related(
+        'student', 'student__current_class'
+    ).order_by('student__first_name', 'student__last_name')
     # Ensure checklist exists
     checklist, _ = PreTripChecklist.objects.get_or_create(trip=trip)
 
@@ -287,3 +288,181 @@ def trip_history(request):
     return render(request, 'departments/driver/trip_history.html', {
         'trips': trips,
     })
+    
+
+# ============================================================
+# TRIP MANIFEST — Print/PDF
+# ============================================================
+
+@login_required
+def trip_manifest(request, trip_id):
+    """Print-friendly trip manifest page."""
+    if not _driver_required(request):
+        return redirect('dashboard_home')
+
+    from .models import Trip
+    trip = get_object_or_404(
+        Trip, id=trip_id,
+        school=request.user.school,
+        driver=request.user,
+    )
+
+    trip_students = trip.trip_students.select_related(
+        'student'
+    ).order_by('student__first_name', 'student__last_name')
+
+    students_data = []
+    for ts in trip_students:
+        student = ts.student
+        students_data.append({
+            'ts': ts,
+            'student': student,
+            'parent_phone': student.guardian_phone or '',
+            'parent_name': student.guardian_name or '',
+            'stop_name': ts.stop_name,
+        })
+
+    return render(request, 'departments/driver/trip_manifest.html', {
+        'trip': trip,
+        'students_data': students_data,
+        'school': request.user.school,
+        'printed_at': timezone.now(),
+    })
+
+
+@login_required
+def trip_manifest_pdf(request, trip_id):
+    """PDF of trip manifest."""
+    if not _driver_required(request):
+        return redirect('dashboard_home')
+
+    from .models import Trip
+    from django.http import HttpResponse
+    from django.template.loader import render_to_string
+
+    trip = get_object_or_404(
+        Trip, id=trip_id,
+        school=request.user.school,
+        driver=request.user,
+    )
+
+    trip_students = trip.trip_students.select_related(
+        'student'
+    ).order_by('student__first_name', 'student__last_name')
+
+    students_data = []
+    for ts in trip_students:
+        student = ts.student
+        students_data.append({
+            'ts': ts,
+            'student': student,
+            'parent_phone': student.guardian_phone or '',
+            'parent_name': student.guardian_name or '',
+            'stop_name': ts.stop_name,
+        })
+
+    html_string = render_to_string('departments/driver/trip_manifest_pdf.html', {
+        'trip': trip,
+        'students_data': students_data,
+        'school': request.user.school,
+        'printed_at': timezone.now(),
+    })
+
+    try:
+        from weasyprint import HTML
+        response = HttpResponse(content_type='application/pdf')
+        filename = f"manifest_{trip.route.name.replace(' ', '_')}_{trip.date}.pdf"
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        HTML(string=html_string, base_url=request.build_absolute_uri()).write_pdf(response)
+        return response
+    except ImportError:
+        messages.error(request, 'PDF generation not available.')
+        return redirect('trip_detail', trip_id=trip.id)
+
+
+@login_required
+def my_students(request):
+    """All students assigned to this driver."""
+    if not _driver_required(request):
+        return redirect('dashboard_home')
+
+    from .models import TripStudent
+    from apps.students.models import Student
+
+    student_ids = TripStudent.objects.filter(
+        trip__driver=request.user,
+        trip__school=request.user.school,
+    ).values_list('student_id', flat=True).distinct()
+
+    students = Student.objects.filter(
+        id__in=student_ids, is_active=True
+    ).order_by('first_name', 'last_name')
+
+    students_data = []
+    for student in students:
+        students_data.append({
+            'student': student,
+            'parent_name': student.guardian_name or '',
+            'parent_phone': student.guardian_phone or '',
+        })
+
+    return render(request, 'departments/driver/my_students.html', {
+        'students_data': students_data,
+        'total': len(students_data),
+    })
+
+
+@login_required
+def my_students_pdf(request):
+    """PDF of all students assigned to this driver."""
+    if not _driver_required(request):
+        return redirect('dashboard_home')
+
+    from .models import TripStudent
+    from apps.students.models import Student
+    from django.http import HttpResponse
+    from django.template.loader import render_to_string
+
+    student_ids = TripStudent.objects.filter(
+        trip__driver=request.user,
+        trip__school=request.user.school,
+    ).values_list('student_id', flat=True).distinct()
+
+    students = Student.objects.filter(
+        id__in=student_ids, is_active=True
+    ).order_by('first_name', 'last_name')
+
+    students_data = []
+    for student in students:
+        students_data.append({
+            'student': student,
+            'parent_name': student.guardian_name or '',
+            'parent_phone': student.guardian_phone or '',
+        })
+
+    html_string = render_to_string('departments/driver/my_students_pdf.html', {
+        'students_data': students_data,
+        'school': request.user.school,
+        'driver': request.user,
+        'printed_at': timezone.now(),
+    })
+
+       # Use xhtml2pdf (pure Python, no native libs)
+    from xhtml2pdf import pisa
+    import io
+
+    response = HttpResponse(content_type='application/pdf')
+    filename = f"my_students_{request.user.get_full_name() or request.user.email}.pdf"
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+
+    result = pisa.CreatePDF(
+        src=io.StringIO(html_string),
+        dest=response,
+        encoding='utf-8',
+    )
+
+    if result.err:
+        messages.error(request, f'PDF generation failed: {result.err}')
+        return redirect('my_students')
+
+    return response

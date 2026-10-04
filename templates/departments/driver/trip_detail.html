@@ -21,6 +21,8 @@
     {% endif %}
     <a href="{% url 'checklist_update' trip.id %}" class="btn btn-secondary">Pre-Trip Checklist</a>
     <a href="{% url 'driver_dashboard' %}" class="btn btn-secondary">← Back</a>
+        <a href="{% url 'trip_manifest' trip.id %}" target="_blank" class="btn btn-secondary">🖨️ Print Manifest</a>
+    <a href="{% url 'trip_manifest_pdf' trip.id %}" class="btn btn-secondary">📄 Download PDF</a>
   </div>
 </div>
 

@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+{% block title %}{% if fuel %}Edit Fuel Log{% else %}Log Fuel{% endif %}{% endblock %}
+{% block header_title %}{% if fuel %}Edit Fuel Log{% else %}Log Fuel{% endif %}{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 720px; margin: 0 auto;">
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Vehicle *</label>
+      <select name="vehicle" required style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+        <option value="">— Select vehicle —</option>
+        {% for v in vehicles %}
+          <option value="{{ v.id }}"
+            {% if form_data.vehicle == v.id|stringformat:"s" %}selected{% elif fuel and fuel.vehicle.id == v.id %}selected{% endif %}>
+            {{ v.plate_number }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Driver (optional)</label>
+      <select name="driver" style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+        <option value="">— None —</option>
+        {% for d in drivers %}
+          <option value="{{ d.id }}"
+            {% if form_data.driver == d.id|stringformat:"s" %}selected{% elif fuel and fuel.driver and fuel.driver.id == d.id %}selected{% endif %}>
+            {{ d.get_full_name|default:d.email }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Date *</label>
+        <input type="date" name="date" required
+               value="{% if form_data.date %}{{ form_data.date }}{% elif fuel %}{{ fuel.date|date:'Y-m-d' }}{% else %}{{ today|date:'Y-m-d' }}{% endif %}"
+               style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+      </div>
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Amount (KES) *</label>
+        <input type="number" name="amount_kes" step="0.01" required
+               value="{% if form_data.amount_kes %}{{ form_data.amount_kes }}{% elif fuel %}{{ fuel.amount_kes }}{% endif %}"
+               style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Litres</label>
+        <input type="number" name="litres" step="0.01"
+               value="{% if form_data.litres %}{{ form_data.litres }}{% elif fuel and fuel.litres %}{{ fuel.litres }}{% endif %}"
+               style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+      </div>
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Odometer</label>
+        <input type="number" name="odometer_reading"
+               value="{% if form_data.odometer_reading %}{{ form_data.odometer_reading }}{% elif fuel and fuel.odometer_reading %}{{ fuel.odometer_reading }}{% endif %}"
+               style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+      </div>
+    </div>
+
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Payment Method *</label>
+      <select name="payment_method" required style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+        <option value="">— Select —</option>
+        <option value="cash" {% if form_data.payment_method == 'cash' %}selected{% elif fuel and fuel.payment_method == 'cash' %}selected{% endif %}>Cash</option>
+        <option value="mpesa" {% if form_data.payment_method == 'mpesa' %}selected{% elif fuel and fuel.payment_method == 'mpesa' %}selected{% endif %}>M-Pesa</option>
+        <option value="card" {% if form_data.payment_method == 'card' %}selected{% elif fuel and fuel.payment_method == 'card' %}selected{% endif %}>Fuel Card</option>
+        <option value="credit" {% if form_data.payment_method == 'credit' %}selected{% elif fuel and fuel.payment_method == 'credit' %}selected{% endif %}>Credit</option>
+        <option value="other" {% if form_data.payment_method == 'other' %}selected{% elif fuel and fuel.payment_method == 'other' %}selected{% endif %}>Other</option>
+      </select>
+    </div>
+
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Payment Reference</label>
+      <input type="text" name="payment_reference"
+             value="{% if form_data.payment_reference %}{{ form_data.payment_reference }}{% elif fuel %}{{ fuel.payment_reference }}{% endif %}"
+             placeholder="M-Pesa code, receipt #"
+             style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+    </div>
+
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Station Name</label>
+      <input type="text" name="station_name"
+             value="{% if form_data.station_name %}{{ form_data.station_name }}{% elif fuel %}{{ fuel.station_name }}{% endif %}"
+             placeholder="e.g. Total Westlands"
+             style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+    </div>
+
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Notes</label>
+      <textarea name="notes" rows="2" style="width: 100%; padding: 10px; border: 1px solid var(--border);">{% if form_data.notes %}{{ form_data.notes }}{% elif fuel %}{{ fuel.notes }}{% endif %}</textarea>
+    </div>
+
+    <div style="margin-bottom: 24px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Receipt (optional)</label>
+      <input type="file" name="receipt" accept="image/*,.pdf">
+    </div>
+
+    <div style="display: flex; gap: 12px; justify-content: flex-end;">
+      <a href="{% url 'departments_transport' %}" class="btn btn-secondary">Cancel</a>
+      <button type="submit" class="btn btn-primary">{% if fuel %}Save Changes{% else %}Add Fuel Log{% endif %}</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

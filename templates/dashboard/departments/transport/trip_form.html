@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+{% block title %}{% if trip %}Edit Trip{% else %}Schedule Trip{% endif %}{% endblock %}
+{% block header_title %}{% if trip %}Edit Trip{% else %}Schedule Trip{% endif %}{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 720px; margin: 0 auto;">
+  <form method="post">
+    {% csrf_token %}
+
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Route *</label>
+      <select name="route" required style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+        <option value="">— Select route —</option>
+        {% for r in routes %}
+          <option value="{{ r.id }}"
+            {% if form_data.route == r.id|stringformat:"s" %}selected{% elif trip and trip.route.id == r.id %}selected{% endif %}>
+            {{ r.name }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Vehicle</label>
+        <select name="vehicle" style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+          <option value="">— Select vehicle —</option>
+          {% for v in vehicles %}
+            <option value="{{ v.id }}"
+              {% if form_data.vehicle == v.id|stringformat:"s" %}selected{% elif trip and trip.vehicle and trip.vehicle.id == v.id %}selected{% endif %}>
+              {{ v.plate_number }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Driver</label>
+        <select name="driver" style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+          <option value="">— Select driver —</option>
+          {% for d in drivers %}
+            <option value="{{ d.id }}"
+              {% if form_data.driver == d.id|stringformat:"s" %}selected{% elif trip and trip.driver and trip.driver.id == d.id %}selected{% endif %}>
+              {{ d.get_full_name|default:d.email }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Date *</label>
+        <input type="date" name="date" required
+               value="{% if form_data.date %}{{ form_data.date }}{% elif trip %}{{ trip.date|date:'Y-m-d' }}{% else %}{{ today|date:'Y-m-d' }}{% endif %}"
+               style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+      </div>
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Direction *</label>
+        <select name="direction" required style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+          <option value="morning" {% if form_data.direction == 'morning' %}selected{% elif trip and trip.direction == 'morning' %}selected{% endif %}>Morning (Home → School)</option>
+          <option value="evening" {% if form_data.direction == 'evening' %}selected{% elif trip and trip.direction == 'evening' %}selected{% endif %}>Evening (School → Home)</option>
+        </select>
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Departure Time</label>
+        <input type="time" name="departure_time"
+               value="{% if form_data.departure_time %}{{ form_data.departure_time }}{% elif trip and trip.departure_time %}{{ trip.departure_time|time:'H:i' }}{% endif %}"
+               style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+      </div>
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Status</label>
+        <select name="status" style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+          <option value="scheduled" {% if not trip or trip.status == 'scheduled' %}selected{% endif %}>Scheduled</option>
+          <option value="in_progress" {% if trip and trip.status == 'in_progress' %}selected{% endif %}>In Progress</option>
+          <option value="completed" {% if trip and trip.status == 'completed' %}selected{% endif %}>Completed</option>
+          <option value="cancelled" {% if trip and trip.status == 'cancelled' %}selected{% endif %}>Cancelled</option>
+        </select>
+      </div>
+    </div>
+
+    <div style="margin-bottom: 24px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Notes</label>
+      <textarea name="notes" rows="3" style="width: 100%; padding: 10px; border: 1px solid var(--border);">{% if form_data.notes %}{{ form_data.notes }}{% elif trip %}{{ trip.notes }}{% endif %}</textarea>
+    </div>
+
+    <div style="display: flex; gap: 12px; justify-content: flex-end;">
+      <a href="{% url 'departments_transport' %}" class="btn btn-secondary">Cancel</a>
+      <button type="submit" class="btn btn-primary">{% if trip %}Save Changes{% else %}Schedule Trip{% endif %}</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

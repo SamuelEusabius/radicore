@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Trip Manifest — {{ trip.route.name }} — {{ trip.date }}</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', Arial, sans-serif;
+      color: #1a1a1a;
+      padding: 30px;
+      background: #f5f5f5;
+    }
+    .manifest {
+      background: white;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 40px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      padding-bottom: 20px;
+      border-bottom: 3px solid #00695c;
+      margin-bottom: 24px;
+    }
+    .header-logo {
+      width: 80px;
+      height: 80px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 12px;
+      background: #00695c;
+      color: white;
+      font-weight: 800;
+      font-size: 28px;
+      flex-shrink: 0;
+    }
+    .header-logo img { width: 100%; height: 100%; object-fit: contain; border-radius: 12px; }
+    .header-info { flex: 1; }
+    .header-info h1 {
+      font-size: 24px;
+      font-weight: 800;
+      color: #00695c;
+      margin-bottom: 6px;
+    }
+    .header-info p {
+      font-size: 13px;
+      color: #666;
+      line-height: 1.5;
+    }
+
+    .doc-title {
+      text-align: center;
+      font-size: 20px;
+      font-weight: 700;
+      color: #1a1a1a;
+      margin-bottom: 6px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+    .doc-subtitle {
+      text-align: center;
+      font-size: 13px;
+      color: #666;
+      margin-bottom: 24px;
+    }
+
+    .trip-info {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      background: #f8fafc;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 24px;
+      border-left: 4px solid #00695c;
+    }
+    .trip-info-item label {
+      display: block;
+      font-size: 10px;
+      text-transform: uppercase;
+      color: #666;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      margin-bottom: 4px;
+    }
+    .trip-info-item value {
+      display: block;
+      font-size: 14px;
+      color: #1a1a1a;
+      font-weight: 700;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 24px;
+    }
+    thead th {
+      background: #1a2332;
+      color: white;
+      padding: 12px;
+      text-align: left;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      font-weight: 700;
+    }
+    tbody td {
+      padding: 10px 12px;
+      font-size: 12px;
+      border-bottom: 1px solid #e5e7eb;
+      color: #374151;
+    }
+    tbody tr:nth-child(even) { background: #fafafa; }
+
+    .footer {
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 2px solid #e5e7eb;
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: #999;
+    }
+
+    .signature {
+      margin-top: 40px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 60px;
+    }
+    .signature-line {
+      border-top: 1px solid #333;
+      padding-top: 6px;
+      font-size: 11px;
+      color: #666;
+    }
+
+    @media print {
+      body { background: white; padding: 0; }
+      .manifest { box-shadow: none; padding: 20px; }
+      .no-print { display: none !important; }
+    }
+
+    .print-btn {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 12px 24px;
+      background: #00695c;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 14px;
+      box-shadow: 0 4px 12px rgba(0, 105, 92, 0.3);
+    }
+    .print-btn:hover { background: #004d40; }
+    .back-btn {
+      position: fixed;
+      top: 20px;
+      right: 160px;
+      padding: 12px 24px;
+      background: white;
+      color: #1a1a1a;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 14px;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+
+<button onclick="window.print()" class="print-btn no-print">🖨️ Print</button>
+<a href="{% url 'trip_detail' trip.id %}" class="back-btn no-print">← Back</a>
+
+<div class="manifest">
+
+  <!-- ============ HEADER ============ -->
+  <div class="header">
+    <div class="header-logo">
+      {% if school.logo %}
+        <img src="{{ school.logo.url }}" alt="{{ school.name }}">
+      {% else %}
+        {{ school.name|slice:":2"|upper }}
+      {% endif %}
+    </div>
+    <div class="header-info">
+      <h1>{{ school.name }}</h1>
+      <p>
+        {% if school.address %}{{ school.address }}<br>{% endif %}
+        {% if school.county %}{{ school.county }} County{% endif %}
+        {% if school.phone %} · Tel: {{ school.phone }}{% endif %}
+        {% if school.email %}<br>{{ school.email }}{% endif %}
+      </p>
+    </div>
+  </div>
+
+  <!-- ============ DOCUMENT TITLE ============ -->
+  <div class="doc-title">Trip Manifest</div>
+  <div class="doc-subtitle">
+    Generated on {{ printed_at|date:"j F Y, H:i" }} by {{ trip.driver.get_full_name|default:trip.driver.email }}
+  </div>
+
+  <!-- ============ TRIP INFO ============ -->
+  <div class="trip-info">
+    <div class="trip-info-item">
+      <label>Route</label>
+      <value>{{ trip.route.name }}</value>
+    </div>
+    <div class="trip-info-item">
+      <label>Date</label>
+      <value>{{ trip.date|date:"l, j F Y" }}</value>
+    </div>
+    <div class="trip-info-item">
+      <label>Direction</label>
+      <value>{{ trip.get_direction_display }}</value>
+    </div>
+    <div class="trip-info-item">
+      <label>Vehicle</label>
+      <value>{{ trip.vehicle.plate_number|default:"—" }}{% if trip.vehicle.make %} ({{ trip.vehicle.make }}){% endif %}</value>
+    </div>
+    <div class="trip-info-item">
+      <label>Departure Time</label>
+      <value>{{ trip.departure_time|default:"—" }}</value>
+    </div>
+    <div class="trip-info-item">
+      <label>Total Students</label>
+      <value>{{ students_data|length }}</value>
+    </div>
+  </div>
+
+  <!-- ============ STUDENT TABLE ============ -->
+  {% if students_data %}
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 40px;">#</th>
+        <th>Student Name</th>
+        <th>Admission No</th>
+        <th>Class</th>
+        <th>Stop / Pickup Point</th>
+        <th>Parent Phone</th>
+        <th style="width: 100px;">Signature</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in students_data %}
+      <tr>
+        <td>{{ forloop.counter }}</td>
+        <td><strong>{{ row.student.first_name }} {{ row.student.middle_name|default:"" }} {{ row.student.last_name }}</strong></td>
+        <td>{{ row.student.admission_number }}</td>
+        <td>{{ row.student.current_class.name|default:"—" }}</td>
+        <td>{{ row.stop_name|default:"—" }}</td>
+        <td>{{ row.parent_phone|default:"—" }}</td>
+        <td></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p style="text-align: center; padding: 40px; color: #999;">
+    No students assigned to this trip yet.
+  </p>
+  {% endif %}
+
+  <!-- ============ SIGNATURES ============ -->
+  <div class="signature">
+    <div>
+      <div class="signature-line">Driver's Signature</div>
+      <div style="font-size: 11px; color: #999; margin-top: 4px;">
+        {{ trip.driver.get_full_name|default:trip.driver.email }}
+      </div>
+    </div>
+    <div>
+      <div class="signature-line">School Admin's Signature</div>
+    </div>
+  </div>
+
+  <!-- ============ FOOTER ============ -->
+  <div class="footer">
+    <div>{{ school.name }} · Trip Manifest</div>
+    <div>{{ trip.route.name }} · {{ trip.date }}</div>
+  </div>
+
+</div>
+
+</body>
+</html>

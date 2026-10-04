@@ -183,3 +183,372 @@ def departments_kitchen(request):
     if not _school_admin_required(request):
         return redirect('dashboard_home')
     return render(request, 'dashboard/departments/kitchen.html')
+  
+
+# ============================================================
+# TRANSPORT — VEHICLE CRUD
+# ============================================================
+
+@login_required
+def transport_vehicle_form(request, vehicle_id=None):
+    if not _school_admin_required(request):
+        return redirect('dashboard_home')
+
+    from apps.departments.models import Vehicle
+    school = request.user.school
+
+    vehicle = None
+    if vehicle_id:
+        vehicle = get_object_or_404(Vehicle, id=vehicle_id, school=school)
+
+    if request.method == 'POST':
+        plate = request.POST.get('plate_number', '').strip().upper()
+        make = request.POST.get('make', '').strip()
+        model = request.POST.get('model', '').strip()
+        capacity = request.POST.get('capacity', '40').strip()
+        notes = request.POST.get('notes', '').strip()
+        is_active = 'is_active' in request.POST
+
+        errors = []
+        if not plate:
+            errors.append('Plate number is required.')
+
+        existing = Vehicle.objects.filter(school=school, plate_number=plate)
+        if vehicle:
+            existing = existing.exclude(id=vehicle.id)
+        if existing.exists():
+            errors.append(f'Vehicle "{plate}" already exists.')
+
+        if errors:
+            for e in errors:
+                messages.error(request, e)
+            return render(request, 'dashboard/departments/transport/vehicle_form.html', {
+                'vehicle': vehicle,
+                'form_data': request.POST,
+            })
+
+        if vehicle:
+            vehicle.plate_number = plate
+            vehicle.make = make
+            vehicle.model = model
+            vehicle.capacity = capacity or 40
+            vehicle.notes = notes
+            vehicle.is_active = is_active
+            vehicle.save()
+            messages.success(request, f'Vehicle "{plate}" updated.')
+        else:
+            Vehicle.objects.create(
+                school=school, plate_number=plate, make=make, model=model,
+                capacity=capacity or 40, notes=notes, is_active=is_active,
+            )
+            messages.success(request, f'Vehicle "{plate}" added.')
+
+        return redirect('departments_transport')
+
+    return render(request, 'dashboard/departments/transport/vehicle_form.html', {
+        'vehicle': vehicle,
+    })
+
+
+@login_required
+def transport_vehicle_delete(request, vehicle_id):
+    if not _school_admin_required(request):
+        return redirect('dashboard_home')
+
+    from apps.departments.models import Vehicle
+    vehicle = get_object_or_404(Vehicle, id=vehicle_id, school=request.user.school)
+
+    if request.method == 'POST':
+        name = vehicle.plate_number
+        vehicle.delete()
+        messages.success(request, f'Vehicle "{name}" deleted.')
+        return redirect('departments_transport')
+
+    return render(request, 'dashboard/departments/transport/confirm_delete.html', {
+        'object_name': vehicle.plate_number,
+        'object_type': 'Vehicle',
+        'cancel_url': 'departments_transport',
+    })
+
+
+# ============================================================
+# TRANSPORT — ROUTE CRUD
+# ============================================================
+
+@login_required
+def transport_route_form(request, route_id=None):
+    if not _school_admin_required(request):
+        return redirect('dashboard_home')
+
+    from apps.departments.models import Route
+    school = request.user.school
+
+    route = None
+    if route_id:
+        route = get_object_or_404(Route, id=route_id, school=school)
+
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        description = request.POST.get('description', '').strip()
+        morning = request.POST.get('morning_departure') or None
+        evening = request.POST.get('evening_departure') or None
+        is_active = 'is_active' in request.POST
+
+        errors = []
+        if not name:
+            errors.append('Route name is required.')
+
+        if errors:
+            for e in errors:
+                messages.error(request, e)
+            return render(request, 'dashboard/departments/transport/route_form.html', {
+                'route': route,
+                'form_data': request.POST,
+            })
+
+        if route:
+            route.name = name
+            route.description = description
+            route.morning_departure = morning
+            route.evening_departure = evening
+            route.is_active = is_active
+            route.save()
+            messages.success(request, f'Route "{name}" updated.')
+        else:
+            Route.objects.create(
+                school=school, name=name, description=description,
+                morning_departure=morning, evening_departure=evening,
+                is_active=is_active,
+            )
+            messages.success(request, f'Route "{name}" added.')
+
+        return redirect('departments_transport')
+
+    return render(request, 'dashboard/departments/transport/route_form.html', {
+        'route': route,
+    })
+
+
+@login_required
+def transport_route_delete(request, route_id):
+    if not _school_admin_required(request):
+        return redirect('dashboard_home')
+
+    from apps.departments.models import Route
+    route = get_object_or_404(Route, id=route_id, school=request.user.school)
+
+    if request.method == 'POST':
+        name = route.name
+        route.delete()
+        messages.success(request, f'Route "{name}" deleted.')
+        return redirect('departments_transport')
+
+    return render(request, 'dashboard/departments/transport/confirm_delete.html', {
+        'object_name': route.name,
+        'object_type': 'Route',
+        'cancel_url': 'departments_transport',
+    })
+
+
+# ============================================================
+# TRANSPORT — TRIP CRUD
+# ============================================================
+
+@login_required
+def transport_trip_form(request, trip_id=None):
+    if not _school_admin_required(request):
+        return redirect('dashboard_home')
+
+    from apps.departments.models import Trip, Route, Vehicle
+    from apps.accounts.models import User
+    from datetime import date as dt
+
+    school = request.user.school
+
+    trip = None
+    if trip_id:
+        trip = get_object_or_404(Trip, id=trip_id, school=school)
+
+    routes = Route.objects.filter(school=school, is_active=True).order_by('name')
+    vehicles = Vehicle.objects.filter(school=school, is_active=True).order_by('plate_number')
+    drivers = User.objects.filter(school=school, role='driver', is_active=True).order_by('first_name')
+
+    if request.method == 'POST':
+        route_id = request.POST.get('route', '').strip()
+        vehicle_id = request.POST.get('vehicle', '').strip() or None
+        driver_id = request.POST.get('driver', '').strip() or None
+        date_val = request.POST.get('date', '').strip()
+        direction = request.POST.get('direction', '').strip()
+        departure = request.POST.get('departure_time') or None
+        status = request.POST.get('status', 'scheduled').strip()
+        notes = request.POST.get('notes', '').strip()
+
+        errors = []
+        if not route_id:
+            errors.append('Route is required.')
+        if not date_val:
+            errors.append('Date is required.')
+        if not direction:
+            errors.append('Direction is required.')
+
+        if errors:
+            for e in errors:
+                messages.error(request, e)
+            return render(request, 'dashboard/departments/transport/trip_form.html', {
+                'trip': trip, 'routes': routes, 'vehicles': vehicles,
+                'drivers': drivers, 'form_data': request.POST,
+            })
+
+        if trip:
+            trip.route_id = route_id
+            trip.vehicle_id = vehicle_id
+            trip.driver_id = driver_id
+            trip.date = date_val
+            trip.direction = direction
+            trip.departure_time = departure
+            trip.status = status
+            trip.notes = notes
+            trip.save()
+            messages.success(request, 'Trip updated.')
+        else:
+            Trip.objects.create(
+                school=school, route_id=route_id, vehicle_id=vehicle_id,
+                driver_id=driver_id, date=date_val, direction=direction,
+                departure_time=departure, status=status, notes=notes,
+            )
+            messages.success(request, 'Trip scheduled.')
+
+        return redirect('departments_transport')
+
+    return render(request, 'dashboard/departments/transport/trip_form.html', {
+        'trip': trip, 'routes': routes, 'vehicles': vehicles,
+        'drivers': drivers, 'today': dt.today(),
+    })
+
+
+@login_required
+def transport_trip_delete(request, trip_id):
+    if not _school_admin_required(request):
+        return redirect('dashboard_home')
+
+    from apps.departments.models import Trip
+    trip = get_object_or_404(Trip, id=trip_id, school=request.user.school)
+
+    if request.method == 'POST':
+        info = f'{trip.route.name} - {trip.date}'
+        trip.delete()
+        messages.success(request, f'Trip "{info}" deleted.')
+        return redirect('departments_transport')
+
+    return render(request, 'dashboard/departments/transport/confirm_delete.html', {
+        'object_name': f'{trip.route.name} · {trip.date} · {trip.get_direction_display()}',
+        'object_type': 'Trip',
+        'cancel_url': 'departments_transport',
+    })
+
+
+# ============================================================
+# TRANSPORT — FUEL LOG CRUD
+# ============================================================
+
+@login_required
+def transport_fuel_form(request, fuel_id=None):
+    if not _school_admin_required(request):
+        return redirect('dashboard_home')
+
+    from apps.departments.models import FuelLog, Vehicle
+    from apps.accounts.models import User
+    from datetime import date as dt
+
+    school = request.user.school
+
+    fuel = None
+    if fuel_id:
+        fuel = get_object_or_404(FuelLog, id=fuel_id, school=school)
+
+    vehicles = Vehicle.objects.filter(school=school, is_active=True).order_by('plate_number')
+    drivers = User.objects.filter(school=school, role='driver', is_active=True).order_by('first_name')
+
+    if request.method == 'POST':
+        vehicle_id = request.POST.get('vehicle', '').strip()
+        driver_id = request.POST.get('driver', '').strip() or None
+        date_val = request.POST.get('date', '').strip()
+        amount = request.POST.get('amount_kes', '').strip()
+        litres = request.POST.get('litres') or None
+        odometer = request.POST.get('odometer_reading') or None
+        payment_method = request.POST.get('payment_method', '').strip()
+        reference = request.POST.get('payment_reference', '').strip()
+        station = request.POST.get('station_name', '').strip()
+        notes = request.POST.get('notes', '').strip()
+        receipt = request.FILES.get('receipt')
+
+        errors = []
+        if not vehicle_id:
+            errors.append('Vehicle is required.')
+        if not date_val:
+            errors.append('Date is required.')
+        if not amount:
+            errors.append('Amount is required.')
+        if not payment_method:
+            errors.append('Payment method is required.')
+
+        if errors:
+            for e in errors:
+                messages.error(request, e)
+            return render(request, 'dashboard/departments/transport/fuel_form.html', {
+                'fuel': fuel, 'vehicles': vehicles, 'drivers': drivers,
+                'today': dt.today(), 'form_data': request.POST,
+            })
+
+        if fuel:
+            fuel.vehicle_id = vehicle_id
+            fuel.driver_id = driver_id
+            fuel.date = date_val
+            fuel.amount_kes = amount
+            fuel.litres = litres
+            fuel.odometer_reading = odometer
+            fuel.payment_method = payment_method
+            fuel.payment_reference = reference
+            fuel.station_name = station
+            fuel.notes = notes
+            if receipt:
+                fuel.receipt = receipt
+            fuel.save()
+            messages.success(request, 'Fuel log updated.')
+        else:
+            FuelLog.objects.create(
+                school=school, vehicle_id=vehicle_id, driver_id=driver_id,
+                date=date_val, amount_kes=amount, litres=litres,
+                odometer_reading=odometer, payment_method=payment_method,
+                payment_reference=reference, station_name=station,
+                notes=notes, receipt=receipt,
+            )
+            messages.success(request, 'Fuel log added.')
+
+        return redirect('departments_transport')
+
+    return render(request, 'dashboard/departments/transport/fuel_form.html', {
+        'fuel': fuel, 'vehicles': vehicles, 'drivers': drivers,
+        'today': dt.today(),
+    })
+
+
+@login_required
+def transport_fuel_delete(request, fuel_id):
+    if not _school_admin_required(request):
+        return redirect('dashboard_home')
+
+    from apps.departments.models import FuelLog
+    fuel = get_object_or_404(FuelLog, id=fuel_id, school=request.user.school)
+
+    if request.method == 'POST':
+        info = f'{fuel.vehicle.plate_number} - KES {fuel.amount_kes}'
+        fuel.delete()
+        messages.success(request, f'Fuel log "{info}" deleted.')
+        return redirect('departments_transport')
+
+    return render(request, 'dashboard/departments/transport/confirm_delete.html', {
+        'object_name': f'{fuel.vehicle.plate_number} · KES {fuel.amount_kes} · {fuel.date}',
+        'object_type': 'Fuel Log',
+        'cancel_url': 'departments_transport',
+    })

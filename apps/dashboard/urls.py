@@ -294,6 +294,25 @@ urlpatterns = [
     path('departments/lab/', views.departments_lab, name='departments_lab'),
     path('departments/health/', views.departments_health, name='departments_health'),
     path('departments/kitchen/', views.departments_kitchen, name='departments_kitchen'),
+        # Transport — Vehicle CRUD
+    path('departments/transport/vehicles/add/', views.transport_vehicle_form, name='transport_vehicle_add'),
+    path('departments/transport/vehicles/<int:vehicle_id>/edit/', views.transport_vehicle_form, name='transport_vehicle_edit'),
+    path('departments/transport/vehicles/<int:vehicle_id>/delete/', views.transport_vehicle_delete, name='transport_vehicle_delete'),
+
+    # Transport — Route CRUD
+    path('departments/transport/routes/add/', views.transport_route_form, name='transport_route_add'),
+    path('departments/transport/routes/<int:route_id>/edit/', views.transport_route_form, name='transport_route_edit'),
+    path('departments/transport/routes/<int:route_id>/delete/', views.transport_route_delete, name='transport_route_delete'),
+
+    # Transport — Trip CRUD
+    path('departments/transport/trips/add/', views.transport_trip_form, name='transport_trip_add'),
+    path('departments/transport/trips/<int:trip_id>/edit/', views.transport_trip_form, name='transport_trip_edit'),
+    path('departments/transport/trips/<int:trip_id>/delete/', views.transport_trip_delete, name='transport_trip_delete'),
+
+    # Transport — Fuel Log CRUD
+    path('departments/transport/fuel/add/', views.transport_fuel_form, name='transport_fuel_add'),
+    path('departments/transport/fuel/<int:fuel_id>/edit/', views.transport_fuel_form, name='transport_fuel_edit'),
+    path('departments/transport/fuel/<int:fuel_id>/delete/', views.transport_fuel_delete, name='transport_fuel_delete'),
     
     # Subscription
     path('subscribe/', RedirectView.as_view(

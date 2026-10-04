@@ -384,6 +384,11 @@
     <span class="sidebar-link-text">My Dashboard</span>
   </a>
 
+    <a href="{% url 'my_students' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="graduation-cap" size=18 %}
+    <span class="sidebar-link-text">My Students</span>
+  </a>
+
   <div class="sidebar-section-label">Trips</div>
   <a href="{% url 'trip_history' %}" class="sidebar-link">
     {% include 'partials/icons.html' with name="calendar" size=18 %}

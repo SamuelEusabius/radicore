@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    @page { size: A4 landscape; margin: 1.5cm; }
+    body { font-family: Arial, sans-serif; color: #1a1a1a; font-size: 11px; }
+
+    .header {
+      border-bottom: 3px solid #00695c;
+      padding-bottom: 12px;
+      margin-bottom: 16px;
+    }
+    .header h1 { font-size: 20px; color: #00695c; margin-bottom: 4px; }
+    .header p { font-size: 11px; color: #666; }
+
+    .doc-title {
+      text-align: center;
+      font-size: 16px;
+      font-weight: bold;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+    .doc-subtitle {
+      text-align: center;
+      font-size: 10px;
+      color: #666;
+      margin-bottom: 16px;
+    }
+
+    .trip-info {
+      background-color: #f8fafc;
+      border-left: 4px solid #00695c;
+      padding: 12px;
+      margin-bottom: 16px;
+      font-size: 11px;
+    }
+    .trip-info td { padding: 4px 12px; }
+    .trip-info strong { color: #00695c; }
+
+    table { width: 100%; border-collapse: collapse; }
+    thead th {
+      background-color: #1a2332;
+      color: white;
+      padding: 8px 6px;
+      text-align: left;
+      font-size: 10px;
+      text-transform: uppercase;
+    }
+    tbody td {
+      padding: 6px;
+      font-size: 10px;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    tbody tr:nth-child(even) { background-color: #f9fafb; }
+
+    .footer {
+      margin-top: 24px;
+      padding-top: 10px;
+      border-top: 1px solid #ddd;
+      text-align: center;
+      font-size: 9px;
+      color: #999;
+    }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <h1>{{ school.name }}</h1>
+  <p>
+    {% if school.address %}{{ school.address }}{% endif %}
+    {% if school.phone %} · Tel: {{ school.phone }}{% endif %}
+  </p>
+</div>
+
+<div class="doc-title">Trip Manifest</div>
+<div class="doc-subtitle">
+  Generated {{ printed_at|date:"j F Y, H:i" }}
+</div>
+
+<table class="trip-info">
+  <tr>
+    <td><strong>Route:</strong> {{ trip.route.name }}</td>
+    <td><strong>Date:</strong> {{ trip.date|date:"j M Y" }}</td>
+    <td><strong>Direction:</strong> {{ trip.get_direction_display }}</td>
+  </tr>
+  <tr>
+    <td><strong>Vehicle:</strong> {{ trip.vehicle.plate_number|default:"—" }}</td>
+    <td><strong>Departure:</strong> {{ trip.departure_time|default:"—" }}</td>
+    <td><strong>Students:</strong> {{ students_data|length }}</td>
+  </tr>
+</table>
+
+<table>
+  <thead>
+    <tr>
+      <th style="width: 25px;">#</th>
+      <th>Student Name</th>
+      <th>Admission No</th>
+      <th>Class</th>
+      <th>Stop</th>
+      <th>Parent Phone</th>
+      <th style="width: 70px;">Signature</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in students_data %}
+    <tr>
+      <td>{{ forloop.counter }}</td>
+      <td><b>{{ row.student.first_name }} {{ row.student.last_name }}</b></td>
+      <td>{{ row.student.admission_number }}</td>
+      <td>{{ row.student.class_level|default:"—" }}</td>
+      <td>{{ row.stop_name|default:"—" }}</td>
+      <td>{{ row.parent_phone|default:"—" }}</td>
+      <td></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<div class="footer">
+  {{ school.name }} · Trip Manifest · {{ trip.route.name }} · {{ trip.date }}
+</div>
+
+</body>
+</html>

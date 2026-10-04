@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% block title %}{% if route %}Edit Route{% else %}Add Route{% endif %}{% endblock %}
+{% block header_title %}{% if route %}Edit Route{% else %}Add Route{% endif %}{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 640px; margin: 0 auto;">
+  <form method="post">
+    {% csrf_token %}
+
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Route Name *</label>
+      <input type="text" name="name" required
+             value="{% if form_data.name %}{{ form_data.name }}{% elif route %}{{ route.name }}{% endif %}"
+             placeholder="e.g. Route A - Westlands"
+             style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+    </div>
+
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Description</label>
+      <textarea name="description" rows="3" style="width: 100%; padding: 10px; border: 1px solid var(--border);">{% if form_data.description %}{{ form_data.description }}{% elif route %}{{ route.description }}{% endif %}</textarea>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Morning Departure</label>
+        <input type="time" name="morning_departure"
+               value="{% if form_data.morning_departure %}{{ form_data.morning_departure }}{% elif route and route.morning_departure %}{{ route.morning_departure|time:'H:i' }}{% endif %}"
+               style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+      </div>
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Evening Departure</label>
+        <input type="time" name="evening_departure"
+               value="{% if form_data.evening_departure %}{{ form_data.evening_departure }}{% elif route and route.evening_departure %}{{ route.evening_departure|time:'H:i' }}{% endif %}"
+               style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+      </div>
+    </div>
+
+    <div style="margin-bottom: 24px;">
+      <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+        <input type="checkbox" name="is_active" {% if not route or route.is_active %}checked{% endif %} style="width: 18px; height: 18px;">
+        <span>Active</span>
+      </label>
+    </div>
+
+    <div style="display: flex; gap: 12px; justify-content: flex-end;">
+      <a href="{% url 'departments_transport' %}" class="btn btn-secondary">Cancel</a>
+      <button type="submit" class="btn btn-primary">{% if route %}Save Changes{% else %}Add Route{% endif %}</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% block title %}{% if vehicle %}Edit Vehicle{% else %}Add Vehicle{% endif %}{% endblock %}
+{% block header_title %}{% if vehicle %}Edit Vehicle{% else %}Add Vehicle{% endif %}{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 640px; margin: 0 auto;">
+  <form method="post">
+    {% csrf_token %}
+
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Plate Number *</label>
+      <input type="text" name="plate_number" required
+             value="{% if form_data.plate_number %}{{ form_data.plate_number }}{% elif vehicle %}{{ vehicle.plate_number }}{% endif %}"
+             placeholder="e.g. KCA 123X"
+             style="width: 100%; padding: 10px; border: 1px solid var(--border); text-transform: uppercase;">
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Make</label>
+        <input type="text" name="make"
+               value="{% if form_data.make %}{{ form_data.make }}{% elif vehicle %}{{ vehicle.make }}{% endif %}"
+               placeholder="Toyota" style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+      </div>
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Model</label>
+        <input type="text" name="model"
+               value="{% if form_data.model %}{{ form_data.model }}{% elif vehicle %}{{ vehicle.model }}{% endif %}"
+               placeholder="Coaster" style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+      </div>
+    </div>
+
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Capacity (seats)</label>
+      <input type="number" name="capacity"
+             value="{% if form_data.capacity %}{{ form_data.capacity }}{% elif vehicle %}{{ vehicle.capacity }}{% else %}40{% endif %}"
+             style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+    </div>
+
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Notes</label>
+      <textarea name="notes" rows="3" style="width: 100%; padding: 10px; border: 1px solid var(--border);">{% if form_data.notes %}{{ form_data.notes }}{% elif vehicle %}{{ vehicle.notes }}{% endif %}</textarea>
+    </div>
+
+    <div style="margin-bottom: 24px;">
+      <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+        <input type="checkbox" name="is_active" {% if not vehicle or vehicle.is_active %}checked{% endif %} style="width: 18px; height: 18px;">
+        <span>Active</span>
+      </label>
+    </div>
+
+    <div style="display: flex; gap: 12px; justify-content: flex-end;">
+      <a href="{% url 'departments_transport' %}" class="btn btn-secondary">Cancel</a>
+      <button type="submit" class="btn btn-primary">{% if vehicle %}Save Changes{% else %}Add Vehicle{% endif %}</button>
+    </div>
+  </form>
+</div>
+{% endblock %}
