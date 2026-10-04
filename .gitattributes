@@ -1,0 +1,5 @@
+# Ensure Python files always use LF line endings and UTF-8 without BOM
+*.py text eol=lf
+*.html text eol=lf
+*.css text eol=lf
+*.js text eol=lf
