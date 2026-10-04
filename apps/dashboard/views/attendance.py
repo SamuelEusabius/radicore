@@ -18,7 +18,7 @@ from apps.accounts.decorators import (
 
 
 @login_required
-@role_required('teacher', 'school_admin', 'super_admin')
+@role_required('teacher', 'school_admin')
 def teacher_attendance(request):
     """Mark attendance for a class — modern responsive layout."""
     from apps.students.models import Student
@@ -463,7 +463,7 @@ def class_teacher_attendance_pdf(request):
 @login_required
 def admin_attendance_overview(request):
     """School-wide attendance overview for admins."""
-    if request.user.role not in ('school_admin', 'super_admin'):
+    if request.user.role != 'school_admin':
         return redirect('dashboard_home')
 
     from apps.students.models import Student
@@ -572,7 +572,7 @@ def admin_class_attendance(request, class_id):
 @login_required
 def admin_attendance_export(request):
     """Export school-wide attendance as CSV."""
-    if request.user.role not in ('school_admin', 'super_admin'):
+    if request.user.role != 'school_admin':
         return redirect('dashboard_home')
 
     from apps.attendance.models import Attendance

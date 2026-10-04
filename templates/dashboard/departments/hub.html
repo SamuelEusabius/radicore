@@ -1,0 +1,169 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Departments{% endblock %}
+{% block header_title %}Departments{% endblock %}
+{% block header_sub %}{{ current_school.name }}{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-info">
+    <h1 class="page-title">Departments Hub</h1>
+    <p class="page-subtitle">
+      Manage all school departments from one place.
+      {% if total_pending %}
+        <strong style="color: var(--warning);">{{ total_pending }} report{{ total_pending|pluralize }} awaiting review.</strong>
+      {% endif %}
+    </p>
+  </div>
+  <a href="{% url 'department_reports_inbox' %}" class="btn btn-secondary">
+    📥 Reports Inbox
+  </a>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+
+  <!-- TRANSPORT -->
+  <a href="{% url 'departments_transport' %}" class="card card-hover" style="text-decoration: none; color: inherit; padding: 24px;">
+    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+      <div class="stat-icon" style="background: rgba(37, 99, 235, 0.1); color: #2563EB; width: 48px; height: 48px;">
+        🚌
+      </div>
+      <div>
+        <div style="font-family: var(--font-heading); font-weight: 700; font-size: var(--text-md); color: var(--ink-900);">
+          Transport
+        </div>
+        <div style="font-size: var(--text-xs); color: var(--ink-500);">Vehicles · Routes · Trips</div>
+      </div>
+    </div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: var(--text-xs);">
+      <div><strong>{{ stats.transport.vehicles|default:0 }}</strong> vehicles</div>
+      <div><strong>{{ stats.transport.routes|default:0 }}</strong> routes</div>
+      <div><strong>{{ stats.transport.today_trips|default:0 }}</strong> today's trips</div>
+      <div>KES <strong>{{ stats.transport.fuel_30d|default:0|floatformat:0 }}</strong> fuel (30d)</div>
+    </div>
+    {% if stats.transport.pending_reports %}
+      <div style="margin-top: 12px; padding: 6px 10px; background: #fef3c7; color: #92400e; font-size: var(--text-xs); border-radius: 6px;">
+        ⚠️ {{ stats.transport.pending_reports }} pending report{{ stats.transport.pending_reports|pluralize }}
+      </div>
+    {% endif %}
+  </a>
+
+  <!-- LIBRARY -->
+  <a href="{% url 'departments_library' %}" class="card card-hover" style="text-decoration: none; color: inherit; padding: 24px;">
+    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+      <div class="stat-icon" style="background: rgba(124, 58, 237, 0.1); color: #7C3AED; width: 48px; height: 48px;">
+        📚
+      </div>
+      <div>
+        <div style="font-family: var(--font-heading); font-weight: 700; font-size: var(--text-md); color: var(--ink-900);">
+          Library
+        </div>
+        <div style="font-size: var(--text-xs); color: var(--ink-500);">Books · Issues · Returns</div>
+      </div>
+    </div>
+    <div style="font-size: var(--text-xs); color: var(--ink-500);">
+      Manage book catalog and student loans.
+    </div>
+    {% if stats.library.pending_reports %}
+      <div style="margin-top: 12px; padding: 6px 10px; background: #fef3c7; color: #92400e; font-size: var(--text-xs); border-radius: 6px;">
+        ⚠️ {{ stats.library.pending_reports }} pending report{{ stats.library.pending_reports|pluralize }}
+      </div>
+    {% endif %}
+  </a>
+
+  <!-- LABORATORY -->
+  <a href="{% url 'departments_lab' %}" class="card card-hover" style="text-decoration: none; color: inherit; padding: 24px;">
+    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+      <div class="stat-icon" style="background: rgba(5, 150, 105, 0.1); color: #059669; width: 48px; height: 48px;">
+        🔬
+      </div>
+      <div>
+        <div style="font-family: var(--font-heading); font-weight: 700; font-size: var(--text-md); color: var(--ink-900);">
+          Laboratory
+        </div>
+        <div style="font-size: var(--text-xs); color: var(--ink-500);">Equipment · Experiments</div>
+      </div>
+    </div>
+    <div style="font-size: var(--text-xs); color: var(--ink-500);">
+      Equipment inventory and issue tracking.
+    </div>
+    {% if stats.lab.pending_reports %}
+      <div style="margin-top: 12px; padding: 6px 10px; background: #fef3c7; color: #92400e; font-size: var(--text-xs); border-radius: 6px;">
+        ⚠️ {{ stats.lab.pending_reports }} pending report{{ stats.lab.pending_reports|pluralize }}
+      </div>
+    {% endif %}
+  </a>
+
+  <!-- HEALTH -->
+  <a href="{% url 'departments_health' %}" class="card card-hover" style="text-decoration: none; color: inherit; padding: 24px;">
+    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+      <div class="stat-icon" style="background: rgba(220, 38, 38, 0.1); color: #DC2626; width: 48px; height: 48px;">
+        🏥
+      </div>
+      <div>
+        <div style="font-family: var(--font-heading); font-weight: 700; font-size: var(--text-md); color: var(--ink-900);">
+          Health
+        </div>
+        <div style="font-size: var(--text-xs); color: var(--ink-500);">Nurse · Medicine · Records</div>
+      </div>
+    </div>
+    <div style="font-size: var(--text-xs); color: var(--ink-500);">
+      Student health records and medicine stock.
+    </div>
+    {% if stats.health.pending_reports %}
+      <div style="margin-top: 12px; padding: 6px 10px; background: #fef3c7; color: #92400e; font-size: var(--text-xs); border-radius: 6px;">
+        ⚠️ {{ stats.health.pending_reports }} pending report{{ stats.health.pending_reports|pluralize }}
+      </div>
+    {% endif %}
+  </a>
+
+  <!-- KITCHEN -->
+  <a href="{% url 'departments_kitchen' %}" class="card card-hover" style="text-decoration: none; color: inherit; padding: 24px;">
+    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+      <div class="stat-icon" style="background: rgba(217, 119, 6, 0.1); color: #D97706; width: 48px; height: 48px;">
+        👨‍🍳
+      </div>
+      <div>
+        <div style="font-family: var(--font-heading); font-weight: 700; font-size: var(--text-md); color: var(--ink-900);">
+          Kitchen
+        </div>
+        <div style="font-size: var(--text-xs); color: var(--ink-500);">Menu · Stock · Meals</div>
+      </div>
+    </div>
+    <div style="font-size: var(--text-xs); color: var(--ink-500);">
+      Meal planning and stock management.
+    </div>
+    {% if stats.kitchen.pending_reports %}
+      <div style="margin-top: 12px; padding: 6px 10px; background: #fef3c7; color: #92400e; font-size: var(--text-xs); border-radius: 6px;">
+        ⚠️ {{ stats.kitchen.pending_reports }} pending report{{ stats.kitchen.pending_reports|pluralize }}
+      </div>
+    {% endif %}
+  </a>
+
+  <!-- REPORTS INBOX -->
+  <a href="{% url 'department_reports_inbox' %}" class="card card-hover" style="text-decoration: none; color: inherit; padding: 24px; border: 2px solid var(--primary);">
+    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+      <div class="stat-icon" style="background: var(--primary-soft); color: var(--primary); width: 48px; height: 48px;">
+        📥
+      </div>
+      <div>
+        <div style="font-family: var(--font-heading); font-weight: 700; font-size: var(--text-md); color: var(--primary);">
+          Reports Inbox
+        </div>
+        <div style="font-size: var(--text-xs); color: var(--ink-500);">All department reports</div>
+      </div>
+    </div>
+    <div style="font-size: var(--text-xs); color: var(--ink-500);">
+      Review and action reports from all departments.
+    </div>
+    {% if total_pending %}
+      <div style="margin-top: 12px; padding: 6px 10px; background: var(--primary-soft); color: var(--primary); font-size: var(--text-xs); border-radius: 6px; font-weight: 600;">
+        {{ total_pending }} pending total
+      </div>
+    {% endif %}
+  </a>
+
+</div>
+
+{% endblock %}

@@ -22,7 +22,7 @@ from apps.accounts.decorators import (
 @login_required
 def teachers_list(request):
     """List all teachers with filters and stats."""
-    if request.user.role not in ('school_admin', 'super_admin'):
+    if request.user.role != 'school_admin':
         return redirect('dashboard_home')
 
     from apps.teachers.models import Teacher
@@ -201,7 +201,7 @@ def teacher_timetable(request):
     from apps.academics.models import Timetable
 
     user = request.user
-    if user.role not in ('teacher', 'school_admin', 'super_admin'):
+    if user.role not in ('teacher', 'school_admin'):
         return redirect('dashboard_home')
 
     entries = Timetable.objects.filter(
@@ -233,7 +233,7 @@ def teacher_timetable(request):
 
 @login_required
 def add_teacher(request):
-    if request.user.role not in ('school_admin', 'super_admin'):
+    if request.user.role != 'school_admin':
         return redirect('dashboard_home')
 
     from apps.accounts.models import User
@@ -329,7 +329,7 @@ def add_teacher(request):
 
 @login_required
 def delete_teacher(request, teacher_id):
-    if request.user.role not in ('school_admin', 'super_admin'):
+    if request.user.role != 'school_admin':
         return redirect('dashboard_home')
 
     from apps.teachers.models import Teacher

@@ -1,0 +1,162 @@
+{% extends 'base.html' %}
+{% block title %}Transport{% endblock %}
+{% block header_title %}Transport Department{% endblock %}
+{% block header_sub %}{{ current_school.name }}{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-info">
+    <h1 class="page-title">Transport</h1>
+    <p class="page-subtitle">Vehicles, routes, and trips.</p>
+  </div>
+  <a href="{% url 'departments_hub' %}" class="btn btn-secondary">← Departments</a>
+</div>
+
+<!-- KPI Row -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+  <div class="card">
+    <div class="stat-label">Vehicles</div>
+    <div class="stat-value">{{ vehicle_count }}</div>
+  </div>
+  <div class="card">
+    <div class="stat-label">Routes</div>
+    <div class="stat-value">{{ route_count }}</div>
+  </div>
+  <div class="card">
+    <div class="stat-label">Today's Trips</div>
+    <div class="stat-value">{{ trip_count }}</div>
+  </div>
+  <div class="card">
+    <div class="stat-label">Fuel (30 days)</div>
+    <div class="stat-value" style="font-size: var(--text-md);">KES {{ fuel_total_30d|floatformat:0 }}</div>
+  </div>
+</div>
+
+<!-- Vehicles -->
+<div class="card mb-6">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+    <h3 style="margin: 0; font-family: var(--font-heading);">Vehicles</h3>
+    <a href="/admin/departments/vehicle/add/" class="btn btn-sm btn-primary">+ Add Vehicle</a>
+  </div>
+  {% if vehicles %}
+    <table class="table">
+      <thead>
+        <tr><th>Plate</th><th>Make / Model</th><th>Capacity</th><th>Status</th></tr>
+      </thead>
+      <tbody>
+        {% for v in vehicles %}
+        <tr>
+          <td><strong>{{ v.plate_number }}</strong></td>
+          <td>{{ v.make }} {{ v.model }}</td>
+          <td>{{ v.capacity }}</td>
+          <td>
+            {% if v.is_active %}
+              <span class="badge badge-success">Active</span>
+            {% else %}
+              <span class="badge badge-gray">Inactive</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p style="color: var(--ink-500); padding: 20px; text-align: center;">
+      No vehicles yet. <a href="/admin/departments/vehicle/add/" style="color: var(--primary);">Add the first vehicle →</a>
+    </p>
+  {% endif %}
+</div>
+
+<!-- Routes -->
+<div class="card mb-6">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+    <h3 style="margin: 0; font-family: var(--font-heading);">Routes</h3>
+    <a href="/admin/departments/route/add/" class="btn btn-sm btn-primary">+ Add Route</a>
+  </div>
+  {% if routes %}
+    <table class="table">
+      <thead>
+        <tr><th>Name</th><th>Morning</th><th>Evening</th><th>Status</th></tr>
+      </thead>
+      <tbody>
+        {% for r in routes %}
+        <tr>
+          <td><strong>{{ r.name }}</strong></td>
+          <td>{{ r.morning_departure|default:"—" }}</td>
+          <td>{{ r.evening_departure|default:"—" }}</td>
+          <td>
+            {% if r.is_active %}
+              <span class="badge badge-success">Active</span>
+            {% else %}
+              <span class="badge badge-gray">Inactive</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p style="color: var(--ink-500); padding: 20px; text-align: center;">
+      No routes yet. <a href="/admin/departments/route/add/" style="color: var(--primary);">Add the first route →</a>
+    </p>
+  {% endif %}
+</div>
+
+<!-- Today's Trips -->
+<div class="card mb-6">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+    <h3 style="margin: 0; font-family: var(--font-heading);">Today's Trips</h3>
+    <a href="/admin/departments/trip/add/" class="btn btn-sm btn-primary">+ Schedule Trip</a>
+  </div>
+  {% if today_trips %}
+    <table class="table">
+      <thead>
+        <tr><th>Direction</th><th>Route</th><th>Vehicle</th><th>Driver</th><th>Status</th></tr>
+      </thead>
+      <tbody>
+        {% for t in today_trips %}
+        <tr>
+          <td>{{ t.get_direction_display }}</td>
+          <td>{{ t.route.name }}</td>
+          <td>{{ t.vehicle.plate_number|default:"—" }}</td>
+          <td>{{ t.driver.get_full_name|default:t.driver.email|default:"—"|truncatechars:20 }}</td>
+          <td><span class="badge badge-info">{{ t.get_status_display }}</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p style="color: var(--ink-500); padding: 20px; text-align: center;">
+      No trips scheduled for today. <a href="/admin/departments/trip/add/" style="color: var(--primary);">Schedule one →</a>
+    </p>
+  {% endif %}
+</div>
+
+<!-- Recent Fuel -->
+<div class="card">
+  <h3 style="margin-bottom: 16px; font-family: var(--font-heading);">Recent Fuel Logs</h3>
+  {% if recent_fuel %}
+    <table class="table">
+      <thead>
+        <tr><th>Date</th><th>Vehicle</th><th>Driver</th><th>Amount</th><th>Payment</th><th>Station</th></tr>
+      </thead>
+      <tbody>
+        {% for f in recent_fuel %}
+        <tr>
+          <td>{{ f.date|date:"j M Y" }}</td>
+          <td>{{ f.vehicle.plate_number }}</td>
+          <td>{{ f.driver.get_full_name|default:f.driver.email|truncatechars:20|default:"—" }}</td>
+          <td>KES {{ f.amount_kes|floatformat:0 }}</td>
+          <td><span class="badge badge-info">{{ f.get_payment_method_display }}</span></td>
+          <td>{{ f.station_name|default:"—" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p style="color: var(--ink-500); padding: 20px; text-align: center;">No fuel logs yet.</p>
+  {% endif %}
+</div>
+
+{% endblock %}

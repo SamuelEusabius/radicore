@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block title %}Trip History{% endblock %}
+{% block header_title %}Trip History{% endblock %}
+{% block header_sub %}All trips{% endblock %}
+
+{% block content %}
+
+<div class="card">
+  {% if trips %}
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Direction</th>
+          <th>Route</th>
+          <th>Vehicle</th>
+          <th>Students</th>
+          <th>Status</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for t in trips %}
+        <tr>
+          <td>{{ t.date|date:"j M Y" }}</td>
+          <td>{{ t.get_direction_display }}</td>
+          <td>{{ t.route.name }}</td>
+          <td>{{ t.vehicle.plate_number|default:"—" }}</td>
+          <td>{{ t.student_count }}</td>
+          <td>
+            <span class="badge badge-{% if t.status == 'completed' %}success{% elif t.status == 'in_progress' %}warning{% elif t.status == 'cancelled' %}danger{% else %}gray{% endif %}">
+              {{ t.get_status_display }}
+            </span>
+          </td>
+          <td><a href="{% url 'trip_detail' t.id %}" class="btn btn-sm btn-secondary">View</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p style="text-align: center; color: var(--ink-500); padding: 40px;">No trips recorded yet.</p>
+  {% endif %}
+</div>
+
+{% endblock %}

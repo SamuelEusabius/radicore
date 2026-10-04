@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+{% block title %}Log Fuel{% endblock %}
+{% block header_title %}Log Fuel{% endblock %}
+{% block header_sub %}New entry{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 720px; margin: 0 auto;">
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Vehicle *</label>
+      <select name="vehicle" required style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+        <option value="">— Select vehicle —</option>
+        {% for v in vehicles %}
+          <option value="{{ v.id }}" {% if form_data.vehicle == v.id|stringformat:"s" %}selected{% endif %}>
+            {{ v.plate_number }}{% if v.make %} ({{ v.make }} {{ v.model }}){% endif %}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Date *</label>
+        <input type="date" name="date" required value="{{ form_data.date|default:today|date:'Y-m-d' }}"
+               style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+      </div>
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Amount (KES) *</label>
+        <input type="number" name="amount_kes" step="0.01" required value="{{ form_data.amount_kes|default:'' }}"
+               style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Litres</label>
+        <input type="number" name="litres" step="0.01" value="{{ form_data.litres|default:'' }}"
+               style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+      </div>
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Odometer Reading</label>
+        <input type="number" name="odometer_reading" value="{{ form_data.odometer_reading|default:'' }}"
+               style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+      </div>
+    </div>
+
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Payment Method *</label>
+      <select name="payment_method" required style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+        <option value="">— Select —</option>
+        <option value="cash" {% if form_data.payment_method == 'cash' %}selected{% endif %}>Cash</option>
+        <option value="mpesa" {% if form_data.payment_method == 'mpesa' %}selected{% endif %}>M-Pesa</option>
+        <option value="card" {% if form_data.payment_method == 'card' %}selected{% endif %}>Fuel Card</option>
+        <option value="credit" {% if form_data.payment_method == 'credit' %}selected{% endif %}>Credit (Supplier)</option>
+        <option value="other" {% if form_data.payment_method == 'other' %}selected{% endif %}>Other</option>
+      </select>
+    </div>
+
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Payment Reference</label>
+      <input type="text" name="payment_reference" value="{{ form_data.payment_reference|default:'' }}"
+             placeholder="M-Pesa code, receipt number, etc."
+             style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+    </div>
+
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Station Name</label>
+      <input type="text" name="station_name" value="{{ form_data.station_name|default:'' }}"
+             placeholder="e.g. Total Westlands"
+             style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+    </div>
+
+    <div style="margin-bottom: 24px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Receipt (optional)</label>
+      <input type="file" name="receipt" accept="image/*,.pdf">
+    </div>
+
+    <div style="display: flex; gap: 12px; justify-content: flex-end;">
+      <a href="{% url 'driver_dashboard' %}" class="btn btn-secondary">Cancel</a>
+      <button type="submit" class="btn btn-primary">Save Fuel Log</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

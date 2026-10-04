@@ -18,7 +18,7 @@ from apps.accounts.decorators import (
 @login_required
 def manage_classes(request):
     """Manage school classes — list, add, edit, delete."""
-    if request.user.role not in ('school_admin', 'super_admin'):
+    if request.user.role != 'school_admin':
         return redirect('dashboard_home')
 
     from apps.academics.models import ClassLevel
@@ -151,7 +151,7 @@ def manage_classes(request):
 @login_required
 def manage_subjects(request):
     """Manage subjects — list, add, edit, delete."""
-    if request.user.role not in ('school_admin', 'super_admin'):
+    if request.user.role != 'school_admin':
         return redirect('dashboard_home')
 
     from apps.academics.models import Subject
@@ -286,7 +286,7 @@ def manage_subjects(request):
 @login_required
 def subject_delete(request, subject_id):
     """Confirm and delete a subject."""
-    if request.user.role not in ('school_admin', 'super_admin'):
+    if request.user.role != 'school_admin':
         return redirect('dashboard_home')
 
     from apps.academics.models import Subject

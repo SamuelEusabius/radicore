@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+{% block title %}{{ trip }}{% endblock %}
+{% block header_title %}Trip Details{% endblock %}
+{% block header_sub %}{{ trip.route.name }} · {{ trip.date|date:"j M Y" }}{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-info">
+    <h1 class="page-title">{{ trip.route.name }}</h1>
+    <p class="page-subtitle">
+      {{ trip.get_direction_display }} · {{ trip.date|date:"l, j F Y" }}
+      {% if trip.vehicle %} · Vehicle: {{ trip.vehicle.plate_number }}{% endif %}
+    </p>
+  </div>
+  <div style="display: flex; gap: 8px;">
+    {% if trip.status == 'scheduled' %}
+      <a href="{% url 'trip_start' trip.id %}" class="btn btn-primary">Start Trip</a>
+    {% elif trip.status == 'in_progress' %}
+      <a href="{% url 'trip_complete' trip.id %}" class="btn btn-primary">Complete Trip</a>
+    {% endif %}
+    <a href="{% url 'checklist_update' trip.id %}" class="btn btn-secondary">Pre-Trip Checklist</a>
+    <a href="{% url 'driver_dashboard' %}" class="btn btn-secondary">← Back</a>
+  </div>
+</div>
+
+<!-- Status + Stats -->
+<div class="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-6">
+  <div class="card">
+    <div class="stat-label">Status</div>
+    <div class="stat-value" style="font-size: var(--text-md);">{{ trip.get_status_display }}</div>
+  </div>
+  <div class="card">
+    <div class="stat-label">Total Students</div>
+    <div class="stat-value">{{ trip_students.count }}</div>
+  </div>
+  <div class="card">
+    <div class="stat-label">Boarded</div>
+    <div class="stat-value" style="color: var(--success);">{{ boarded_count }}</div>
+  </div>
+  <div class="card">
+    <div class="stat-label">Pending</div>
+    <div class="stat-value" style="color: var(--warning);">{{ pending_count }}</div>
+  </div>
+</div>
+
+<!-- Checklist status -->
+{% if checklist.is_cleared %}
+  <div class="card" style="background: #d1fae5; border-left: 4px solid var(--success); margin-bottom: 24px;">
+    <strong style="color: #065f46;">✅ Pre-trip checklist cleared</strong>
+    <span style="color: #065f46; font-size: var(--text-sm);"> · {{ checklist.cleared_at|date:"j M Y H:i" }}</span>
+  </div>
+{% else %}
+  <div class="card" style="background: #fef3c7; border-left: 4px solid var(--warning); margin-bottom: 24px;">
+    <strong style="color: #92400e;">⚠️ Pre-trip checklist NOT cleared</strong>
+    <a href="{% url 'checklist_update' trip.id %}" style="color: #92400e; text-decoration: underline;">Complete it now →</a>
+  </div>
+{% endif %}
+
+<!-- Student Manifest -->
+<div class="card">
+  <h3 style="margin-bottom: 16px; font-family: var(--font-heading);">Student Manifest</h3>
+  {% if trip_students %}
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Student</th>
+          <th>Admission No</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for ts in trip_students %}
+        <tr>
+          <td>{{ ts.student.full_name }}</td>
+          <td>{{ ts.student.admission_number }}</td>
+          <td>
+            <span class="badge badge-{% if ts.boarding_status == 'boarded' %}success{% elif ts.boarding_status == 'dropped' %}info{% elif ts.boarding_status == 'absent' %}danger{% else %}gray{% endif %}">
+              {{ ts.get_boarding_status_display }}
+            </span>
+          </td>
+          <td>
+            <form method="post" action="{% url 'trip_student_mark' trip.id ts.student.id %}" style="display: inline-flex; gap: 4px;">
+              {% csrf_token %}
+              {% if ts.boarding_status != 'boarded' %}
+                <button name="action" value="boarded" class="btn btn-sm btn-primary">Board</button>
+              {% endif %}
+              {% if ts.boarding_status == 'boarded' %}
+                <button name="action" value="dropped" class="btn btn-sm btn-primary">Drop</button>
+              {% endif %}
+              {% if ts.boarding_status == 'pending' %}
+                <button name="action" value="absent" class="btn btn-sm btn-secondary">Absent</button>
+              {% endif %}
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <div class="pro-empty" style="border: none; padding: 40px;">
+      <p style="color: var(--ink-500);">No students assigned to this trip yet.</p>
+    </div>
+  {% endif %}
+</div>
+
+{% endblock %}

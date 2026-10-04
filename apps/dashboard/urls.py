@@ -287,6 +287,13 @@ urlpatterns = [
     path('subscription/<int:school_id>/pending/', views.subscription_payment_pending, name='subscription_payment_pending'),
     path('subscription/<int:school_id>/status/', views.subscription_payment_status, name='subscription_payment_status'),
     path('subscription/<int:school_id>/confirm/', views.confirm_subscription_payment, name='confirm_subscription_payment'),
+        # Departments Hub (School Admin)
+    path('departments/', views.departments_hub, name='departments_hub'),
+    path('departments/transport/', views.departments_transport, name='departments_transport'),
+    path('departments/library/', views.departments_library, name='departments_library'),
+    path('departments/lab/', views.departments_lab, name='departments_lab'),
+    path('departments/health/', views.departments_health, name='departments_health'),
+    path('departments/kitchen/', views.departments_kitchen, name='departments_kitchen'),
     
     # Subscription
     path('subscribe/', RedirectView.as_view(

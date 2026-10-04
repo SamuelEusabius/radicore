@@ -122,10 +122,38 @@
         <span class="sidebar-link-text">Attendance</span>
       </a>
 
-      <div class="sidebar-section-label">Departments</div>
+          <div class="sidebar-section-label">Departments</div>
+      <a href="{% url 'departments_hub' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="grid" size=18 %}
+        <span class="sidebar-link-text">Departments Hub</span>
+      </a>
+      <a href="{% url 'departments_transport' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="truck" size=18 %}
+        <span class="sidebar-link-text">Transport</span>
+      </a>
+      <a href="{% url 'departments_library' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="book" size=18 %}
+        <span class="sidebar-link-text">Library</span>
+      </a>
+      <a href="{% url 'departments_lab' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="activity" size=18 %}
+        <span class="sidebar-link-text">Laboratory</span>
+      </a>
+      <a href="{% url 'departments_health' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="heart" size=18 %}
+        <span class="sidebar-link-text">Health</span>
+      </a>
+      <a href="{% url 'departments_kitchen' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="coffee" size=18 %}
+        <span class="sidebar-link-text">Kitchen</span>
+      </a>
       <a href="{% url 'department_reports_inbox' %}" class="sidebar-link">
         {% include 'partials/icons.html' with name="inbox" size=18 %}
-        <span class="sidebar-link-text">Department Reports</span>
+        <span class="sidebar-link-text">Reports Inbox</span>
+      </a>
+      <a href="{% url 'staff_list' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="users" size=18 %}
+        <span class="sidebar-link-text">Department Staff</span>
       </a>
 
       <div class="sidebar-section-label">Tools</div>
@@ -350,16 +378,34 @@
     <!-- DRIVER                                        -->
     <!-- ============================================ -->
     {% if user.role == 'driver' %}
-      <div class="sidebar-section-label">Transport</div>
-      <a href="{% url 'driver_dashboard' %}" class="sidebar-link">
-        {% include 'partials/icons.html' with name="home" size=18 %}
-        <span class="sidebar-link-text">My Dashboard</span>
-      </a>
-      <a href="{% url 'department_report_create' 'transport' %}" class="sidebar-link">
-        {% include 'partials/icons.html' with name="file-plus" size=18 %}
-        <span class="sidebar-link-text">Submit Report</span>
-      </a>
-    {% endif %}
+  <div class="sidebar-section-label">Overview</div>
+  <a href="{% url 'driver_dashboard' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="home" size=18 %}
+    <span class="sidebar-link-text">My Dashboard</span>
+  </a>
+
+  <div class="sidebar-section-label">Trips</div>
+  <a href="{% url 'trip_history' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="calendar" size=18 %}
+    <span class="sidebar-link-text">All Trips</span>
+  </a>
+
+  <div class="sidebar-section-label">Fuel</div>
+  <a href="{% url 'fuel_log_add' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="plus" size=18 %}
+    <span class="sidebar-link-text">Log Fuel</span>
+  </a>
+  <a href="{% url 'fuel_log_list' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="file-text" size=18 %}
+    <span class="sidebar-link-text">Fuel History</span>
+  </a>
+
+  <div class="sidebar-section-label">Reports</div>
+  <a href="{% url 'department_report_create' 'transport' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="file-plus" size=18 %}
+    <span class="sidebar-link-text">Submit Report</span>
+  </a>
+{% endif %}
 
     <!-- ============================================ -->
     <!-- LIBRARIAN                                     -->

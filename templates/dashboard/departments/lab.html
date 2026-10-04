@@ -1,0 +1,19 @@
+@'
+{% extends "base.html" %}
+{% block title %}Laboratory{% endblock %}
+{% block header_title %}Laboratory Department{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div class="page-header-info">
+    <h1 class="page-title">Laboratory</h1>
+    <p class="page-subtitle">Equipment and experiments.</p>
+  </div>
+  <a href="{% url "departments_hub" %}" class="btn btn-secondary">← Departments</a>
+</div>
+<div class="card" style="text-align: center; padding: 60px 24px;">
+  <div style="font-size: 56px; margin-bottom: 16px;">🔬</div>
+  <h2 style="font-family: var(--font-heading); color: var(--ink-900);">Coming Soon</h2>
+  <p style="color: var(--ink-500); margin-top: 8px;">Lab management is being built.</p>
+</div>
+{% endblock %}
+'@ | Set-Content -Path templates\dashboard\departments\lab.html -Encoding UTF8

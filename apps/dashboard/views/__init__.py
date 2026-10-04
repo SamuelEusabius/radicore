@@ -178,3 +178,11 @@ from .core import (
     redirect_dashboard,
 )
 from .modules import *
+from .departments_admin import (
+    departments_hub,
+    departments_transport,
+    departments_library,
+    departments_lab,
+    departments_health,
+    departments_kitchen,
+)

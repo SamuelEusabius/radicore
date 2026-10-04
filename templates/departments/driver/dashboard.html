@@ -1,0 +1,156 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Driver Dashboard{% endblock %}
+{% block header_title %}Driver Dashboard{% endblock %}
+{% block header_sub %}{{ current_school.name }}{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-info">
+    <h1 class="page-title">Good day, {{ user.get_full_name|default:user.email|truncatechars:22 }}</h1>
+    <p class="page-subtitle">Today is {{ today|date:"l, j F Y" }}</p>
+  </div>
+</div>
+
+<!-- KPI Row -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+  <div class="card">
+    <div class="stat-label">Today's Trips</div>
+    <div class="stat-value">{{ today_trip_count }}</div>
+    <div class="stat-meta">Scheduled for today</div>
+  </div>
+  <div class="card">
+    <div class="stat-label">Fuel (30 days)</div>
+    <div class="stat-value">KES {{ fuel_total_30d|floatformat:0 }}</div>
+    <div class="stat-meta">Total spent</div>
+  </div>
+  <div class="card">
+    <div class="stat-label">Upcoming</div>
+    <div class="stat-value">{{ upcoming_trips.count }}</div>
+    <div class="stat-meta">Next 7 days</div>
+  </div>
+  <div class="card">
+    <div class="stat-label">Reports</div>
+    <div class="stat-value">{{ recent_reports.count }}</div>
+    <div class="stat-meta">Submitted</div>
+  </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="card mb-6">
+  <h3 style="margin-bottom: 16px; font-family: var(--font-heading);">Quick Actions</h3>
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+    <a href="{% url 'fuel_log_add' %}" class="btn btn-primary">+ Log Fuel</a>
+    <a href="{% url 'fuel_log_list' %}" class="btn btn-secondary">Fuel History</a>
+    <a href="{% url 'trip_history' %}" class="btn btn-secondary">All Trips</a>
+    <a href="{% url 'department_report_create' 'transport' %}" class="btn btn-secondary">+ Report</a>
+  </div>
+</div>
+
+<!-- Today's Trips -->
+<div class="card mb-6">
+  <h3 style="margin-bottom: 16px; font-family: var(--font-heading);">Today's Trips</h3>
+  {% if today_trips %}
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Direction</th>
+          <th>Route</th>
+          <th>Vehicle</th>
+          <th>Departure</th>
+          <th>Students</th>
+          <th>Status</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for t in today_trips %}
+        <tr>
+          <td>{{ t.get_direction_display }}</td>
+          <td>{{ t.route.name }}</td>
+          <td>{{ t.vehicle.plate_number|default:"—" }}</td>
+          <td>{{ t.departure_time|default:"—" }}</td>
+          <td>{{ t.student_count }}</td>
+          <td>
+            <span class="badge badge-{% if t.status == 'in_progress' %}warning{% elif t.status == 'completed' %}success{% elif t.status == 'cancelled' %}danger{% else %}gray{% endif %}">
+              {{ t.get_status_display }}
+            </span>
+          </td>
+          <td><a href="{% url 'trip_detail' t.id %}" class="btn btn-sm btn-primary">Open</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <div class="pro-empty" style="border: none; padding: 40px;">
+      <p style="color: var(--ink-500);">No trips scheduled for today.</p>
+      <p style="font-size: var(--text-xs); color: var(--ink-400); margin-top: 8px;">
+        Ask your School Admin to schedule trips.
+      </p>
+    </div>
+  {% endif %}
+</div>
+
+<!-- Upcoming Trips -->
+{% if upcoming_trips %}
+<div class="card mb-6">
+  <h3 style="margin-bottom: 16px; font-family: var(--font-heading);">Upcoming Trips (Next 7 Days)</h3>
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Direction</th>
+        <th>Route</th>
+        <th>Departure</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for t in upcoming_trips %}
+      <tr>
+        <td>{{ t.date|date:"j M" }}</td>
+        <td>{{ t.get_direction_display }}</td>
+        <td>{{ t.route.name }}</td>
+        <td>{{ t.departure_time|default:"—" }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+<!-- Recent Fuel -->
+<div class="card">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+    <h3 style="margin: 0; font-family: var(--font-heading);">Recent Fuel Logs</h3>
+    <a href="{% url 'fuel_log_list' %}" style="color: var(--primary); font-size: var(--text-sm);">View all →</a>
+  </div>
+  {% if recent_fuel %}
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Vehicle</th>
+          <th>Amount</th>
+          <th>Payment</th>
+          <th>Station</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for f in recent_fuel %}
+        <tr>
+          <td>{{ f.date|date:"j M" }}</td>
+          <td>{{ f.vehicle.plate_number }}</td>
+          <td>KES {{ f.amount_kes|floatformat:0 }}</td>
+          <td><span class="badge badge-info">{{ f.get_payment_method_display }}</span></td>
+          <td>{{ f.station_name|default:"—" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p style="color: var(--ink-500); padding: 20px; text-align: center;">No fuel logs yet.</p>
+  {% endif %}
+</div>
+
+{% endblock %}

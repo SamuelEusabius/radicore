@@ -104,7 +104,7 @@ def timetable_view(request):
 @login_required
 def timetable_add(request):
     """Add a timetable entry."""
-    if request.user.role not in ('school_admin', 'super_admin'):
+    if request.user.role != 'school_admin':
         return redirect('dashboard_home')
 
     from apps.academics.models import ClassLevel, Subject, Timetable
@@ -158,7 +158,7 @@ def timetable_add(request):
 @login_required
 def timetable_delete(request, entry_id):
     """Delete a timetable entry."""
-    if request.user.role not in ('school_admin', 'super_admin'):
+    if request.user.role != 'school_admin':
         return redirect('dashboard_home')
 
     from apps.academics.models import Timetable

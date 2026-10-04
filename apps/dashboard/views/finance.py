@@ -155,7 +155,7 @@ def accountant_dash(request):
 @login_required
 def accountant_invoices(request):
     """Invoice list with status tabs, search, filters, and pagination."""
-    if request.user.role not in ('accountant', 'school_admin', 'super_admin'):
+    if request.user.role not in ('accountant', 'school_admin'):
         return redirect('dashboard_home')
 
     from apps.finance.models import Invoice, FeeStructure
@@ -230,7 +230,7 @@ def accountant_invoices(request):
 @login_required
 def accountant_transactions(request):
     """School accountant sees all transactions, expenditure, debts, credit."""
-    if request.user.role not in ('accountant', 'school_admin', 'super_admin'):
+    if request.user.role not in ('accountant', 'school_admin'):
         return redirect('dashboard_home')
 
     from apps.finance.models import Invoice, Payment, Expenditure
@@ -448,7 +448,7 @@ def accountant_students(request):
     from apps.academics.models import ClassLevel
     from django.db.models import Sum, Q
 
-    if request.user.role not in ('accountant', 'school_admin', 'super_admin'):
+    if request.user.role not in ('accountant', 'school_admin'):
         return redirect('dashboard_home')
 
     school = request.user.school
@@ -560,7 +560,7 @@ def generate_invoices(request):
       - Single class (all active students)
       - All classes (bulk by term)
     """
-    if request.user.role not in ('accountant', 'school_admin', 'super_admin'):
+    if request.user.role not in ('accountant', 'school_admin'):
         return redirect('dashboard_home')
 
     from apps.finance.models import FeeStructure, Invoice
@@ -857,7 +857,7 @@ def generate_invoices(request):
 @login_required
 def invoice_student_quick(request, student_id):
     """Quick-invoice a single student from the Students & Fees page."""
-    if request.user.role not in ('accountant', 'school_admin', 'super_admin'):
+    if request.user.role not in ('accountant', 'school_admin'):
         return redirect('dashboard_home')
 
     from apps.students.models import Student
@@ -938,7 +938,7 @@ def invoice_student_quick(request, student_id):
 @login_required
 def record_payment(request, invoice_id):
     """Record a manual payment against an invoice."""
-    if request.user.role not in ('accountant', 'school_admin', 'super_admin'):
+    if request.user.role not in ('accountant', 'school_admin'):
         return redirect('dashboard_home')
 
     from apps.finance.models import Invoice, Payment
@@ -1003,7 +1003,7 @@ def record_payment(request, invoice_id):
 @login_required
 def financial_report_pdf(request):
     """Generate a financial report PDF for the selected period."""
-    if request.user.role not in ('accountant', 'school_admin', 'super_admin'):
+    if request.user.role not in ('accountant', 'school_admin'):
         return redirect('dashboard_home')
 
     from apps.finance.models import Invoice, Payment, Expenditure
@@ -1148,7 +1148,7 @@ def financial_report_pdf(request):
 
 
 @login_required
-@role_required('accountant', 'school_admin', 'super_admin')
+@role_required('accountant', 'school_admin')
 def class_fee_statement(request):
     """Shows fee summary for one class + per-student breakdown."""
     from apps.students.models import Student
@@ -1318,7 +1318,7 @@ def class_fee_statement_pdf(request, class_id):
 
 
 @login_required
-@role_required('accountant', 'school_admin', 'super_admin')
+@role_required('accountant', 'school_admin')
 def fee_structure_list(request):
     """List all fee structures with filters and summary."""
     from apps.finance.models import FeeStructure
@@ -1390,7 +1390,7 @@ def fee_structure_list(request):
 
 
 @login_required
-@role_required('accountant', 'school_admin', 'super_admin')
+@role_required('accountant', 'school_admin')
 def fee_structure_add(request):
     """Create a new fee structure."""
     from apps.finance.models import FeeStructure
@@ -1440,7 +1440,7 @@ def fee_structure_add(request):
 
 
 @login_required
-@role_required('accountant', 'school_admin', 'super_admin')
+@role_required('accountant', 'school_admin')
 def fee_structure_edit(request, fee_id):
     """Edit an existing fee structure."""
     from apps.finance.models import FeeStructure
@@ -1473,7 +1473,7 @@ def fee_structure_edit(request, fee_id):
 
 
 @login_required
-@role_required('accountant', 'school_admin', 'super_admin')
+@role_required('accountant', 'school_admin')
 def fee_structure_delete(request, fee_id):
     """Delete a fee structure."""
     from apps.finance.models import FeeStructure
@@ -1490,7 +1490,7 @@ def fee_structure_delete(request, fee_id):
 
 
 @login_required
-@role_required('accountant', 'school_admin', 'super_admin')
+@role_required('accountant', 'school_admin')
 def fee_structure_bulk(request):
     """
     Bulk-draft fee structures across ALL classes.
@@ -1574,7 +1574,7 @@ def fee_structure_bulk(request):
 @login_required
 def fee_structure_matrix(request):
     """Bulk draft page — matrix editor for fee items × classes."""
-    if request.user.role not in ('accountant', 'school_admin', 'super_admin'):
+    if request.user.role not in ('accountant', 'school_admin'):
         return redirect('dashboard_home')
 
     import json
@@ -1610,7 +1610,7 @@ def fee_structure_matrix_save(request):
     if request.method != 'POST':
         return JsonResponse({'success': False, 'error': 'POST required'}, status=405)
 
-    if request.user.role not in ('accountant', 'school_admin', 'super_admin'):
+    if request.user.role not in ('accountant', 'school_admin'):
         return JsonResponse({'success': False, 'error': 'Not authorized'}, status=403)
 
     import json
@@ -1703,7 +1703,7 @@ def fee_structure_matrix_save(request):
 @login_required
 def fee_structure_class_pdf(request, class_name):
     """Print/download the fee structure for ONE class as A4 portrait PDF."""
-    if request.user.role not in ('accountant', 'school_admin', 'super_admin'):
+    if request.user.role not in ('accountant', 'school_admin'):
         return redirect('dashboard_home')
 
     from django.utils import timezone
@@ -1875,7 +1875,7 @@ def expenditure_list(request):
 
 
 @login_required
-@role_required('accountant', 'school_admin', 'super_admin')
+@role_required('accountant', 'school_admin')
 def expenditure_add(request):
     """Add new expenditure."""
     from apps.finance.models import Expenditure
@@ -1921,7 +1921,7 @@ def expenditure_add(request):
 
 
 @login_required
-@role_required('accountant', 'school_admin', 'super_admin')
+@role_required('accountant', 'school_admin')
 def expenditure_edit(request, expenditure_id):
     """Edit existing expenditure."""
     from apps.finance.models import Expenditure
@@ -1955,7 +1955,7 @@ def expenditure_edit(request, expenditure_id):
 
 
 @login_required
-@role_required('accountant', 'school_admin', 'super_admin')
+@role_required('accountant', 'school_admin')
 def expenditure_delete(request, expenditure_id):
     """Delete expenditure."""
     from apps.finance.models import Expenditure
@@ -1972,7 +1972,7 @@ def expenditure_delete(request, expenditure_id):
 
 
 @login_required
-@role_required('accountant', 'school_admin', 'super_admin')
+@role_required('accountant', 'school_admin')
 def expenditure_pdf(request):
     """Generate PDF of expenditures with filters."""
     from apps.finance.models import Expenditure
@@ -2022,7 +2022,7 @@ def expenditure_pdf(request):
 @login_required
 def add_expenditure(request):
     """Accountant adds an expenditure entry."""
-    if request.user.role not in ('accountant', 'school_admin', 'super_admin'):
+    if request.user.role not in ('accountant', 'school_admin'):
         return redirect('dashboard_home')
 
     from apps.finance.models import Expenditure
