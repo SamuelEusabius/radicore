@@ -11,10 +11,8 @@ Private endpoints (called by our frontend):
   - mpesa_status (poll for result)
 """
 import logging
-from datetime import datetime
 from decimal import Decimal
 
-from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
@@ -56,7 +54,9 @@ def mpesa_stk_push(request, invoice_id):
         try:
             request.user.parent_profile.students.get(id=invoice.student_id)
         except Exception:
-            return JsonResponse({'success': False, 'error': 'Not authorized'}, status=403)
+            return JsonResponse(
+                {'success': False, 'error': 'Not authorized'}, status=403
+            )
 
     # Amount
     amount = request.POST.get('amount', '').strip()
@@ -64,24 +64,29 @@ def mpesa_stk_push(request, invoice_id):
         try:
             amount = Decimal(amount)
         except Exception:
-            return JsonResponse({'success': False, 'error': 'Invalid amount'}, status=400)
+            return JsonResponse(
+                {'success': False, 'error': 'Invalid amount'}, status=400
+            )
     else:
         amount = invoice.balance
 
     if amount <= 0:
-        return JsonResponse({'success': False, 'error': 'Invoice already paid'}, status=400)
+        return JsonResponse(
+            {'success': False, 'error': 'Invoice already paid'}, status=400
+        )
 
     # Phone
     phone = request.POST.get('phone', '').strip()
     if not phone:
-        # Try parent phone
         try:
             phone = request.user.parent_profile.phone
         except Exception:
             phone = ''
 
     if not phone:
-        return JsonResponse({'success': False, 'error': 'Phone number required'}, status=400)
+        return JsonResponse(
+            {'success': False, 'error': 'Phone number required'}, status=400
+        )
 
     # Create transaction record
     txn = MpesaTransaction.objects.create(
@@ -91,7 +96,11 @@ def mpesa_stk_push(request, invoice_id):
         phone=mpesa_service.normalize_phone(phone),
         amount=amount,
         initiated_by=request.user,
-        raw_request={'invoice_id': invoice.id, 'amount': str(amount), 'phone': phone},
+        raw_request={
+            'invoice_id': invoice.id,
+            'amount': str(amount),
+            'phone': phone,
+        },
     )
 
     # Call Safaricom
@@ -113,7 +122,9 @@ def mpesa_stk_push(request, invoice_id):
     txn.merchant_request_id = result.get('MerchantRequestID', '')
     txn.checkout_request_id = result.get('CheckoutRequestID', '')
     txn.raw_callback = result
-    txn.save(update_fields=['merchant_request_id', 'checkout_request_id', 'raw_callback'])
+    txn.save(update_fields=[
+        'merchant_request_id', 'checkout_request_id', 'raw_callback'
+    ])
 
     if result.get('ResponseCode') != '0':
         txn.status = MpesaTransaction.Status.FAILED
@@ -123,7 +134,9 @@ def mpesa_stk_push(request, invoice_id):
     return JsonResponse({
         'success': True,
         'checkout_request_id': txn.checkout_request_id,
-        'message': result.get('CustomerMessage', 'Check your phone to complete payment'),
+        'message': result.get(
+            'CustomerMessage', 'Check your phone to complete payment'
+        ),
     })
 
 
@@ -136,28 +149,9 @@ def mpesa_stk_push(request, invoice_id):
 def mpesa_callback(request):
     """
     Safaricom calls this URL when an STK Push completes or fails.
-
-    Payload (success):
-        {
-          "Body": {
-            "stkCallback": {
-              "MerchantRequestID": "...",
-              "CheckoutRequestID": "...",
-              "ResultCode": 0,
-              "ResultDesc": "The service request is processed successfully.",
-              "CallbackMetadata": {
-                "Item": [
-                  {"Name": "Amount", "Value": 100},
-                  {"Name": "MpesaReceiptNumber", "Value": "NLJ7RT61SV"},
-                  {"Name": "TransactionDate", "Value": 20260125163045},
-                  {"Name": "PhoneNumber", "Value": 254712345678}
-                ]
-              }
-            }
-          }
-        }
     """
     import json
+
     try:
         data = json.loads(request.body.decode('utf-8'))
     except Exception:
@@ -187,8 +181,10 @@ def mpesa_callback(request):
 
         if result_code == 0:
             # Success — extract metadata
-            meta = {item['Name']: item.get('Value')
-                    for item in stk['CallbackMetadata']['Item']}
+            meta = {
+                item['Name']: item.get('Value')
+                for item in stk['CallbackMetadata']['Item']
+            }
 
             receipt = meta.get('MpesaReceiptNumber', '')
             amount = meta.get('Amount', 0)
@@ -201,7 +197,9 @@ def mpesa_callback(request):
                 txn.status = MpesaTransaction.Status.SUCCESS
                 txn.mpesa_receipt_number = receipt
                 txn.save()
-                return JsonResponse({'ResultCode': 0, 'ResultDesc': 'Accepted'})
+                return JsonResponse(
+                    {'ResultCode': 0, 'ResultDesc': 'Accepted'}
+                )
 
             txn.mpesa_receipt_number = receipt
             txn.status = MpesaTransaction.Status.SUCCESS
@@ -216,6 +214,10 @@ def mpesa_callback(request):
                     notes=f"M-Pesa STK Push. Receipt: {receipt}",
                 )
                 txn.payment = payment
+                # Update invoice status
+                txn.invoice.amount_paid += Decimal(str(amount))
+                txn.invoice.save()
+                txn.invoice.update_status()
 
         elif result_code in (1032,):
             txn.status = MpesaTransaction.Status.CANCELLED
@@ -252,20 +254,10 @@ def mpesa_c2b_validation(request):
 def mpesa_c2b_confirmation(request):
     """
     Safaricom calls this AFTER a successful C2B payment.
-    We record the payment automatically.
-
-    Payload:
-        {
-          "TransactionType": "Pay Bill",
-          "TransID": "RKTQDM7W6S",
-          "TransTime": "20260125163045",
-          "TransAmount": "100.00",
-          "BusinessShortCode": "174379",
-          "BillRefNumber": "INV123",
-          "MSISDN": "254712345678"
-        }
+    We record the payment — auto-matched or unallocated.
     """
     import json
+
     try:
         data = json.loads(request.body.decode('utf-8'))
     except Exception:
@@ -293,7 +285,9 @@ def mpesa_c2b_confirmation(request):
             mpesa_receipt_number=receipt
         ).exists():
             logger.info(f"Duplicate C2B receipt: {receipt}")
-            return JsonResponse({'ResultCode': 0, 'ResultDesc': 'Accepted'})
+            return JsonResponse(
+                {'ResultCode': 0, 'ResultDesc': 'Accepted'}
+            )
 
         invoice = None
         school = None
@@ -328,6 +322,23 @@ def mpesa_c2b_confirmation(request):
             txn.payment = payment
             txn.save(update_fields=['payment'])
 
+            # Update invoice status
+            invoice.amount_paid += amount
+            invoice.save()
+            invoice.update_status()
+
+        else:
+            # No invoice matched — try auto-match or queue as unallocated
+            from .unallocated_services import try_auto_match
+            try:
+                from apps.schools.models import School
+                # If only one school exists, use it
+                target_school = School.objects.first()
+                if target_school:
+                    try_auto_match(txn, target_school)
+            except Exception as e:
+                logger.exception(f"Auto-match failed: {e}")
+
     except Exception as e:
         logger.exception(f"C2B processing error: {e}")
 
@@ -349,14 +360,20 @@ def mpesa_status(request, checkout_request_id):
     ).first()
 
     if not txn:
-        return JsonResponse({'success': False, 'error': 'Unknown transaction'}, status=404)
+        return JsonResponse(
+            {'success': False, 'error': 'Unknown transaction'}, status=404
+        )
 
     # Authorization: parent can only see own
     if request.user.role == 'parent' and txn.invoice:
         try:
-            request.user.parent_profile.students.get(id=txn.invoice.student_id)
+            request.user.parent_profile.students.get(
+                id=txn.invoice.student_id
+            )
         except Exception:
-            return JsonResponse({'success': False, 'error': 'Not authorized'}, status=403)
+            return JsonResponse(
+                {'success': False, 'error': 'Not authorized'}, status=403
+            )
 
     return JsonResponse({
         'success': True,

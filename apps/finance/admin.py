@@ -49,3 +49,22 @@ class WalletTransactionAdmin(admin.ModelAdmin):
     list_filter = ('tx_type', 'source', 'status', 'created_at')
     search_fields = ('reference', 'wallet__student__first_name', 'wallet__student__last_name', 'external_reference')
     date_hierarchy = 'created_at'
+    
+    
+
+from .unallocated_models import UnallocatedPayment, UnallocatedAllocation
+
+
+@admin.register(UnallocatedPayment)
+class UnallocatedPaymentAdmin(admin.ModelAdmin):
+    list_display = ('mpesa_receipt', 'amount', 'phone', 'account_reference', 'status', 'school', 'transaction_date')
+    list_filter = ('status', 'school', 'transaction_date')
+    search_fields = ('mpesa_receipt', 'phone', 'account_reference', 'payer_name')
+    date_hierarchy = 'transaction_date'
+    readonly_fields = ('raw_callback', 'created_at', 'updated_at')
+
+
+@admin.register(UnallocatedAllocation)
+class UnallocatedAllocationAdmin(admin.ModelAdmin):
+    list_display = ('unallocated_payment', 'student', 'amount', 'created_at')
+    search_fields = ('unallocated_payment__mpesa_receipt', 'student__first_name', 'student__last_name')
