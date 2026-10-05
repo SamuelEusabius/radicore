@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils import timezone
+from .wallet_models import StudentWallet, WalletTransaction
 
 
 # ==========================================================

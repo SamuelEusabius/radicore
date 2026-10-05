@@ -1,6 +1,7 @@
 from django.contrib import admin
 from .models import FeeStructure, Invoice, Payment
 from .mpesa_models import MpesaTransaction
+from .wallet_models import StudentWallet, WalletTransaction
 @admin.register(FeeStructure)
 class FeeStructureAdmin(admin.ModelAdmin):
     list_display = ['name', 'class_level', 'amount_kes', 'due_date', 'school']
@@ -28,4 +29,23 @@ class MpesaTransactionAdmin(admin.ModelAdmin):
                      'checkout_request_id', 'merchant_request_id')
     readonly_fields = ('created_at', 'completed_at',
                        'raw_request', 'raw_callback')
+    date_hierarchy = 'created_at'
+    
+
+# ============================================================
+# STUDENT WALLET
+# ============================================================
+
+@admin.register(StudentWallet)
+class StudentWalletAdmin(admin.ModelAdmin):
+    list_display = ('student', 'school', 'balance', 'is_locked', 'daily_withdrawal_limit', 'updated_at')
+    list_filter = ('school', 'is_locked')
+    search_fields = ('student__first_name', 'student__last_name', 'student__admission_number')
+
+
+@admin.register(WalletTransaction)
+class WalletTransactionAdmin(admin.ModelAdmin):
+    list_display = ('reference', 'wallet', 'tx_type', 'source', 'amount', 'balance_after', 'status', 'created_at')
+    list_filter = ('tx_type', 'source', 'status', 'created_at')
+    search_fields = ('reference', 'wallet__student__first_name', 'wallet__student__last_name', 'external_reference')
     date_hierarchy = 'created_at'

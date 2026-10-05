@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Student Wallets{% endblock %}
+{% block header_title %}Student Wallets{% endblock %}
+{% block header_sub %}{{ current_school.name }}{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-info">
+    <h1 class="page-title">Student Wallets</h1>
+    <p class="page-subtitle">Manage preloaded money for students</p>
+  </div>
+  <div style="display: flex; gap: 8px;">
+    <a href="{% url 'wallet_list' %}" class="btn btn-primary">All Wallets</a>
+    <a href="{% url 'teacher_pending_collections' %}" class="btn btn-secondary">Pending Collections</a>
+  </div>
+</div>
+
+<!-- KPI Row -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+  <div class="card">
+    <div class="stat-label">Total Balance</div>
+    <div class="stat-value" style="font-size: var(--text-lg); color: var(--primary);">
+      KES {{ total_balance|floatformat:0 }}
+    </div>
+    <div class="stat-meta">Across all students</div>
+  </div>
+  <div class="card">
+    <div class="stat-label">Active Wallets</div>
+    <div class="stat-value">{{ active_wallets }} / {{ total_wallets }}</div>
+    <div class="stat-meta">Students with balance</div>
+  </div>
+  <div class="card">
+    <div class="stat-label">Today's Deposits</div>
+    <div class="stat-value" style="color: var(--success);">KES {{ today_deposits|floatformat:0 }}</div>
+    <div class="stat-meta">Loaded today</div>
+  </div>
+  <div class="card">
+    <div class="stat-label">Today's Withdrawals</div>
+    <div class="stat-value" style="color: var(--warning);">KES {{ today_withdrawals|floatformat:0 }}</div>
+    <div class="stat-meta">Withdrawn today</div>
+  </div>
+</div>
+
+<!-- Pending Collections Alert -->
+{% if pending_collections %}
+<div class="card mb-6" style="border-left: 4px solid var(--warning);">
+  <h3 style="margin-bottom: 12px; font-family: var(--font-heading); color: var(--warning);">
+    ⏳ Pending Collections ({{ pending_collections|length }})
+  </h3>
+  <table class="table">
+    <thead>
+      <tr><th>Date</th><th>Student</th><th>Amount</th><th>Withdrawn By</th><th></th></tr>
+    </thead>
+    <tbody>
+      {% for tx in pending_collections %}
+      <tr>
+        <td>{{ tx.created_at|date:"j M H:i" }}</td>
+        <td><strong>{{ tx.wallet.student.full_name }}</strong></td>
+        <td>KES {{ tx.amount|floatformat:0 }}</td>
+        <td>{{ tx.withdrawn_by.get_full_name|default:tx.withdrawn_by.email|truncatechars:20 }}</td>
+        <td style="text-align: right;">
+          <a href="{% url 'wallet_mark_collected' tx.id %}" class="btn btn-sm btn-primary">Mark Collected</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+<!-- Recent Transactions -->
+<div class="card">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+    <h3 style="margin: 0; font-family: var(--font-heading);">Recent Transactions</h3>
+  </div>
+  {% if recent_tx %}
+  <table class="table">
+    <thead>
+      <tr><th>Date</th><th>Student</th><th>Type</th><th>Amount</th><th>Balance</th><th>By</th></tr>
+    </thead>
+    <tbody>
+      {% for tx in recent_tx %}
+      <tr>
+        <td>{{ tx.created_at|date:"j M H:i" }}</td>
+        <td>
+          <a href="{% url 'wallet_detail' tx.wallet.id %}" style="color: var(--primary); font-weight: 600; text-decoration: none;">
+            {{ tx.wallet.student.full_name }}
+          </a>
+        </td>
+        <td>
+          <span class="badge badge-{% if tx.tx_type == 'deposit' %}success{% else %}warning{% endif %}">
+            {{ tx.get_tx_type_display }}
+          </span>
+        </td>
+        <td>
+          {% if tx.tx_type == 'deposit' %}<span style="color: var(--success);">+{% else %}<span style="color: var(--warning);">-{% endif %}
+            KES {{ tx.amount|floatformat:0 }}
+          </span>
+        </td>
+        <td><strong>KES {{ tx.balance_after|floatformat:0 }}</strong></td>
+        <td>{{ tx.initiated_by.get_full_name|default:tx.initiated_by.email|truncatechars:18|default:"—" }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="pro-empty" style="border: none; padding: 40px;">
+    <p style="color: var(--ink-500);">No transactions yet.</p>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}

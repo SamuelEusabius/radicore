@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block title %}Confirm Collection{% endblock %}
+{% block header_title %}Confirm Collection{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 520px; margin: 40px auto; text-align: center; padding: 40px;">
+  <div style="font-size: 56px; margin-bottom: 16px;">💰</div>
+  <h2 style="font-family: var(--font-heading); margin-bottom: 12px;">Confirm Collection</h2>
+  <p style="color: var(--ink-600); margin-bottom: 20px;">
+    Confirm that <strong>{{ tx.wallet.student.full_name }}</strong> has collected:
+  </p>
+  <div style="background: var(--primary-soft); padding: 20px; border-radius: 10px; font-weight: 800; font-size: 24px; color: var(--primary); margin-bottom: 24px;">
+    KES {{ tx.amount|floatformat:0 }}
+  </div>
+  <form method="post">
+    {% csrf_token %}
+    <div style="display: flex; gap: 12px; justify-content: center;">
+      <a href="{% url 'wallet_detail' tx.wallet.id %}" class="btn btn-secondary">Cancel</a>
+      <button type="submit" class="btn btn-primary">✓ Confirm Collected</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

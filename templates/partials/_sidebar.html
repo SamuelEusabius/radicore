@@ -229,18 +229,6 @@
       </a>
 
       <div class="sidebar-section-label">Teaching</div>
-      <a href="{% url 'teacher_attendance' %}" class="sidebar-link">
-        {% include 'partials/icons.html' with name="clipboard" size=18 %}
-        <span class="sidebar-link-text">Mark Attendance</span>
-      </a>
-      <a href="{% url 'enter_grades' %}" class="sidebar-link">
-        {% include 'partials/icons.html' with name="edit" size=18 %}
-        <span class="sidebar-link-text">Enter Grades</span>
-      </a>
-      <a href="{% url 'class_results' %}" class="sidebar-link">
-        {% include 'partials/icons.html' with name="bar-chart" size=18 %}
-        <span class="sidebar-link-text">Class Results</span>
-      </a>
       <a href="{% url 'teacher_timetable' %}" class="sidebar-link">
         {% include 'partials/icons.html' with name="calendar" size=18 %}
         <span class="sidebar-link-text">My Timetable</span>
@@ -253,6 +241,18 @@
           <span class="sidebar-link-text">My Class</span>
         </a>
       {% endif %}
+            {% if user.teacher_profile.is_class_teacher %}
+        <div class="sidebar-section-label">Class Wallet</div>
+        <a href="{% url 'teacher_wallets' %}" class="sidebar-link">
+          {% include 'partials/icons.html' with name="credit-card" size=18 %}
+          <span class="sidebar-link-text">Class Wallets</span>
+        </a>
+        <a href="{% url 'teacher_pending_collections' %}" class="sidebar-link">
+          {% include 'partials/icons.html' with name="alert-circle" size=18 %}
+          <span class="sidebar-link-text">Pending Collections</span>
+        </a>
+      {% endif %}
+      
 
       <div class="sidebar-section-label">Communication</div>
       <a href="{% url 'messages_inbox' %}" class="sidebar-link">
@@ -329,6 +329,15 @@
       <a href="{% url 'add_expenditure' %}" class="sidebar-link">
         {% include 'partials/icons.html' with name="trending-down" size=18 %}
         <span class="sidebar-link-text">Add Expenditure</span>
+      </a>
+            <div class="sidebar-section-label">Wallet</div>
+      <a href="{% url 'wallet_dashboard' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="credit-card" size=18 %}
+        <span class="sidebar-link-text">Student Wallets</span>
+      </a>
+      <a href="{% url 'wallet_list' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="users" size=18 %}
+        <span class="sidebar-link-text">All Wallets</span>
       </a>
 
       <div class="sidebar-section-label">Communication</div>
@@ -562,6 +571,10 @@
         {% include 'partials/icons.html' with name="users" size=18 %}
         <span class="sidebar-link-text">My Children</span>
       </a>
+            <a href="{% url 'parent_wallets' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="credit-card" size=18 %}
+        <span class="sidebar-link-text">Wallet</span>
+      </a>
     {% endif %}
 
     <!-- ============================================ -->
@@ -572,6 +585,10 @@
       <a href="{% url 'dashboard_home' %}" class="sidebar-link">
         {% include 'partials/icons.html' with name="home" size=18 %}
         <span class="sidebar-link-text">Dashboard</span>
+      </a>
+            <a href="{% url 'student_wallet' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="credit-card" size=18 %}
+        <span class="sidebar-link-text">My Wallet</span>
       </a>
     {% endif %}
 

@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% block title %}My Children's Wallets{% endblock %}
+{% block header_title %}Wallet{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-info">
+    <h1 class="page-title">My Children's Wallets</h1>
+    <p class="page-subtitle">{{ children_count }} child{{ children_count|pluralize }}</p>
+  </div>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+  {% for w in wallets %}
+  <div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 16px;">
+      <div>
+        <h3 style="margin: 0; font-family: var(--font-heading);">{{ w.student.full_name }}</h3>
+        <p style="margin: 4px 0 0 0; font-size: var(--text-xs); color: var(--ink-500);">
+          {{ w.student.admission_number }} · {{ w.student.class_level }}
+        </p>
+      </div>
+      <div style="background: var(--primary-soft); padding: 8px 12px; border-radius: 8px; text-align: right;">
+        <div style="font-size: 10px; color: var(--primary); text-transform: uppercase; font-weight: 700;">Balance</div>
+        <div style="font-size: 18px; font-weight: 800; color: var(--primary); font-family: var(--font-heading);">
+          KES {{ w.balance|floatformat:0 }}
+        </div>
+      </div>
+    </div>
+    <a href="{% url 'parent_child_wallet' w.id %}" class="btn btn-primary" style="width: 100%;">
+      View Details
+    </a>
+  </div>
+  {% empty %}
+  <div class="card" style="grid-column: 1 / -1; text-align: center; padding: 60px;">
+    <p style="color: var(--ink-500);">No children linked to your account.</p>
+  </div>
+  {% endfor %}
+</div>
+
+{% endblock %}

@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% block title %}Top Up Wallet{% endblock %}
+{% block header_title %}Top Up Wallet{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 560px; margin: 0 auto;">
+  <div style="background: var(--surface-muted); padding: 16px; border-radius: 8px; margin-bottom: 20px;">
+    <h3 style="margin: 0; font-family: var(--font-heading);">{{ wallet.student.full_name }}</h3>
+    <p style="margin: 4px 0 0 0; color: var(--ink-600); font-size: var(--text-sm);">
+      {{ wallet.student.admission_number }} · {{ wallet.student.class_level }}
+    </p>
+    <p style="margin: 8px 0 0 0; color: var(--ink-500); font-size: var(--text-xs);">
+      Current balance: <strong style="color: var(--primary);">KES {{ wallet.balance|floatformat:0 }}</strong>
+    </p>
+  </div>
+
+  <form method="post">
+    {% csrf_token %}
+
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Amount (KES) *</label>
+      <input type="number" name="amount" step="0.01" min="1" required autofocus
+             style="width: 100%; padding: 14px; border: 1px solid var(--border); font-size: 20px; text-align: center; font-weight: 700;">
+    </div>
+
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Payment Source *</label>
+      <select name="source" required style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+        <option value="cash">Cash (at school)</option>
+        <option value="mpesa">M-Pesa (record existing)</option>
+        <option value="bank">Bank Transfer</option>
+        <option value="manual">Manual Adjustment</option>
+      </select>
+    </div>
+
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Reference / Receipt #</label>
+      <input type="text" name="reference" placeholder="e.g. M-Pesa code QWE123XYZ"
+             style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+    </div>
+
+    <div style="margin-bottom: 24px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Notes</label>
+      <textarea name="notes" rows="2" style="width: 100%; padding: 10px; border: 1px solid var(--border);"></textarea>
+    </div>
+
+    <div style="display: flex; gap: 12px; justify-content: flex-end;">
+      <a href="{% url 'wallet_detail' wallet.id %}" class="btn btn-secondary">Cancel</a>
+      <button type="submit" class="btn btn-primary">Load Money</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

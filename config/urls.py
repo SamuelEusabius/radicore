@@ -14,6 +14,7 @@ urlpatterns = [
 
     # Blocked page (no auth required by middleware)
     path('school-blocked/', school_blocked, name='school_blocked'),
+    path('wallet/', include('apps.finance.wallet_urls')),
 
     # Custom logout BEFORE allauth
     path('accounts/logout/', logout_view, name='account_logout'),

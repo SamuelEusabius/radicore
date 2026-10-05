@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% block title %}Withdraw from Wallet{% endblock %}
+{% block header_title %}Withdraw Money{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 560px; margin: 0 auto;">
+  <div style="background: var(--surface-muted); padding: 16px; border-radius: 8px; margin-bottom: 20px;">
+    <h3 style="margin: 0; font-family: var(--font-heading);">{{ wallet.student.full_name }}</h3>
+    <p style="margin: 4px 0 0 0; color: var(--ink-600); font-size: var(--text-sm);">
+      {{ wallet.student.admission_number }} · {{ wallet.student.class_level }}
+    </p>
+    <p style="margin: 8px 0 0 0; font-size: var(--text-sm);">
+      Available: <strong style="color: var(--primary); font-size: 18px;">KES {{ wallet.balance|floatformat:0 }}</strong>
+    </p>
+    <p style="margin: 4px 0 0 0; font-size: var(--text-xs); color: var(--ink-500);">
+      Today: KES {{ wallet.today_withdrawn|floatformat:0 }} / Limit: KES {{ wallet.daily_withdrawal_limit|floatformat:0 }}
+    </p>
+  </div>
+
+  <form method="post">
+    {% csrf_token %}
+
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Amount (KES) *</label>
+      <input type="number" name="amount" step="0.01" min="1" required autofocus
+             max="{{ wallet.balance }}"
+             style="width: 100%; padding: 14px; border: 1px solid var(--border); font-size: 20px; text-align: center; font-weight: 700;">
+    </div>
+
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Purpose</label>
+      <input type="text" name="purpose" placeholder="e.g. Shopping, Fare, Snacks"
+             style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+    </div>
+
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Collected By (student name)</label>
+      <input type="text" name="collected_by" value="{{ wallet.student.full_name }}"
+             style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+    </div>
+
+    <div style="margin-bottom: 20px;">
+      <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+        <input type="checkbox" name="mark_collected" checked style="width: 18px; height: 18px;">
+        <span>Mark as collected immediately (uncheck if student will collect later)</span>
+      </label>
+    </div>
+
+    <div style="margin-bottom: 24px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Notes</label>
+      <textarea name="notes" rows="2" style="width: 100%; padding: 10px; border: 1px solid var(--border);"></textarea>
+    </div>
+
+    <div style="display: flex; gap: 12px; justify-content: flex-end;">
+      <a href="{% url 'wallet_detail' wallet.id %}" class="btn btn-secondary">Cancel</a>
+      <button type="submit" class="btn btn-primary">Withdraw</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

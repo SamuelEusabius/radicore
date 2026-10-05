@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% block title %}Pending Collections{% endblock %}
+{% block header_title %}Pending Collections{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-info">
+    <h1 class="page-title">{{ class_name }} — Pending</h1>
+    <p class="page-subtitle">Withdrawals awaiting collection</p>
+  </div>
+  <a href="{% url 'teacher_wallets' %}" class="btn btn-secondary">← Back to Wallets</a>
+</div>
+
+<div class="card">
+  {% if pending %}
+  <table class="table">
+    <thead>
+      <tr><th>Date</th><th>Student</th><th>Amount</th><th>Withdrawn By</th><th></th></tr>
+    </thead>
+    <tbody>
+      {% for tx in pending %}
+      <tr>
+        <td>{{ tx.created_at|date:"j M Y H:i" }}</td>
+        <td><strong>{{ tx.wallet.student.full_name }}</strong></td>
+        <td>KES {{ tx.amount|floatformat:0 }}</td>
+        <td>{{ tx.withdrawn_by.get_full_name|default:tx.withdrawn_by.email|truncatechars:20 }}</td>
+        <td style="text-align: right;">
+          <a href="{% url 'wallet_mark_collected' tx.id %}" class="btn btn-sm btn-primary">Mark Collected</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="pro-empty" style="border: none; padding: 60px;">
+    <p style="color: var(--ink-500);">No pending collections. 🎉</p>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}

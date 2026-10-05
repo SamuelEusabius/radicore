@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% block title %}My Class Wallets{% endblock %}
+{% block header_title %}Class Wallets{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-info">
+    <h1 class="page-title">{{ class_name }} — Wallets</h1>
+    <p class="page-subtitle">{{ student_count }} students · Total held: KES {{ total_balance|floatformat:0 }}</p>
+  </div>
+  <a href="{% url 'teacher_pending_collections' %}" class="btn btn-secondary">Pending Collections</a>
+</div>
+
+<div class="card">
+  {% if wallets %}
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Student</th><th>Admission</th><th>Balance</th><th>Status</th>
+        <th style="text-align: right;">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for w in wallets %}
+      <tr>
+        <td><strong>{{ w.student.full_name }}</strong></td>
+        <td>{{ w.student.admission_number }}</td>
+        <td>
+          <strong style="color: var(--primary);">KES {{ w.balance|floatformat:0 }}</strong>
+        </td>
+        <td>
+          {% if w.balance > 0 %}<span class="badge badge-success">Has funds</span>
+          {% else %}<span class="badge badge-gray">Empty</span>{% endif %}
+        </td>
+        <td style="text-align: right; white-space: nowrap;">
+          {% if w.balance > 0 %}
+            <a href="{% url 'wallet_withdraw' w.id %}" class="btn btn-sm btn-primary">Withdraw for Student</a>
+          {% endif %}
+          <a href="{% url 'wallet_detail' w.id %}" class="btn btn-sm btn-secondary">View</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="pro-empty" style="border: none; padding: 60px;">
+    <p style="color: var(--ink-500);">No students in your class.</p>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}

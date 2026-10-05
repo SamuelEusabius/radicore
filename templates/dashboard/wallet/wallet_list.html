@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% block title %}All Wallets{% endblock %}
+{% block header_title %}All Student Wallets{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-info">
+    <h1 class="page-title">All Wallets</h1>
+    <p class="page-subtitle">{{ wallets|length }} wallets · Total: KES {{ total|floatformat:0 }}</p>
+  </div>
+  <a href="{% url 'wallet_dashboard' %}" class="btn btn-secondary">← Dashboard</a>
+</div>
+
+<form method="get" class="card mb-6" style="display: flex; gap: 12px;">
+  <input type="text" name="q" value="{{ search }}" placeholder="Search student or admission..."
+         style="flex: 1; padding: 10px; border: 1px solid var(--border);">
+  <select name="class" style="padding: 10px; border: 1px solid var(--border);">
+    <option value="">All Classes</option>
+    {% for c in classes %}
+      <option value="{{ c }}" {% if class_filter == c %}selected{% endif %}>{{ c }}</option>
+    {% endfor %}
+  </select>
+  <button type="submit" class="btn btn-primary">Filter</button>
+</form>
+
+<div class="card">
+  {% if wallets %}
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Student</th><th>Admission No</th><th>Class</th><th>Balance</th><th>Status</th>
+        <th style="text-align: right;">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for w in wallets %}
+      <tr>
+        <td><strong>{{ w.student.full_name }}</strong></td>
+        <td>{{ w.student.admission_number }}</td>
+        <td>{{ w.student.class_level|default:"—" }}</td>
+        <td>
+          <strong style="color: {% if w.balance > 0 %}var(--primary){% else %}var(--ink-400){% endif %};">
+            KES {{ w.balance|floatformat:0 }}
+          </strong>
+        </td>
+        <td>
+          {% if w.is_locked %}<span class="badge badge-danger">Locked</span>
+          {% elif w.balance == 0 %}<span class="badge badge-gray">Empty</span>
+          {% else %}<span class="badge badge-success">Active</span>{% endif %}
+        </td>
+        <td style="text-align: right; white-space: nowrap;">
+          <a href="{% url 'wallet_topup' w.id %}" class="btn btn-sm btn-primary">+ Top Up</a>
+          <a href="{% url 'wallet_withdraw' w.id %}" class="btn btn-sm btn-secondary">− Withdraw</a>
+          <a href="{% url 'wallet_detail' w.id %}" class="btn btn-sm btn-secondary">View</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="pro-empty" style="border: none; padding: 60px;">
+    <p style="color: var(--ink-500);">No wallets yet.</p>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}
