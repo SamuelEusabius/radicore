@@ -131,9 +131,9 @@
         {% include 'partials/icons.html' with name="truck" size=18 %}
         <span class="sidebar-link-text">Transport</span>
       </a>
-      <a href="{% url 'departments_library' %}" class="sidebar-link">
+            <a href="{% url 'department_reports_inbox' %}?department=library" class="sidebar-link">
         {% include 'partials/icons.html' with name="book" size=18 %}
-        <span class="sidebar-link-text">Library</span>
+        <span class="sidebar-link-text">Library Reports</span>
       </a>
       <a href="{% url 'departments_lab' %}" class="sidebar-link">
         {% include 'partials/icons.html' with name="activity" size=18 %}
@@ -185,12 +185,10 @@
         <div class="sidebar-section-label">Modules</div>
       {% endif %}
 
-      {% if 'library' in enabled_modules %}
-        <a href="{% url 'school_module_placeholder' 'library' %}" class="sidebar-link">
-          {% include 'partials/icons.html' with name="book" size=18 %}
-          <span class="sidebar-link-text">Library</span>
-        </a>
-      {% endif %}
+            <a href="{% url 'book_list' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="book" size=18 %}
+        <span class="sidebar-link-text">Library</span>
+      </a>
 
       {% if 'transport' in enabled_modules %}
         <a href="{% url 'school_module_placeholder' 'transport' %}" class="sidebar-link">
@@ -416,17 +414,33 @@
     <!-- LIBRARIAN                                     -->
     <!-- ============================================ -->
     {% if user.role == 'librarian' %}
-      <div class="sidebar-section-label">Library</div>
-      <a href="{% url 'librarian_dashboard' %}" class="sidebar-link">
-        {% include 'partials/icons.html' with name="home" size=18 %}
-        <span class="sidebar-link-text">My Dashboard</span>
-      </a>
-      <a href="{% url 'department_report_create' 'library' %}" class="sidebar-link">
-        {% include 'partials/icons.html' with name="file-plus" size=18 %}
-        <span class="sidebar-link-text">Submit Report</span>
-      </a>
-    {% endif %}
-
+  <div class="sidebar-section-label">Library</div>
+  <a href="{% url 'librarian_dashboard' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="home" size=18 %}
+    <span class="sidebar-link-text">My Dashboard</span>
+  </a>
+  <a href="{% url 'book_list' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="book" size=18 %}
+    <span class="sidebar-link-text">Book Catalog</span>
+  </a>
+  <a href="{% url 'issue_book' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="upload" size=18 %}
+    <span class="sidebar-link-text">Issue Book</span>
+  </a>
+  <a href="{% url 'book_issue_list' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="clipboard" size=18 %}
+    <span class="sidebar-link-text">All Issues</span>
+  </a>
+  <a href="{% url 'overdue_list' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="alert-triangle" size=18 %}
+    <span class="sidebar-link-text">Overdue</span>
+  </a>
+  <div class="sidebar-section-label">Reports</div>
+  <a href="{% url 'department_report_create' 'library' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="file-plus" size=18 %}
+    <span class="sidebar-link-text">Submit Report</span>
+  </a>
+{% endif %}
     <!-- ============================================ -->
     <!-- LAB TECHNICIAN                                -->
     <!-- ============================================ -->

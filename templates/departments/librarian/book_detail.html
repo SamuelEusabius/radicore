@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+{% block title %}{{ book.title }}{% endblock %}
+{% block header_title %}{{ book.title }}{% endblock %}
+{% block header_sub %}{{ book.author|default:"Unknown author" }}{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-info">
+    <h1 class="page-title">{{ book.title }}</h1>
+    <p class="page-subtitle">{{ book.author|default:"Unknown" }}{% if book.year %} · {{ book.year }}{% endif %}</p>
+  </div>
+    <div style="display: flex; gap: 8px;">
+    {% if user.role == 'librarian' %}
+      {% if book.is_available %}
+        <a href="{% url 'issue_book_for_book' book.id %}" class="btn btn-primary">+ Issue Book</a>
+      {% endif %}
+      <a href="{% url 'book_edit' book.id %}" class="btn btn-secondary">Edit</a>
+    {% endif %}
+    <a href="{% url 'book_list' %}" class="btn btn-secondary">← Catalog</a>
+  </div>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+  <div class="card">
+    <div class="stat-label">Available Copies</div>
+    <div class="stat-value" style="color: {% if book.is_available %}var(--success){% else %}var(--danger){% endif %};">
+      {{ book.available_copies }} / {{ book.total_copies }}
+    </div>
+    <div class="stat-meta">{{ book.available_copies }} of {{ book.total_copies }} in library</div>
+  </div>
+  <div class="card">
+    <div class="stat-label">Category</div>
+    <div class="stat-value" style="font-size: var(--text-md);">{{ book.category|default:"Uncategorized" }}</div>
+    <div class="stat-meta">{% if book.isbn %}ISBN: {{ book.isbn }}{% endif %}</div>
+  </div>
+  <div class="card">
+    <div class="stat-label">Status</div>
+    <div class="stat-value" style="font-size: var(--text-md);">
+      {% if book.is_active %}Active{% else %}Archived{% endif %}
+    </div>
+    <div class="stat-meta">{% if book.shelf_location %}Shelf: {{ book.shelf_location }}{% endif %}</div>
+  </div>
+</div>
+
+{% if book.notes %}
+<div class="card mb-6">
+  <h3 style="margin-bottom: 12px; font-family: var(--font-heading); font-size: var(--text-md);">Notes</h3>
+  <p style="line-height: 1.7; color: var(--ink-700);">{{ book.notes }}</p>
+</div>
+{% endif %}
+
+<div class="card">
+  <h3 style="margin-bottom: 16px; font-family: var(--font-heading);">Issue History (Last 30)</h3>
+  {% if issues %}
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Student</th>
+        <th>Issued</th>
+        <th>Due</th>
+        <th>Returned</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for issue in issues %}
+      <tr>
+        <td>{{ issue.student.full_name }}</td>
+        <td>{{ issue.issue_date|date:"j M Y" }}</td>
+        <td>{{ issue.due_date|date:"j M Y" }}</td>
+        <td>{{ issue.return_date|date:"j M Y"|default:"—" }}</td>
+        <td>
+          <span class="badge badge-{% if issue.status == 'returned' %}success{% elif issue.is_overdue %}danger{% else %}info{% endif %}">
+            {{ issue.get_status_display }}
+          </span>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p style="text-align: center; color: var(--ink-500); padding: 30px;">Never issued.</p>
+  {% endif %}
+</div>
+
+{% endblock %}

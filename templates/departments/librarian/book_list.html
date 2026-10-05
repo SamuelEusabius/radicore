@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+{% block title %}Book Catalog{% endblock %}
+{% block header_title %}Book Catalog{% endblock %}
+{% block header_sub %}{{ stats.total }} books{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-info">
+    <h1 class="page-title">Book Catalog</h1>
+    <p class="page-subtitle">
+      {{ stats.total }} titles · {{ stats.available }} available
+    </p>
+   <div style="display: flex; gap: 8px;">
+    {% if user.role == 'librarian' %}
+      <a href="{% url 'book_add' %}" class="btn btn-primary">+ Add Book</a>
+    {% endif %}
+    <a href="{% if user.role == 'librarian' %}{% url 'librarian_dashboard' %}{% else %}{% url 'departments_hub' %}{% endif %}" class="btn btn-secondary">← Back</a>
+  </div>
+
+<!-- Filters -->
+<form method="get" class="card mb-6" style="display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap;">
+  <div style="flex: 1; min-width: 200px;">
+    <label style="display: block; font-size: var(--text-xs); font-weight: 600; margin-bottom: 4px; color: var(--ink-600);">Search</label>
+    <input type="text" name="q" value="{{ search }}" placeholder="Title, author, ISBN..."
+           style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+  </div>
+  <div style="min-width: 180px;">
+    <label style="display: block; font-size: var(--text-xs); font-weight: 600; margin-bottom: 4px; color: var(--ink-600);">Category</label>
+    <select name="category" style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+      <option value="">All Categories</option>
+      {% for cat in categories %}
+        <option value="{{ cat }}" {% if category_filter == cat %}selected{% endif %}>{{ cat }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <button type="submit" class="btn btn-primary">Filter</button>
+  {% if search or category_filter %}
+    <a href="{% url 'book_list' %}" class="btn btn-secondary">Clear</a>
+  {% endif %}
+</form>
+
+<div class="card">
+  {% if books %}
+  <div style="overflow-x: auto;">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Title</th>
+          <th>Author</th>
+          <th>Category</th>
+          <th>Copies</th>
+          <th>Available</th>
+          <th style="text-align: right;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for b in books %}
+        <tr>
+          <td>
+            <a href="{% url 'book_detail' b.id %}" style="color: var(--primary); font-weight: 600; text-decoration: none;">
+              {{ b.title }}
+            </a>
+            {% if b.isbn %}
+              <div style="font-size: 10px; color: var(--ink-500);">ISBN: {{ b.isbn }}</div>
+            {% endif %}
+          </td>
+          <td>{{ b.author|default:"—" }}</td>
+          <td>
+            {% if b.category %}
+              <span class="badge badge-info">{{ b.category }}</span>
+            {% else %}—{% endif %}
+          </td>
+          <td>{{ b.total_copies }}</td>
+          <td>
+            {% if b.is_available %}
+              <span class="badge badge-success">{{ b.available_copies }} available</span>
+            {% else %}
+              <span class="badge badge-danger">Out of stock</span>
+            {% endif %}
+          </td>
+                    <td style="text-align: right; white-space: nowrap;">
+            {% if user.role == 'librarian' %}
+              {% if b.is_available %}
+                <a href="{% url 'issue_book_for_book' b.id %}" class="btn btn-sm btn-primary">Issue</a>
+              {% endif %}
+              <a href="{% url 'book_edit' b.id %}" class="btn btn-sm btn-secondary">Edit</a>
+              <a href="{% url 'book_delete' b.id %}" class="btn btn-sm" style="background: #fee2e2; color: #991b1b;">Delete</a>
+            {% else %}
+              <a href="{% url 'book_detail' b.id %}" class="btn btn-sm btn-secondary">View</a>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="pro-empty" style="border: none; padding: 60px;">
+    <p style="color: var(--ink-500);">
+      {% if search or category_filter %}
+        No books match your filters.
+      {% else %}
+        No books in the catalog yet.
+      {% endif %}
+    </p>
+    <a href="{% url 'book_add' %}" class="btn btn-primary" style="margin-top: 12px;">+ Add your first book</a>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}

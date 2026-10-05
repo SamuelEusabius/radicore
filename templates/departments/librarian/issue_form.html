@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% block title %}Issue Book{% endblock %}
+{% block header_title %}Issue Book{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 640px; margin: 0 auto;">
+  <form method="post">
+    {% csrf_token %}
+
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Book *</label>
+      <select name="book" required style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+        <option value="">— Select book —</option>
+        {% for b in available_books %}
+          <option value="{{ b.id }}"
+            {% if book and book.id == b.id %}selected{% elif form_data.book == b.id|stringformat:"s" %}selected{% endif %}>
+            {{ b.title }}{% if b.author %} — {{ b.author }}{% endif %} ({{ b.available_copies }} avail.)
+          </option>
+        {% endfor %}
+      </select>
+      {% if not available_books %}
+        <p style="color: var(--danger); font-size: var(--text-xs); margin-top: 6px;">
+          ⚠️ No books available. Add books or return some first.
+        </p>
+      {% endif %}
+    </div>
+
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Student *</label>
+      <select name="student" required style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+        <option value="">— Select student —</option>
+        {% for s in students %}
+          <option value="{{ s.id }}" {% if form_data.student == s.id|stringformat:"s" %}selected{% endif %}>
+            {{ s.first_name }} {{ s.last_name }} ({{ s.admission_number }}){% if s.class_level %} — {{ s.class_level }}{% endif %}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Issue Date *</label>
+        <input type="date" name="issue_date" required
+               value="{% if form_data.issue_date %}{{ form_data.issue_date }}{% else %}{{ today|date:'Y-m-d' }}{% endif %}"
+               style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+      </div>
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Due Date *</label>
+        <input type="date" name="due_date" required
+               value="{% if form_data.due_date %}{{ form_data.due_date }}{% endif %}"
+               style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+      </div>
+    </div>
+
+    <div style="margin-bottom: 24px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Notes</label>
+      <textarea name="notes" rows="2" style="width: 100%; padding: 10px; border: 1px solid var(--border);">{% if form_data.notes %}{{ form_data.notes }}{% endif %}</textarea>
+    </div>
+
+    <div style="display: flex; gap: 12px; justify-content: flex-end;">
+      <a href="{% url 'librarian_dashboard' %}" class="btn btn-secondary">Cancel</a>
+      <button type="submit" class="btn btn-primary">Issue Book</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

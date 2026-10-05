@@ -706,12 +706,15 @@ def _ct_build_rankings(exam, cls, students, subjects):
 @login_required
 @class_teacher_only
 def class_teacher_results_sheet_pdf(request):
-    """Printable A4 landscape class results sheet."""
-    from apps.grades.models import Exam
+    """Printable A4 landscape class results sheet (CBC)."""
+    from apps.grades.models import Exam, Grade
     from apps.students.models import Student
-    from apps.core.pdf_utils import html_to_pdf_response
+    from apps.academics.models import Subject
+    from apps.core.pdf_utils import html_to_pdf_response, image_to_base64
+    from apps.grades.services.report_card import (
+        cbc_grade, cbc_points, compute_rankings, subject_positions,
+    )
     from django.template.loader import render_to_string
-    from django.utils import timezone
 
     teacher, cls = _ct_teacher_and_class(request)
     if teacher is None:
@@ -736,49 +739,74 @@ def class_teacher_results_sheet_pdf(request):
 
     students = Student.objects.filter(
         school=request.user.school, class_level=cls.name, is_active=True,
-    ).order_by('gender', 'first_name', 'last_name')
+    ).order_by('first_name', 'last_name')
 
-    rankings, subjects = _ct_build_rankings(exam, cls, students, None)
+    # Subjects present in this exam for this class
+    subject_ids = Grade.objects.filter(
+        exam=exam, student__in=students
+    ).values_list('subject_id', flat=True).distinct()
 
-    # Class averages per subject
-    subject_averages = []
-    for sub in subjects:
-        vals = []
-        for r in rankings:
-            idx = subjects.index(sub)
-            if r['marks'][idx] is not None:
-                vals.append(r['marks'][idx])
-        subject_averages.append(round(sum(vals) / len(vals), 1) if vals else 0)
+    subjects = list(
+        Subject.objects.filter(id__in=subject_ids).order_by('name')
+    )
+    if not subjects:
+        subjects = list(Subject.objects.filter(school=request.user.school).order_by('name'))
 
-    total_avg = round(sum(r['total'] for r in rankings) / len(rankings), 1) if rankings else 0
-    class_avg = round(sum(r['average'] for r in rankings) / len(rankings), 1) if rankings else 0
+    # Marks matrix
+    all_grades = Grade.objects.filter(
+        exam=exam, student__in=students
+    ).values('student_id', 'subject_id', 'marks', 'out_of')
 
-    def cbc(p):
-        if p >= 80: return 'EE'
-        if p >= 65: return 'ME'
-        if p >= 50: return 'AE'
-        return 'BE'
+    marks_matrix = {}
+    for g in all_grades:
+        sid = g['student_id']
+        sub_id = g['subject_id']
+        pct = (float(g['marks']) / float(g['out_of'] or 100)) * 100
+        marks_matrix.setdefault(sid, {})[sub_id] = round(pct, 1)
 
-    class_grade = cbc(class_avg)
+    rankings = compute_rankings(exam, students)
+
+    rows = []
+    for s in students:
+        r = rankings.get(s.id, {'total': 0, 'avg': 0, 'rank': '—'})
+        subject_cells = []
+        for sub in subjects:
+            pct = marks_matrix.get(s.id, {}).get(sub.id)
+            subject_cells.append({
+                'subject': sub.name,
+                'pct': pct if pct is not None else None,
+                'grade': cbc_grade(pct) if pct is not None else '—',
+            })
+
+        rows.append({
+            'student': s,
+            'subject_cells': subject_cells,
+            'total': r['total'],
+            'avg': r['avg'],
+            'rank': r['rank'],
+            'grade': cbc_grade(r['avg']),
+            'points': cbc_points(r['avg']),
+        })
+
+    rows.sort(key=lambda x: x['rank'] if isinstance(x['rank'], int) else 999)
+
+    # Class averages
+    class_avg = round(sum(r['avg'] for r in rows) / len(rows), 1) if rows else 0
+
+    school_logo_b64 = image_to_base64(request.user.school.logo) if request.user.school.logo else None
 
     html_string = render_to_string('pdf/class_results.html', {
-        'school': request.user.school,
-        'cls': cls,
-        'teacher': teacher,
         'exam': exam,
+        'class_level': cls,
         'subjects': subjects,
-        'rankings': rankings,
-        'subject_averages': subject_averages,
-        'total_avg': total_avg,
-        'class_avg': class_avg,
-        'class_grade': class_grade,
-        'generated_at': timezone.now(),
-        'generated_by': request.user,
+        'rows': rows,
+        'school': request.user.school,
+        'user': request.user,
+        'school_logo_b64': school_logo_b64,
     })
 
     filename = f"results_{cls.name.replace(' ', '_')}_{exam.name.replace(' ', '_')}.pdf"
     return html_to_pdf_response(html_string, filename)
-
 
 @login_required
 @class_teacher_only
@@ -979,3 +1007,107 @@ def _render_report_card_pdf(request, student, exam, rankings, positions, class_s
     return buffer.getvalue()
 
 
+@login_required
+@class_teacher_only
+def class_teacher_results_sheet_pdf(request):
+    """Printable A4 landscape class results sheet (CBC)."""
+    from apps.grades.models import Exam, Grade
+    from apps.students.models import Student
+    from apps.academics.models import Subject
+    from apps.core.pdf_utils import html_to_pdf_response, image_to_base64
+    from apps.grades.services.report_card import (
+        cbc_grade, cbc_points, compute_rankings,
+    )
+    from django.template.loader import render_to_string
+
+    teacher, cls = _ct_teacher_and_class(request)
+    if teacher is None:
+        return redirect('dashboard_home')
+    if cls is None:
+        return redirect('class_teacher_dashboard')
+
+    exams = Exam.objects.filter(school=request.user.school).order_by('-year', '-id')
+    exam_id = request.GET.get('exam')
+
+    exam = None
+    if exam_id:
+        try:
+            exam = Exam.objects.get(id=exam_id, school=request.user.school)
+        except Exam.DoesNotExist:
+            pass
+    if not exam and exams.exists():
+        exam = exams.first()
+
+    if not exam:
+        return HttpResponse('<h1>No exam selected</h1>', status=404)
+
+    students = Student.objects.filter(
+        school=request.user.school, class_level=cls.name, is_active=True,
+    ).order_by('first_name', 'last_name')
+
+    # Get subjects that have marks for this exam + class
+    subject_ids = Grade.objects.filter(
+        exam=exam, student__in=students
+    ).values_list('subject_id', flat=True).distinct()
+
+    subjects = list(
+        Subject.objects.filter(id__in=subject_ids).order_by('name')
+    )
+    if not subjects:
+        subjects = list(Subject.objects.filter(school=request.user.school).order_by('name'))
+
+    # Marks matrix: {student_id: {subject_id: pct}}
+    all_grades = Grade.objects.filter(
+        exam=exam, student__in=students
+    ).values('student_id', 'subject_id', 'marks', 'out_of')
+
+    marks_matrix = {}
+    for g in all_grades:
+        sid = g['student_id']
+        sub_id = g['subject_id']
+        pct = (float(g['marks']) / float(g['out_of'] or 100)) * 100
+        marks_matrix.setdefault(sid, {})[sub_id] = round(pct, 1)
+
+    rankings = compute_rankings(exam, students)
+
+    rows = []
+    for s in students:
+        r = rankings.get(s.id, {'total': 0, 'avg': 0, 'rank': '—'})
+        subject_cells = []
+        for sub in subjects:
+            pct = marks_matrix.get(s.id, {}).get(sub.id)
+            subject_cells.append({
+                'subject': sub.name,
+                'pct': pct if pct is not None else None,
+                'grade': cbc_grade(pct) if pct is not None else '—',
+            })
+
+        rows.append({
+            'student': s,
+            'subject_cells': subject_cells,
+            'total': r['total'],
+            'avg': r['avg'],
+            'rank': r['rank'],
+            'grade': cbc_grade(r['avg']),
+            'points': cbc_points(r['avg']),
+        })
+
+    rows.sort(key=lambda x: x['rank'] if isinstance(x['rank'], int) else 999)
+
+    # Class average
+    class_avg = round(sum(r['avg'] for r in rows) / len(rows), 1) if rows else 0
+
+    school_logo_b64 = image_to_base64(request.user.school.logo) if request.user.school.logo else None
+
+    html_string = render_to_string('pdf/class_results.html', {
+        'exam': exam,
+        'class_level': cls,
+        'subjects': subjects,
+        'rows': rows,
+        'school': request.user.school,
+        'user': request.user,
+        'school_logo_b64': school_logo_b64,
+    })
+
+    filename = f"results_{cls.name.replace(' ', '_')}_{exam.name.replace(' ', '_')}.pdf"
+    return html_to_pdf_response(html_string, filename)

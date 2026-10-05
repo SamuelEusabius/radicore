@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+{% block title %}Return Book{% endblock %}
+{% block header_title %}Return Book{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 640px; margin: 0 auto;">
+
+  <!-- Issue summary -->
+  <div style="background: var(--surface-muted); padding: 20px; border-radius: 8px; margin-bottom: 24px;">
+    <h3 style="margin-bottom: 12px; font-family: var(--font-heading);">{{ issue.book.title }}</h3>
+    <div style="font-size: var(--text-sm); line-height: 2;">
+      <div><strong>Student:</strong> {{ issue.student.full_name }} ({{ issue.student.admission_number }})</div>
+      <div><strong>Issued:</strong> {{ issue.issue_date|date:"j M Y" }}</div>
+      <div><strong>Due:</strong> {{ issue.due_date|date:"j M Y" }}</div>
+      {% if issue.is_overdue %}
+        <div style="color: var(--danger);">
+          <strong>⚠️ Overdue by {{ issue.days_overdue }} day{{ issue.days_overdue|pluralize }}</strong>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <form method="post">
+    {% csrf_token %}
+
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Return Date *</label>
+      <input type="date" name="return_date" required value="{{ today|date:'Y-m-d' }}"
+             style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+    </div>
+
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Condition</label>
+      <select name="status" style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+        <option value="returned">Returned — Good Condition</option>
+        <option value="damaged">Returned — Damaged</option>
+        <option value="lost">Reported Lost</option>
+      </select>
+    </div>
+
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Fine (KES)</label>
+      <input type="number" name="fine_kes" step="0.01" value="0"
+             style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+      <p style="font-size: var(--text-xs); color: var(--ink-500); margin-top: 4px;">
+        Suggested fine for overdue: KES 10/day = <strong>KES {{ issue.days_overdue|default:0|floatformat:0 }}00</strong>
+      </p>
+    </div>
+
+    <div style="margin-bottom: 24px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Notes</label>
+      <textarea name="notes" rows="2" style="width: 100%; padding: 10px; border: 1px solid var(--border);"></textarea>
+    </div>
+
+    <div style="display: flex; gap: 12px; justify-content: flex-end;">
+      <a href="{% url 'book_issue_list' %}" class="btn btn-secondary">Cancel</a>
+      <button type="submit" class="btn btn-primary">Confirm Return</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

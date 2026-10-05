@@ -233,3 +233,112 @@ class PreTripChecklist(models.Model):
 
     def __str__(self):
         return f"Checklist for {self.trip}"
+    
+
+# ============================================================
+# LIBRARY MODULE
+# ============================================================
+
+class Book(models.Model):
+    """A book in the school library."""
+    STATUS_CHOICES = [
+        ('available', 'Available'),
+        ('out_of_stock', 'Out of Stock'),
+        ('archived', 'Archived'),
+    ]
+
+    school = models.ForeignKey(
+        'schools.School', on_delete=models.CASCADE,
+        related_name='books'
+    )
+    title = models.CharField(max_length=300)
+    author = models.CharField(max_length=200, blank=True)
+    isbn = models.CharField(max_length=30, blank=True)
+    category = models.CharField(max_length=100, blank=True)
+    publisher = models.CharField(max_length=150, blank=True)
+    edition = models.CharField(max_length=50, blank=True)
+    year = models.PositiveIntegerField(null=True, blank=True)
+
+    total_copies = models.PositiveIntegerField(default=1)
+    shelf_location = models.CharField(max_length=50, blank=True)
+    notes = models.TextField(blank=True)
+    cover = models.ImageField(upload_to='library/covers/', null=True, blank=True)
+
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['title']
+
+    def __str__(self):
+        return f"{self.title} ({self.author})"
+
+    @property
+    def available_copies(self):
+        """Count copies not currently issued."""
+        issued = self.issues.filter(status='issued').count()
+        return max(0, self.total_copies - issued)
+
+    @property
+    def is_available(self):
+        return self.available_copies > 0
+
+
+class BookIssue(models.Model):
+    """A book issue/return record."""
+    STATUS_CHOICES = [
+        ('issued', 'Issued'),
+        ('returned', 'Returned'),
+        ('lost', 'Lost'),
+        ('damaged', 'Damaged'),
+    ]
+
+    school = models.ForeignKey(
+        'schools.School', on_delete=models.CASCADE,
+        related_name='book_issues'
+    )
+    book = models.ForeignKey(Book, on_delete=models.CASCADE, related_name='issues')
+    student = models.ForeignKey(
+        'students.Student', on_delete=models.CASCADE,
+        related_name='book_issues'
+    )
+
+    issue_date = models.DateField()
+    due_date = models.DateField()
+    return_date = models.DateField(null=True, blank=True)
+
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='issued')
+    fine_kes = models.DecimalField(max_digits=8, decimal_places=2, default=0)
+    fine_paid = models.BooleanField(default=False)
+
+    issued_by = models.ForeignKey(
+        'accounts.User', on_delete=models.SET_NULL, null=True,
+        related_name='books_issued'
+    )
+    returned_to = models.ForeignKey(
+        'accounts.User', on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='books_received'
+    )
+
+    notes = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-issue_date']
+
+    def __str__(self):
+        return f"{self.book.title} → {self.student.full_name}"
+
+    @property
+    def is_overdue(self):
+        if self.status != 'issued':
+            return False
+        from datetime import date
+        return self.due_date < date.today()
+
+    @property
+    def days_overdue(self):
+        if not self.is_overdue:
+            return 0
+        from datetime import date
+        return (date.today() - self.due_date).days

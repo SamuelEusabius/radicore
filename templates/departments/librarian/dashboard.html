@@ -1,0 +1,130 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Library Dashboard{% endblock %}
+{% block header_title %}Library Dashboard{% endblock %}
+{% block header_sub %}{{ current_school.name }}{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-info">
+    <h1 class="page-title">Good day, {{ user.get_full_name|default:user.email|truncatechars:22 }}</h1>
+    <p class="page-subtitle">Today is {{ today|date:"l, j F Y" }}</p>
+  </div>
+  <div style="display: flex; gap: 8px;">
+    <a href="{% url 'issue_book' %}" class="btn btn-primary">+ Issue Book</a>
+    <a href="{% url 'book_add' %}" class="btn btn-secondary">+ Add Book</a>
+  </div>
+</div>
+
+<!-- KPI Row -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+  <div class="card">
+    <div class="stat-label">Total Books</div>
+    <div class="stat-value">{{ total_books }}</div>
+    <div class="stat-meta">{{ total_copies }} copies</div>
+  </div>
+  <div class="card">
+    <div class="stat-label">Currently Issued</div>
+    <div class="stat-value" style="color: var(--info);">{{ issued_count }}</div>
+    <div class="stat-meta">Books out</div>
+  </div>
+  <div class="card">
+    <div class="stat-label">Overdue</div>
+    <div class="stat-value" style="color: var(--danger);">{{ overdue_count }}</div>
+    <div class="stat-meta">Needs follow-up</div>
+  </div>
+  <div class="card">
+    <div class="stat-label">Catalog</div>
+    <div class="stat-value">
+      <a href="{% url 'book_list' %}" style="color: var(--primary); text-decoration: none;">View →</a>
+    </div>
+  </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="card mb-6">
+  <h3 style="margin-bottom: 16px; font-family: var(--font-heading);">Quick Actions</h3>
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+    <a href="{% url 'issue_book' %}" class="btn btn-primary">📤 Issue Book</a>
+    <a href="{% url 'book_issue_list' %}" class="btn btn-secondary">📋 All Issues</a>
+    <a href="{% url 'overdue_list' %}" class="btn btn-secondary">⚠️ Overdue</a>
+    <a href="{% url 'library_report_pdf' %}" class="btn btn-secondary">📄 Export PDF</a>
+  </div>
+</div>
+
+<!-- Overdue (if any) -->
+{% if overdue %}
+<div class="card mb-6" style="border-left: 4px solid var(--danger);">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+    <h3 style="margin: 0; color: var(--danger); font-family: var(--font-heading);">⚠️ Overdue Books</h3>
+    <a href="{% url 'overdue_list' %}" style="color: var(--primary); font-size: var(--text-sm);">View all →</a>
+  </div>
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Book</th>
+        <th>Student</th>
+        <th>Due Date</th>
+        <th>Days Overdue</th>
+        <th style="text-align: right;">Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for issue in overdue %}
+      <tr>
+        <td><strong>{{ issue.book.title }}</strong></td>
+        <td>{{ issue.student.full_name }}</td>
+        <td>{{ issue.due_date|date:"j M Y" }}</td>
+        <td><span class="badge badge-danger">{{ issue.days_overdue }} days</span></td>
+        <td style="text-align: right;">
+          <a href="{% url 'return_book' issue.id %}" class="btn btn-sm btn-primary">Return</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+<!-- Recent Issues -->
+<div class="card">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+    <h3 style="margin: 0; font-family: var(--font-heading);">Recent Issues</h3>
+    <a href="{% url 'book_issue_list' %}" style="color: var(--primary); font-size: var(--text-sm);">View all →</a>
+  </div>
+  {% if recent_issues %}
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Book</th>
+        <th>Student</th>
+        <th>Issued</th>
+        <th>Due</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for issue in recent_issues %}
+      <tr>
+        <td>{{ issue.book.title }}</td>
+        <td>{{ issue.student.full_name }}</td>
+        <td>{{ issue.issue_date|date:"j M" }}</td>
+        <td>{{ issue.due_date|date:"j M" }}</td>
+        <td>
+          <span class="badge badge-{% if issue.status == 'returned' %}success{% elif issue.is_overdue %}danger{% else %}info{% endif %}">
+            {{ issue.get_status_display }}
+          </span>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="pro-empty" style="border: none; padding: 40px;">
+    <p style="color: var(--ink-500);">No issues yet.</p>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}

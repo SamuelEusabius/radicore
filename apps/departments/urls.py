@@ -1,6 +1,7 @@
 from django.urls import path
 from . import views
 from . import views_transport
+from . import views, views_transport, views_library
 
 urlpatterns = [
     path('driver/', views.driver_dashboard, name='driver_dashboard'),
@@ -33,4 +34,27 @@ urlpatterns = [
     # My students
     path('driver/students/', views_transport.my_students, name='my_students'),
     path('driver/students/pdf/', views_transport.my_students_pdf, name='my_students_pdf'),
+        # ============================================================
+    # LIBRARY MODULE
+    # ============================================================
+
+    # Librarian dashboard
+    path('librarian/', views_library.librarian_dashboard, name='librarian_dashboard'),
+
+    # Books catalog
+    path('librarian/books/', views_library.book_list, name='book_list'),
+    path('librarian/books/add/', views_library.book_form, name='book_add'),
+    path('librarian/books/<int:book_id>/', views_library.book_detail, name='book_detail'),
+    path('librarian/books/<int:book_id>/edit/', views_library.book_form, name='book_edit'),
+    path('librarian/books/<int:book_id>/delete/', views_library.book_delete, name='book_delete'),
+
+    # Issue / Return
+    path('librarian/issue/', views_library.issue_book, name='issue_book'),
+    path('librarian/issue/<int:book_id>/', views_library.issue_book, name='issue_book_for_book'),
+    path('librarian/return/<int:issue_id>/', views_library.return_book, name='return_book'),
+    path('librarian/issues/', views_library.book_issue_list, name='book_issue_list'),
+    path('librarian/overdue/', views_library.overdue_list, name='overdue_list'),
+
+    # Reports
+    path('librarian/reports/pdf/', views_library.library_report_pdf, name='library_report_pdf'),
 ]

@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+{% block title %}{% if book %}Edit Book{% else %}Add Book{% endif %}{% endblock %}
+{% block header_title %}{% if book %}Edit Book{% else %}Add Book{% endif %}{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 720px; margin: 0 auto;">
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Title *</label>
+      <input type="text" name="title" required
+             value="{% if form_data.title %}{{ form_data.title }}{% elif book %}{{ book.title }}{% endif %}"
+             style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Author</label>
+        <input type="text" name="author"
+               value="{% if form_data.author %}{{ form_data.author }}{% elif book %}{{ book.author }}{% endif %}"
+               style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+      </div>
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">ISBN</label>
+        <input type="text" name="isbn"
+               value="{% if form_data.isbn %}{{ form_data.isbn }}{% elif book %}{{ book.isbn }}{% endif %}"
+               style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Category</label>
+        <input type="text" name="category"
+               value="{% if form_data.category %}{{ form_data.category }}{% elif book %}{{ book.category }}{% endif %}"
+               placeholder="e.g. Science, Fiction" style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+      </div>
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Publisher</label>
+        <input type="text" name="publisher"
+               value="{% if form_data.publisher %}{{ form_data.publisher }}{% elif book %}{{ book.publisher }}{% endif %}"
+               style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Edition</label>
+        <input type="text" name="edition"
+               value="{% if form_data.edition %}{{ form_data.edition }}{% elif book %}{{ book.edition }}{% endif %}"
+               style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+      </div>
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Year</label>
+        <input type="number" name="year"
+               value="{% if form_data.year %}{{ form_data.year }}{% elif book %}{{ book.year }}{% endif %}"
+               style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+      </div>
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Total Copies *</label>
+        <input type="number" name="total_copies"
+               value="{% if form_data.total_copies %}{{ form_data.total_copies }}{% elif book %}{{ book.total_copies }}{% else %}1{% endif %}"
+               min="1" required style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+      </div>
+    </div>
+
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Shelf Location</label>
+      <input type="text" name="shelf_location"
+             value="{% if form_data.shelf_location %}{{ form_data.shelf_location }}{% elif book %}{{ book.shelf_location }}{% endif %}"
+             placeholder="e.g. Shelf A-3" style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+    </div>
+
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Notes</label>
+      <textarea name="notes" rows="3" style="width: 100%; padding: 10px; border: 1px solid var(--border);">{% if form_data.notes %}{{ form_data.notes }}{% elif book %}{{ book.notes }}{% endif %}</textarea>
+    </div>
+
+    <div style="margin-bottom: 24px;">
+      <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+        <input type="checkbox" name="is_active" {% if not book or book.is_active %}checked{% endif %} style="width: 18px; height: 18px;">
+        <span>Active</span>
+      </label>
+    </div>
+
+    <div style="display: flex; gap: 12px; justify-content: flex-end;">
+      <a href="{% url 'book_list' %}" class="btn btn-secondary">Cancel</a>
+      <button type="submit" class="btn btn-primary">{% if book %}Save Changes{% else %}Add Book{% endif %}</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

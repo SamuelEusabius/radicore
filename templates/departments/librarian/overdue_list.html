@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+{% block title %}Overdue Books{% endblock %}
+{% block header_title %}Overdue Books{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-info">
+    <h1 class="page-title" style="color: var(--danger);">⚠️ Overdue Books</h1>
+    <p class="page-subtitle">{{ overdue|length }} book{{ overdue|length|pluralize }} overdue</p>
+  </div>
+  <a href="{% url 'librarian_dashboard' %}" class="btn btn-secondary">← Dashboard</a>
+</div>
+
+<div class="card">
+  {% if overdue %}
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Book</th>
+        <th>Student</th>
+        <th>Issued</th>
+        <th>Due Date</th>
+        <th>Days Overdue</th>
+        <th style="text-align: right;">Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for issue in overdue %}
+      <tr>
+        <td><strong>{{ issue.book.title }}</strong></td>
+        <td>
+          {{ issue.student.full_name }}
+          <div style="font-size: 10px; color: var(--ink-500);">{{ issue.student.admission_number }}</div>
+        </td>
+        <td>{{ issue.issue_date|date:"j M Y" }}</td>
+        <td>{{ issue.due_date|date:"j M Y" }}</td>
+        <td><span class="badge badge-danger">{{ issue.days_overdue }} days</span></td>
+        <td style="text-align: right;">
+          <a href="{% url 'return_book' issue.id %}" class="btn btn-sm btn-primary">Return Now</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="pro-empty" style="border: none; padding: 60px;">
+    <p style="color: var(--success); font-size: var(--text-lg);">
+      ✅ No overdue books. Great job!
+    </p>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}

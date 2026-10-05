@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+{% block title %}All Book Issues{% endblock %}
+{% block header_title %}All Book Issues{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-info">
+    <h1 class="page-title">All Book Issues</h1>
+    <p class="page-subtitle">{{ stats.all }} total · {{ stats.issued }} currently issued · {{ stats.overdue }} overdue</p>
+  </div>
+  <a href="{% url 'library_report_pdf' %}{% if status_filter %}?status={{ status_filter }}{% endif %}" class="btn btn-primary">
+    📄 Export PDF
+  </a>
+</div>
+
+<!-- Status filters -->
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+  <a href="{% url 'book_issue_list' %}" class="card card-hover" style="text-decoration: none; color: inherit; {% if not status_filter %}border: 2px solid var(--primary);{% endif %}">
+    <div class="stat-label">All</div>
+    <div class="stat-value">{{ stats.all }}</div>
+  </a>
+  <a href="?status=issued" class="card card-hover" style="text-decoration: none; color: inherit; {% if status_filter == 'issued' %}border: 2px solid var(--primary);{% endif %}">
+    <div class="stat-label">Issued</div>
+    <div class="stat-value" style="color: var(--info);">{{ stats.issued }}</div>
+  </a>
+  <a href="?status=returned" class="card card-hover" style="text-decoration: none; color: inherit; {% if status_filter == 'returned' %}border: 2px solid var(--primary);{% endif %}">
+    <div class="stat-label">Returned</div>
+    <div class="stat-value" style="color: var(--success);">{{ stats.returned }}</div>
+  </a>
+  <a href="?status=overdue" class="card card-hover" style="text-decoration: none; color: inherit;">
+    <div class="stat-label">Overdue</div>
+    <div class="stat-value" style="color: var(--danger);">{{ stats.overdue }}</div>
+  </a>
+</div>
+
+<!-- Search -->
+<form method="get" class="card mb-6" style="display: flex; gap: 12px;">
+  <input type="text" name="q" value="{{ search }}" placeholder="Search book or student..."
+         style="flex: 1; padding: 10px; border: 1px solid var(--border);">
+  {% if status_filter %}<input type="hidden" name="status" value="{{ status_filter }}">{% endif %}
+  <button type="submit" class="btn btn-primary">Search</button>
+  {% if search %}<a href="?{% if status_filter %}status={{ status_filter }}{% endif %}" class="btn btn-secondary">Clear</a>{% endif %}
+</form>
+
+<div class="card">
+  {% if issues %}
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Book</th>
+        <th>Student</th>
+        <th>Issued</th>
+        <th>Due</th>
+        <th>Status</th>
+        <th style="text-align: right;">Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for issue in issues %}
+      <tr>
+        <td><strong>{{ issue.book.title }}</strong></td>
+        <td>{{ issue.student.full_name }}</td>
+        <td>{{ issue.issue_date|date:"j M Y" }}</td>
+        <td>{{ issue.due_date|date:"j M Y" }}</td>
+        <td>
+          {% if issue.status == 'issued' and issue.is_overdue %}
+            <span class="badge badge-danger">Overdue ({{ issue.days_overdue }}d)</span>
+          {% else %}
+            <span class="badge badge-{% if issue.status == 'returned' %}success{% elif issue.status == 'issued' %}info{% elif issue.status == 'lost' %}danger{% else %}warning{% endif %}">
+              {{ issue.get_status_display }}
+            </span>
+          {% endif %}
+        </td>
+        <td style="text-align: right;">
+          {% if issue.status == 'issued' %}
+            <a href="{% url 'return_book' issue.id %}" class="btn btn-sm btn-primary">Return</a>
+          {% else %}
+            <span style="color: var(--ink-400); font-size: var(--text-xs);">
+              {% if issue.return_date %}{{ issue.return_date|date:"j M Y" }}{% endif %}
+            </span>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="pro-empty" style="border: none; padding: 60px;">
+    <p style="color: var(--ink-500);">No issues found.</p>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}
