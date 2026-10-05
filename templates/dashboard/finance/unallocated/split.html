@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+{% block title %}Split Payment{% endblock %}
+{% block header_title %}Split Payment{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-info">
+    <h1 class="page-title">Split KES {{ payment.amount|floatformat:0 }}</h1>
+    <p class="page-subtitle">Divide this payment across multiple students (e.g. siblings)</p>
+  </div>
+  <a href="{% url 'unallocated_queue' %}" class="btn btn-secondary">← Back</a>
+</div>
+
+<div class="card" style="border-left: 4px solid var(--info); margin-bottom: 20px;">
+  <p style="margin: 0; font-size: var(--text-sm); color: var(--ink-700);">
+    ℹ️ <strong>How this works:</strong> Enter the student IDs and amounts below. 
+    The sum must be ≤ KES {{ payment.amount|floatformat:0 }}. Any remainder stays in the queue.
+  </p>
+</div>
+
+<form method="post" id="splitForm">
+  {% csrf_token %}
+
+  <div class="card" style="padding: 0; overflow: hidden;">
+    <table class="table" id="splitTable">
+      <thead>
+        <tr>
+          <th style="width: 40px;">#</th>
+          <th>Student</th>
+          <th style="width: 200px;">Amount (KES)</th>
+          <th style="width: 50px;"></th>
+        </tr>
+      </thead>
+      <tbody id="splitBody">
+        <tr class="split-row">
+          <td>1</td>
+          <td>
+            <input type="text" placeholder="Type student name or ID..." 
+                   class="student-search" autocomplete="off"
+                   style="width: 100%; padding: 8px; border: 1px solid var(--border);">
+            <input type="hidden" name="student_1" class="student-id-input">
+          </td>
+          <td>
+            <input type="number" name="amount_1" class="amount-input" step="0.01" min="1" max="{{ payment.amount }}"
+                   style="width: 100%; padding: 8px; border: 1px solid var(--border); font-weight: 700;">
+          </td>
+          <td>
+            <button type="button" onclick="removeRow(this)" style="background: transparent; border: none; color: var(--danger); cursor: pointer; font-size: 18px;">✕</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div style="display: flex; gap: 12px; margin-top: 16px; align-items: center; flex-wrap: wrap;">
+    <button type="button" onclick="addRow()" class="btn btn-secondary">+ Add Row</button>
+    <div style="margin-left: auto; font-size: var(--text-md);">
+      Total: <strong id="totalAmount" style="color: var(--primary); font-size: 20px;">0.00</strong>
+      <span style="color: var(--ink-500);">/ {{ payment.amount|floatformat:2 }}</span>
+    </div>
+  </div>
+
+  <div style="display: flex; gap: 12px; margin-top: 24px; justify-content: flex-end;">
+    <a href="{% url 'unallocated_queue' %}" class="btn btn-secondary">Cancel</a>
+    <button type="submit" class="btn btn-primary" id="submitBtn">Apply Split</button>
+  </div>
+</form>
+
+<script>
+  let rowCount = 1;
+
+  function updateTotal() {
+    let total = 0;
+    document.querySelectorAll('.amount-input').forEach(input => {
+      total += parseFloat(input.value || 0);
+    });
+    document.getElementById('totalAmount').textContent = total.toFixed(2);
+    const max = parseFloat('{{ payment.amount|floatformat:2 }}');
+    document.getElementById('submitBtn').disabled = total > max || total === 0;
+  }
+
+  function addRow() {
+    rowCount++;
+    const tbody = document.getElementById('splitBody');
+    const row = document.createElement('tr');
+    row.className = 'split-row';
+    row.innerHTML = `
+      <td>${rowCount}</td>
+      <td>
+        <input type="text" placeholder="Type student name or ID..." class="student-search" autocomplete="off" style="width: 100%; padding: 8px; border: 1px solid var(--border);">
+        <input type="hidden" name="student_${rowCount}" class="student-id-input">
+      </td>
+      <td>
+        <input type="number" name="amount_${rowCount}" class="amount-input" step="0.01" min="1" max="{{ payment.amount }}" style="width: 100%; padding: 8px; border: 1px solid var(--border); font-weight: 700;">
+      </td>
+      <td>
+        <button type="button" onclick="removeRow(this)" style="background: transparent; border: none; color: var(--danger); cursor: pointer; font-size: 18px;">✕</button>
+      </td>
+    `;
+    tbody.appendChild(row);
+  }
+
+  function removeRow(btn) {
+    btn.closest('tr').remove();
+    updateTotal();
+  }
+
+  document.addEventListener('input', function(e) {
+    if (e.target.classList.contains('amount-input')) updateTotal();
+  });
+
+  updateTotal();
+</script>
+
+{% endblock %}

@@ -1,0 +1,140 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Unallocated Payments{% endblock %}
+{% block header_title %}Unallocated Payments{% endblock %}
+{% block header_sub %}{{ current_school.name }}{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-info">
+    <h1 class="page-title">Unallocated Payments</h1>
+    <p class="page-subtitle">M-Pesa payments that couldn't be matched to a student</p>
+  </div>
+  <div style="display: flex; gap: 8px;">
+    <a href="{% url 'unallocated_reports' %}" class="btn btn-secondary">📊 Reports</a>
+  </div>
+</div>
+
+<!-- KPI Row -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+  <div class="card">
+    <div class="stat-label">Unallocated</div>
+    <div class="stat-value" style="color: var(--danger);">{{ stats.unallocated }}</div>
+    <div class="stat-meta">Pending reconciliation</div>
+  </div>
+  <div class="card">
+    <div class="stat-label">Amount Pending</div>
+    <div class="stat-value" style="font-size: var(--text-md); color: var(--danger);">
+      KES {{ stats.total_unallocated|floatformat:0 }}
+    </div>
+    <div class="stat-meta">Money waiting</div>
+  </div>
+  <div class="card">
+    <div class="stat-label">Resolved</div>
+    <div class="stat-value" style="color: var(--success);">{{ stats.allocated }}</div>
+    <div class="stat-meta">All time</div>
+  </div>
+  <div class="card">
+    <div class="stat-label">This Week</div>
+    <div class="stat-value">{{ stats.resolved_this_week }}</div>
+    <div class="stat-meta">Resolved</div>
+  </div>
+</div>
+
+<!-- Filter tabs -->
+<div class="card mb-6">
+  <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px;">
+    <a href="?status=unallocated" class="btn {% if status_filter == 'unallocated' %}btn-primary{% else %}btn-secondary{% endif %}">Pending</a>
+    <a href="?status=allocated" class="btn {% if status_filter == 'allocated' %}btn-primary{% else %}btn-secondary{% endif %}">Allocated</a>
+    <a href="?status=rejected" class="btn {% if status_filter == 'rejected' %}btn-primary{% else %}btn-secondary{% endif %}">Rejected</a>
+    <a href="?status=" class="btn {% if not status_filter %}btn-primary{% else %}btn-secondary{% endif %}">All</a>
+  </div>
+
+  <form method="get" style="display: flex; gap: 12px; flex-wrap: wrap;">
+    <input type="hidden" name="status" value="{{ status_filter }}">
+    <input type="text" name="q" value="{{ search }}" placeholder="Search receipt, phone, or reference..."
+           style="flex: 1; min-width: 200px; padding: 10px; border: 1px solid var(--border);">
+    <input type="date" name="from" value="{{ date_from }}" style="padding: 10px; border: 1px solid var(--border);">
+    <input type="date" name="to" value="{{ date_to }}" style="padding: 10px; border: 1px solid var(--border);">
+    <button type="submit" class="btn btn-primary">Search</button>
+  </form>
+</div>
+
+<!-- Queue -->
+<div class="card" style="padding: 0; overflow: hidden;">
+  {% if payments %}
+  <div style="overflow-x: auto;">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Receipt</th>
+          <th>Date</th>
+          <th>Phone</th>
+          <th>Reference Used</th>
+          <th>Amount</th>
+          <th>Age</th>
+          <th>Status</th>
+          <th style="text-align: right;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in payments %}
+        <tr {% if p.status == 'unallocated' and p.age_hours > 24 %}style="background: #fef3c7;"{% endif %}>
+          <td><code style="font-weight: 700;">{{ p.mpesa_receipt }}</code></td>
+          <td>{{ p.transaction_date|date:"j M H:i" }}</td>
+          <td>{{ p.phone }}</td>
+          <td>
+            {% if p.account_reference %}
+              <span class="badge badge-info">{{ p.account_reference }}</span>
+            {% else %}
+              <span style="color: var(--danger); font-style: italic;">(blank)</span>
+            {% endif %}
+          </td>
+          <td><strong>KES {{ p.amount|floatformat:0 }}</strong></td>
+          <td>
+            {% if p.status == 'unallocated' %}
+              {% if p.age_hours < 1 %}<span style="color: var(--success);">{{ p.age_hours }}h</span>
+              {% elif p.age_hours < 24 %}<span style="color: var(--warning);">{{ p.age_hours }}h</span>
+              {% else %}<span style="color: var(--danger); font-weight: 700;">{{ p.age_hours|floatformat:0 }}h</span>{% endif %}
+            {% else %}—{% endif %}
+          </td>
+          <td>
+            {% if p.status == 'unallocated' %}
+              <span class="badge badge-danger">Pending</span>
+            {% elif p.status == 'allocated' %}
+              <span class="badge badge-success">Allocated</span>
+            {% elif p.status == 'rejected' %}
+              <span class="badge badge-gray">Rejected</span>
+            {% else %}
+              <span class="badge badge-info">{{ p.get_status_display }}</span>
+            {% endif %}
+          </td>
+          <td style="text-align: right; white-space: nowrap;">
+            {% if p.status == 'unallocated' %}
+              <a href="{% url 'unallocated_reassign' p.id %}" class="btn btn-sm btn-primary">Reassign</a>
+              <a href="{% url 'unallocated_split' p.id %}" class="btn btn-sm btn-secondary">Split</a>
+              <a href="{% url 'unallocated_reject' p.id %}" class="btn btn-sm" style="background: #fee2e2; color: #991b1b;">Reject</a>
+            {% else %}
+              <a href="{% url 'unallocated_detail' p.id %}" class="btn btn-sm btn-secondary">View</a>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="pro-empty" style="border: none; padding: 80px;">
+    <div style="font-size: 64px; margin-bottom: 16px;">🎉</div>
+    <h3 style="font-family: var(--font-heading); margin-bottom: 8px;">
+      {% if status_filter == 'unallocated' %}No unallocated payments{% else %}No payments found{% endif %}
+    </h3>
+    <p style="color: var(--ink-500);">
+      {% if status_filter == 'unallocated' %}All caught up! Every M-Pesa payment has been matched.{% else %}Try adjusting your filters.{% endif %}
+    </p>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}

@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+{% block title %}{{ payment.mpesa_receipt }}{% endblock %}
+{% block header_title %}Payment Details{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-info">
+    <h1 class="page-title">Receipt: <code>{{ payment.mpesa_receipt }}</code></h1>
+    <p class="page-subtitle">
+      KES {{ payment.amount|floatformat:0 }} · {{ payment.transaction_date|date:"l, j F Y H:i" }}
+    </p>
+  </div>
+  <div style="display: flex; gap: 8px;">
+    {% if payment.status == 'unallocated' %}
+      <a href="{% url 'unallocated_reassign' payment.id %}" class="btn btn-primary">Reassign</a>
+      <a href="{% url 'unallocated_split' payment.id %}" class="btn btn-secondary">Split</a>
+    {% endif %}
+    <a href="{% url 'unallocated_queue' %}" class="btn btn-secondary">← Back</a>
+  </div>
+</div>
+
+<!-- Info Card -->
+<div class="card mb-6" style="background: {% if payment.status == 'unallocated' %}#fef3c7{% elif payment.status == 'allocated' %}#d1fae5{% else %}#f1f5f9{% endif %}; border-left: 4px solid {% if payment.status == 'unallocated' %}var(--warning){% elif payment.status == 'allocated' %}var(--success){% else %}var(--ink-400){% endif %};">
+  <div style="display: flex; justify-content: space-between; align-items: center;">
+    <div>
+      <div style="font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.1em; color: var(--ink-600); font-weight: 700;">
+        Status
+      </div>
+      <div style="font-family: var(--font-heading); font-size: 24px; font-weight: 800; margin-top: 4px;">
+        {{ payment.get_status_display }}
+      </div>
+    </div>
+    {% if payment.resolved_by %}
+    <div style="text-align: right;">
+      <div style="font-size: var(--text-xs); text-transform: uppercase; color: var(--ink-500);">
+        Resolved by
+      </div>
+      <div style="font-weight: 700; margin-top: 4px;">
+        {{ payment.resolved_by.get_full_name|default:payment.resolved_by.email }}
+      </div>
+      <div style="font-size: var(--text-xs); color: var(--ink-500);">
+        {{ payment.resolved_at|date:"j M Y H:i" }}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Payment Info -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+  <div class="card">
+    <h3 style="margin-bottom: 16px; font-family: var(--font-heading); font-size: var(--text-md);">Payment Details</h3>
+    <table style="width: 100%; font-size: var(--text-sm);">
+      <tr><td style="padding: 8px 0; color: var(--ink-500);">Amount</td><td style="font-weight: 700; text-align: right;">KES {{ payment.amount|floatformat:2 }}</td></tr>
+      <tr><td style="padding: 8px 0; color: var(--ink-500);">Phone</td><td style="font-weight: 700; text-align: right;">{{ payment.phone }}</td></tr>
+      <tr><td style="padding: 8px 0; color: var(--ink-500);">Reference Entered</td><td style="font-weight: 700; text-align: right;">{% if payment.account_reference %}<code>{{ payment.account_reference }}</code>{% else %}<em style="color: var(--danger);">(blank)</em>{% endif %}</td></tr>
+      <tr><td style="padding: 8px 0; color: var(--ink-500);">Payer Name</td><td style="font-weight: 700; text-align: right;">{{ payment.payer_name|default:"—" }}</td></tr>
+      <tr><td style="padding: 8px 0; color: var(--ink-500);">Transaction Date</td><td style="font-weight: 700; text-align: right;">{{ payment.transaction_date|date:"j M Y H:i" }}</td></tr>
+      <tr><td style="padding: 8px 0; color: var(--ink-500);">Age</td><td style="font-weight: 700; text-align: right;">{{ payment.age_hours }} hours</td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-bottom: 16px; font-family: var(--font-heading); font-size: var(--text-md);">Notes</h3>
+    <p style="white-space: pre-wrap; font-size: var(--text-sm); color: var(--ink-700); line-height: 1.6;">
+      {{ payment.notes|default:"No notes yet." }}
+    </p>
+  </div>
+</div>
+
+<!-- Allocations -->
+{% if allocations %}
+<div class="card">
+  <h3 style="margin-bottom: 16px; font-family: var(--font-heading);">Allocations</h3>
+  <table class="table">
+    <thead>
+      <tr><th>Student</th><th>Invoice</th><th>Amount</th><th>Notes</th><th>Date</th></tr>
+    </thead>
+    <tbody>
+      {% for a in allocations %}
+      <tr>
+        <td><strong>{{ a.student.full_name }}</strong></td>
+        <td>{% if a.invoice %}#{{ a.invoice.id }}{% else %}—{% endif %}</td>
+        <td>KES {{ a.amount|floatformat:0 }}</td>
+        <td>{{ a.notes|default:"—" }}</td>
+        <td>{{ a.created_at|date:"j M Y H:i" }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+<!-- Raw M-Pesa Payload (collapsible) -->
+<details style="margin-top: 20px;">
+  <summary style="cursor: pointer; color: var(--primary); font-size: var(--text-sm); font-weight: 600;">
+    🔍 Raw M-Pesa Callback Data
+  </summary>
+  <div class="card" style="margin-top: 12px; background: var(--ink-900); color: #d1fae5;">
+    <pre style="overflow-x: auto; font-size: 12px; line-height: 1.5;">{{ payment.raw_callback|pprint }}</pre>
+  </div>
+</details>
+
+{% endblock %}

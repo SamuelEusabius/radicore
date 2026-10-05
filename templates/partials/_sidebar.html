@@ -120,6 +120,10 @@
         {% include 'partials/icons.html' with name="clipboard" size=18 %}
         <span class="sidebar-link-text">Attendance</span>
       </a>
+            <a href="{% url 'unallocated_queue' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="alert-triangle" size=18 %}
+        <span class="sidebar-link-text">Unallocated Payments</span>
+      </a>
 
           <div class="sidebar-section-label">Departments</div>
       <a href="{% url 'departments_hub' %}" class="sidebar-link">
@@ -329,6 +333,10 @@
       <a href="{% url 'add_expenditure' %}" class="sidebar-link">
         {% include 'partials/icons.html' with name="trending-down" size=18 %}
         <span class="sidebar-link-text">Add Expenditure</span>
+      </a>
+            <a href="{% url 'unallocated_queue' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="alert-triangle" size=18 %}
+        <span class="sidebar-link-text">Unallocated Payments</span>
       </a>
             <div class="sidebar-section-label">Wallet</div>
       <a href="{% url 'wallet_dashboard' %}" class="sidebar-link">

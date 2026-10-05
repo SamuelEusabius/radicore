@@ -34,6 +34,7 @@ urlpatterns = [
     path('dashboard/', include('apps.dashboard.urls')),
     path('', include('apps.schools.public_urls')),
     path('accounts/super-admin/profile/', super_admin_profile, name='super_admin_profile'),
+        path('unallocated/', include('apps.finance.unallocated_urls')),
 ]
 
 if settings.DEBUG:
