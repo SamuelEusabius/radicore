@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% block title %}Medicine Stock Logs{% endblock %}
+{% block header_title %}Stock Movement Logs{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-info">
+    <h1 class="page-title">
+      {% if medicine %}Logs — {{ medicine.name }}{% else %}All Stock Movement{% endif %}
+    </h1>
+    <p class="page-subtitle">{{ logs|length }} entries</p>
+  </div>
+  <a href="{% url 'medicine_list' %}" class="btn btn-secondary">← Back to Stock</a>
+</div>
+
+<!-- Filter -->
+<form method="get" class="card mb-6" style="display: flex; gap: 12px;">
+  <select name="action" style="flex: 1; padding: 10px; border: 1px solid var(--border);">
+    <option value="">All Actions</option>
+    {% for code, label in action_choices %}
+      <option value="{{ code }}" {% if action_filter == code %}selected{% endif %}>{{ label }}</option>
+    {% endfor %}
+  </select>
+  <button type="submit" class="btn btn-primary">Filter</button>
+  {% if action_filter %}
+    <a href="{% url 'medicine_logs' %}" class="btn btn-secondary">Clear</a>
+  {% endif %}
+</form>
+
+<div class="card">
+  {% if logs %}
+  <table class="table">
+    <thead>
+      <tr><th>Date</th><th>Medicine</th><th>Action</th><th>Qty</th><th>Balance After</th><th>Reason</th><th>By</th></tr>
+    </thead>
+    <tbody>
+      {% for log in logs %}
+      <tr>
+        <td>{{ log.created_at|date:"j M Y H:i" }}</td>
+        <td><strong>{{ log.medicine.name }}</strong></td>
+        <td>
+          <span class="badge badge-{% if log.action == 'in' %}success{% elif log.action == 'out' %}info{% elif log.action == 'expired' or log.action == 'damaged' %}danger{% else %}warning{% endif %}">
+            {{ log.get_action_display }}
+          </span>
+        </td>
+        <td>{{ log.quantity }}</td>
+        <td>{{ log.balance_after }}</td>
+        <td>{{ log.reason|default:"—" }}</td>
+        <td>{{ log.recorded_by.get_full_name|default:log.recorded_by.email|truncatechars:18|default:"—" }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="pro-empty" style="border: none; padding: 60px;">
+    <p style="color: var(--ink-500);">No stock movements yet.</p>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}

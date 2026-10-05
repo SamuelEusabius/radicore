@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+{% block title %}Health Visits{% endblock %}
+{% block header_title %}Health Visits{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-info">
+    <h1 class="page-title">Health Visits</h1>
+    <p class="page-subtitle">{{ stats.total }} total visits</p>
+  </div>
+  <div style="display: flex; gap: 8px;">
+    <a href="{% url 'health_visit_add' %}" class="btn btn-primary">+ Log Visit</a>
+    <a href="{% url 'nurse_dashboard' %}" class="btn btn-secondary">← Dashboard</a>
+  </div>
+</div>
+
+<!-- Stats -->
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+  <div class="card">
+    <div class="stat-label">Total</div>
+    <div class="stat-value">{{ stats.total }}</div>
+  </div>
+  <div class="card">
+    <div class="stat-label">Illness</div>
+    <div class="stat-value" style="color: var(--info);">{{ stats.illness }}</div>
+  </div>
+  <div class="card">
+    <div class="stat-label">Injury</div>
+    <div class="stat-value" style="color: var(--warning);">{{ stats.injury }}</div>
+  </div>
+  <div class="card">
+    <div class="stat-label">Referred</div>
+    <div class="stat-value" style="color: var(--danger);">{{ stats.referred }}</div>
+  </div>
+</div>
+
+<!-- Filters -->
+<form method="get" class="card mb-6" style="display: flex; gap: 12px; flex-wrap: wrap;">
+  <input type="text" name="q" value="{{ search }}" placeholder="Search student or symptoms..."
+         style="flex: 1; min-width: 200px; padding: 10px; border: 1px solid var(--border);">
+  <select name="type" style="padding: 10px; border: 1px solid var(--border);">
+    <option value="">All Types</option>
+    <option value="illness" {% if visit_type_filter == 'illness' %}selected{% endif %}>Illness</option>
+    <option value="injury" {% if visit_type_filter == 'injury' %}selected{% endif %}>Injury</option>
+    <option value="emergency" {% if visit_type_filter == 'emergency' %}selected{% endif %}>Emergency</option>
+    <option value="routine" {% if visit_type_filter == 'routine' %}selected{% endif %}>Routine</option>
+  </select>
+  <select name="outcome" style="padding: 10px; border: 1px solid var(--border);">
+    <option value="">All Outcomes</option>
+    <option value="treated" {% if outcome_filter == 'treated' %}selected{% endif %}>Treated</option>
+    <option value="sent_home" {% if outcome_filter == 'sent_home' %}selected{% endif %}>Sent Home</option>
+    <option value="referred" {% if outcome_filter == 'referred' %}selected{% endif %}>Referred</option>
+    <option value="resting" {% if outcome_filter == 'resting' %}selected{% endif %}>Resting</option>
+  </select>
+  <button type="submit" class="btn btn-primary">Filter</button>
+  {% if search or visit_type_filter or outcome_filter %}
+    <a href="{% url 'health_visit_list' %}" class="btn btn-secondary">Clear</a>
+  {% endif %}
+</form>
+
+<div class="card">
+  {% if visits %}
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Student</th>
+        <th>Type</th>
+        <th>Symptoms</th>
+        <th>Outcome</th>
+        <th style="text-align: right;">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for v in visits %}
+      <tr>
+        <td>{{ v.visit_date|date:"j M Y" }}</td>
+        <td>{{ v.student.full_name }}</td>
+        <td><span class="badge badge-info">{{ v.get_visit_type_display }}</span></td>
+        <td>{{ v.symptoms|truncatechars:50 }}</td>
+        <td>
+          <span class="badge badge-{% if v.outcome == 'referred' %}danger{% elif v.outcome == 'sent_home' %}warning{% elif v.outcome == 'treated' %}success{% else %}gray{% endif %}">
+            {{ v.get_outcome_display }}
+          </span>
+        </td>
+        <td style="text-align: right; white-space: nowrap;">
+          <a href="{% url 'health_visit_detail' v.id %}" class="btn btn-sm btn-secondary">View</a>
+          {% if user.role == 'nurse' %}
+            <a href="{% url 'health_visit_edit' v.id %}" class="btn btn-sm btn-primary">Edit</a>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="pro-empty" style="border: none; padding: 60px;">
+    <p style="color: var(--ink-500);">No visits found.</p>
+    <a href="{% url 'health_visit_add' %}" class="btn btn-primary" style="margin-top: 12px;">+ Log first visit</a>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}

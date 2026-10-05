@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block title %}Stock Movement{% endblock %}
+{% block header_title %}Record Stock Movement{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 520px; margin: 0 auto;">
+  <div style="text-align: center; margin-bottom: 24px;">
+    <h3 style="font-family: var(--font-heading); margin-bottom: 8px;">{{ item.name }}</h3>
+    <p style="color: var(--ink-500);">
+      Current: <strong style="color: var(--primary);">{{ item.quantity|floatformat:1 }} {{ item.get_unit_display }}</strong>
+    </p>
+  </div>
+
+  <form method="post">
+    {% csrf_token %}
+
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Action *</label>
+      <select name="action" required style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+        <option value="">— Select action —</option>
+        {% for code, label in action_choices %}
+          <option value="{{ code }}">{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Quantity *</label>
+      <input type="number" name="quantity" step="0.01" min="0.01" required
+             style="width: 100%; padding: 10px; border: 1px solid var(--border); font-size: 18px; text-align: center;">
+    </div>
+
+    <div style="margin-bottom: 24px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Reason / Notes</label>
+      <input type="text" name="reason" placeholder="e.g. Purchase from supplier"
+             style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+    </div>
+
+    <div style="display: flex; gap: 12px; justify-content: flex-end;">
+      <a href="{% url 'kitchen_stock_list' %}" class="btn btn-secondary">Cancel</a>
+      <button type="submit" class="btn btn-primary">Record Movement</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

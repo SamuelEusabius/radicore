@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block title %}{% if action == 'in' %}Stock In{% else %}Stock Out{% endif %}{% endblock %}
+{% block header_title %}{% if action == 'in' %}+ Stock In{% else %}− Stock Out{% endif %}{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 520px; margin: 0 auto; text-align: center; padding: 30px;">
+  <h3 style="margin-bottom: 8px; font-family: var(--font-heading);">{{ medicine.name }}</h3>
+  <p style="color: var(--ink-500); margin-bottom: 20px;">
+    Current stock: <strong style="color: var(--primary);">{{ medicine.quantity }} {{ medicine.unit }}</strong>
+  </p>
+
+  <form method="post">
+    {% csrf_token %}
+
+    <div style="margin-bottom: 20px; text-align: left;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Quantity *</label>
+      <input type="number" name="quantity" min="1"
+             {% if action == 'out' %}max="{{ medicine.quantity }}"{% endif %}
+             required
+             style="width: 100%; padding: 10px; border: 1px solid var(--border); text-align: center; font-size: 18px;">
+    </div>
+
+    <div style="margin-bottom: 24px; text-align: left;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Reason</label>
+      <input type="text" name="reason"
+             placeholder="{% if action == 'in' %}e.g. Purchase from pharmacy{% else %}e.g. Dispensed to student{% endif %}"
+             style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+    </div>
+
+    <div style="display: flex; gap: 12px; justify-content: center;">
+      <a href="{% url 'medicine_list' %}" class="btn btn-secondary">Cancel</a>
+      <button type="submit" class="btn btn-primary">
+        Confirm {% if action == 'in' %}Stock In{% else %}Stock Out{% endif %}
+      </button>
+    </div>
+  </form>
+</div>
+{% endblock %}

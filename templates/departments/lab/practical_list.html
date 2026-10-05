@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+{% block title %}Practical Schedule{% endblock %}
+{% block header_title %}Practical Schedule{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-info">
+    <h1 class="page-title">Practicals</h1>
+    <p class="page-subtitle">{{ practicals|length }} scheduled</p>
+  </div>
+  <a href="{% url 'practical_add' %}" class="btn btn-primary">+ Schedule Practical</a>
+</div>
+
+<form method="get" class="card mb-6" style="display: flex; gap: 12px;">
+  <input type="text" name="q" value="{{ search }}" placeholder="Search title or class..."
+         style="flex: 1; padding: 10px; border: 1px solid var(--border);">
+  <select name="status" style="padding: 10px; border: 1px solid var(--border);">
+    <option value="">All</option>
+    <option value="upcoming" {% if status_filter == 'upcoming' %}selected{% endif %}>Upcoming</option>
+    <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Completed</option>
+  </select>
+  <button type="submit" class="btn btn-primary">Filter</button>
+</form>
+
+<div class="card">
+  {% if practicals %}
+  <table class="table">
+    <thead>
+      <tr><th>Date</th><th>Time</th><th>Title</th><th>Class</th><th>Teacher</th><th>Status</th><th style="text-align: right;">Actions</th></tr>
+    </thead>
+    <tbody>
+      {% for p in practicals %}
+      <tr>
+        <td>{{ p.scheduled_date|date:"j M Y" }}</td>
+        <td>{{ p.start_time|default:"—" }}</td>
+        <td><strong>{{ p.title }}</strong></td>
+        <td>{{ p.class_level }}</td>
+        <td>{{ p.teacher|default:"—" }}</td>
+        <td>
+          {% if p.is_completed %}<span class="badge badge-success">Completed</span>
+          {% elif p.scheduled_date < today %}<span class="badge badge-warning">Missed</span>
+          {% else %}<span class="badge badge-info">Scheduled</span>{% endif %}
+        </td>
+        <td style="text-align: right; white-space: nowrap;">
+          <a href="{% url 'practical_edit' p.id %}" class="btn btn-sm btn-secondary">Edit</a>
+          <a href="{% url 'practical_delete' p.id %}" class="btn btn-sm" style="background: #fee2e2; color: #991b1b;">Delete</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="pro-empty" style="border: none; padding: 60px;">
+    <p style="color: var(--ink-500);">No practicals scheduled.</p>
+    <a href="{% url 'practical_add' %}" class="btn btn-primary" style="margin-top: 12px;">+ Schedule first practical</a>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}

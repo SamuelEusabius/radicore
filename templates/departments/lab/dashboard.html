@@ -1,0 +1,167 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Lab Dashboard{% endblock %}
+{% block header_title %}Lab Technician Dashboard{% endblock %}
+{% block header_sub %}{{ current_school.name }}{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-info">
+    <h1 class="page-title">Good day, {{ user.get_full_name|default:user.email|truncatechars:22 }}</h1>
+    <p class="page-subtitle">Today is {{ today|date:"l, j F Y" }}</p>
+  </div>
+  <div style="display: flex; gap: 8px;">
+    <a href="{% url 'lab_equipment_add' %}" class="btn btn-primary">+ Add Equipment</a>
+    <a href="{% url 'lab_incident_add' %}" class="btn btn-secondary">+ Log Incident</a>
+  </div>
+</div>
+
+<!-- KPI Row -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+  <div class="card">
+    <div class="stat-label">Equipment Items</div>
+    <div class="stat-value">{{ total_items }}</div>
+    <div class="stat-meta">{{ total_quantity }} total units</div>
+  </div>
+  <div class="card">
+    <div class="stat-label">Working Units</div>
+    <div class="stat-value" style="color: var(--success);">{{ working }}</div>
+    <div class="stat-meta">Functional</div>
+  </div>
+  <div class="card">
+    <div class="stat-label">Needs Repair</div>
+    <div class="stat-value" style="color: var(--warning);">{{ broken_or_repair|length }}</div>
+    <div class="stat-meta">Broken / repair</div>
+  </div>
+  <div class="card">
+    <div class="stat-label">Inventory Value</div>
+    <div class="stat-value" style="font-size: var(--text-md);">KES {{ total_value|floatformat:0 }}</div>
+    <div class="stat-meta">Total value</div>
+  </div>
+</div>
+
+<!-- Alerts -->
+{% if broken_or_repair or unresolved %}
+<div class="card mb-6" style="border-left: 4px solid var(--warning);">
+  <h3 style="margin-bottom: 12px; font-family: var(--font-heading); color: var(--warning);">⚠️ Lab Alerts</h3>
+
+  {% if unresolved %}
+    <p style="margin-bottom: 8px;">
+      <strong>Unresolved incidents:</strong>
+      <span class="badge badge-danger">{{ unresolved }}</span>
+      <a href="{% url 'lab_incident_list' %}?status=open" style="margin-left: 8px; color: var(--primary);">View →</a>
+    </p>
+  {% endif %}
+
+  {% if broken_or_repair %}
+    <p>
+      <strong>Equipment needing attention:</strong>
+      {% for e in broken_or_repair %}
+        <span class="badge badge-warning">{{ e.name }} ({{ e.get_condition_display }})</span>
+      {% endfor %}
+    </p>
+  {% endif %}
+</div>
+{% endif %}
+
+<!-- Quick Actions -->
+<div class="card mb-6">
+  <h3 style="margin-bottom: 16px; font-family: var(--font-heading);">Quick Actions</h3>
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+    <a href="{% url 'lab_equipment_list' %}" class="btn btn-primary">🔬 Equipment</a>
+    <a href="{% url 'lab_incident_add' %}" class="btn btn-secondary">⚠️ Log Incident</a>
+    <a href="{% url 'practical_add' %}" class="btn btn-secondary">📅 Schedule Practical</a>
+    <a href="{% url 'lab_report_pdf' %}" class="btn btn-secondary">📄 Export PDF</a>
+  </div>
+</div>
+
+<!-- Today's Practicals -->
+{% if today_practicals %}
+<div class="card mb-6" style="border-left: 4px solid var(--primary);">
+  <h3 style="margin-bottom: 16px; font-family: var(--font-heading);">🔬 Today's Practicals</h3>
+  <table class="table">
+    <thead>
+      <tr><th>Time</th><th>Title</th><th>Class</th><th>Teacher</th><th>Status</th></tr>
+    </thead>
+    <tbody>
+      {% for p in today_practicals %}
+      <tr>
+        <td>{{ p.start_time|default:"—" }}{% if p.end_time %} - {{ p.end_time }}{% endif %}</td>
+        <td><strong>{{ p.title }}</strong></td>
+        <td>{{ p.class_level }}</td>
+        <td>{{ p.teacher|default:"—" }}</td>
+        <td>
+          {% if p.is_completed %}<span class="badge badge-success">Done</span>
+          {% else %}<span class="badge badge-info">Scheduled</span>{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+<!-- Upcoming Practicals -->
+{% if upcoming_practicals %}
+<div class="card mb-6">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+    <h3 style="margin: 0; font-family: var(--font-heading);">Upcoming Practicals</h3>
+    <a href="{% url 'practical_list' %}" style="color: var(--primary); font-size: var(--text-sm);">View all →</a>
+  </div>
+  <table class="table">
+    <thead>
+      <tr><th>Date</th><th>Title</th><th>Class</th><th>Teacher</th></tr>
+    </thead>
+    <tbody>
+      {% for p in upcoming_practicals %}
+      <tr>
+        <td>{{ p.scheduled_date|date:"D, j M" }}</td>
+        <td>{{ p.title }}</td>
+        <td>{{ p.class_level }}</td>
+        <td>{{ p.teacher|default:"—" }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+<!-- Recent Incidents -->
+<div class="card">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+    <h3 style="margin: 0; font-family: var(--font-heading);">Recent Incidents</h3>
+    <a href="{% url 'lab_incident_list' %}" style="color: var(--primary); font-size: var(--text-sm);">View all →</a>
+  </div>
+  {% if recent_incidents %}
+  <table class="table">
+    <thead>
+      <tr><th>Date</th><th>Type</th><th>Equipment</th><th>Severity</th><th>Status</th></tr>
+    </thead>
+    <tbody>
+      {% for i in recent_incidents %}
+      <tr>
+        <td>{{ i.incident_date|date:"j M" }}</td>
+        <td>{{ i.get_incident_type_display }}</td>
+        <td>{{ i.equipment.name|default:"—" }}</td>
+        <td>
+          <span class="badge badge-{% if i.severity == 'critical' %}danger{% elif i.severity == 'high' %}warning{% else %}gray{% endif %}">
+            {{ i.get_severity_display }}
+          </span>
+        </td>
+        <td>
+          {% if i.resolved %}<span class="badge badge-success">Resolved</span>
+          {% else %}<span class="badge badge-danger">Open</span>{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="pro-empty" style="border: none; padding: 40px;">
+    <p style="color: var(--ink-500);">No incidents recorded yet.</p>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}

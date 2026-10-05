@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+{% block title %}Visit Details{% endblock %}
+{% block header_title %}Visit Details{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-info">
+    <h1 class="page-title">{{ visit.student.full_name }}</h1>
+    <p class="page-subtitle">{{ visit.visit_date|date:"l, j F Y" }}{% if visit.visit_time %} · {{ visit.visit_time|time:"H:i" }}{% endif %}</p>
+  </div>
+  <div style="display: flex; gap: 8px;">
+    {% if user.role == 'nurse' %}
+      <a href="{% url 'health_visit_edit' visit.id %}" class="btn btn-primary">Edit</a>
+    {% endif %}
+    <a href="{% url 'health_visit_list' %}" class="btn btn-secondary">← Back</a>
+  </div>
+</div>
+
+<div class="card mb-6">
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+    <div>
+      <div style="font-size: var(--text-xs); color: var(--ink-500); text-transform: uppercase;">Visit Type</div>
+      <div style="font-weight: 700; margin-top: 4px;">{{ visit.get_visit_type_display }}</div>
+    </div>
+    <div>
+      <div style="font-size: var(--text-xs); color: var(--ink-500); text-transform: uppercase;">Outcome</div>
+      <div style="font-weight: 700; margin-top: 4px;">{{ visit.get_outcome_display }}</div>
+    </div>
+    <div>
+      <div style="font-size: var(--text-xs); color: var(--ink-500); text-transform: uppercase;">Attended By</div>
+      <div style="font-weight: 700; margin-top: 4px;">{{ visit.attended_by.get_full_name|default:visit.attended_by.email|default:"—" }}</div>
+    </div>
+    <div>
+      <div style="font-size: var(--text-xs); color: var(--ink-500); text-transform: uppercase;">Guardian Notified</div>
+      <div style="font-weight: 700; margin-top: 4px;">
+        {% if visit.guardian_notified %}✅ Yes ({{ visit.guardian_notified_at|date:"j M H:i" }}){% else %}❌ No{% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card mb-6">
+  <h3 style="margin-bottom: 12px; font-family: var(--font-heading);">Symptoms</h3>
+  <p style="white-space: pre-wrap; line-height: 1.7;">{{ visit.symptoms }}</p>
+</div>
+
+{% if visit.diagnosis %}
+<div class="card mb-6">
+  <h3 style="margin-bottom: 12px; font-family: var(--font-heading);">Diagnosis</h3>
+  <p>{{ visit.diagnosis }}</p>
+</div>
+{% endif %}
+
+{% if visit.treatment %}
+<div class="card mb-6">
+  <h3 style="margin-bottom: 12px; font-family: var(--font-heading);">Treatment</h3>
+  <p style="white-space: pre-wrap;">{{ visit.treatment }}</p>
+</div>
+{% endif %}
+
+{% if visit.referred_to %}
+<div class="card mb-6" style="border-left: 4px solid var(--warning);">
+  <h3 style="margin-bottom: 12px; font-family: var(--font-heading);">Referred To</h3>
+  <p>{{ visit.referred_to }}</p>
+</div>
+{% endif %}
+
+{% if medicine_logs %}
+<div class="card mb-6">
+  <h3 style="margin-bottom: 16px; font-family: var(--font-heading);">Medicine Dispensed</h3>
+  <table class="table">
+    <thead>
+      <tr><th>Medicine</th><th>Quantity</th><th>Time</th></tr>
+    </thead>
+    <tbody>
+      {% for log in medicine_logs %}
+      <tr>
+        <td>{{ log.medicine.name }}</td>
+        <td>{{ log.quantity }} {{ log.medicine.unit }}</td>
+        <td>{{ log.created_at|date:"j M H:i" }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+{% if visit.notes %}
+<div class="card">
+  <h3 style="margin-bottom: 12px; font-family: var(--font-heading);">Notes</h3>
+  <p style="white-space: pre-wrap;">{{ visit.notes }}</p>
+</div>
+{% endif %}
+
+{% endblock %}

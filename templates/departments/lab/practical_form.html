@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+{% block title %}{% if practical %}Edit Practical{% else %}Schedule Practical{% endif %}{% endblock %}
+{% block header_title %}{% if practical %}Edit Practical{% else %}Schedule Practical{% endif %}{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 720px; margin: 0 auto;">
+  <form method="post">
+    {% csrf_token %}
+
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Title *</label>
+      <input type="text" name="title" required
+             value="{% if form_data.title %}{{ form_data.title }}{% elif practical %}{{ practical.title }}{% endif %}"
+             placeholder="e.g. Titration Experiment"
+             style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Class *</label>
+        <input type="text" name="class_level" required
+               value="{% if form_data.class_level %}{{ form_data.class_level }}{% elif practical %}{{ practical.class_level }}{% endif %}"
+               placeholder="e.g. Form 2A"
+               style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+      </div>
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Subject</label>
+        <input type="text" name="subject"
+               value="{% if form_data.subject %}{{ form_data.subject }}{% elif practical %}{{ practical.subject }}{% endif %}"
+               placeholder="e.g. Chemistry"
+               style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Date *</label>
+        <input type="date" name="scheduled_date" required
+               value="{% if form_data.scheduled_date %}{{ form_data.scheduled_date }}{% elif practical %}{{ practical.scheduled_date|date:'Y-m-d' }}{% else %}{{ today|date:'Y-m-d' }}{% endif %}"
+               style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+      </div>
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Start Time</label>
+        <input type="time" name="start_time"
+               value="{% if form_data.start_time %}{{ form_data.start_time }}{% elif practical and practical.start_time %}{{ practical.start_time|time:'H:i' }}{% endif %}"
+               style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+      </div>
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">End Time</label>
+        <input type="time" name="end_time"
+               value="{% if form_data.end_time %}{{ form_data.end_time }}{% elif practical and practical.end_time %}{{ practical.end_time|time:'H:i' }}{% endif %}"
+               style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+      </div>
+    </div>
+
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Teacher</label>
+      <input type="text" name="teacher"
+             value="{% if form_data.teacher %}{{ form_data.teacher }}{% elif practical %}{{ practical.teacher }}{% endif %}"
+             style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+    </div>
+
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Equipment / Chemicals Needed</label>
+      <textarea name="equipment_needed" rows="3"
+                placeholder="List what's needed for this practical"
+                style="width: 100%; padding: 10px; border: 1px solid var(--border);">{% if form_data.equipment_needed %}{{ form_data.equipment_needed }}{% elif practical %}{{ practical.equipment_needed }}{% endif %}</textarea>
+    </div>
+
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Notes</label>
+      <textarea name="notes" rows="2" style="width: 100%; padding: 10px; border: 1px solid var(--border);">{% if form_data.notes %}{{ form_data.notes }}{% elif practical %}{{ practical.notes }}{% endif %}</textarea>
+    </div>
+
+    <div style="margin-bottom: 24px;">
+      <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+        <input type="checkbox" name="is_completed" {% if practical and practical.is_completed %}checked{% endif %} style="width: 18px; height: 18px;">
+        <span>Mark as completed</span>
+      </label>
+    </div>
+
+    <div style="display: flex; gap: 12px; justify-content: flex-end;">
+      <a href="{% url 'practical_list' %}" class="btn btn-secondary">Cancel</a>
+      <button type="submit" class="btn btn-primary">{% if practical %}Save Changes{% else %}Schedule Practical{% endif %}</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

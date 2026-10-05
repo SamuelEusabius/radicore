@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% block title %}Stock Logs{% endblock %}
+{% block header_title %}Kitchen Stock Logs{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-info">
+    <h1 class="page-title">{% if item %}Logs — {{ item.name }}{% else %}All Stock Movements{% endif %}</h1>
+    <p class="page-subtitle">{{ logs|length }} entries</p>
+  </div>
+  <a href="{% url 'kitchen_stock_list' %}" class="btn btn-secondary">← Back to Stock</a>
+</div>
+
+<form method="get" class="card mb-6" style="display: flex; gap: 12px;">
+  <select name="action" style="flex: 1; padding: 10px; border: 1px solid var(--border);">
+    <option value="">All Actions</option>
+    {% for code, label in action_choices %}
+      <option value="{{ code }}" {% if action_filter == code %}selected{% endif %}>{{ label }}</option>
+    {% endfor %}
+  </select>
+  <button type="submit" class="btn btn-primary">Filter</button>
+</form>
+
+<div class="card">
+  {% if logs %}
+  <table class="table">
+    <thead>
+      <tr><th>Date</th><th>Item</th><th>Action</th><th>Qty</th><th>Balance</th><th>Reason</th><th>By</th></tr>
+    </thead>
+    <tbody>
+      {% for log in logs %}
+      <tr>
+        <td>{{ log.created_at|date:"j M Y H:i" }}</td>
+        <td><strong>{{ log.stock_item.name }}</strong></td>
+        <td>
+          <span class="badge badge-{% if log.action == 'in' or log.action == 'donated' %}success{% elif log.action == 'used' %}info{% elif log.action == 'wastage' %}danger{% else %}warning{% endif %}">
+            {{ log.get_action_display }}
+          </span>
+        </td>
+        <td>{{ log.quantity|floatformat:1 }}</td>
+        <td>{{ log.balance_after|floatformat:1 }}</td>
+        <td>{{ log.reason|default:"—" }}</td>
+        <td>{{ log.recorded_by.get_full_name|default:log.recorded_by.email|truncatechars:18|default:"—" }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="pro-empty" style="border: none; padding: 60px;">
+    <p style="color: var(--ink-500);">No movements recorded.</p>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}

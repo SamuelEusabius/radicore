@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block title %}Confirm Delete{% endblock %}
+{% block header_title %}Confirm Delete{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 520px; margin: 40px auto; text-align: center; padding: 40px;">
+  <div style="font-size: 56px; margin-bottom: 16px;">⚠️</div>
+  <h2 style="font-family: var(--font-heading); margin-bottom: 12px;">Delete {{ object_type }}?</h2>
+  <div style="background: var(--surface-muted); padding: 14px; border-radius: 8px; font-weight: 600; margin-bottom: 24px;">
+    {{ object_name }}
+  </div>
+  <form method="post">
+    {% csrf_token %}
+    <div style="display: flex; gap: 12px; justify-content: center;">
+      <a href="{% url cancel_url %}" class="btn btn-secondary">Cancel</a>
+      <button type="submit" class="btn" style="background: var(--danger); color: white;">Yes, Delete</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

@@ -4,9 +4,8 @@
   <!-- ============ BRAND ============ -->
   <div class="sidebar-brand">
     <div class="sidebar-logo">
-      <img src="{% static 'images/graduation-cap-books.png' %}" alt="School MS"
-           style="width: 100%; height: 100%; object-fit: contain; display: block;">
-    </div>
+  <img src="{% static 'images/graduation-cap-books.png' %}" alt="School MS">
+</div>
     <div class="sidebar-brand-text">
       <p class="sidebar-brand-name">{{ current_school.name|default:"School MS"|truncatechars:18 }}</p>
       <p class="sidebar-brand-role">
@@ -135,17 +134,17 @@
         {% include 'partials/icons.html' with name="book" size=18 %}
         <span class="sidebar-link-text">Library Reports</span>
       </a>
-      <a href="{% url 'departments_lab' %}" class="sidebar-link">
+            <a href="{% url 'department_reports_inbox' %}?department=lab" class="sidebar-link">
         {% include 'partials/icons.html' with name="activity" size=18 %}
-        <span class="sidebar-link-text">Laboratory</span>
+        <span class="sidebar-link-text">Lab Reports</span>
       </a>
-      <a href="{% url 'departments_health' %}" class="sidebar-link">
+            <a href="{% url 'department_reports_inbox' %}?department=health" class="sidebar-link">
         {% include 'partials/icons.html' with name="heart" size=18 %}
-        <span class="sidebar-link-text">Health</span>
+        <span class="sidebar-link-text">Health Reports</span>
       </a>
-      <a href="{% url 'departments_kitchen' %}" class="sidebar-link">
+           <a href="{% url 'department_reports_inbox' %}?department=kitchen" class="sidebar-link">
         {% include 'partials/icons.html' with name="coffee" size=18 %}
-        <span class="sidebar-link-text">Kitchen</span>
+        <span class="sidebar-link-text">Kitchen Reports</span>
       </a>
       <a href="{% url 'department_reports_inbox' %}" class="sidebar-link">
         {% include 'partials/icons.html' with name="inbox" size=18 %}
@@ -445,46 +444,110 @@
     <!-- LAB TECHNICIAN                                -->
     <!-- ============================================ -->
     {% if user.role == 'lab_technician' %}
-      <div class="sidebar-section-label">Laboratory</div>
-      <a href="{% url 'lab_technician_dashboard' %}" class="sidebar-link">
-        {% include 'partials/icons.html' with name="home" size=18 %}
-        <span class="sidebar-link-text">My Dashboard</span>
-      </a>
-      <a href="{% url 'department_report_create' 'lab' %}" class="sidebar-link">
-        {% include 'partials/icons.html' with name="file-plus" size=18 %}
-        <span class="sidebar-link-text">Submit Report</span>
-      </a>
-    {% endif %}
+  <div class="sidebar-section-label">Laboratory</div>
+  <a href="{% url 'lab_dashboard' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="home" size=18 %}
+    <span class="sidebar-link-text">Dashboard</span>
+  </a>
+  <a href="{% url 'lab_equipment_list' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="activity" size=18 %}
+    <span class="sidebar-link-text">Equipment</span>
+  </a>
+  <a href="{% url 'lab_incident_list' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="alert-triangle" size=18 %}
+    <span class="sidebar-link-text">Incidents</span>
+  </a>
+  <a href="{% url 'practical_list' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="calendar" size=18 %}
+    <span class="sidebar-link-text">Practicals</span>
+  </a>
+  <div class="sidebar-section-label">Reports</div>
+  <a href="{% url 'lab_report_pdf' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="download" size=18 %}
+    <span class="sidebar-link-text">Lab Report PDF</span>
+  </a>
+  <a href="{% url 'department_report_create' 'lab' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="file-plus" size=18 %}
+    <span class="sidebar-link-text">Submit Report</span>
+  </a>
+{% endif %}
 
     <!-- ============================================ -->
     <!-- NURSE                                         -->
     <!-- ============================================ -->
     {% if user.role == 'nurse' %}
-      <div class="sidebar-section-label">Health</div>
-      <a href="{% url 'nurse_dashboard' %}" class="sidebar-link">
-        {% include 'partials/icons.html' with name="home" size=18 %}
-        <span class="sidebar-link-text">My Dashboard</span>
-      </a>
-      <a href="{% url 'department_report_create' 'health' %}" class="sidebar-link">
-        {% include 'partials/icons.html' with name="file-plus" size=18 %}
-        <span class="sidebar-link-text">Submit Report</span>
-      </a>
-    {% endif %}
-
+  <div class="sidebar-section-label">Health</div>
+  <a href="{% url 'nurse_dashboard' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="home" size=18 %}
+    <span class="sidebar-link-text">Dashboard</span>
+  </a>
+  <a href="{% url 'health_visit_add' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="plus" size=18 %}
+    <span class="sidebar-link-text">Log Visit</span>
+  </a>
+  <a href="{% url 'health_visit_list' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="clipboard" size=18 %}
+    <span class="sidebar-link-text">All Visits</span>
+  </a>
+  <div class="sidebar-section-label">Medicine</div>
+  <a href="{% url 'medicine_list' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="activity" size=18 %}
+    <span class="sidebar-link-text">Medicine Stock</span>
+  </a>
+  <a href="{% url 'medicine_add' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="plus" size=18 %}
+    <span class="sidebar-link-text">Add Medicine</span>
+  </a>
+  <a href="{% url 'medicine_logs' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="file-text" size=18 %}
+    <span class="sidebar-link-text">Stock Logs</span>
+  </a>
+  <div class="sidebar-section-label">Reports</div>
+  <a href="{% url 'health_report_pdf' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="download" size=18 %}
+    <span class="sidebar-link-text">Health Report PDF</span>
+  </a>
+  <a href="{% url 'department_report_create' 'health' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="file-plus" size=18 %}
+    <span class="sidebar-link-text">Submit Report</span>
+  </a>
+{% endif %}
     <!-- ============================================ -->
     <!-- CHIEF CHEF                                    -->
     <!-- ============================================ -->
-    {% if user.role == 'chief_chef' %}
-      <div class="sidebar-section-label">Kitchen</div>
-      <a href="{% url 'chief_chef_dashboard' %}" class="sidebar-link">
-        {% include 'partials/icons.html' with name="home" size=18 %}
-        <span class="sidebar-link-text">My Dashboard</span>
-      </a>
-      <a href="{% url 'department_report_create' 'kitchen' %}" class="sidebar-link">
-        {% include 'partials/icons.html' with name="file-plus" size=18 %}
-        <span class="sidebar-link-text">Submit Report</span>
-      </a>
-    {% endif %}
+   {% if user.role == 'chief_chef' %}
+  <div class="sidebar-section-label">Kitchen</div>
+  <a href="{% url 'chef_dashboard' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="home" size=18 %}
+    <span class="sidebar-link-text">Dashboard</span>
+  </a>
+  <a href="{% url 'meal_plan_list' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="calendar" size=18 %}
+    <span class="sidebar-link-text">Menu</span>
+  </a>
+  <a href="{% url 'meal_list' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="coffee" size=18 %}
+    <span class="sidebar-link-text">Meals</span>
+  </a>
+  <div class="sidebar-section-label">Stock</div>
+  <a href="{% url 'kitchen_stock_list' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="activity" size=18 %}
+    <span class="sidebar-link-text">Kitchen Stock</span>
+  </a>
+  <a href="{% url 'kitchen_logs' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="file-text" size=18 %}
+    <span class="sidebar-link-text">Stock Logs</span>
+  </a>
+  <div class="sidebar-section-label">Reports</div>
+  <a href="{% url 'kitchen_report_pdf' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="download" size=18 %}
+    <span class="sidebar-link-text">Kitchen Report PDF</span>
+  </a>
+  <a href="{% url 'department_report_create' 'kitchen' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="file-plus" size=18 %}
+    <span class="sidebar-link-text">Submit Report</span>
+  </a>
+{% endif %}
 
     <!-- ============================================ -->
     <!-- PARENT                                        -->

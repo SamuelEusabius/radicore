@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% block title %}{% if meal %}Edit Meal{% else %}Add Meal{% endif %}{% endblock %}
+{% block header_title %}{% if meal %}Edit Meal{% else %}Add Meal{% endif %}{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 640px; margin: 0 auto;">
+  <form method="post">
+    {% csrf_token %}
+
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Meal Name *</label>
+      <input type="text" name="name" required
+             value="{% if form_data.name %}{{ form_data.name }}{% elif meal %}{{ meal.name }}{% endif %}"
+             placeholder="e.g. Rice and Beans"
+             style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+    </div>
+
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Meal Type *</label>
+      <select name="meal_type" required style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+        <option value="">— Select type —</option>
+        {% for code, label in meal_types %}
+          <option value="{{ code }}"
+            {% if form_data.meal_type == code %}selected{% elif meal and meal.meal_type == code %}selected{% endif %}>
+            {{ label }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Description</label>
+      <textarea name="description" rows="3" style="width: 100%; padding: 10px; border: 1px solid var(--border);">{% if form_data.description %}{{ form_data.description }}{% elif meal %}{{ meal.description }}{% endif %}</textarea>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Served Time</label>
+        <input type="time" name="served_time"
+               value="{% if form_data.served_time %}{{ form_data.served_time }}{% elif meal and meal.served_time %}{{ meal.served_time|time:'H:i' }}{% endif %}"
+               style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+      </div>
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Cost Per Head (KES)</label>
+        <input type="number" name="cost_per_head" step="0.01"
+               value="{% if form_data.cost_per_head %}{{ form_data.cost_per_head }}{% elif meal %}{{ meal.cost_per_head }}{% else %}0{% endif %}"
+               style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+      </div>
+    </div>
+
+    <div style="margin-bottom: 24px;">
+      <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+        <input type="checkbox" name="is_active" {% if not meal or meal.is_active %}checked{% endif %} style="width: 18px; height: 18px;">
+        <span>Active</span>
+      </label>
+    </div>
+
+    <div style="display: flex; gap: 12px; justify-content: flex-end;">
+      <a href="{% url 'meal_list' %}" class="btn btn-secondary">Cancel</a>
+      <button type="submit" class="btn btn-primary">{% if meal %}Save Changes{% else %}Add Meal{% endif %}</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

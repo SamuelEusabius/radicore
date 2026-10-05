@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+{% block title %}{% if incident %}Edit Incident{% else %}Log Incident{% endif %}{% endblock %}
+{% block header_title %}{% if incident %}Edit Incident{% else %}Log Incident{% endif %}{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 720px; margin: 0 auto;">
+  <form method="post">
+    {% csrf_token %}
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Incident Type *</label>
+        <select name="incident_type" required style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+          <option value="">— Select —</option>
+          {% for code, label in incident_types %}
+            <option value="{{ code }}" {% if incident and incident.incident_type == code %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Date *</label>
+        <input type="date" name="incident_date" required
+               value="{% if form_data.incident_date %}{{ form_data.incident_date }}{% elif incident %}{{ incident.incident_date|date:'Y-m-d' }}{% else %}{{ today|date:'Y-m-d' }}{% endif %}"
+               style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+      </div>
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Time</label>
+        <input type="time" name="incident_time"
+               value="{% if form_data.incident_time %}{{ form_data.incident_time }}{% elif incident and incident.incident_time %}{{ incident.incident_time|time:'H:i' }}{% endif %}"
+               style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Equipment Involved</label>
+        <select name="equipment" style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+          <option value="">— None —</option>
+          {% for e in equipment_list %}
+            <option value="{{ e.id }}" {% if incident and incident.equipment and incident.equipment.id == e.id %}selected{% endif %}>{{ e.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Severity</label>
+        <select name="severity" style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+          {% for code, label in severities %}
+            <option value="{{ code }}" {% if incident and incident.severity == code %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Student Involved (if any)</label>
+        <select name="involved_student" style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+          <option value="">— None —</option>
+          {% for s in students %}
+            <option value="{{ s.id }}" {% if incident and incident.involved_student and incident.involved_student.id == s.id %}selected{% endif %}>
+              {{ s.first_name }} {{ s.last_name }} ({{ s.admission_number }})
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Class Involved</label>
+        <input type="text" name="class_involved"
+               value="{% if form_data.class_involved %}{{ form_data.class_involved }}{% elif incident %}{{ incident.class_involved }}{% endif %}"
+               placeholder="e.g. Form 2A"
+               style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+      </div>
+    </div>
+
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Description *</label>
+      <textarea name="description" required rows="3" style="width: 100%; padding: 10px; border: 1px solid var(--border);">{% if form_data.description %}{{ form_data.description }}{% elif incident %}{{ incident.description }}{% endif %}</textarea>
+    </div>
+
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Action Taken</label>
+      <textarea name="action_taken" rows="3" style="width: 100%; padding: 10px; border: 1px solid var(--border);">{% if form_data.action_taken %}{{ form_data.action_taken }}{% elif incident %}{{ incident.action_taken }}{% endif %}</textarea>
+    </div>
+
+    <div style="margin-bottom: 24px;">
+      <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+        <input type="checkbox" name="resolved" {% if incident and incident.resolved %}checked{% endif %} style="width: 18px; height: 18px;">
+        <span>Mark as Resolved</span>
+      </label>
+    </div>
+
+    <div style="display: flex; gap: 12px; justify-content: flex-end;">
+      <a href="{% url 'lab_incident_list' %}" class="btn btn-secondary">Cancel</a>
+      <button type="submit" class="btn btn-primary">{% if incident %}Save Changes{% else %}Log Incident{% endif %}</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

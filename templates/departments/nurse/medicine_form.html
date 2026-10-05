@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+{% block title %}{% if medicine %}Edit Medicine{% else %}Add Medicine{% endif %}{% endblock %}
+{% block header_title %}{% if medicine %}Edit Medicine{% else %}Add Medicine{% endif %}{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 640px; margin: 0 auto;">
+  <form method="post">
+    {% csrf_token %}
+
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Name *</label>
+      <input type="text" name="name" required
+             value="{% if form_data.name %}{{ form_data.name }}{% elif medicine %}{{ medicine.name }}{% endif %}"
+             style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+    </div>
+
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Category</label>
+      <select name="category" style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+        {% for code, label in categories %}
+          <option value="{{ code }}" {% if medicine and medicine.category == code %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Quantity</label>
+        <input type="number" name="quantity" min="0"
+               value="{% if form_data.quantity %}{{ form_data.quantity }}{% elif medicine %}{{ medicine.quantity }}{% else %}0{% endif %}"
+               style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+      </div>
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Unit</label>
+        <input type="text" name="unit"
+               value="{% if form_data.unit %}{{ form_data.unit }}{% elif medicine %}{{ medicine.unit }}{% else %}tablets{% endif %}"
+               placeholder="tablets, ml, sachets"
+               style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+      </div>
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Reorder At</label>
+        <input type="number" name="reorder_level" min="0"
+               value="{% if form_data.reorder_level %}{{ form_data.reorder_level }}{% elif medicine %}{{ medicine.reorder_level }}{% else %}10{% endif %}"
+               style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+      </div>
+    </div>
+
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Expiry Date</label>
+      <input type="date" name="expiry_date"
+             value="{% if form_data.expiry_date %}{{ form_data.expiry_date }}{% elif medicine and medicine.expiry_date %}{{ medicine.expiry_date|date:'Y-m-d' }}{% endif %}"
+             style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+    </div>
+
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Supplier</label>
+      <input type="text" name="supplier"
+             value="{% if form_data.supplier %}{{ form_data.supplier }}{% elif medicine %}{{ medicine.supplier }}{% endif %}"
+             style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+    </div>
+
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Notes</label>
+      <textarea name="notes" rows="2" style="width: 100%; padding: 10px; border: 1px solid var(--border);">{% if form_data.notes %}{{ form_data.notes }}{% elif medicine %}{{ medicine.notes }}{% endif %}</textarea>
+    </div>
+
+    <div style="margin-bottom: 24px;">
+      <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+        <input type="checkbox" name="is_active" {% if not medicine or medicine.is_active %}checked{% endif %} style="width: 18px; height: 18px;">
+        <span>Active</span>
+      </label>
+    </div>
+
+    <div style="display: flex; gap: 12px; justify-content: flex-end;">
+      <a href="{% url 'medicine_list' %}" class="btn btn-secondary">Cancel</a>
+      <button type="submit" class="btn btn-primary">{% if medicine %}Save Changes{% else %}Add Medicine{% endif %}</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

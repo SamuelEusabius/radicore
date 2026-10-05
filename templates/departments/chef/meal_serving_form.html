@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% block title %}Record Serving{% endblock %}
+{% block header_title %}Record Meal Serving{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 640px; margin: 0 auto;">
+
+  <div style="background: var(--surface-muted); padding: 16px; border-radius: 8px; margin-bottom: 20px;">
+    <h3 style="margin: 0 0 8px 0; font-family: var(--font-heading);">{{ plan.meal.name }}</h3>
+    <p style="margin: 0; color: var(--ink-600); font-size: var(--text-sm);">
+      {{ plan.date|date:"l, j F Y" }} · {{ plan.meal.get_meal_type_display }}
+      {% if plan.meal.served_time %} · {{ plan.meal.served_time|time:"H:i" }}{% endif %}
+    </p>
+    {% if plan.head_count %}
+      <p style="margin: 8px 0 0 0; font-size: var(--text-xs); color: var(--ink-500);">
+        Expected: <strong>{{ plan.head_count }}</strong>
+      </p>
+    {% endif %}
+  </div>
+
+  <form method="post">
+    {% csrf_token %}
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Students Served</label>
+        <input type="number" name="students_served" min="0" value="0" required
+               style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+      </div>
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Staff Served</label>
+        <input type="number" name="staff_served" min="0" value="0"
+               style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+      </div>
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Guests</label>
+        <input type="number" name="guests_served" min="0" value="0"
+               style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+      </div>
+    </div>
+
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Wastage (plates)</label>
+      <input type="number" name="wastage_plates" min="0" value="0"
+             style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+      <p style="font-size: var(--text-xs); color: var(--ink-500); margin-top: 4px;">
+        Number of plates returned / discarded
+      </p>
+    </div>
+
+    <div style="margin-bottom: 24px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Notes</label>
+      <textarea name="notes" rows="2" style="width: 100%; padding: 10px; border: 1px solid var(--border);"></textarea>
+    </div>
+
+    <div style="display: flex; gap: 12px; justify-content: flex-end;">
+      <a href="{% url 'chef_dashboard' %}" class="btn btn-secondary">Cancel</a>
+      <button type="submit" class="btn btn-primary">Record Serving</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

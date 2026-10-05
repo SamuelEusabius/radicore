@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% block title %}Menu{% endblock %}
+{% block header_title %}Menu Planning{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-info">
+    <h1 class="page-title">Menu</h1>
+    <p class="page-subtitle">Planned meals for the selected date range</p>
+  </div>
+  <a href="{% url 'meal_plan_add' %}" class="btn btn-primary">+ Plan Meal</a>
+</div>
+
+<!-- Date filter -->
+<form method="get" class="card mb-6" style="display: flex; gap: 12px; align-items: flex-end;">
+  <div>
+    <label style="display: block; font-size: var(--text-xs); font-weight: 600; margin-bottom: 4px;">From</label>
+    <input type="date" name="from" value="{{ date_from }}" style="padding: 8px; border: 1px solid var(--border);">
+  </div>
+  <div>
+    <label style="display: block; font-size: var(--text-xs); font-weight: 600; margin-bottom: 4px;">To</label>
+    <input type="date" name="to" value="{{ date_to }}" style="padding: 8px; border: 1px solid var(--border);">
+  </div>
+  <button type="submit" class="btn btn-primary">Filter</button>
+</form>
+
+{% if plans_by_date %}
+  {% for d, plans in plans_by_date.items %}
+  <div class="card mb-4">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+      <h3 style="margin: 0; font-family: var(--font-heading);">
+        {{ d|date:"l, j F Y" }}
+        {% if d == today %}<span class="badge badge-primary">TODAY</span>{% endif %}
+      </h3>
+      <a href="{% url 'meal_plan_add' %}" class="btn btn-sm btn-secondary">+ Add</a>
+    </div>
+
+    <table class="table">
+      <thead><tr><th>Meal</th><th>Type</th><th>Time</th><th>Head Count</th><th style="text-align: right;">Actions</th></tr></thead>
+      <tbody>
+        {% for plan in plans %}
+        <tr>
+          <td><strong>{{ plan.meal.name }}</strong></td>
+          <td><span class="badge badge-info">{{ plan.meal.get_meal_type_display }}</span></td>
+          <td>{{ plan.meal.served_time|default:"—" }}</td>
+          <td>{{ plan.head_count }}</td>
+          <td style="text-align: right; white-space: nowrap;">
+            <a href="{% url 'meal_serving_form' plan.id %}" class="btn btn-sm btn-primary">Serve</a>
+            <a href="{% url 'meal_plan_edit' plan.id %}" class="btn btn-sm btn-secondary">Edit</a>
+            <a href="{% url 'meal_plan_delete' plan.id %}" class="btn btn-sm" style="background: #fee2e2; color: #991b1b;">Delete</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endfor %}
+{% else %}
+<div class="card">
+  <div class="pro-empty" style="border: none; padding: 60px;">
+    <p style="color: var(--ink-500);">No meals planned for this date range.</p>
+    <a href="{% url 'meal_plan_add' %}" class="btn btn-primary" style="margin-top: 12px;">+ Plan a meal</a>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

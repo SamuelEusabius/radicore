@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+{% block title %}Kitchen Stock{% endblock %}
+{% block header_title %}Kitchen Stock{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-info">
+    <h1 class="page-title">Kitchen Stock</h1>
+    <p class="page-subtitle">{{ items|length }} items · Total value KES {{ total_value|floatformat:0 }}</p>
+  </div>
+  <div style="display: flex; gap: 8px;">
+    <a href="{% url 'kitchen_stock_add' %}" class="btn btn-primary">+ Add Stock</a>
+    <a href="{% url 'kitchen_logs' %}" class="btn btn-secondary">📋 Stock Logs</a>
+  </div>
+</div>
+
+{% if low_stock %}
+<div class="card mb-6" style="border-left: 4px solid var(--warning);">
+  <h3 style="margin-bottom: 12px; font-family: var(--font-heading); color: var(--warning);">⚠️ Low Stock Items</h3>
+  {% for item in low_stock %}
+    <div style="padding: 6px 0; border-bottom: 1px solid var(--border);">
+      <strong>{{ item.name }}</strong> — {{ item.quantity|floatformat:1 }} {{ item.get_unit_display }} (reorder at {{ item.reorder_level|floatformat:0 }})
+      <a href="{% url 'kitchen_stock_action' item.id %}" class="btn btn-sm btn-primary" style="float: right;">+ Add Stock</a>
+    </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<form method="get" class="card mb-6" style="display: flex; gap: 12px;">
+  <input type="text" name="q" value="{{ search }}" placeholder="Search items..."
+         style="flex: 1; padding: 10px; border: 1px solid var(--border);">
+  <select name="category" style="padding: 10px; border: 1px solid var(--border);">
+    <option value="">All Categories</option>
+    {% for code, label in categories %}
+      <option value="{{ code }}" {% if category_filter == code %}selected{% endif %}>{{ label }}</option>
+    {% endfor %}
+  </select>
+  <button type="submit" class="btn btn-primary">Filter</button>
+</form>
+
+<div class="card">
+  {% if items %}
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Item</th><th>Category</th><th>Quantity</th><th>Reorder</th><th>Unit Cost</th><th>Value</th><th>Status</th>
+        <th style="text-align: right;">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in items %}
+      <tr>
+        <td><strong>{{ item.name }}</strong></td>
+        <td><span class="badge badge-info">{{ item.get_category_display }}</span></td>
+        <td>
+          {% if item.is_low_stock %}
+            <span class="badge badge-warning">{{ item.quantity|floatformat:1 }} {{ item.get_unit_display }}</span>
+          {% else %}
+            <strong>{{ item.quantity|floatformat:1 }}</strong> {{ item.get_unit_display }}
+          {% endif %}
+        </td>
+        <td>{{ item.reorder_level|floatformat:1 }}</td>
+        <td>KES {{ item.unit_cost|floatformat:0 }}</td>
+        <td>KES {{ item.total_value|floatformat:0 }}</td>
+        <td>
+          {% if item.is_active %}<span class="badge badge-success">Active</span>
+          {% else %}<span class="badge badge-gray">Inactive</span>{% endif %}
+        </td>
+        <td style="text-align: right; white-space: nowrap;">
+          <a href="{% url 'kitchen_stock_action' item.id %}" class="btn btn-sm btn-primary">± Stock</a>
+          <a href="{% url 'kitchen_stock_edit' item.id %}" class="btn btn-sm btn-secondary">Edit</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="pro-empty" style="border: none; padding: 60px;">
+    <p style="color: var(--ink-500);">No kitchen stock yet.</p>
+    <a href="{% url 'kitchen_stock_add' %}" class="btn btn-primary" style="margin-top: 12px;">+ Add first item</a>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}

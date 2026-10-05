@@ -1,7 +1,9 @@
-from django.urls import path
 from . import views
 from . import views_transport
-from . import views, views_transport, views_library
+from django.urls import path
+from . import views, views_transport, views_library, views_health
+from . import views, views_transport, views_library, views_health, views_kitchen
+from . import views, views_transport, views_library, views_health, views_kitchen, views_lab
 
 urlpatterns = [
     path('driver/', views.driver_dashboard, name='driver_dashboard'),
@@ -12,6 +14,28 @@ urlpatterns = [
     
     path('reports/new/<slug:department_code>/', views.department_report_create, name='department_report_create'),
     path('reports/inbox/', views.department_reports_inbox, name='department_reports_inbox'),
+        # ============================================================
+    # HEALTH / NURSE MODULE
+    # ============================================================
+    path('nurse/', views_health.nurse_dashboard, name='nurse_dashboard'),
+
+    # Health visits
+    path('nurse/visits/', views_health.health_visit_list, name='health_visit_list'),
+    path('nurse/visits/add/', views_health.health_visit_form, name='health_visit_add'),
+    path('nurse/visits/<int:visit_id>/', views_health.health_visit_detail, name='health_visit_detail'),
+    path('nurse/visits/<int:visit_id>/edit/', views_health.health_visit_form, name='health_visit_edit'),
+
+    # Medicine
+    path('nurse/medicines/', views_health.medicine_list, name='medicine_list'),
+    path('nurse/medicines/add/', views_health.medicine_form, name='medicine_add'),
+    path('nurse/medicines/<int:medicine_id>/edit/', views_health.medicine_form, name='medicine_edit'),
+    path('nurse/medicines/<int:medicine_id>/stock-in/', views_health.medicine_stock_in, name='medicine_stock_in'),
+    path('nurse/medicines/<int:medicine_id>/stock-out/', views_health.medicine_stock_out, name='medicine_stock_out'),
+    path('nurse/medicines/logs/', views_health.medicine_logs, name='medicine_logs'),
+    path('nurse/medicines/<int:medicine_id>/logs/', views_health.medicine_logs, name='medicine_logs_for'),
+
+    # Reports
+    path('nurse/reports/pdf/', views_health.health_report_pdf, name='health_report_pdf'),
      # ---------- DRIVER — TRANSPORT MODULE ----------
     path('driver/', views_transport.driver_dashboard, name='driver_dashboard'),
     path('driver/trips/<int:trip_id>/', views_transport.trip_detail, name='trip_detail'),
@@ -57,4 +81,55 @@ urlpatterns = [
 
     # Reports
     path('librarian/reports/pdf/', views_library.library_report_pdf, name='library_report_pdf'),
+        # ============================================================
+    # KITCHEN / CHEF MODULE
+    # ============================================================
+    path('chef/', views_kitchen.chef_dashboard, name='chef_dashboard'),
+
+    # Meals
+    path('chef/meals/', views_kitchen.meal_list, name='meal_list'),
+    path('chef/meals/add/', views_kitchen.meal_form, name='meal_add'),
+    path('chef/meals/<int:meal_id>/edit/', views_kitchen.meal_form, name='meal_edit'),
+
+    # Meal Plans (menu)
+    path('chef/menu/', views_kitchen.meal_plan_list, name='meal_plan_list'),
+    path('chef/menu/add/', views_kitchen.meal_plan_form, name='meal_plan_add'),
+    path('chef/menu/<int:plan_id>/edit/', views_kitchen.meal_plan_form, name='meal_plan_edit'),
+    path('chef/menu/<int:plan_id>/delete/', views_kitchen.meal_plan_delete, name='meal_plan_delete'),
+    path('chef/menu/<int:plan_id>/serve/', views_kitchen.meal_serving_form, name='meal_serving_form'),
+
+    # Kitchen Stock
+    path('chef/stock/', views_kitchen.kitchen_stock_list, name='kitchen_stock_list'),
+    path('chef/stock/add/', views_kitchen.kitchen_stock_form, name='kitchen_stock_add'),
+    path('chef/stock/<int:item_id>/edit/', views_kitchen.kitchen_stock_form, name='kitchen_stock_edit'),
+    path('chef/stock/<int:item_id>/action/', views_kitchen.kitchen_stock_action, name='kitchen_stock_action'),
+    path('chef/stock/logs/', views_kitchen.kitchen_logs, name='kitchen_logs'),
+    path('chef/stock/<int:item_id>/logs/', views_kitchen.kitchen_logs, name='kitchen_logs_for'),
+
+    # Reports
+    path('chef/reports/pdf/', views_kitchen.kitchen_report_pdf, name='kitchen_report_pdf'),
+        # ============================================================
+    # LABORATORY / LAB TECHNICIAN MODULE
+    # ============================================================
+    path('lab/', views_lab.lab_dashboard, name='lab_dashboard'),
+
+    # Equipment
+    path('lab/equipment/', views_lab.lab_equipment_list, name='lab_equipment_list'),
+    path('lab/equipment/add/', views_lab.lab_equipment_form, name='lab_equipment_add'),
+    path('lab/equipment/<int:item_id>/edit/', views_lab.lab_equipment_form, name='lab_equipment_edit'),
+    path('lab/equipment/<int:item_id>/delete/', views_lab.lab_equipment_delete, name='lab_equipment_delete'),
+
+    # Incidents
+    path('lab/incidents/', views_lab.lab_incident_list, name='lab_incident_list'),
+    path('lab/incidents/add/', views_lab.lab_incident_form, name='lab_incident_add'),
+    path('lab/incidents/<int:incident_id>/edit/', views_lab.lab_incident_form, name='lab_incident_edit'),
+
+    # Practicals
+    path('lab/practicals/', views_lab.practical_list, name='practical_list'),
+    path('lab/practicals/add/', views_lab.practical_form, name='practical_add'),
+    path('lab/practicals/<int:practical_id>/edit/', views_lab.practical_form, name='practical_edit'),
+    path('lab/practicals/<int:practical_id>/delete/', views_lab.practical_delete, name='practical_delete'),
+
+    # Reports
+    path('lab/reports/pdf/', views_lab.lab_report_pdf, name='lab_report_pdf'),
 ]

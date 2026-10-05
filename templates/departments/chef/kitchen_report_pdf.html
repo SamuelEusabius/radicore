@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  @page { size: A4 landscape; margin: 1.5cm; }
+  body { font-family: Arial, sans-serif; font-size: 10px; color: #1a1a1a; }
+  .header { border-bottom: 3px solid #00695c; padding-bottom: 12px; margin-bottom: 16px; }
+  .header h1 { font-size: 20px; color: #00695c; margin-bottom: 4px; }
+  .header p { font-size: 11px; color: #666; }
+  .doc-title { text-align: center; font-size: 16px; font-weight: bold; text-transform: uppercase; margin-bottom: 4px; }
+  .doc-subtitle { text-align: center; font-size: 10px; color: #666; margin-bottom: 16px; }
+  h3 { font-size: 12px; color: #00695c; margin: 16px 0 8px 0; border-bottom: 1px solid #00695c; padding-bottom: 4px; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+  thead th { background-color: #1a2332; color: white; padding: 6px 5px; text-align: left; font-size: 9px; text-transform: uppercase; }
+  tbody td { padding: 5px; font-size: 9.5px; border-bottom: 1px solid #e5e7eb; }
+  tbody tr:nth-child(even) { background-color: #f9fafb; }
+  .summary { background: #f8fafc; border-left: 4px solid #00695c; padding: 12px; margin-bottom: 16px; font-size: 11px; }
+  .footer { margin-top: 24px; padding-top: 10px; border-top: 1px solid #ddd; text-align: center; font-size: 9px; color: #999; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>{{ school.name }}</h1>
+  <p>{% if school.code %}Code: {{ school.code }} · {% endif %}{% if school.phone %}Tel: {{ school.phone }}{% endif %}</p>
+</div>
+
+<div class="doc-title">Kitchen Stock Report</div>
+<div class="doc-subtitle">Generated {{ today|date:"j F Y" }}</div>
+
+<div class="summary">
+  <strong>Total items:</strong> {{ stock_items|length }} ·
+  <strong>Total value:</strong> KES {{ total_value|floatformat:0 }}
+</div>
+
+<h3>Current Stock</h3>
+<table>
+  <thead>
+    <tr>
+      <th>#</th><th>Item</th><th>Category</th><th>Quantity</th><th>Unit</th><th>Unit Cost (KES)</th><th>Total Value</th><th>Reorder At</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for item in stock_items %}
+    <tr>
+      <td>{{ forloop.counter }}</td>
+      <td><strong>{{ item.name }}</strong></td>
+      <td>{{ item.get_category_display }}</td>
+      <td>{{ item.quantity|floatformat:2 }}</td>
+      <td>{{ item.get_unit_display }}</td>
+      <td>{{ item.unit_cost|floatformat:0 }}</td>
+      <td>{{ item.total_value|floatformat:0 }}</td>
+      <td>{{ item.reorder_level|floatformat:0 }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<h3>Recent Movements (Last 30 Days)</h3>
+<table>
+  <thead>
+    <tr>
+      <th>Date</th><th>Item</th><th>Action</th><th>Quantity</th><th>Balance After</th><th>Reason</th><th>By</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for log in recent_logs %}
+    <tr>
+      <td>{{ log.created_at|date:"j M Y H:i" }}</td>
+      <td>{{ log.stock_item.name }}</td>
+      <td>{{ log.get_action_display }}</td>
+      <td>{{ log.quantity|floatformat:2 }}</td>
+      <td>{{ log.balance_after|floatformat:2 }}</td>
+      <td>{{ log.reason|default:"—" }}</td>
+      <td>{{ log.recorded_by.get_full_name|default:log.recorded_by.email|truncatechars:18|default:"—" }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<div class="footer">
+  {{ school.name }} · Kitchen Stock Report · Generated {{ user.get_full_name|default:user.email }}
+</div>
+
+</body>
+</html>

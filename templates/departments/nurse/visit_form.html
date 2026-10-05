@@ -1,0 +1,127 @@
+{% extends 'base.html' %}
+{% block title %}{% if visit %}Edit Visit{% else %}Log Visit{% endif %}{% endblock %}
+{% block header_title %}{% if visit %}Edit Visit{% else %}Log Visit{% endif %}{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 840px; margin: 0 auto;">
+  <form method="post">
+    {% csrf_token %}
+
+    <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Student *</label>
+        <select name="student" required style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+          <option value="">— Select student —</option>
+          {% for s in students %}
+            <option value="{{ s.id }}"
+              {% if form_data.student == s.id|stringformat:"s" %}selected{% elif visit and visit.student.id == s.id %}selected{% endif %}>
+              {{ s.first_name }} {{ s.last_name }} ({{ s.admission_number }})
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Date *</label>
+        <input type="date" name="visit_date" required
+               value="{% if form_data.visit_date %}{{ form_data.visit_date }}{% elif visit %}{{ visit.visit_date|date:'Y-m-d' }}{% else %}{{ today|date:'Y-m-d' }}{% endif %}"
+               style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+      </div>
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Time</label>
+        <input type="time" name="visit_time"
+               value="{% if form_data.visit_time %}{{ form_data.visit_time }}{% elif visit and visit.visit_time %}{{ visit.visit_time|time:'H:i' }}{% endif %}"
+               style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+      </div>
+    </div>
+
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Visit Type *</label>
+      <select name="visit_type" required style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+        <option value="illness">Illness</option>
+        <option value="injury">Injury</option>
+        <option value="emergency">Emergency</option>
+        <option value="routine">Routine Check</option>
+        <option value="followup">Follow-up</option>
+      </select>
+    </div>
+
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Symptoms / Complaint *</label>
+      <textarea name="symptoms" required rows="3"
+                placeholder="What did the student report? What did you observe?"
+                style="width: 100%; padding: 10px; border: 1px solid var(--border);">{% if form_data.symptoms %}{{ form_data.symptoms }}{% elif visit %}{{ visit.symptoms }}{% endif %}</textarea>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Diagnosis</label>
+        <input type="text" name="diagnosis"
+               value="{% if form_data.diagnosis %}{{ form_data.diagnosis }}{% elif visit %}{{ visit.diagnosis }}{% endif %}"
+               style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+      </div>
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Outcome</label>
+        <select name="outcome" style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+          <option value="treated">Treated & Returned to Class</option>
+          <option value="resting">Resting in Sick Bay</option>
+          <option value="sent_home">Sent Home</option>
+          <option value="referred">Referred to Hospital</option>
+          <option value="observation">Under Observation</option>
+        </select>
+      </div>
+    </div>
+
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Treatment Administered</label>
+      <textarea name="treatment" rows="3"
+                style="width: 100%; padding: 10px; border: 1px solid var(--border);">{% if form_data.treatment %}{{ form_data.treatment }}{% elif visit %}{{ visit.treatment }}{% endif %}</textarea>
+    </div>
+
+    <!-- Medicine dispensation -->
+    <div class="card" style="background: var(--surface-muted); margin-bottom: 20px; padding: 16px;">
+      <h3 style="margin: 0 0 12px 0; font-family: var(--font-heading); font-size: var(--text-sm);">💊 Dispense Medicine (Optional)</h3>
+      <div style="max-height: 200px; overflow-y: auto;">
+        {% for m in medicines %}
+        <div style="display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--border);">
+          <div style="flex: 1;">
+            <strong>{{ m.name }}</strong>
+            <span style="font-size: var(--text-xs); color: var(--ink-500);">
+              — {{ m.quantity }} {{ m.unit }} available
+            </span>
+          </div>
+          <input type="number" name="dispense_{{ m.id }}" min="0" max="{{ m.quantity }}"
+                 placeholder="0"
+                 style="width: 80px; padding: 6px; border: 1px solid var(--border);">
+          <span style="font-size: var(--text-xs); color: var(--ink-500);">{{ m.unit }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div style="margin-bottom: 20px;">
+      <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+        <input type="checkbox" name="guardian_notified" {% if visit and visit.guardian_notified %}checked{% endif %} style="width: 18px; height: 18px;">
+        <span>Guardian has been notified</span>
+      </label>
+    </div>
+
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Referred To (if applicable)</label>
+      <input type="text" name="referred_to"
+             value="{% if form_data.referred_to %}{{ form_data.referred_to }}{% elif visit %}{{ visit.referred_to }}{% endif %}"
+             placeholder="Hospital / clinic name"
+             style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+    </div>
+
+    <div style="margin-bottom: 24px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Notes</label>
+      <textarea name="notes" rows="2" style="width: 100%; padding: 10px; border: 1px solid var(--border);">{% if form_data.notes %}{{ form_data.notes }}{% elif visit %}{{ visit.notes }}{% endif %}</textarea>
+    </div>
+
+    <div style="display: flex; gap: 12px; justify-content: flex-end;">
+      <a href="{% url 'health_visit_list' %}" class="btn btn-secondary">Cancel</a>
+      <button type="submit" class="btn btn-primary">{% if visit %}Save Changes{% else %}Record Visit{% endif %}</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

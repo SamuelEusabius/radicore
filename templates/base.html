@@ -6,31 +6,38 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}School MS{% endblock %}</title>
 
+  <!-- Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="{% static 'css/design-tokens.css' %}">
-  <link rel="stylesheet" href="{% static 'css/layout.css' %}">
-  <link rel="stylesheet" href="{% static 'css/components.css' %}">
-  <link rel="stylesheet" href="{% static 'css/utilities.css' %}">
-  <link rel="stylesheet" href="{% static 'css/design_system.css' %}">
-  <link rel="stylesheet" href="{% static 'css/loader.css' %}">
-  <style>
-  [x-cloak] { display: none !important; }
-</style>
-
+  <!-- ============ CSS ============ -->
+ <link rel="stylesheet" href="{% static 'css/design-tokens.css' %}?v={% now 'U' %}">
+<link rel="stylesheet" href="{% static 'css/layout.css' %}?v={% now 'U' %}">
+<link rel="stylesheet" href="{% static 'css/components.css' %}?v={% now 'U' %}">
+<link rel="stylesheet" href="{% static 'css/utilities.css' %}?v={% now 'U' %}">
+<link rel="stylesheet" href="{% static 'css/design_system.css' %}?v={% now 'U' %}">
+<link rel="stylesheet" href="{% static 'css/loader.css' %}?v={% now 'U' %}">
+  <!-- Tailwind CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
 
   {% block extra_head %}{% endblock %}
-    {% block extra_css %}{% endblock %}
+  {% block extra_css %}{% endblock %}
 </head>
 <body>
 
 {% if user.is_authenticated %}
+
+  <!-- ==================== AUTHENTICATED LAYOUT ==================== -->
   <div class="app-shell">
+
     {% include 'partials/_sidebar.html' %}
+
+    <!-- Mobile backdrop overlay -->
+    <div class="mobile-backdrop" id="mobileBackdrop"></div>
+
     <div class="main-area">
       {% include 'partials/_topbar.html' %}
 
+      <!-- Flash messages -->
       {% if messages %}
         <div style="padding: var(--s-4) var(--s-6) 0;">
           {% for m in messages %}
@@ -43,15 +50,22 @@
         </div>
       {% endif %}
 
+      <!-- Page content -->
       <div class="page-content">
         {% block content %}{% endblock %}
       </div>
     </div>
+
   </div>
+
 {% else %}
+
+  <!-- ==================== PUBLIC / UNAUTHENTICATED ==================== -->
   {% block public_content %}{% endblock %}
+
 {% endif %}
 
+<!-- ============ PAGE LOADER ============ -->
 <div id="page-loader">
   <div class="loader-spinner"></div>
   <div class="loader-brand">
@@ -67,9 +81,80 @@
 </div>
 
 <script src="{% static 'js/loader.js' %}"></script>
-{% block extra_js %}{% endblock %}
+
+<!-- ============================================
+     SIDEBAR TOGGLE (mobile drawer + desktop collapse)
+     ============================================ -->
+<script>
+  (function() {
+    const sidebar = document.getElementById('sidebar');
+    const toggle = document.getElementById('sidebarToggle');
+    const backdrop = document.getElementById('mobileBackdrop');
+
+    if (!sidebar || !toggle) {
+      console.warn('Sidebar or toggle button not found');
+      return;
+    }
+
+    const isMobile = () => window.matchMedia('(max-width: 768px)').matches;
+
+    // --- Open / close ---
+    toggle.addEventListener('click', (e) => {
+      e.preventDefault();
+
+      if (isMobile()) {
+        const isOpen = sidebar.classList.toggle('mobile-open');
+        if (backdrop) backdrop.classList.toggle('open', isOpen);
+        document.body.style.overflow = isOpen ? 'hidden' : '';
+      } else {
+        sidebar.classList.toggle('collapsed');
+      }
+    });
+
+    // --- Backdrop click closes ---
+    if (backdrop) {
+      backdrop.addEventListener('click', () => {
+        sidebar.classList.remove('mobile-open');
+        backdrop.classList.remove('open');
+        document.body.style.overflow = '';
+      });
+    }
+
+    // --- Sidebar link click closes (mobile only) ---
+    sidebar.querySelectorAll('a').forEach(a => {
+      a.addEventListener('click', () => {
+        if (isMobile()) {
+          sidebar.classList.remove('mobile-open');
+          if (backdrop) backdrop.classList.remove('open');
+          document.body.style.overflow = '';
+        }
+      });
+    });
+
+    // --- ESC key closes ---
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && sidebar.classList.contains('mobile-open')) {
+        sidebar.classList.remove('mobile-open');
+        if (backdrop) backdrop.classList.remove('open');
+        document.body.style.overflow = '';
+      }
+    });
+
+    // --- Auto-close when resizing from mobile → desktop ---
+    window.addEventListener('resize', () => {
+      if (!isMobile() && sidebar.classList.contains('mobile-open')) {
+        sidebar.classList.remove('mobile-open');
+        if (backdrop) backdrop.classList.remove('open');
+        document.body.style.overflow = '';
+      }
+    });
+  })();
+</script>
+
 <!-- Alpine.js -->
 <script defer src="{% static 'js/alpine.min.js' %}"></script>
+
+{% block extra_js %}{% endblock %}
 
 </body>
 </html>

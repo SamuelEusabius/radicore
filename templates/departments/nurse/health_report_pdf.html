@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  @page { size: A4 landscape; margin: 1.5cm; }
+  body { font-family: Arial, sans-serif; font-size: 10px; color: #1a1a1a; }
+  .header { border-bottom: 3px solid #00695c; padding-bottom: 12px; margin-bottom: 16px; }
+  .header h1 { font-size: 20px; color: #00695c; margin-bottom: 4px; }
+  .header p { font-size: 11px; color: #666; }
+  .doc-title { text-align: center; font-size: 16px; font-weight: bold; text-transform: uppercase; margin-bottom: 4px; }
+  .doc-subtitle { text-align: center; font-size: 10px; color: #666; margin-bottom: 16px; }
+  table { width: 100%; border-collapse: collapse; }
+  thead th { background-color: #1a2332; color: white; padding: 8px 6px; text-align: left; font-size: 9px; text-transform: uppercase; }
+  tbody td { padding: 6px; font-size: 10px; border-bottom: 1px solid #e5e7eb; }
+  tbody tr:nth-child(even) { background-color: #f9fafb; }
+  .badge { display: inline-block; padding: 2px 6px; border-radius: 3px; font-size: 8px; font-weight: bold; text-transform: uppercase; }
+  .badge-info { background-color: #dbeafe; color: #1e40af; }
+  .badge-warning { background-color: #fef3c7; color: #92400e; }
+  .badge-danger { background-color: #fee2e2; color: #991b1b; }
+  .badge-success { background-color: #d1fae5; color: #065f46; }
+  .footer { margin-top: 24px; padding-top: 10px; border-top: 1px solid #ddd; text-align: center; font-size: 9px; color: #999; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>{{ school.name }}</h1>
+  <p>{% if school.code %}Code: {{ school.code }} · {% endif %}{% if school.phone %}Tel: {{ school.phone }}{% endif %}</p>
+</div>
+
+<div class="doc-title">Health Visit Report</div>
+<div class="doc-subtitle">
+  Last {{ days }} days ({{ since|date:"j M" }} – {{ today|date:"j M Y" }}) · {{ total }} visit{{ total|pluralize }}
+</div>
+
+<table>
+  <thead>
+    <tr>
+      <th style="width: 25px;">#</th>
+      <th>Date</th>
+      <th>Student</th>
+      <th>Type</th>
+      <th>Symptoms</th>
+      <th>Diagnosis</th>
+      <th>Treatment</th>
+      <th>Outcome</th>
+      <th>Attended By</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for v in visits %}
+    <tr>
+      <td>{{ forloop.counter }}</td>
+      <td>{{ v.visit_date|date:"j M" }}</td>
+      <td><strong>{{ v.student.first_name }} {{ v.student.last_name }}</strong></td>
+      <td><span class="badge badge-info">{{ v.get_visit_type_display }}</span></td>
+      <td>{{ v.symptoms|truncatechars:60 }}</td>
+      <td>{{ v.diagnosis|truncatechars:30|default:"—" }}</td>
+      <td>{{ v.treatment|truncatechars:40|default:"—" }}</td>
+      <td>
+        {% if v.outcome == 'referred' %}<span class="badge badge-danger">{{ v.get_outcome_display }}</span>
+        {% elif v.outcome == 'sent_home' %}<span class="badge badge-warning">{{ v.get_outcome_display }}</span>
+        {% else %}{{ v.get_outcome_display }}{% endif %}
+      </td>
+      <td>{{ v.attended_by.get_full_name|default:v.attended_by.email|truncatechars:18|default:"—" }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<div class="footer">
+  {{ school.name }} · Health Report · Generated {{ user.get_full_name|default:user.email }}
+</div>
+
+</body>
+</html>

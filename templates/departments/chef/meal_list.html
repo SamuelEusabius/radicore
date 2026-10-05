@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% block title %}Meals{% endblock %}
+{% block header_title %}Meals Catalog{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-info">
+    <h1 class="page-title">Meals</h1>
+    <p class="page-subtitle">{{ meals|length }} meal{{ meals|length|pluralize }} defined</p>
+  </div>
+  <a href="{% url 'meal_add' %}" class="btn btn-primary">+ Add Meal</a>
+</div>
+
+<form method="get" class="card mb-6" style="display: flex; gap: 12px;">
+  <input type="text" name="q" value="{{ search }}" placeholder="Search meals..."
+         style="flex: 1; padding: 10px; border: 1px solid var(--border);">
+  <select name="type" style="padding: 10px; border: 1px solid var(--border);">
+    <option value="">All Types</option>
+    {% for code, label in meal_types %}
+      <option value="{{ code }}" {% if type_filter == code %}selected{% endif %}>{{ label }}</option>
+    {% endfor %}
+  </select>
+  <button type="submit" class="btn btn-primary">Filter</button>
+</form>
+
+<div class="card">
+  {% if meals %}
+  <table class="table">
+    <thead>
+      <tr><th>Name</th><th>Type</th><th>Time</th><th>Cost/Head</th><th>Status</th><th style="text-align: right;">Actions</th></tr>
+    </thead>
+    <tbody>
+      {% for m in meals %}
+      <tr>
+        <td><strong>{{ m.name }}</strong></td>
+        <td><span class="badge badge-info">{{ m.get_meal_type_display }}</span></td>
+        <td>{{ m.served_time|default:"—" }}</td>
+        <td>KES {{ m.cost_per_head|floatformat:0 }}</td>
+        <td>
+          {% if m.is_active %}<span class="badge badge-success">Active</span>
+          {% else %}<span class="badge badge-gray">Inactive</span>{% endif %}
+        </td>
+        <td style="text-align: right;">
+          <a href="{% url 'meal_edit' m.id %}" class="btn btn-sm btn-secondary">Edit</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="pro-empty" style="border: none; padding: 60px;">
+    <p style="color: var(--ink-500);">No meals defined yet.</p>
+    <a href="{% url 'meal_add' %}" class="btn btn-primary" style="margin-top: 12px;">+ Add first meal</a>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}

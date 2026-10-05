@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+{% block title %}Lab Equipment{% endblock %}
+{% block header_title %}Lab Equipment Inventory{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-info">
+    <h1 class="page-title">Equipment</h1>
+    <p class="page-subtitle">{{ items|length }} item{{ items|length|pluralize }} · Value KES {{ total_value|floatformat:0 }}</p>
+  </div>
+  <a href="{% url 'lab_equipment_add' %}" class="btn btn-primary">+ Add Equipment</a>
+</div>
+
+{% if broken %}
+<div class="card mb-6" style="border-left: 4px solid var(--warning);">
+  <h3 style="margin-bottom: 12px; font-family: var(--font-heading); color: var(--warning);">⚠️ Needs Attention</h3>
+  {% for e in broken %}
+    <div style="padding: 6px 0; border-bottom: 1px solid var(--border);">
+      <strong>{{ e.name }}</strong> — {{ e.get_condition_display }}
+      <a href="{% url 'lab_equipment_edit' e.id %}" class="btn btn-sm btn-secondary" style="float: right;">Update</a>
+    </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<form method="get" class="card mb-6" style="display: flex; gap: 12px; flex-wrap: wrap;">
+  <input type="text" name="q" value="{{ search }}" placeholder="Search equipment..."
+         style="flex: 1; min-width: 200px; padding: 10px; border: 1px solid var(--border);">
+  <select name="category" style="padding: 10px; border: 1px solid var(--border);">
+    <option value="">All Categories</option>
+    {% for code, label in categories %}
+      <option value="{{ code }}" {% if category_filter == code %}selected{% endif %}>{{ label }}</option>
+    {% endfor %}
+  </select>
+  <select name="condition" style="padding: 10px; border: 1px solid var(--border);">
+    <option value="">All Conditions</option>
+    {% for code, label in conditions %}
+      <option value="{{ code }}" {% if condition_filter == code %}selected{% endif %}>{{ label }}</option>
+    {% endfor %}
+  </select>
+  <button type="submit" class="btn btn-primary">Filter</button>
+  {% if search or category_filter or condition_filter %}
+    <a href="{% url 'lab_equipment_list' %}" class="btn btn-secondary">Clear</a>
+  {% endif %}
+</form>
+
+<div class="card">
+  {% if items %}
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Name</th><th>Category</th><th>Qty</th><th>Working</th><th>Condition</th><th>Location</th>
+        <th style="text-align: right;">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for e in items %}
+      <tr>
+        <td><strong>{{ e.name }}</strong></td>
+        <td><span class="badge badge-info">{{ e.get_category_display }}</span></td>
+        <td>{{ e.quantity }}</td>
+        <td>
+          <strong>{{ e.working_quantity }}</strong>
+          {% if e.working_quantity < e.quantity %}
+            <span class="badge badge-warning" style="font-size: 9px;">{{ e.quantity|add:"-"|add:e.working_quantity }} broken</span>
+          {% endif %}
+        </td>
+        <td>
+          <span class="badge badge-{% if e.condition == 'excellent' or e.condition == 'good' %}success{% elif e.condition == 'fair' %}info{% elif e.condition == 'needs_repair' %}warning{% else %}danger{% endif %}">
+            {{ e.get_condition_display }}
+          </span>
+        </td>
+        <td>{{ e.location|default:"—" }}</td>
+        <td style="text-align: right; white-space: nowrap;">
+          <a href="{% url 'lab_equipment_edit' e.id %}" class="btn btn-sm btn-secondary">Edit</a>
+          <a href="{% url 'lab_equipment_delete' e.id %}" class="btn btn-sm" style="background: #fee2e2; color: #991b1b;">Delete</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="pro-empty" style="border: none; padding: 60px;">
+    <p style="color: var(--ink-500);">No equipment yet.</p>
+    <a href="{% url 'lab_equipment_add' %}" class="btn btn-primary" style="margin-top: 12px;">+ Add first item</a>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}

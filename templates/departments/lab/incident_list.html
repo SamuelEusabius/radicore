@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% block title %}Lab Incidents{% endblock %}
+{% block header_title %}Lab Incidents{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-info">
+    <h1 class="page-title">Lab Incidents</h1>
+    <p class="page-subtitle">{{ incidents|length }} record{{ incidents|length|pluralize }}</p>
+  </div>
+  <a href="{% url 'lab_incident_add' %}" class="btn btn-primary">+ Log Incident</a>
+</div>
+
+<form method="get" class="card mb-6" style="display: flex; gap: 12px; flex-wrap: wrap;">
+  <input type="text" name="q" value="{{ search }}" placeholder="Search description..."
+         style="flex: 1; min-width: 200px; padding: 10px; border: 1px solid var(--border);">
+  <select name="type" style="padding: 10px; border: 1px solid var(--border);">
+    <option value="">All Types</option>
+    {% for code, label in incident_types %}
+      <option value="{{ code }}" {% if type_filter == code %}selected{% endif %}>{{ label }}</option>
+    {% endfor %}
+  </select>
+  <select name="severity" style="padding: 10px; border: 1px solid var(--border);">
+    <option value="">All Severities</option>
+    {% for code, label in severities %}
+      <option value="{{ code }}" {% if severity_filter == code %}selected{% endif %}>{{ label }}</option>
+    {% endfor %}
+  </select>
+  <select name="status" style="padding: 10px; border: 1px solid var(--border);">
+    <option value="">All Status</option>
+    <option value="open" {% if status_filter == 'open' %}selected{% endif %}>Open</option>
+    <option value="resolved" {% if status_filter == 'resolved' %}selected{% endif %}>Resolved</option>
+  </select>
+  <button type="submit" class="btn btn-primary">Filter</button>
+</form>
+
+<div class="card">
+  {% if incidents %}
+  <table class="table">
+    <thead>
+      <tr><th>Date</th><th>Type</th><th>Equipment</th><th>Severity</th><th>Student</th><th>Status</th><th style="text-align: right;">Actions</th></tr>
+    </thead>
+    <tbody>
+      {% for i in incidents %}
+      <tr>
+        <td>{{ i.incident_date|date:"j M Y" }}</td>
+        <td>{{ i.get_incident_type_display }}</td>
+        <td>{{ i.equipment.name|default:"—" }}</td>
+        <td>
+          <span class="badge badge-{% if i.severity == 'critical' %}danger{% elif i.severity == 'high' %}warning{% else %}gray{% endif %}">
+            {{ i.get_severity_display }}
+          </span>
+        </td>
+        <td>{{ i.involved_student.full_name|default:"—" }}</td>
+        <td>
+          {% if i.resolved %}<span class="badge badge-success">Resolved</span>
+          {% else %}<span class="badge badge-danger">Open</span>{% endif %}
+        </td>
+        <td style="text-align: right;">
+          <a href="{% url 'lab_incident_edit' i.id %}" class="btn btn-sm btn-secondary">View/Edit</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="pro-empty" style="border: none; padding: 60px;">
+    <p style="color: var(--ink-500);">No incidents recorded.</p>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}

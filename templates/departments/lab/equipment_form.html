@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+{% block title %}{% if item %}Edit Equipment{% else %}Add Equipment{% endif %}{% endblock %}
+{% block header_title %}{% if item %}Edit Equipment{% else %}Add Equipment{% endif %}{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 720px; margin: 0 auto;">
+  <form method="post">
+    {% csrf_token %}
+
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Equipment Name *</label>
+      <input type="text" name="name" required
+             value="{% if form_data.name %}{{ form_data.name }}{% elif item %}{{ item.name }}{% endif %}"
+             style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+    </div>
+
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Category</label>
+      <select name="category" style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+        {% for code, label in categories %}
+          <option value="{{ code }}" {% if item and item.category == code %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Total Quantity</label>
+        <input type="number" name="quantity" min="0" required
+               value="{% if form_data.quantity %}{{ form_data.quantity }}{% elif item %}{{ item.quantity }}{% else %}1{% endif %}"
+               style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+      </div>
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Working Quantity</label>
+        <input type="number" name="working_quantity" min="0"
+               value="{% if form_data.working_quantity %}{{ form_data.working_quantity }}{% elif item %}{{ item.working_quantity }}{% else %}1{% endif %}"
+               style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Condition</label>
+        <select name="condition" style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+          {% for code, label in conditions %}
+            <option value="{{ code }}" {% if item and item.condition == code %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Location</label>
+        <input type="text" name="location" placeholder="e.g. Shelf A, Cabinet 2"
+               value="{% if form_data.location %}{{ form_data.location }}{% elif item %}{{ item.location }}{% endif %}"
+               style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Purchase Date</label>
+        <input type="date" name="purchase_date"
+               value="{% if form_data.purchase_date %}{{ form_data.purchase_date }}{% elif item and item.purchase_date %}{{ item.purchase_date|date:'Y-m-d' }}{% endif %}"
+               style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+      </div>
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Unit Cost (KES)</label>
+        <input type="number" name="unit_cost" step="0.01" min="0"
+               value="{% if form_data.unit_cost %}{{ form_data.unit_cost }}{% elif item %}{{ item.unit_cost }}{% else %}0{% endif %}"
+               style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+      </div>
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Supplier</label>
+        <input type="text" name="supplier"
+               value="{% if form_data.supplier %}{{ form_data.supplier }}{% elif item %}{{ item.supplier }}{% endif %}"
+               style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+      </div>
+    </div>
+
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Notes</label>
+      <textarea name="notes" rows="2" style="width: 100%; padding: 10px; border: 1px solid var(--border);">{% if form_data.notes %}{{ form_data.notes }}{% elif item %}{{ item.notes }}{% endif %}</textarea>
+    </div>
+
+    <div style="margin-bottom: 24px;">
+      <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+        <input type="checkbox" name="is_active" {% if not item or item.is_active %}checked{% endif %} style="width: 18px; height: 18px;">
+        <span>Active</span>
+      </label>
+    </div>
+
+    <div style="display: flex; gap: 12px; justify-content: flex-end;">
+      <a href="{% url 'lab_equipment_list' %}" class="btn btn-secondary">Cancel</a>
+      <button type="submit" class="btn btn-primary">{% if item %}Save Changes{% else %}Add Equipment{% endif %}</button>
+    </div>
+  </form>
+</div>
+{% endblock %}
