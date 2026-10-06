@@ -564,10 +564,92 @@ def admin_attendance_overview(request):
 
 @login_required
 def admin_class_attendance(request, class_id):
-    """Placeholder — will show per-class attendance drill-down."""
-    messages.info(request, 'Class-level attendance coming soon.')
-    return redirect('admin_attendance_overview')
+    """View detailed attendance for one specific class."""
+    if request.user.role != 'school_admin':
+        return redirect('dashboard_home')
 
+    from apps.academics.models import ClassLevel
+    from apps.students.models import Student
+    from apps.attendance.models import Attendance
+    from datetime import date, datetime, timedelta
+
+    school = request.user.school
+    cls = get_object_or_404(ClassLevel, id=class_id, school=school)
+    today = date.today()
+
+    # Date selection
+    date_str = request.GET.get('date') or today.strftime('%Y-%m-%d')
+    try:
+        selected_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+    except ValueError:
+        selected_date = today
+    if selected_date > today:
+        selected_date = today
+
+    # Students in class
+    students = Student.objects.filter(
+        school=school, class_level=cls.name, is_active=True
+    ).order_by('first_name', 'last_name')
+
+    # Attendance for the day
+    attendance_map = {
+        a.student_id: a
+        for a in Attendance.objects.filter(
+            student__in=students, date=selected_date
+        )
+    }
+
+    # Stats
+    present = sum(1 for a in attendance_map.values() if a.status == 'P')
+    absent = sum(1 for a in attendance_map.values() if a.status == 'A')
+    late = sum(1 for a in attendance_map.values() if a.status == 'L')
+    excused = sum(1 for a in attendance_map.values() if a.status == 'E')
+    marked = len(attendance_map)
+    total = students.count()
+    not_marked = total - marked
+
+    # Build rows
+    rows = []
+    for s in students:
+        att = attendance_map.get(s.id)
+        rows.append({
+            'student': s,
+            'status': att.status if att else None,
+            'status_display': att.get_status_display() if att else 'Not Marked',
+            'notes': att.notes if att else '',
+        })
+
+    # Last 7 days trend
+    trend = []
+    for i in range(6, -1, -1):
+        d = today - timedelta(days=i)
+        day_qs = Attendance.objects.filter(
+            student__in=students, date=d
+        )
+        day_present = day_qs.filter(status='P').count()
+        day_marked = day_qs.count()
+        trend.append({
+            'date': d,
+            'present': day_present,
+            'marked': day_marked,
+            'pct': round((day_present / total) * 100, 1) if total else 0,
+        })
+
+    return render(request, 'dashboard/admin_class_attendance.html', {
+        'cls': cls,
+        'selected_date': selected_date,
+        'students': students,
+        'rows': rows,
+        'present': present,
+        'absent': absent,
+        'late': late,
+        'excused': excused,
+        'marked': marked,
+        'not_marked': not_marked,
+        'total': total,
+        'attendance_pct': round((present / total) * 100, 1) if total else 0,
+        'trend': trend,
+    })
 
 @login_required
 def admin_attendance_export(request):

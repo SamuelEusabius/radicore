@@ -10,6 +10,7 @@ Generates:
 """
 from io import BytesIO
 from decimal import Decimal
+from django.db.models import Q
 
 
 # ============================================================
@@ -155,16 +156,31 @@ def subject_positions(exam, students_qs):
 
 
 def previous_exam_for(exam, school):
-    """Find the previous exam (by date or year/term) for comparison."""
-    from apps.grades.models import Exam
+    """Find the previous exam before this one.
 
-    qs = Exam.objects.filter(school=school).exclude(id=exam.id).order_by('-year', '-id')
+    Uses multiple strategies:
+      1. If exam has date, use exams with date < this exam's date
+      2. Fall back to (year, id) ordering
+      3. If current exam has no date, treat it as the latest
+    """
+    from apps.grades.models import Exam
+    from django.db.models import Q
+
+    qs = Exam.objects.filter(school=school).exclude(id=exam.id)
 
     if exam.date:
-        qs = qs.filter(date__lt=exam.date)
+        # Strategy 1: by date
+        earlier = qs.filter(date__lt=exam.date).order_by('-date', '-id').first()
+        if earlier:
+            return earlier
+        # Fallback: by year/id
+        return qs.filter(
+            Q(year__lt=exam.year) |
+            Q(year=exam.year, id__lt=exam.id)
+        ).order_by('-year', '-id').first()
 
-    return qs.first()
-
+    # Current exam has no date — return most recent other exam
+    return qs.order_by('-year', '-id').first()
 
 # ============================================================
 # PERFORMANCE CHART (returns base64 data URI)
@@ -172,14 +188,14 @@ def previous_exam_for(exam, school):
 
 def build_performance_chart(current_grades, previous_grades):
     """
-    Builds a matplotlib line chart as a base64 data URI.
-    Compatible with xhtml2pdf (no external file needed).
-
-    current_grades / previous_grades: dict {subject_name: percentage}
+    Builds a matplotlib bar+line chart as base64 data URI.
+    Optimized for xhtml2pdf — small image, low DPI, high compression.
     """
     import matplotlib
     matplotlib.use('Agg')
     import matplotlib.pyplot as plt
+    from io import BytesIO
+    import base64
 
     subject_names = sorted(set(current_grades.keys()) | set(previous_grades.keys()))
     if not subject_names:
@@ -188,47 +204,98 @@ def build_performance_chart(current_grades, previous_grades):
     curr_vals = [current_grades.get(s, 0) for s in subject_names]
     prev_vals = [previous_grades.get(s, 0) for s in subject_names]
 
-    fig, ax = plt.subplots(figsize=(7.2, 2.8), dpi=110)
+    # ---- SMALL figure, low DPI ----
+    fig, ax = plt.subplots(figsize=(6.5, 2.0), dpi=70)
 
-    x = range(len(subject_names))
+    x = list(range(len(subject_names)))
+    bar_width = 0.38
 
+    # Current bars (teal)
+    ax.bar(
+        [i - bar_width/2 for i in x],
+        curr_vals,
+        width=bar_width,
+        color='#00695c',
+        edgecolor='#004d40',
+        linewidth=0.6,
+        label='Current',
+        zorder=3,
+    )
+
+    # Previous bars (gray)
     if previous_grades:
-        ax.plot(x, prev_vals, marker='o', linestyle='--',
-                color='#94a3b8', linewidth=1.8, markersize=5,
-                label='Previous Exam')
+        ax.bar(
+            [i + bar_width/2 for i in x],
+            prev_vals,
+            width=bar_width,
+            color='#cbd5e1',
+            edgecolor='#94a3b8',
+            linewidth=0.6,
+            label='Previous',
+            zorder=3,
+        )
 
-    ax.plot(x, curr_vals, marker='o', linestyle='-',
-            color='#00695c', linewidth=2.2, markersize=7,
-            label='Current Exam')
+    # Trend line
+    ax.plot(
+        x, curr_vals,
+        marker='o', linestyle='-',
+        color='#004d40', linewidth=1.6, markersize=4,
+        label='Trend',
+        zorder=4,
+    )
 
+    # Value labels
     for i, v in enumerate(curr_vals):
-        ax.annotate(f'{int(v)}', (i, v), textcoords='offset points',
-                    xytext=(0, 8), ha='center', fontsize=8, color='#00695c')
+        ax.annotate(
+            f'{int(v)}',
+            (i, v),
+            textcoords='offset points',
+            xytext=(0, 4),
+            ha='center',
+            fontsize=6,
+            color='#004d40',
+            fontweight='bold',
+        )
 
-    ax.set_xticks(list(x))
-    ax.set_xticklabels(subject_names, fontsize=8.5, rotation=0)
-    ax.set_ylim(0, 100)
-    ax.set_ylabel('Percentage (%)', fontsize=9)
-    ax.grid(axis='y', linestyle=':', alpha=0.4)
-    ax.legend(loc='upper right', fontsize=8, frameon=False)
+    # Styling
+    ax.set_xticks(x)
+    short_names = [s[:10] + '…' if len(s) > 10 else s for s in subject_names]
+    ax.set_xticklabels(short_names, fontsize=6, rotation=0)
+    ax.set_ylim(0, 105)
+    ax.grid(axis='y', linestyle=':', alpha=0.3, zorder=0)
+    ax.legend(loc='upper right', fontsize=6, frameon=False, ncol=3)
+    ax.tick_params(axis='both', colors='#4b5563', labelsize=6)
 
     for spine in ['top', 'right']:
         ax.spines[spine].set_visible(False)
+    ax.spines['left'].set_color('#cbd5e1')
+    ax.spines['bottom'].set_color('#cbd5e1')
 
-    plt.tight_layout()
+    plt.tight_layout(pad=0.3)
 
+    # ---- Encode as base64 ----
     buffer = BytesIO()
-    plt.savefig(buffer, format='png', bbox_inches='tight')
+    plt.savefig(
+        buffer,
+        format='png',
+        bbox_inches='tight',
+        pad_inches=0.05,
+        facecolor='white',
+        optimize=True,
+    )
     plt.close(fig)
 
-    # Convert to base64 data URI
-    import base64
-    data = base64.b64encode(buffer.getvalue()).decode('ascii')
+    img_bytes = buffer.getvalue()
     buffer.close()
 
-    return f'data:image/png;base64,{data}'
+    print(f"[CHART] PNG size: {len(img_bytes)} bytes")
 
+    encoded = base64.b64encode(img_bytes).decode('ascii')
+    data_uri = f'data:image/png;base64,{encoded}'
+    print(f"[CHART] Data URI length: {len(data_uri)} chars")
 
+    return data_uri
+   
 # ============================================================
 # AUTO-GENERATED REMARKS
 # ============================================================

@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% block title %}Subject Matrix{% endblock %}
+{% block header_title %}Subject Performance Matrix{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-info">
+    <h1 class="page-title">Subject Performance Matrix</h1>
+    <p class="page-subtitle">Every subject at a glance</p>
+  </div>
+  <a href="{% url 'dos_dashboard' %}" class="btn btn-secondary">← Dashboard</a>
+</div>
+
+<form method="get" class="card mb-6" style="display: flex; gap: 12px;">
+  <select name="exam" required style="flex: 1; padding: 10px; border: 1px solid var(--border);">
+    <option value="">— Select exam —</option>
+    {% for e in all_exams %}
+      <option value="{{ e.id }}" {% if selected_exam == e.id|stringformat:"s" %}selected{% endif %}>
+        {{ e.name }} — {{ e.term }} {{ e.year }}
+      </option>
+    {% endfor %}
+  </select>
+  <button type="submit" class="btn btn-primary">Show Matrix</button>
+</form>
+
+<div class="card">
+  {% if matrix %}
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Subject</th>
+        <th>Mean</th>
+        <th>Pass %</th>
+        <th>Highest</th>
+        <th>Lowest</th>
+        <th>Candidates</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in matrix %}
+      <tr>
+        <td><strong>{{ row.subject.name }}</strong></td>
+        <td>
+          <span class="badge badge-{% if row.mean >= 70 %}success{% elif row.mean >= 50 %}info{% else %}warning{% endif %}">
+            {{ row.mean }}%
+          </span>
+        </td>
+        <td>{{ row.pass_pct }}%</td>
+        <td>{{ row.highest }}</td>
+        <td>{{ row.lowest }}</td>
+        <td>{{ row.count }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="pro-empty" style="border: none; padding: 60px;">
+    <p style="color: var(--ink-500);">Select an exam to view the matrix.</p>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}

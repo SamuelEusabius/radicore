@@ -126,17 +126,22 @@ class Payment(models.Model):
         return f"{self.reference} — KES {self.amount_kes}"
 
     def save(self, *args, **kwargs):
-        # Auto-generate reference if blank
         if not self.reference:
             self.reference = self.generate_reference(self.method)
 
         super().save(*args, **kwargs)
+        
+        from apps.finance.models import Invoice
+        inv = Invoice.objects.get(id=self.invoice_id)
 
-        # Update invoice totals
-        self.invoice.amount_paid = sum(
-            p.amount_kes for p in self.invoice.payments.all()
-        )
-        self.invoice.update_status()
+        from django.db.models import Sum
+        total_paid = Payment.objects.filter(
+            invoice_id=self.invoice_id
+        ).aggregate(t=Sum('amount_kes'))['t'] or 0
+
+        inv.amount_paid = total_paid
+        inv.save(update_fields=['amount_paid'])
+        inv.update_status()
 
     @staticmethod
     def generate_reference(method):

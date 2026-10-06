@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% block title %}Exam Comparison{% endblock %}
+{% block header_title %}Exam Comparison{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-info">
+    <h1 class="page-title">Exam Comparison</h1>
+    <p class="page-subtitle">Subject performance across all exams</p>
+  </div>
+  <a href="{% url 'dos_dashboard' %}" class="btn btn-secondary">← Dashboard</a>
+</div>
+
+<div class="card">
+  {% if comparison %}
+  <div style="overflow-x: auto;">
+    <table class="table">
+      <thead>
+        <tr>
+          <th style="min-width: 200px;">Subject</th>
+          {% for e in all_exams %}
+            <th>{{ e.name }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in comparison %}
+        <tr>
+          <td><strong>{{ row.subject.name }}</strong></td>
+          {% for exam_data in row.exams %}
+            <td>
+              <span class="badge badge-{% if exam_data.mean >= 70 %}success{% elif exam_data.mean >= 50 %}info{% else %}warning{% endif %}">
+                {{ exam_data.mean }}%
+              </span>
+            </td>
+          {% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="pro-empty" style="border: none; padding: 60px;">
+    <p style="color: var(--ink-500);">No exam data to compare yet.</p>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}

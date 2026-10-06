@@ -613,3 +613,49 @@ def mark_all_read(request):
     return redirect('notifications_list')
 
 
+
+
+
+# ============================================================
+# NOTIFICATIONS — MARK ALL READ
+# ============================================================
+
+@login_required
+def mark_all_read(request):
+    """Mark all notifications as read for the current user."""
+    from apps.notifications.models import Notification
+    from django.utils import timezone
+
+    Notification.objects.filter(
+        recipient=request.user,
+        is_read=False,
+    ).update(
+        is_read=True,
+        sent_at=timezone.now(),
+    )
+
+    messages.success(request, 'All notifications marked as read.')
+    return redirect('notifications_list')
+
+
+
+# ============================================================
+# NOTIFICATIONS — MARK ALL READ
+# ============================================================
+
+@login_required
+def mark_all_read(request):
+    """Mark all notifications as read for the current user."""
+    from apps.notifications.models import Notification
+    from django.utils import timezone
+
+    Notification.objects.filter(
+        recipient=request.user,
+        is_read=False,
+    ).update(
+        is_read=True,
+        sent_at=timezone.now(),
+    )
+
+    messages.success(request, 'All notifications marked as read.')
+    return redirect('notifications_list')

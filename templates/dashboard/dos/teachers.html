@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% block title %}Teacher Monitoring{% endblock %}
+{% block header_title %}Teacher Monitoring{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-info">
+    <h1 class="page-title">Teacher Academic Monitoring</h1>
+    <p class="page-subtitle">{{ teacher_rows|length }} teacher{{ teacher_rows|length|pluralize }}</p>
+  </div>
+  <a href="{% url 'dos_dashboard' %}" class="btn btn-secondary">← Dashboard</a>
+</div>
+
+<div class="card">
+  {% if teacher_rows %}
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Teacher</th>
+        <th>Subjects</th>
+        <th>Class Teacher</th>
+        <th>Students</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in teacher_rows %}
+      <tr>
+        <td><strong>{{ row.teacher.user.get_full_name|default:row.teacher.user.email }}</strong></td>
+        <td>
+          {% if row.subjects %}
+            {% for s in row.subjects %}
+              <span class="badge badge-info">{{ s.name }}</span>
+            {% endfor %}
+          {% else %}
+            <span style="color: var(--ink-400);">—</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if row.is_class_teacher %}
+            <span class="badge badge-success">Yes</span>
+          {% else %}
+            <span class="badge badge-gray">No</span>
+          {% endif %}
+        </td>
+        <td>{{ row.student_count }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="pro-empty" style="border: none; padding: 60px;">
+    <p style="color: var(--ink-500);">No teachers registered.</p>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}

@@ -8,20 +8,23 @@
 </div>
     <div class="sidebar-brand-text">
       <p class="sidebar-brand-name">{{ current_school.name|default:"School MS"|truncatechars:18 }}</p>
-      <p class="sidebar-brand-role">
-        {% if user.role == 'super_admin' %}Super Admin
-        {% elif user.role == 'school_admin' %}Admin
-        {% elif user.role == 'teacher' %}Teacher
-        {% elif user.role == 'accountant' %}Accountant
-        {% elif user.role == 'parent' %}Parent
-        {% elif user.role == 'student' %}Student
-        {% elif user.role == 'driver' %}Driver
-        {% elif user.role == 'librarian' %}Librarian
-        {% elif user.role == 'lab_technician' %}Lab Technician
-        {% elif user.role == 'nurse' %}Nurse
-        {% elif user.role == 'chief_chef' %}Chief Chef
-        {% else %}{{ user.role|default:"User" }}{% endif %}
-      </p>
+          <p class="sidebar-brand-role">
+      {% if user.role == 'super_admin' %}Super Admin
+      {% elif user.role == 'school_admin' %}Admin
+      {% elif user.role == 'teacher' %}Teacher
+      {% elif user.role == 'accountant' %}Accountant
+      {% elif user.role == 'parent' %}Parent
+      {% elif user.role == 'student' %}Student
+      {% elif user.role == 'driver' %}Driver
+      {% elif user.role == 'librarian' %}Librarian
+      {% elif user.role == 'lab_technician' %}Lab Technician
+      {% elif user.role == 'nurse' %}Nurse
+      {% elif user.role == 'chief_chef' %}Chief Chef
+      {% elif user.role == 'director_of_studies' %}Director of Studies
+      {% elif user.role == 'store_keeper' %}Store Keeper
+      {% elif user.role == 'boarding_master' %}Boarding Master
+      {% else %}{{ user.role|default:"User" }}{% endif %}
+    </p>
     </div>
   </div>
 
@@ -130,6 +133,10 @@
         {% include 'partials/icons.html' with name="grid" size=18 %}
         <span class="sidebar-link-text">Departments Hub</span>
       </a>
+      <a href="{% url 'dos_dashboard' %}" class="sidebar-link">
+  {% include 'partials/icons.html' with name="bar-chart" size=18 %}
+  <span class="sidebar-link-text">DOS Dashboard</span>
+</a>
       <a href="{% url 'departments_transport' %}" class="sidebar-link">
         {% include 'partials/icons.html' with name="truck" size=18 %}
         <span class="sidebar-link-text">Transport</span>
@@ -489,6 +496,54 @@
   </a>
 {% endif %}
 
+<!-- ============================================ -->
+    <!-- DIRECTOR OF STUDIES                          -->
+    <!-- ============================================ -->
+
+    {% if user.role == 'director_of_studies' %}
+  <div class="sidebar-section-label">Academics</div>
+  <a href="{% url 'dos_dashboard' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="home" size=18 %}
+    <span class="sidebar-link-text">Dashboard</span>
+  </a>
+  <a href="{% url 'dos_classes' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="book" size=18 %}
+    <span class="sidebar-link-text">Classes & Streams</span>
+  </a>
+  <a href="{% url 'dos_combine' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="grid" size=18 %}
+    <span class="sidebar-link-text">Combine Classes</span>
+  </a>
+  <div class="sidebar-section-label">Analytics</div>
+  <a href="{% url 'dos_analytics' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="bar-chart" size=18 %}
+    <span class="sidebar-link-text">Exam Analytics</span>
+  </a>
+  <a href="{% url 'dos_subject_matrix' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="grid" size=18 %}
+    <span class="sidebar-link-text">Subject Matrix</span>
+  </a>
+  <a href="{% url 'dos_comparison' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="trending-up" size=18 %}
+    <span class="sidebar-link-text">Exam Comparison</span>
+  </a>
+  <div class="sidebar-section-label">Monitoring</div>
+  <a href="{% url 'dos_lessons' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="clipboard" size=18 %}
+    <span class="sidebar-link-text">Lesson Follow-up</span>
+  </a>
+  <a href="{% url 'dos_teachers' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="teacher" size=18 %}
+    <span class="sidebar-link-text">Teacher Monitoring</span>
+  </a>
+  <div class="sidebar-section-label">Reports</div>
+  <a href="{% url 'dos_report_pdf' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="download" size=18 %}
+    <span class="sidebar-link-text">Export PDF</span>
+  </a>
+{% endif %}
+
+
     <!-- ============================================ -->
     <!-- NURSE                                         -->
     <!-- ============================================ -->
@@ -618,7 +673,7 @@
     </a>
 
   </nav>
-
+    
   <!-- ============ USER FOOTER ============ -->
   <div class="sidebar-user">
     <div class="sidebar-user-avatar">

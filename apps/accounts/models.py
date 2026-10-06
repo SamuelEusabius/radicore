@@ -4,17 +4,20 @@ from django.db import models
 
 class User(AbstractUser):
     class Role(models.TextChoices):
-        SUPER_ADMIN    = 'super_admin',    'Super Admin'
-        SCHOOL_ADMIN   = 'school_admin',   'School Admin'
-        TEACHER        = 'teacher',        'Teacher'
-        PARENT         = 'parent',         'Parent'
-        ACCOUNTANT     = 'accountant',     'Accountant'
-        STUDENT        = 'student',        'Student'
-        DRIVER         = 'driver',         'Driver'
-        LIBRARIAN      = 'librarian',      'Librarian'
-        LAB_TECHNICIAN = 'lab_technician', 'Lab Technician'
-        NURSE          = 'nurse',          'Nurse'
-        CHIEF_CHEF     = 'chief_chef',     'Chief Chef'
+        SUPER_ADMIN         = 'super_admin',         'Super Admin'
+        SCHOOL_ADMIN        = 'school_admin',        'School Admin'
+        TEACHER             = 'teacher',             'Teacher'
+        PARENT              = 'parent',              'Parent'
+        ACCOUNTANT          = 'accountant',          'Accountant'
+        STUDENT             = 'student',             'Student'
+        DRIVER              = 'driver',              'Driver'
+        LIBRARIAN           = 'librarian',           'Librarian'
+        LAB_TECHNICIAN      = 'lab_technician',      'Lab Technician'
+        NURSE               = 'nurse',               'Nurse'
+        CHIEF_CHEF          = 'chief_chef',          'Chief Chef'
+        DIRECTOR_OF_STUDIES = 'director_of_studies', 'Director of Studies'
+        STORE_KEEPER        = 'store_keeper',        'Store Keeper'
+        BOARDING_MASTER     = 'boarding_master',     'Boarding Master'
         
         
     email = models.EmailField(unique=True)

@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  @page { size: A4 landscape; margin: 10mm; }
+  body { font-family: Arial, sans-serif; font-size: 9px; color: #1a1a1a; }
+
+  /* ============ HEADER ============ */
+  .header {
+    border-bottom: 3px solid #00695c;
+    padding-bottom: 10px;
+    margin-bottom: 14px;
+  }
+  .header-table { width: 100%; border-collapse: collapse; }
+  .header-table td { vertical-align: top; padding: 0; }
+  .logo-cell { width: 70px; }
+  .logo-cell img { width: 60px; height: 60px; object-fit: contain; }
+  .logo-placeholder {
+    width: 60px; height: 60px;
+    background: #00695c;
+    color: white;
+    font-size: 22px;
+    font-weight: 800;
+    text-align: center;
+    line-height: 60px;
+  }
+  .school-info h1 {
+    font-size: 20px;
+    color: #00695c;
+    margin: 0 0 4px 0;
+  }
+  .school-motto {
+    font-size: 10px;
+    font-style: italic;
+    color: #6b7280;
+    margin: 0 0 6px 0;
+  }
+  .school-contacts {
+    font-size: 9px;
+    color: #4b5563;
+    line-height: 1.5;
+    margin: 0;
+  }
+  .school-contacts span { margin-right: 12px; }
+
+  /* ============ DOC TITLE ============ */
+  .doc-title {
+    text-align: center;
+    font-size: 16px;
+    font-weight: bold;
+    text-transform: uppercase;
+    margin: 6px 0 3px 0;
+    letter-spacing: 0.05em;
+    color: #00695c;
+  }
+  .doc-subtitle {
+    text-align: center;
+    font-size: 10px;
+    color: #666;
+    margin-bottom: 16px;
+  }
+
+  /* ============ PAGE BREAKS ============ */
+  .page { page-break-after: always; }
+  .page:last-child { page-break-after: auto; }
+
+  /* ============ HEADINGS ============ */
+  h3 {
+    font-size: 12px;
+    color: #00695c;
+    margin: 0 0 8px 0;
+    padding-bottom: 4px;
+    border-bottom: 2px solid #00695c;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  /* ============ TABLES ============ */
+  table.data {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 10px;
+  }
+  table.data thead th {
+    background: #1a2332;
+    color: #ffffff;
+    padding: 8px 5px;
+    text-align: left;
+    font-size: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    border: 1px solid #0f172a;
+  }
+  table.data thead th.center { text-align: center; }
+
+  table.data tbody td {
+    padding: 7px 5px;
+    font-size: 9px;
+    border: 1px solid #e5e7eb;
+    vertical-align: middle;
+    background: #ffffff;      /* ← pure white default */
+  }
+  table.data tbody td.center { text-align: center; }
+
+  /* Light cream for top 3 only — same as class results sheet */
+  table.data tbody tr.top-3 td {
+    background: #fef9c3;
+    color: #111827;
+  }
+
+  /* Hover effect (browsers only, xhtml2pdf ignores) */
+  table.data tbody tr:hover td { background: #f0fdfa; }
+
+  /* Total row highlighted */
+  table.data tbody tr.total-row td {
+    background: #e6f5ef;
+    font-weight: 700;
+    color: #004d40;
+  }
+
+  /* ============ BADGES (matching class results sheet) ============ */
+  .badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 3px;
+    font-size: 8px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  .badge-success { background: #d1fae5; color: #065f46; }
+  .badge-info    { background: #dbeafe; color: #1e40af; }
+  .badge-warning { background: #fef3c7; color: #92400e; }
+  .badge-danger  { background: #fee2e2; color: #991b1b; }
+  .badge-gray    { background: #f1f5f9; color: #475569; }
+
+  /* CBC grade text colors */
+  .grade-EE1, .grade-EE2 { color: #059669; font-weight: 700; }
+  .grade-ME1, .grade-ME2 { color: #2563eb; font-weight: 700; }
+  .grade-AE1, .grade-AE2 { color: #d97706; font-weight: 700; }
+  .grade-BE1, .grade-BE2 { color: #dc2626; font-weight: 700; }
+
+  /* Mean & total columns — teal emphasis */
+  .td-total {
+    font-weight: 700;
+    color: #004d40;
+  }
+  .td-mean {
+    font-weight: 700;
+    color: #00695c;
+  }
+
+  /* ============ KPI CARDS (page 4) ============ */
+  .kpi-grid { display: flex; gap: 12px; margin-bottom: 16px; }
+  .kpi-card {
+    flex: 1;
+    padding: 14px;
+    background: #ffffff;
+    border-left: 5px solid #00695c;
+    border-top: 1px solid #e5e7eb;
+    border-right: 1px solid #e5e7eb;
+    border-bottom: 1px solid #e5e7eb;
+    border-radius: 4px;
+  }
+  .kpi-label {
+    font-size: 8px;
+    color: #666;
+    text-transform: uppercase;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+  }
+  .kpi-value {
+    font-size: 24px;
+    font-weight: 800;
+    color: #00695c;
+    margin-top: 6px;
+  }
+
+  /* ============ BEST SUBJECT BANNER ============ */
+  .best-banner {
+    background: #d1fae5;
+    border-left: 5px solid #059669;
+    padding: 14px 16px;
+    margin-bottom: 16px;
+    border-radius: 4px;
+  }
+  .best-banner .label {
+    font-size: 9px;
+    color: #065f46;
+    text-transform: uppercase;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+  }
+  .best-banner .value {
+    font-size: 20px;
+    font-weight: 800;
+    color: #065f46;
+    margin: 4px 0;
+  }
+  .best-banner .meta {
+    font-size: 10px;
+    color: #065f46;
+  }
+
+  /* ============ FOOTER ============ */
+  .footer {
+    margin-top: 20px;
+    padding: 8px;
+    background: #f9fafb;
+    border-top: 1px solid #ddd;
+    text-align: center;
+    font-size: 8px;
+    color: #6b7280;
+  }
+</style>
+</head>
+<body>
+
+<!-- ============================================ -->
+<!-- PAGE 1: FULL CLASS RESULTS SHEET              -->
+<!-- ============================================ -->
+<div class="page">
+
+  <div class="header">
+    <table class="header-table">
+      <tr>
+        <td class="logo-cell">
+          {% if school_logo_b64 %}
+            <img src="{{ school_logo_b64 }}" alt="Logo">
+          {% else %}
+            <div class="logo-placeholder">{{ school.name|slice:":2"|upper }}</div>
+          {% endif %}
+        </td>
+        <td class="school-info">
+          <h1>{{ school.name }}</h1>
+          {% if school.motto %}
+            <p class="school-motto">"{{ school.motto }}"</p>
+          {% endif %}
+          <p class="school-contacts">
+            {% if school.postal_address %}<span><strong>P.O. Box:</strong> {{ school.postal_address }}</span>{% endif %}
+            {% if school.physical_address %}<span>{{ school.physical_address }}</span>{% endif %}
+            {% if school.county %}<span>{{ school.county }} County</span>{% endif %}
+            {% if school.phone %}<span><strong>Tel:</strong> {{ school.phone }}</span>{% endif %}
+            {% if school.email %}<span><strong>Email:</strong> {{ school.email }}</span>{% endif %}
+            {% if school.code %}<span><strong>Code:</strong> {{ school.code }}</span>{% endif %}
+          </p>
+        </td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="doc-title">Full Class Results Sheet</div>
+  <div class="doc-subtitle">
+    {% for c in selected_classes %}{{ c.name }}{% if not forloop.last %} + {% endif %}{% endfor %}
+    · {{ exam.name }} — {{ exam.term }} {{ exam.year }}
+    · <strong>Students: {{ students_count }}</strong>
+    · <strong>Subjects: {{ subjects|length }}</strong>
+  </div>
+
+  <table class="data">
+    <thead>
+      <tr>
+        <th class="center" style="width: 30px;">#</th>
+        <th class="center" style="width: 60px;">Adm No</th>
+        <th style="min-width: 120px;">Student Name</th>
+        {% for sub in subjects %}
+          <th class="center">{{ sub.name }}</th>
+        {% endfor %}
+        <th class="center">Total</th>
+        <th class="center">Avg %</th>
+        <th class="center">Grade</th>
+        <th class="center">Rank</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in student_rows %}
+      <tr {% if row.rank <= 3 %}class="top-3"{% endif %}>
+        <td class="center"><strong>{{ forloop.counter }}</strong></td>
+        <td class="center">{{ row.student.admission_number }}</td>
+        <td><strong>{{ row.student.first_name }} {{ row.student.last_name }}</strong></td>
+        {% for mark in row.marks %}
+          <td class="center">
+            {% if mark is not None %}{{ mark }}{% else %}<span style="color:#9ca3af;">—</span>{% endif %}
+          </td>
+        {% endfor %}
+        <td class="center td-total">{{ row.total }}</td>
+        <td class="center td-mean">{{ row.mean }}%</td>
+        <td class="center grade-{{ row.grade }}"><strong>{{ row.grade }}</strong></td>
+        <td class="center"><strong>{{ row.rank }}</strong></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <div class="footer">
+    {{ school.name }} · Page 1 of 4 · Full Class Results Sheet · Generated {{ today|date:"j F Y" }}
+  </div>
+</div>
+
+
+<!-- ============================================ -->
+<!-- PAGE 2: BEST STUDENT PER SUBJECT              -->
+<!-- ============================================ -->
+<div class="page">
+
+  <div class="doc-title">Best Student per Subject</div>
+  <div class="doc-subtitle">
+    {% for c in selected_classes %}{{ c.name }}{% if not forloop.last %} + {% endif %}{% endfor %}
+    · {{ exam.name }} — {{ exam.term }} {{ exam.year }}
+  </div>
+
+  <table class="data">
+    <thead>
+      <tr>
+        <th class="center" style="width: 30px;">#</th>
+        <th>Subject</th>
+        <th>Best Student</th>
+        <th class="center">Mark</th>
+        <th class="center">Stream</th>
+        <th class="center">Subject Mean</th>
+        <th class="center">Highest</th>
+        <th class="center">Lowest</th>
+        <th class="center">Pass %</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in subject_stats %}
+      <tr {% if forloop.counter <= 3 %}class="top-3"{% endif %}>
+        <td class="center"><strong>{{ forloop.counter }}</strong></td>
+        <td><strong>{{ row.subject.name }}</strong></td>
+        <td>{{ row.best_student.first_name }} {{ row.best_student.last_name }}</td>
+        <td class="center"><span class="badge badge-success">{{ row.best_mark }}</span></td>
+        <td class="center">{{ row.best_student.class_level }}</td>
+        <td class="center td-mean">{{ row.mean }}%</td>
+        <td class="center">{{ row.highest }}</td>
+        <td class="center">{{ row.lowest }}</td>
+        <td class="center">{{ row.pass_pct }}%</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <div class="footer">
+    {{ school.name }} · Page 2 of 4 · Best Student per Subject
+  </div>
+</div>
+
+
+<!-- ============================================ -->
+<!-- PAGE 3: STREAM COMPARISON                     -->
+<!-- ============================================ -->
+<div class="page">
+
+  <div class="doc-title">Stream Comparison</div>
+  <div class="doc-subtitle">
+    {{ exam.name }} — {{ exam.term }} {{ exam.year }}
+  </div>
+
+  <table class="data">
+    <thead>
+      <tr>
+        <th class="center" style="width: 60px;">Rank</th>
+        <th>Stream</th>
+        <th class="center">Students</th>
+        <th class="center">Mean Score</th>
+        <th class="center">Performance Band</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in stream_comparison %}
+      <tr {% if forloop.counter <= 3 %}class="top-3"{% endif %}>
+        <td class="center"><strong>
+          {% if forloop.counter == 1 %}1st
+          {% elif forloop.counter == 2 %}2nd
+          {% elif forloop.counter == 3 %}3rd
+          {% else %}{{ forloop.counter }}th{% endif %}
+        </strong></td>
+        <td><strong>{{ row.stream }}</strong></td>
+        <td class="center">{{ row.count }}</td>
+        <td class="center td-mean">{{ row.mean }}%</td>
+        <td class="center">
+          {% if row.mean >= 75 %}<span class="badge badge-success">Exceeding</span>
+          {% elif row.mean >= 58 %}<span class="badge badge-info">Meeting</span>
+          {% elif row.mean >= 41 %}<span class="badge badge-warning">Approaching</span>
+          {% else %}<span class="badge badge-danger">Below</span>{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <div class="footer">
+    {{ school.name }} · Page 3 of 4 · Stream Comparison
+  </div>
+</div>
+
+
+<!-- ============================================ -->
+<!-- PAGE 4: SUMMARY (KPI + BEST SUBJECT)          -->
+<!-- ============================================ -->
+<div class="page">
+
+  <div class="doc-title">Combined Analysis Summary</div>
+  <div class="doc-subtitle">
+    {% for c in selected_classes %}{{ c.name }}{% if not forloop.last %} + {% endif %}{% endfor %}
+    · {{ exam.name }} — {{ exam.term }} {{ exam.year }}
+  </div>
+
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-label">Students</div>
+      <div class="kpi-value">{{ students_count }}</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Overall Mean</div>
+      <div class="kpi-value">{{ overall_mean }}%</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Subjects</div>
+      <div class="kpi-value">{{ subjects|length }}</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Streams</div>
+      <div class="kpi-value">{{ stream_comparison|length }}</div>
+    </div>
+  </div>
+
+  {% if subject_stats %}
+  <div class="best-banner">
+    <div class="label">🏆 Best Subject This Exam</div>
+    <div class="value">{{ subject_stats.0.subject.name }} — {{ subject_stats.0.mean }}%</div>
+    <div class="meta">
+      Top scorer: <strong>{{ subject_stats.0.best_student.full_name }}</strong> with <strong>{{ subject_stats.0.best_mark }}</strong> marks
+      &nbsp;·&nbsp; Pass rate: <strong>{{ subject_stats.0.pass_pct }}%</strong>
+      &nbsp;·&nbsp; Candidates: <strong>{{ subject_stats.0.count }}</strong>
+    </div>
+  </div>
+  {% endif %}
+
+  <h3>All Subjects Ranked by Mean</h3>
+  <table class="data">
+    <thead>
+      <tr>
+        <th class="center" style="width: 40px;">Rank</th>
+        <th>Subject</th>
+        <th class="center">Mean</th>
+        <th class="center">Highest</th>
+        <th class="center">Lowest</th>
+        <th class="center">Pass %</th>
+        <th class="center">Candidates</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in subject_stats %}
+      <tr {% if forloop.counter <= 3 %}class="top-3"{% endif %}>
+        <td class="center"><strong>{{ forloop.counter }}</strong></td>
+        <td><strong>{{ row.subject.name }}</strong></td>
+        <td class="center td-mean">{{ row.mean }}%</td>
+        <td class="center">{{ row.highest }}</td>
+        <td class="center">{{ row.lowest }}</td>
+        <td class="center">{{ row.pass_pct }}%</td>
+        <td class="center">{{ row.count }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <div class="footer">
+    {{ school.name }} · Page 4 of 4 · Summary & Analytics
+    <br>Generated {{ today|date:"j F Y" }} by {{ user.get_full_name|default:user.email }}
+  </div>
+</div>
+
+</body>
+</html>

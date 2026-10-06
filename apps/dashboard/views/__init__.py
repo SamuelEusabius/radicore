@@ -157,6 +157,7 @@ from .users import (
     user_deactivate,
     user_delete,
     user_change_role,
+    user_change_password,
 )
 
 from .academics import (
@@ -172,10 +173,12 @@ from .timetable import (
     timetable_pdf,
 )
 from .core import (
+    redirect_dashboard,
     redirect_to_own_dashboard,
     super_admin_dash,
     school_admin_dash,
-    redirect_dashboard,
+    store_keeper_dashboard_placeholder,
+    boarding_dashboard_placeholder,
 )
 from .modules import *
 from .departments_admin import (
@@ -202,4 +205,6 @@ from .departments_admin import (
     transport_trip_form, transport_trip_delete,
     transport_fuel_form, transport_fuel_delete,
     transport_trip_students, transport_trip_auto_assign,
+
 )
+from . import dos_views

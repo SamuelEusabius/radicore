@@ -111,15 +111,45 @@ def redirect_dashboard(request):
     """Send user to their own dashboard based on role."""
     role = request.user.role
     return redirect({
-        'super_admin':    'dash_super_admin',
-        'school_admin':   'dash_school_admin',
-        'teacher':        'dash_teacher',
-        'parent':         'dash_parent',
-        'accountant':     'dash_accountant',
-        'student':        'dash_student',
-        'driver':         'driver_dashboard',
-        'librarian':      'librarian_dashboard',
-        'lab_technician': 'lab_technician_dashboard',
-        'nurse':          'nurse_dashboard',
-        'chief_chef':     'chief_chef_dashboard',
+        'super_admin':         'dash_super_admin',
+        'school_admin':        'dash_school_admin',
+        'teacher':             'dash_teacher',
+        'parent':              'dash_parent',
+        'accountant':          'dash_accountant',
+        'student':             'dash_student',
+        'driver':              'driver_dashboard',
+        'librarian':           'librarian_dashboard',
+        'lab_technician':      'lab_technician_dashboard',
+        'nurse':               'nurse_dashboard',
+        'chief_chef':          'chief_chef_dashboard',
+        'director_of_studies': 'dos_dashboard',
+        'store_keeper':        'store_keeper_dashboard',
+        'boarding_master':     'boarding_dashboard',
     }.get(role, 'landing'))
+    
+    # ============================================================
+# PLACEHOLDER DASHBOARDS (until full modules are built)
+# ============================================================
+
+@login_required
+def store_keeper_dashboard_placeholder(request):
+    """Temporary — shows a 'coming soon' page for Store Keepers."""
+    if request.user.role not in ('store_keeper', 'school_admin'):
+        return redirect('dashboard_home')
+    messages.info(
+        request,
+        'Store Keeper module is being built. Check back soon!'
+    )
+    return redirect('dashboard_home')
+
+
+@login_required
+def boarding_dashboard_placeholder(request):
+    """Temporary — shows a 'coming soon' page for Boarding Masters."""
+    if request.user.role not in ('boarding_master', 'school_admin'):
+        return redirect('dashboard_home')
+    messages.info(
+        request,
+        'Boarding module is being built. Check back soon!'
+    )
+    return redirect('dashboard_home')

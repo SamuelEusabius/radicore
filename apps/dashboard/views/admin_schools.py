@@ -99,10 +99,10 @@ def manage_users(request):
     from apps.accounts.models import User as U
     role_choices = list(U.Role.choices)
     if request.user.role != 'super_admin':
-        ALLOWED_FOR_SUPER_ADMIN = ('school_admin',)
+        ALLOWED_FOR_SUPER_ADMIN = ('school_admin', 'director_of_studies', 'store_keeper', 'boarding_master')
         ALLOWED_FOR_SCHOOL_ADMIN = (
            'teacher', 'accountant', 'parent', 'student',
-           'driver', 'librarian', 'lab_technician', 'nurse', 'chief_chef',
+           'driver', 'librarian', 'lab_technician', 'nurse', 'chief_chef', 'director_of_studies', 'store_keeper', 'boarding_master',
 )
         role_choices = [(v, l) for v, l in role_choices if v in ALLOWED_FOR_SCHOOL_ADMIN]
 
@@ -134,9 +134,9 @@ def create_user(request):
     # ---------- Role lists ----------
     ALLOWED_FOR_SCHOOL_ADMIN = (
         'teacher', 'accountant', 'parent', 'student',
-        'driver', 'librarian', 'lab_technician', 'nurse', 'chief_chef',
+        'driver', 'librarian', 'lab_technician', 'nurse', 'chief_chef', 'director_of_studies', 'store_keeper', 'boarding_master',
     )
-    ALLOWED_FOR_SUPER_ADMIN = ('school_admin',)
+    ALLOWED_FOR_SUPER_ADMIN = ('school_admin', 'director_of_studies', 'store_keeper', 'boarding_master')
 
     # ---------- Build role_choices ALWAYS (no matter what) ----------
     all_role_choices = list(User.Role.choices)

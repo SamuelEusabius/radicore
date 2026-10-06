@@ -150,12 +150,13 @@ def receipt_pdf(request, payment_id):
     from .models import Payment
     from apps.core.pdf_utils import html_to_pdf_response
     from django.template.loader import render_to_string
-
     payment = get_object_or_404(
         Payment, id=payment_id,
         invoice__student__school=request.user.school
     )
-    invoice = payment.invoice
+    # Refresh invoice to get latest amount_paid/balance
+    from apps.finance.models import Invoice
+    invoice = Invoice.objects.get(id=payment.invoice_id)
     student = invoice.student
     school = student.school
 

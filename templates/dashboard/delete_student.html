@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% block title %}Delete Student{% endblock %}
+{% block header_title %}Delete Student{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 520px; margin: 40px auto; text-align: center; padding: 40px;">
+  <div style="font-size: 64px; margin-bottom: 16px;">⚠️</div>
+
+  <h2 style="font-family: var(--font-heading); margin-bottom: 12px;">Delete Student?</h2>
+
+  <p style="color: var(--ink-600); margin-bottom: 20px;">
+    You are about to permanently delete:
+  </p>
+
+  <div style="background: var(--surface-muted); padding: 16px; border-radius: 8px; margin-bottom: 20px;">
+    <div style="font-weight: 700; font-size: var(--text-md);">{{ student.full_name }}</div>
+    <div style="font-size: var(--text-xs); color: var(--ink-500); margin-top: 4px;">
+      {{ student.admission_number }} · {{ student.class_level|default:"—" }}
+    </div>
+  </div>
+
+  <div style="background: #fee2e2; padding: 12px; border-radius: 8px; margin-bottom: 24px; font-size: var(--text-xs); color: #991b1b; text-align: left;">
+    <strong>⚠️ This will permanently delete:</strong>
+    <ul style="margin: 8px 0 0 20px; padding: 0;">
+      <li>Student profile and photo</li>
+      <li>All invoices and payments</li>
+      <li>All grades and exam marks</li>
+      <li>All attendance records</li>
+      <li>Wallet and transactions</li>
+      <li>All related records</li>
+    </ul>
+  </div>
+
+  <form method="post">
+    {% csrf_token %}
+    <div style="display: flex; gap: 12px; justify-content: center;">
+      <a href="{% url 'students_list' %}" class="btn btn-secondary">Cancel</a>
+      <button type="submit" class="btn" style="background: var(--danger); color: white;">
+        Yes, Delete Permanently
+      </button>
+    </div>
+  </form>
+</div>
+{% endblock %}

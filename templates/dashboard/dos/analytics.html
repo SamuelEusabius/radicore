@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+{% block title %}Exam Analytics{% endblock %}
+{% block header_title %}Exam Analytics{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-info">
+    <h1 class="page-title">Exam Analytics</h1>
+    <p class="page-subtitle">Detailed analysis for any examination</p>
+  </div>
+  <a href="{% url 'dos_dashboard' %}" class="btn btn-secondary">← Dashboard</a>
+</div>
+
+<!-- Filter -->
+<form method="get" class="card mb-6" style="display: flex; gap: 12px; flex-wrap: wrap;">
+  <div style="flex: 1; min-width: 200px;">
+    <label style="display: block; font-weight: 600; margin-bottom: 6px; font-size: var(--text-sm);">Exam *</label>
+    <select name="exam" required style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+      <option value="">— Select exam —</option>
+      {% for e in all_exams %}
+        <option value="{{ e.id }}" {% if selected_exam == e.id|stringformat:"s" %}selected{% endif %}>
+          {{ e.name }} — {{ e.term }} {{ e.year }}
+        </option>
+      {% endfor %}
+    </select>
+  </div>
+  <div style="flex: 1; min-width: 200px;">
+    <label style="display: block; font-weight: 600; margin-bottom: 6px; font-size: var(--text-sm);">Class (optional)</label>
+    <select name="class" style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+      <option value="">All Classes</option>
+      {% for c in classes %}
+        <option value="{{ c.id }}" {% if selected_class == c.id|stringformat:"s" %}selected{% endif %}>{{ c.name }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div style="display: flex; align-items: end;">
+    <button type="submit" class="btn btn-primary">Analyse</button>
+  </div>
+</form>
+
+{% if analytics %}
+
+<!-- Header -->
+<div class="card mb-6" style="background: linear-gradient(135deg, #00695c 0%, #004d40 100%); border: none;">
+  <div style="color: white;">
+    <div style="font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.1em; opacity: 0.9;">Analysis</div>
+    <div style="font-family: var(--font-heading); font-size: 22px; font-weight: 800; margin-top: 4px;">
+      {{ analytics.exam.name }} · {{ analytics.exam.term }} {{ analytics.exam.year }}
+    </div>
+    <div style="font-size: var(--text-sm); opacity: 0.9; margin-top: 6px;">
+      {{ analytics.student_count }} students · {{ analytics.total_count }} assessments
+    </div>
+  </div>
+</div>
+
+<!-- Stats -->
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+  <div class="card">
+    <div class="stat-label">Mean Score</div>
+    <div class="stat-value" style="color: var(--primary);">{{ analytics.overall_mean }}%</div>
+  </div>
+  <div class="card">
+    <div class="stat-label">Highest</div>
+    <div class="stat-value" style="color: var(--success);">{{ analytics.highest }}</div>
+  </div>
+  <div class="card">
+    <div class="stat-label">Lowest</div>
+    <div class="stat-value" style="color: var(--danger);">{{ analytics.lowest }}</div>
+  </div>
+  <div class="card">
+    <div class="stat-label">Pass Rate</div>
+    <div class="stat-value" style="color: var(--info);">{{ analytics.pass_pct }}%</div>
+  </div>
+</div>
+
+<!-- CBC Distribution -->
+<div class="card">
+  <h3 style="margin-bottom: 16px; font-family: var(--font-heading);">CBC Grade Distribution</h3>
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+    {% for level, count in analytics.distribution.items %}
+    <div style="padding: 16px; background: var(--surface-muted); border-radius: 8px; text-align: center;">
+      <div style="font-size: var(--text-xs); text-transform: uppercase; color: var(--ink-500); font-weight: 700;">{{ level }}</div>
+      <div style="font-size: 28px; font-weight: 800; color: var(--primary); margin-top: 4px;">{{ count }}</div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+{% else %}
+<div class="card">
+  <div class="pro-empty" style="border: none; padding: 60px;">
+    <p style="color: var(--ink-500);">Select an exam above to view analytics.</p>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

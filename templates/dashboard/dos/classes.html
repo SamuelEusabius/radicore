@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% block title %}Classes & Streams{% endblock %}
+{% block header_title %}Classes & Streams{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-info">
+    <h1 class="page-title">Classes & Streams</h1>
+    <p class="page-subtitle">{{ class_rows|length }} class{{ class_rows|length|pluralize }} in the school</p>
+  </div>
+  <a href="{% url 'dos_dashboard' %}" class="btn btn-secondary">← Dashboard</a>
+</div>
+
+<div class="card">
+  {% if class_rows %}
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Class</th>
+        <th>Students</th>
+        <th>Class Teacher</th>
+        <th>Mean Score</th>
+        <th style="text-align: right;">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in class_rows %}
+      <tr>
+        <td><strong>{{ row.cls.name }}</strong></td>
+        <td><span class="badge badge-info">{{ row.student_count }}</span></td>
+        <td>
+          {% if row.class_teacher %}
+            {{ row.class_teacher.user.get_full_name|default:row.class_teacher.user.email|truncatechars:25 }}
+          {% else %}
+            <span style="color: var(--ink-400);">Not assigned</span>
+          {% endif %}
+        </td>
+        <td>
+          <span class="badge badge-{% if row.mean >= 70 %}success{% elif row.mean >= 50 %}info{% else %}warning{% endif %}">
+            {{ row.mean }}%
+          </span>
+        </td>
+        <td style="text-align: right;">
+          <a href="{% url 'dos_class_detail' row.cls.id %}" class="btn btn-sm btn-primary">Open</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="pro-empty" style="border: none; padding: 60px;">
+    <p style="color: var(--ink-500);">No classes configured.</p>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}

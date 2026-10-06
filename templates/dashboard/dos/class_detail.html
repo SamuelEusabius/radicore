@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+{% block title %}{{ cls.name }}{% endblock %}
+{% block header_title %}{{ cls.name }}{% endblock %}
+{% block header_sub %}{{ student_count }} students{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-info">
+    <h1 class="page-title">{{ cls.name }}</h1>
+    <p class="page-subtitle">{{ student_count }} students {% if exam %}· {{ exam.name }}{% endif %}</p>
+  </div>
+  <div style="display: flex; gap: 8px;">
+    <form method="get" style="display: flex; gap: 8px;">
+      <select name="exam" onchange="this.form.submit()" style="padding: 8px; border: 1px solid var(--border);">
+        <option value="">All Exams</option>
+        {% for e in all_exams %}
+          <option value="{{ e.id }}" {% if exam and exam.id == e.id %}selected{% endif %}>{{ e.name }}</option>
+        {% endfor %}
+      </select>
+    </form>
+    <a href="{% url 'dos_classes' %}" class="btn btn-secondary">← Classes</a>
+  </div>
+</div>
+
+<!-- Subject Means -->
+{% if subject_means %}
+<div class="card mb-6">
+  <h3 style="margin-bottom: 16px; font-family: var(--font-heading);">Subject Performance</h3>
+  <table class="table">
+    <thead>
+      <tr><th>Subject</th><th>Mean</th><th>Candidates</th></tr>
+    </thead>
+    <tbody>
+      {% for row in subject_means %}
+      <tr>
+        <td><strong>{{ row.subject.name }}</strong></td>
+        <td>
+          <span class="badge badge-{% if row.mean >= 70 %}success{% elif row.mean >= 50 %}info{% else %}warning{% endif %}">
+            {{ row.mean }}%
+          </span>
+        </td>
+        <td>{{ row.count }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+<!-- Student Rankings -->
+<div class="card">
+  <h3 style="margin-bottom: 16px; font-family: var(--font-heading);">Student Rankings</h3>
+  {% if grade_rows %}
+  <table class="table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Student</th>
+        <th>Admission No</th>
+        <th>Subjects</th>
+        <th>Total</th>
+        <th>Mean</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in grade_rows %}
+      <tr {% if forloop.counter <= 3 %}style="background: #fef9c3;"{% endif %}>
+        <td><strong>{{ forloop.counter }}</strong></td>
+        <td>{{ row.student.full_name }}</td>
+        <td>{{ row.student.admission_number }}</td>
+        <td>{{ row.subjects_count }}</td>
+        <td>{{ row.total }}</td>
+        <td>
+          <span class="badge badge-{% if row.mean >= 70 %}success{% elif row.mean >= 50 %}info{% else %}warning{% endif %}">
+            {{ row.mean }}%
+          </span>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p style="text-align: center; padding: 40px; color: var(--ink-500);">No grades recorded for this exam.</p>
+  {% endif %}
+</div>
+
+{% endblock %}

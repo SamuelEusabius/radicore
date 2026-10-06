@@ -185,6 +185,9 @@
                 <a href="{% url 'user_change_role' u.id %}" class="btn btn-sm btn-secondary" title="Change role">
                   {% include 'partials/icons.html' with name="edit" size=13 %}
                 </a>
+                <a href="{% url 'user_change_password' u.id %}" class="btn btn-sm btn-secondary" title="Change Password">
+  🔑 
+</a>
 
                 <form method="post" action="{% url 'user_deactivate' u.id %}" style="display: inline;">
                   {% csrf_token %}

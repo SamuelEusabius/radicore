@@ -13,7 +13,7 @@
   </div>
   <div style="display: flex; gap: 8px;">
     <a href="{% url 'wallet_list' %}" class="btn btn-primary">All Wallets</a>
-    <a href="{% url 'teacher_pending_collections' %}" class="btn btn-secondary">Pending Collections</a>
+    <a href="#pending-collections" class="btn btn-secondary" onclick="document.getElementById('pending-collections').scrollIntoView({behavior:'smooth'}); return false;">Pending Collections</a>
   </div>
 </div>
 
@@ -45,7 +45,7 @@
 
 <!-- Pending Collections Alert -->
 {% if pending_collections %}
-<div class="card mb-6" style="border-left: 4px solid var(--warning);">
+<div class="card mb-6" id="pending-collections" style="border-left: 4px solid var(--warning);">
   <h3 style="margin-bottom: 12px; font-family: var(--font-heading); color: var(--warning);">
     ⏳ Pending Collections ({{ pending_collections|length }})
   </h3>

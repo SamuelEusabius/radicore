@@ -7,7 +7,8 @@ Grades & Exams views:
 - Report cards (single, ZIP, merged PDF)
 - Rankings helpers
 """
-from django.shortcuts import render, redirect, get_object_or_404
+from django.shortcuts import render, redirect, get_object_or_404, reverse
+from django.urls import reverse
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import HttpResponse
@@ -1111,3 +1112,25 @@ def class_teacher_results_sheet_pdf(request):
 
     filename = f"results_{cls.name.replace(' ', '_')}_{exam.name.replace(' ', '_')}.pdf"
     return html_to_pdf_response(html_string, filename)
+
+
+
+# ============================================================
+# CLASS TEACHER HELPERS
+# ============================================================
+
+def _ct_teacher_and_class(request):
+    """Return (teacher, class_level) for the requesting class teacher."""
+    from apps.teachers.models import Teacher
+
+    try:
+        teacher = Teacher.objects.select_related('current_class').get(
+            user=request.user
+        )
+    except Teacher.DoesNotExist:
+        return None, None
+
+    if not teacher.is_class_teacher or not teacher.current_class:
+        return teacher, None
+
+    return teacher, teacher.current_class

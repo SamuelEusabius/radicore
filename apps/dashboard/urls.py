@@ -1,6 +1,7 @@
 from django.urls import path
 from . import views
 from django.views.generic import RedirectView
+from django.urls import path, include
 
 urlpatterns = [ 
     path('subscribe/', RedirectView.as_view(
@@ -47,6 +48,7 @@ urlpatterns = [
     # Users
     path('users/', views.manage_users, name='manage_users'),
     path('users/create/', views.create_user, name='create_user'),
+    path('users/<int:user_id>/change-password/', views.user_change_password, name='user_change_password'),
 
     # Academics
     path('academics/classes/', views.manage_classes, name='manage_classes'),
@@ -328,4 +330,9 @@ urlpatterns = [
     # Test SMS
     path('tools/sms-test/', views.send_test_sms_view, name='send_test_sms'),
     path('modules/<slug:module_code>/', views.school_module_placeholder, name='school_module_placeholder'),
+        # Director of Studies
+    path('dos/', include('apps.dashboard.dos_urls')),
+        # Placeholder dashboards (until modules built)
+    path('store-keeper/', views.store_keeper_dashboard_placeholder, name='store_keeper_dashboard'),
+    path('boarding/', views.boarding_dashboard_placeholder, name='boarding_dashboard'),
 ]

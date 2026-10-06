@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% block title %}Lesson Follow-up{% endblock %}
+{% block header_title %}Lesson Follow-up{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-info">
+    <h1 class="page-title">Lesson Follow-up</h1>
+    <p class="page-subtitle">Monitor lesson completion across teachers</p>
+  </div>
+  <a href="{% url 'dos_dashboard' %}" class="btn btn-secondary">← Dashboard</a>
+</div>
+
+<div class="card">
+  {% if teacher_rows %}
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Teacher</th>
+        <th>Scheduled</th>
+        <th>Completed</th>
+        <th>Missed</th>
+        <th>Completion Rate</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in teacher_rows %}
+      <tr>
+        <td><strong>{{ row.teacher.user.get_full_name|default:row.teacher.user.email }}</strong></td>
+        <td>{{ row.scheduled }}</td>
+        <td>{{ row.completed }}</td>
+        <td>{{ row.missed }}</td>
+        <td>
+          <span class="badge badge-success">
+            {% if row.scheduled > 0 %}{{ row.completed }}%{% else %}—{% endif %}
+          </span>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="pro-empty" style="border: none; padding: 60px;">
+    <p style="color: var(--ink-500);">No teachers registered.</p>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}

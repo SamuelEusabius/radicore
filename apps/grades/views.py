@@ -201,9 +201,14 @@ def _render_single_report_card(student, exam, school, rankings, positions, class
     if prev_exam and previous_grades_map:
         try:
             chart_data_uri = build_performance_chart(current_grades_map, previous_grades_map)
-        except Exception:
+        except Exception as e:
+            print(f"[CHART] Error: {e}")
             chart_data_uri = None
-
+    else:
+        print(f"[CHART DEBUG] SKIPPED — prev_exam={bool(prev_exam)} | prev_map empty={not previous_grades_map}")
+    print()
+    
+        # Grade rows
     grade_rows = []
     for g in current_grades:
         pct = round((float(g.marks) / float(g.out_of or 100)) * 100, 1)
@@ -221,8 +226,17 @@ def _render_single_report_card(student, exam, school, rankings, positions, class
             else:
                 trend, trend_diff = 'flat', "0"
 
+        # Subject teacher
+        teacher_name = ''
+        if g.subject.teacher:
+            teacher_name = (
+                g.subject.teacher.get_full_name()
+                or g.subject.teacher.email.split('@')[0]
+            )
+
         grade_rows.append({
             'subject': g.subject.name,
+            'teacher': teacher_name,
             'marks': g.marks,
             'out_of': g.out_of,
             'pct': pct,
@@ -420,12 +434,36 @@ def report_card_pdf(request, student_id, exam_id):
     total_out_of = sum(float(g.out_of) for g in current_grades) or 1
     avg_pct = round((total_marks / total_out_of) * 100, 1) if current_grades else 0
 
-    # Rankings
+        # Rankings
     rankings = compute_rankings(exam, classmates)
     class_rank_info = rankings.get(student.id, {'rank': '—', 'total': total_marks, 'avg': avg_pct})
     class_size = classmates.count()
 
     positions = subject_positions(exam, classmates)
+
+    # ============ COMBINED RANKING (Optional) ============
+    # If DOS has combined streams recently, show the student's rank in combined
+    combined_rank = None
+    combined_size = 0
+    combined_classes = []
+
+    # Try to fetch last DOS combine from session
+    dos_combined = request.session.get('dos_combined_classes', [])
+
+    if dos_combined:
+        # Combine students from all selected classes
+        combined_students = Student.objects.filter(
+            school=student.school,
+            class_level__in=dos_combined,
+            is_active=True,
+        )
+        combined_size = combined_students.count()
+
+        if combined_size > 0:
+            combined_rankings = compute_rankings(exam, combined_students)
+            combined_rank = combined_rankings.get(student.id, {}).get('rank', None)
+            combined_classes = dos_combined
+    # ====================================================
 
     # Previous exam
     prev_exam = previous_exam_for(exam, student.school)
@@ -526,6 +564,9 @@ def report_card_pdf(request, student_id, exam_id):
         'overall_grade': overall_grade,
         'class_rank': class_rank_info['rank'],
         'class_size': class_size,
+        'combined_rank': combined_rank,
+        'combined_size': combined_size,
+        'combined_classes': combined_classes,
         'total_marks': total_marks,
         'total_out_of': total_out_of,
         'chart_data_uri': chart_data_uri,

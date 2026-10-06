@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+{% block title %}{{ cls.name }} — Attendance{% endblock %}
+{% block header_title %}{{ cls.name }} Attendance{% endblock %}
+{% block header_sub %}{{ selected_date|date:"l, j F Y" }}{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-info">
+    <h1 class="page-title">{{ cls.name }} — Attendance</h1>
+    <p class="page-subtitle">{{ total }} students · {{ selected_date|date:"l, j F Y" }}</p>
+  </div>
+  <div style="display: flex; gap: 8px;">
+    <form method="get" style="display: flex; gap: 8px;">
+      <input type="date" name="date" value="{{ selected_date|date:'Y-m-d' }}" max="{{ today|date:'Y-m-d' }}"
+             style="padding: 8px; border: 1px solid var(--border);">
+      <button type="submit" class="btn btn-primary">View</button>
+    </form>
+    <a href="{% url 'admin_attendance_overview' %}" class="btn btn-secondary">← Overview</a>
+  </div>
+</div>
+
+<!-- KPI Row -->
+<div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+  <div class="card">
+    <div class="stat-label">Present</div>
+    <div class="stat-value" style="color: var(--success);">{{ present }}</div>
+  </div>
+  <div class="card">
+    <div class="stat-label">Absent</div>
+    <div class="stat-value" style="color: var(--danger);">{{ absent }}</div>
+  </div>
+  <div class="card">
+    <div class="stat-label">Late</div>
+    <div class="stat-value" style="color: var(--warning);">{{ late }}</div>
+  </div>
+  <div class="card">
+    <div class="stat-label">Excused</div>
+    <div class="stat-value" style="color: var(--info);">{{ excused }}</div>
+  </div>
+  <div class="card">
+    <div class="stat-label">Attendance</div>
+    <div class="stat-value" style="color: {% if attendance_pct >= 80 %}var(--success){% elif attendance_pct >= 60 %}var(--warning){% else %}var(--danger){% endif %};">
+      {{ attendance_pct }}%
+    </div>
+  </div>
+</div>
+
+<!-- 7-day trend -->
+<div class="card mb-6">
+  <h3 style="margin-bottom: 16px; font-family: var(--font-heading);">Last 7 Days</h3>
+  <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px;">
+    {% for day in trend %}
+    <div style="text-align: center; padding: 12px 8px; background: var(--surface-muted); border-radius: 8px;">
+      <div style="font-size: var(--text-xs); color: var(--ink-500);">{{ day.date|date:"D" }}</div>
+      <div style="font-size: var(--text-xs); color: var(--ink-400);">{{ day.date|date:"j M" }}</div>
+      <div style="font-size: 20px; font-weight: 800; color: {% if day.pct >= 80 %}var(--success){% elif day.pct >= 60 %}var(--warning){% else %}var(--danger){% endif %}; margin-top: 4px;">
+        {{ day.pct }}%
+      </div>
+      <div style="font-size: 10px; color: var(--ink-500);">{{ day.present }}/{{ day.marked }}</div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Student list -->
+<div class="card">
+  <h3 style="margin-bottom: 16px; font-family: var(--font-heading);">Students ({{ total }})</h3>
+  {% if rows %}
+  <table class="table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Student</th>
+        <th>Admission No</th>
+        <th>Status</th>
+        <th>Notes</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in rows %}
+      <tr>
+        <td>{{ forloop.counter }}</td>
+        <td><strong>{{ row.student.full_name }}</strong></td>
+        <td>{{ row.student.admission_number }}</td>
+        <td>
+          {% if row.status == 'P' %}<span class="badge badge-success">Present</span>
+          {% elif row.status == 'A' %}<span class="badge badge-danger">Absent</span>
+          {% elif row.status == 'L' %}<span class="badge badge-warning">Late</span>
+          {% elif row.status == 'E' %}<span class="badge badge-info">Excused</span>
+          {% else %}<span class="badge badge-gray">Not Marked</span>{% endif %}
+        </td>
+        <td>{{ row.notes|default:"—" }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p style="text-align: center; padding: 40px; color: var(--ink-500);">No students in this class.</p>
+  {% endif %}
+</div>
+
+{% endblock %}

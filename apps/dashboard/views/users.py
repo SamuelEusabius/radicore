@@ -263,9 +263,9 @@ def user_change_role(request, user_id):
     # Role lists
     ALLOWED_FOR_SCHOOL_ADMIN = (
         'teacher', 'accountant', 'parent', 'student',
-        'driver', 'librarian', 'lab_technician', 'nurse', 'chief_chef',
+        'driver', 'librarian', 'lab_technician', 'nurse', 'chief_chef', 'director_of_studies', 'store_keeper', 'boarding_master',
     )
-    ALLOWED_FOR_SUPER_ADMIN = ('school_admin',)
+    ALLOWED_FOR_SUPER_ADMIN = ('school_admin', 'director_of_studies', 'store_keeper', 'boarding_master')
 
     if request.method == 'POST':
         new_role = request.POST.get('role', '').strip()
@@ -303,4 +303,61 @@ def user_change_role(request, user_id):
     return render(request, 'dashboard/user_change_role.html', {
         'target': target,
         'role_choices': role_choices,
+    })
+    
+    
+
+# ============================================================
+# SCHOOL ADMIN — CHANGE USER PASSWORD
+# ============================================================
+
+@login_required
+def user_change_password(request, user_id):
+    """School Admin changes password for a user in their school."""
+    if request.user.role not in ('school_admin', 'super_admin'):
+        messages.error(request, 'Access denied.')
+        return redirect('dashboard_home')
+
+    from apps.accounts.models import User
+
+    if request.user.role == 'super_admin':
+        target = get_object_or_404(User, id=user_id)
+    else:
+        target = get_object_or_404(User, id=user_id, school=request.user.school)
+
+    # Prevent changing super_admin passwords (unless you are one)
+    if target.role == 'super_admin' and request.user.role != 'super_admin':
+        messages.error(request, 'You cannot change a Super Admin password.')
+        return redirect('manage_users')
+
+    if request.method == 'POST':
+        new_password = request.POST.get('new_password', '').strip()
+        confirm_password = request.POST.get('confirm_password', '').strip()
+
+        errors = []
+        if not new_password:
+            errors.append('Password is required.')
+        elif len(new_password) < 8:
+            errors.append('Password must be at least 8 characters.')
+        elif new_password != confirm_password:
+            errors.append('Passwords do not match.')
+
+        if errors:
+            for e in errors:
+                messages.error(request, e)
+            return render(request, 'dashboard/user_change_password.html', {
+                'target': target,
+            })
+
+        target.set_password(new_password)
+        target.save()
+
+        messages.success(
+            request,
+            f'Password changed for {target.get_full_name() or target.email}.'
+        )
+        return redirect('manage_users')
+
+    return render(request, 'dashboard/user_change_password.html', {
+        'target': target,
     })

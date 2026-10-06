@@ -1,0 +1,272 @@
+{% extends 'base.html' %}
+{% block title %}Combine Classes{% endblock %}
+{% block header_title %}Combined Class Analysis{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-info">
+    <h1 class="page-title">Combine Classes for Analysis</h1>
+    <p class="page-subtitle">Virtual grouping — students remain in their original classes</p>
+  </div>
+  <a href="{% url 'dos_dashboard' %}" class="btn btn-secondary">← Dashboard</a>
+</div>
+
+<div class="card mb-6" style="border-left: 4px solid var(--info);">
+  <p style="margin: 0; font-size: var(--text-sm); color: var(--ink-700);">
+    ℹ️ <strong>Virtual Grouping:</strong> Combine multiple streams below for combined analytics. 
+    Data is computed on-the-fly — no students are moved.
+  </p>
+</div>
+
+<!-- Selection form -->
+<form method="get" class="card mb-6">
+  <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px; align-items: end;">
+    <div>
+      <label style="display: block; font-weight: 600; margin-bottom: 8px;">Select Classes to Combine *</label>
+      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px;">
+        {% for c in classes %}
+        <label style="display: flex; align-items: center; gap: 8px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 6px; cursor: pointer;">
+          <input type="checkbox" name="classes" value="{{ c.id }}"
+                 {% if c.id in selected_ids %}checked{% endif %}
+                 style="width: 16px; height: 16px; accent-color: var(--primary);">
+          <span>{{ c.name }}</span>
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+    <div>
+      <label style="display: block; font-weight: 600; margin-bottom: 8px;">Exam *</label>
+      <select name="exam" required style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+        <option value="">— Select exam —</option>
+        {% for e in all_exams %}
+          <option value="{{ e.id }}" {% if selected_exam == e.id|stringformat:"s" %}selected{% endif %}>
+            {{ e.name }} — {{ e.term }} {{ e.year }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+  </div>
+  <div style="margin-top: 16px; display: flex; gap: 8px; justify-content: flex-end;">
+    <button type="submit" class="btn btn-primary" style="padding: 12px 32px;">🔗 Generate Analysis</button>
+    {% if combined_data %}
+      <a href="{% url 'dos_combine_pdf' %}?{% for c in selected_ids %}classes={{ c }}&{% endfor %}exam={{ selected_exam }}"
+         class="btn btn-secondary" style="padding: 12px 24px;">
+        🖨️ Print PDF
+      </a>
+    {% endif %}
+  </div>
+</form>
+
+{% if combined_data %}
+
+<!-- Header -->
+<div class="card mb-6" style="background: linear-gradient(135deg, #00695c 0%, #004d40 100%); border: none;">
+  <div style="color: white;">
+    <div style="font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.1em; opacity: 0.9;">
+      Combined Analysis
+    </div>
+    <div style="font-family: var(--font-heading); font-size: 24px; font-weight: 800; margin-top: 6px;">
+      {% for c in combined_data.selected_classes %}{{ c.name }}{% if not forloop.last %} + {% endif %}{% endfor %}
+    </div>
+    <div style="font-size: var(--text-sm); opacity: 0.95; margin-top: 8px;">
+      {{ combined_data.exam.name }} · {{ combined_data.exam.term }} {{ combined_data.exam.year }}
+      · {{ combined_data.students_count }} students · Overall mean: <strong>{{ combined_data.overall_mean }}%</strong>
+    </div>
+  </div>
+</div>
+
+<!-- KPI Cards -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+  <div class="card">
+    <div class="stat-label">Overall Mean</div>
+    <div class="stat-value" style="color: var(--primary);">{{ combined_data.overall_mean }}%</div>
+  </div>
+  <div class="card">
+    <div class="stat-label">Students</div>
+    <div class="stat-value">{{ combined_data.students_count }}</div>
+  </div>
+  <div class="card">
+    <div class="stat-label">Subjects</div>
+    <div class="stat-value">{{ combined_data.subjects|length }}</div>
+  </div>
+  <div class="card">
+    <div class="stat-label">Streams</div>
+    <div class="stat-value">{{ combined_data.stream_comparison|length }}</div>
+  </div>
+</div>
+
+<!-- Best Subject -->
+{% if combined_data.best_subject %}
+<div class="card mb-6" style="border-left: 4px solid var(--success); background: var(--success-light);">
+  <div style="display: flex; align-items: center; gap: 16px;">
+    <div style="font-size: 40px;">🏆</div>
+    <div>
+      <div style="font-size: var(--text-xs); text-transform: uppercase; font-weight: 700; color: #065f46;">
+        Best Subject This Exam
+      </div>
+      <div style="font-family: var(--font-heading); font-size: 22px; font-weight: 800; color: #065f46; margin-top: 4px;">
+        {{ combined_data.best_subject.subject.name }}
+      </div>
+      <div style="font-size: var(--text-sm); color: #065f46; margin-top: 4px;">
+        Mean: <strong>{{ combined_data.best_subject.mean }}%</strong>
+        · Pass rate: <strong>{{ combined_data.best_subject.pass_pct }}%</strong>
+        · Top scorer: <strong>{{ combined_data.best_subject.best_student.full_name }}</strong> ({{ combined_data.best_subject.best_mark }})
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- Best Student per Subject -->
+<div class="card mb-6">
+  <h3 style="margin-bottom: 16px; font-family: var(--font-heading);">🏅 Best Student per Subject</h3>
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Subject</th>
+        <th>Best Student</th>
+        <th>Mark</th>
+        <th>Stream</th>
+        <th>Subject Mean</th>
+        <th>Pass %</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in combined_data.subject_stats %}
+      <tr>
+        <td><strong>{{ row.subject.name }}</strong></td>
+        <td>{{ row.best_student.full_name }}</td>
+        <td><span class="badge badge-success">{{ row.best_mark }}</span></td>
+        <td>{{ row.best_student.class_level }}</td>
+        <td>{{ row.mean }}%</td>
+        <td>{{ row.pass_pct }}%</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Stream Comparison -->
+<div class="card mb-6">
+  <h3 style="margin-bottom: 16px; font-family: var(--font-heading);">📊 Stream Comparison</h3>
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Stream</th>
+        <th>Students</th>
+        <th>Mean Score</th>
+        <th>Rank</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in combined_data.stream_comparison %}
+      <tr {% if forloop.counter == 1 %}style="background: #fef9c3;"{% endif %}>
+        <td><strong>{{ row.stream }}</strong></td>
+        <td>{{ row.count }}</td>
+        <td>
+          <span class="badge badge-{% if row.mean >= 70 %}success{% elif row.mean >= 50 %}info{% else %}warning{% endif %}">
+            {{ row.mean }}%
+          </span>
+        </td>
+        <td>
+          {% if forloop.counter == 1 %}🥇 1st{% elif forloop.counter == 2 %}🥈 2nd{% elif forloop.counter == 3 %}🥉 3rd{% else %}{{ forloop.counter }}th{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Trend vs Previous Exam -->
+{% if combined_data.trend_data and combined_data.prev_exam %}
+<div class="card mb-6">
+  <h3 style="margin-bottom: 16px; font-family: var(--font-heading);">
+    📈 Trend vs {{ combined_data.prev_exam.name }}
+  </h3>
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Subject</th>
+        <th>Previous</th>
+        <th>Current</th>
+        <th>Change</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in combined_data.trend_data %}
+      <tr>
+        <td><strong>{{ row.subject.name }}</strong></td>
+        <td>{{ row.previous }}%</td>
+        <td>{{ row.current }}%</td>
+        <td>
+          {% if row.direction == 'up' %}
+            <span class="badge badge-success">↑ +{{ row.diff }}</span>
+          {% elif row.direction == 'down' %}
+            <span class="badge badge-danger">↓ {{ row.diff }}</span>
+          {% else %}
+            <span class="badge badge-gray">— {{ row.diff }}</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+<!-- Full Results Sheet -->
+<div class="card">
+  <h3 style="margin-bottom: 16px; font-family: var(--font-heading);">📋 Full Class Results Sheet</h3>
+  <div style="overflow-x: auto;">
+    <table class="table">
+      <thead>
+        <tr>
+          <th style="width: 30px;">#</th>
+          <th style="min-width: 150px;">Student</th>
+          <th style="width: 60px;">Stream</th>
+          {% for sub in combined_data.subjects %}
+            <th style="min-width: 60px;">{{ sub.name|truncatechars:10 }}</th>
+          {% endfor %}
+          <th>Total</th>
+          <th>Mean</th>
+          <th>Grade</th>
+          <th>Rank</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in combined_data.student_rows %}
+        <tr {% if row.rank <= 3 %}style="background: #fef9c3;"{% endif %}>
+          <td><strong>{{ row.rank }}</strong></td>
+          <td>
+            <strong>{{ row.student.first_name }} {{ row.student.last_name }}</strong>
+            <div style="font-size: 10px; color: var(--ink-500);">{{ row.student.admission_number }}</div>
+          </td>
+          <td><span class="badge badge-info">{{ row.stream }}</span></td>
+          {% for mark in row.marks %}
+            <td>
+              {% if mark is not None %}
+                {{ mark }}
+              {% else %}
+                <span style="color: var(--ink-400);">—</span>
+              {% endif %}
+            </td>
+          {% endfor %}
+          <td><strong>{{ row.total }}</strong></td>
+          <td>
+            <span class="badge badge-{% if row.mean >= 70 %}success{% elif row.mean >= 50 %}info{% else %}warning{% endif %}">
+              {{ row.mean }}%
+            </span>
+          </td>
+          <td><strong>{{ row.grade }}</strong></td>
+          <td>{{ row.rank }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endif %}
+
+{% endblock %}
