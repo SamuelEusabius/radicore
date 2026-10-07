@@ -156,7 +156,10 @@ class School(models.Model):
     is_active = models.BooleanField(
         default=True, help_text="Deactivated schools cannot be accessed"
     )
-    subscription_paid_until = models.DateField(null=True, blank=True)
+    subscription_paid_until = models.DateField(
+    null=True, blank=True,
+    help_text="DEPRECATED — use SchoolSubscription.paid_until instead"
+)
 
     blocked_message = models.TextField(
         blank=True,
@@ -219,7 +222,19 @@ class School(models.Model):
         parts = (self.name or 'SM').split()
         return ''.join(p[0] for p in parts[:2]).upper() or 'SM'
 
+    @property
+    def is_subscription_active(self):
+        """
+        Source of truth for 'can this school use the system'.
+        Reads SchoolSubscription, never School.subscription_paid_until.
+        """
+        sub = getattr(self, 'subscription', None)
+        return bool(sub and sub.is_valid)
 
+    @property
+    def subscription_status_label(self):
+        sub = getattr(self, 'subscription', None)
+        return sub.get_status_display() if sub else 'No subscription'
 # ==========================================================
 # BOARD MEMBER
 # ==========================================================
@@ -330,6 +345,73 @@ class SchoolSubscription(models.Model):
 
     def __str__(self):
         return f"{self.school.name} — {self.get_status_display()}"
+
+    # ==========================================================
+    # HELPERS
+    # ==========================================================
+
+    @property
+    def is_valid(self):
+        from django.utils import timezone
+        now = timezone.now()
+        if self.status == self.Status.TRIAL and self.trial_ends_at:
+            return now < self.trial_ends_at
+        if self.status == self.Status.ACTIVE and self.paid_until:
+            return now < self.paid_until
+        return False
+
+    @property
+    def days_remaining(self):
+        from django.utils import timezone
+        now = timezone.now()
+        target = (
+            self.trial_ends_at
+            if self.status == self.Status.TRIAL
+            else self.paid_until
+        )
+        if not target:
+            return 0
+        return max(0, (target - now).days)
+
+    @property
+    def billing_cycle_display(self):
+        if self.billing_cycle == self.BillingCycle.CONTRACT and self.contract_years:
+            years = self.contract_years
+            suffix = 's' if years > 1 else ''
+            return f"Contract ({years} year{suffix})"
+        return self.get_billing_cycle_display()
+
+    @property
+    def status_badge_class(self):
+        return {
+            'trial':           'pro-badge-info',
+            'pending_payment': 'pro-badge-warning',
+            'active':          'pro-badge-success',
+            'expired':         'pro-badge-danger',
+            'cancelled':       'pro-badge-gray',
+        }.get(self.status, 'pro-badge-gray')
+
+    # ==========================================================
+    # PRICE CALCULATION
+    # ==========================================================
+
+    @staticmethod
+    def calculate_price(plan, billing_cycle, contract_years=1):
+        """
+        Calculate total price + duration days for a billing cycle.
+        Delegates to SubscriptionPlan.price_for_cycle().
+
+        Returns: (total_price, duration_days)
+        """
+        if not plan:
+            return 0, 0
+        if billing_cycle == 'contract':
+            years = max(int(contract_years or 1), 1)
+            unit = plan.contract_2y_price if years >= 2 else plan.contract_1y_price
+            return float(unit) * years, 365 * years
+        if billing_cycle == 'monthly':
+            return float(plan.monthly_price), 30
+        return float(plan.term_price), 90
 
     # ==========================================================
     # HELPERS
