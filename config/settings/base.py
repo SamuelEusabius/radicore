@@ -8,10 +8,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 # ==========================================================
 # SECURITY
 # ==========================================================
-SECRET_KEY = config('SECRET_KEY', default='django-insecure-change-me-in-production-xyz123')
+SECRET_KEY = config('SECRET_KEY', default='django-insecure-dev-only-do-not-use-in-prod')
 DEBUG = config('DEBUG', default=False, cast=bool)
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1', cast=Csv())
-
 # ==========================================================
 # APPLICATIONS
 # ==========================================================
@@ -116,28 +115,23 @@ AUTHENTICATION_BACKENDS = [
     'allauth.account.auth_backends.AuthenticationBackend',
 ]
 
-# Redirect URLs
-LOGIN_REDIRECT_URL = '/dashboard/'
-LOGOUT_REDIRECT_URL = '/'
-LOGIN_URL = '/accounts/login/'
-
 # ==================================================
 # DJANGO-ALLAUTH SETTINGS
 # ==================================================
-SITE_ID = 1
-
 ACCOUNT_LOGIN_METHODS = {'email'}
 ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*']
-ACCOUNT_EMAIL_VERIFICATION = 'none'
+ACCOUNT_EMAIL_VERIFICATION = 'optional'   # prod.py sets 'mandatory'
 ACCOUNT_UNIQUE_EMAIL = True
 ACCOUNT_LOGIN_ON_EMAIL_CONFIRMATION = True
 ACCOUNT_SESSION_REMEMBER = True
+ACCOUNT_EMAIL_CONFIRMATION_EXPIRE_DAYS = 3
+ACCOUNT_EMAIL_SUBJECT_PREFIX = '[ElimuCore] '
+ACCOUNT_ADAPTER = 'apps.accounts.adapters.CustomAccountAdapter'
+
+LOGIN_URL = '/accounts/login/'
 LOGIN_REDIRECT_URL = '/dashboard/'
 LOGOUT_REDIRECT_URL = '/'
-LOGIN_URL = '/accounts/login/'
-# Newer allauth settings (avoids deprecation warnings)
-ACCOUNT_LOGIN_METHODS = {'email'}
-ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*']
+ACCOUNT_LOGIN_REDIRECT_URL = '/dashboard/'
 
 # Disable email sending during signup (no SMTP in dev)
 ACCOUNT_EMAIL_CONFIRMATION_EXPIRE_DAYS = 3
@@ -236,7 +230,7 @@ EMAIL_PORT = config('EMAIL_PORT', default=587, cast=int)
 EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=True, cast=bool)
 EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
-DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='noreply@schoolms.co.ke')
+DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='ElimuCore <noreply@elimucore.co.ke>')
 
 # ==========================================================
 # PAYMENTS
