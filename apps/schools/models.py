@@ -330,7 +330,74 @@ class SchoolSubscription(models.Model):
 
     def __str__(self):
         return f"{self.school.name} — {self.get_status_display()}"
-    
+
+    # ==========================================================
+    # HELPERS
+    # ==========================================================
+
+    @property
+    def is_valid(self):
+        from django.utils import timezone
+        now = timezone.now()
+        if self.status == self.Status.TRIAL and self.trial_ends_at:
+            return now < self.trial_ends_at
+        if self.status == self.Status.ACTIVE and self.paid_until:
+            return now < self.paid_until
+        return False
+
+    @property
+    def days_remaining(self):
+        from django.utils import timezone
+        now = timezone.now()
+        target = (
+            self.trial_ends_at
+            if self.status == self.Status.TRIAL
+            else self.paid_until
+        )
+        if not target:
+            return 0
+        return max(0, (target - now).days)
+
+    @property
+    def billing_cycle_display(self):
+        if self.billing_cycle == self.BillingCycle.CONTRACT and self.contract_years:
+            years = self.contract_years
+            suffix = 's' if years > 1 else ''
+            return f"Contract ({years} year{suffix})"
+        return self.get_billing_cycle_display()
+
+    @property
+    def status_badge_class(self):
+        return {
+            'trial':           'pro-badge-info',
+            'pending_payment': 'pro-badge-warning',
+            'active':          'pro-badge-success',
+            'expired':         'pro-badge-danger',
+            'cancelled':       'pro-badge-gray',
+        }.get(self.status, 'pro-badge-gray')
+
+    # ==========================================================
+    # PRICE CALCULATION
+    # ==========================================================
+
+    @staticmethod
+    def calculate_price(plan, billing_cycle, contract_years=1):
+        """
+        Calculate total price + duration days for a billing cycle.
+        Delegates to SubscriptionPlan.price_for_cycle().
+
+        Returns: (total_price, duration_days)
+        """
+        if not plan:
+            return 0, 0
+        if billing_cycle == 'contract':
+            years = max(int(contract_years or 1), 1)
+            unit = plan.contract_2y_price if years >= 2 else plan.contract_1y_price
+            return float(unit) * years, 365 * years
+        if billing_cycle == 'monthly':
+            return float(plan.monthly_price), 30
+        return float(plan.term_price), 90
+
 
 # ==========================================================
 # MODULAR FEATURE TOGGLES
@@ -420,96 +487,3 @@ def school_has_module(school, module_code):
         module=module_code,
         is_enabled=True,
     ).exists()
-
-    # ==========================================================
-    # HELPERS
-    # ==========================================================
-
-    @property
-    def is_valid(self):
-        from django.utils import timezone
-        now = timezone.now()
-        if self.status == self.Status.TRIAL and self.trial_ends_at:
-            return now < self.trial_ends_at
-        if self.status == self.Status.ACTIVE and self.paid_until:
-            return now < self.paid_until
-        return False
-
-    @property
-    def days_remaining(self):
-        from django.utils import timezone
-        now = timezone.now()
-        target = self.trial_ends_at if self.status == self.Status.TRIAL else self.paid_until
-        if not target:
-            return 0
-        delta = target - now
-        return max(0, delta.days)
-
-    @property
-    def billing_cycle_display(self):
-        if self.billing_cycle == self.BillingCycle.CONTRACT and self.contract_years:
-            return f"Contract ({self.contract_years} year{'s' if self.contract_years > 1 else ''})"
-        return self.get_billing_cycle_display()
-
-    @property
-    def status_badge_class(self):
-        return {
-            'trial':           'pro-badge-info',
-            'pending_payment': 'pro-badge-warning',
-            'active':          'pro-badge-success',
-            'expired':         'pro-badge-danger',
-            'cancelled':       'pro-badge-gray',
-        }.get(self.status, 'pro-badge-gray')
-
-    # ==========================================================
-    # PRICE CALCULATION
-    # ==========================================================
-
-    @staticmethod
-    def calculate_price(plan, billing_cycle, contract_years=1):
-        """
-        Calculate the total price for a given billing cycle.
-
-        Base: plan.price_kes is the price PER TERM (3 months).
-
-        Discounts:
-        - Monthly:      +20% surcharge for short commitment
-        - Term:         base price (no discount)
-        - Contract 1y:  10% discount
-        - Contract 2y:  15% discount
-        - Contract 3y:  20% discount
-        - Contract 5y:  25% discount
-        """
-        if not plan:
-            return 0, 0, 0
-
-        base_term_price = float(plan.price_kes)
-
-        if billing_cycle == 'monthly':
-            monthly_price = (base_term_price / 3) * 1.20
-            total = monthly_price
-            duration_days = 30
-            savings = 0
-
-        elif billing_cycle == 'term':
-            total = base_term_price
-            duration_days = 90
-            savings = 0
-
-        elif billing_cycle == 'contract':
-            years = max(int(contract_years or 1), 1)
-            terms_per_year = 3
-            base_total = base_term_price * terms_per_year * years
-
-            discounts = {1: 0.10, 2: 0.15, 3: 0.20, 5: 0.25}
-            discount = discounts.get(years, 0.25)
-
-            total = base_total * (1 - discount)
-            duration_days = 365 * years
-            savings = base_total - total
-        else:
-            total = base_term_price
-            duration_days = 90
-            savings = 0
-
-        return round(total, 2), duration_days, round(savings, 2)
