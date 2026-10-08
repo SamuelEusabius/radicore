@@ -143,3 +143,7 @@ apps_backup_before_*/
 templates_backup_before_*/
 *.txt.bak
 permission_checks.txt
+
+# One-off setup scripts
+create_*.py
+setup_*.py
