@@ -9,20 +9,25 @@
     <div class="sidebar-brand-text">
       <p class="sidebar-brand-name">{{ current_school.name|default:"School MS"|truncatechars:18 }}</p>
           <p class="sidebar-brand-role">
-      {% if user.role == 'super_admin' %}Super Admin
-      {% elif user.role == 'principal' %}Admin
+            {% if user.role == 'super_admin' %}Super Admin
+      {% elif user.role == 'principal' %}Principal
+      {% elif user.role == 'deputy_admin' %}Deputy Principal
+      {% elif user.role == 'deputy_academics' %}Deputy Principal
+      {% elif user.role == 'director_of_studies' %}Director of Studies
+      {% elif user.role == 'class_teacher' %}Class Teacher
       {% elif user.role == 'teacher' %}Teacher
       {% elif user.role == 'accountant' %}Accountant
-      {% elif user.role == 'parent' %}Parent
-      {% elif user.role == 'student' %}Student
-      {% elif user.role == 'driver' %}Driver
-      {% elif user.role == 'librarian' %}Librarian
-      {% elif user.role == 'lab_technician' %}Lab Technician
-      {% elif user.role == 'nurse' %}Nurse
-      {% elif user.role == 'chief_chef' %}Chief Chef
-      {% elif user.role == 'director_of_studies' %}Director of Studies
+      {% elif user.role == 'secretary' %}Secretary
       {% elif user.role == 'store_keeper' %}Store Keeper
       {% elif user.role == 'boarding_master' %}Boarding Master
+      {% elif user.role == 'chief_chef' %}Chief Chef
+      {% elif user.role == 'security_officer' %}Security Officer
+      {% elif user.role == 'driver' %}Driver
+      {% elif user.role == 'lab_technician' %}Lab Technician
+      {% elif user.role == 'librarian' %}Librarian
+      {% elif user.role == 'nurse' %}Nurse
+      {% elif user.role == 'student' %}Student
+      {% elif user.role == 'parent' %}Parent
       {% else %}{{ user.role|default:"User" }}{% endif %}
     </p>
     </div>
@@ -228,6 +233,48 @@
         </a>
       {% endif %}
     {% endif %}
+
+        <!-- ============================================ -->
+    <!-- DEPUTY PRINCIPAL — ADMINISTRATION             -->
+    <!-- ============================================ -->
+    {% if user.role == 'deputy_admin' %}
+      <div class="sidebar-section-label">Overview</div>
+      <a href="{% url 'dpa_admin_dashboard' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="home" size=18 %}
+        <span class="sidebar-link-text">Dashboard</span>
+      </a>
+
+      <div class="sidebar-section-label">Discipline</div>
+      <a href="{% url 'dpa_discipline_list' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="alert-triangle" size=18 %}
+        <span class="sidebar-link-text">All Cases</span>
+      </a>
+
+      <div class="sidebar-section-label">Staff</div>
+      <a href="#" class="sidebar-link">
+        {% include 'partials/icons.html' with name="calendar" size=18 %}
+        <span class="sidebar-link-text">Leave Requests</span>
+      </a>
+      <a href="#" class="sidebar-link">
+        {% include 'partials/icons.html' with name="clipboard" size=18 %}
+        <span class="sidebar-link-text">Duty Roster</span>
+      </a>
+      <a href="#" class="sidebar-link">
+        {% include 'partials/icons.html' with name="users" size=18 %}
+        <span class="sidebar-link-text">Staff Attendance</span>
+      </a>
+
+      <div class="sidebar-section-label">Communication</div>
+      <a href="{% url 'messages_inbox' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="message-square" size=18 %}
+        <span class="sidebar-link-text">Messages</span>
+      </a>
+      <a href="{% url 'notifications_list' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="bell" size=18 %}
+        <span class="sidebar-link-text">Notifications</span>
+      </a>
+    {% endif %}
+
 
     <!-- ============================================ -->
     <!-- TEACHER                                       -->
