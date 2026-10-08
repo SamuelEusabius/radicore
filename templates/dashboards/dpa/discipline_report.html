@@ -1,0 +1,247 @@
+{% extends "base.html" %}
+
+{% block title %}Discipline Reports{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+    <nav class="text-xs text-gray-500 mb-4">
+        <a href="{% url 'dpa_admin_dashboard' %}" class="hover:text-indigo-600">DPA Dashboard</a>
+        <span class="mx-2">/</span>
+        <a href="{% url 'dpa_discipline_list' %}" class="hover:text-indigo-600">Discipline</a>
+        <span class="mx-2">/</span>
+        <span class="text-gray-700">Reports</span>
+    </nav>
+
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold text-gray-900">Discipline Reports</h1>
+        <p class="text-sm text-gray-500 mt-1">Generate discipline reports by class, grade, or entire school</p>
+    </div>
+
+    <!-- Filter form -->
+    <form method="get" class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+        <input type="hidden" name="apply" value="1">
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Report Scope</label>
+                <select name="scope" id="scope-select"
+                        class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                    {% for value, label in scope_choices %}
+                    <option value="{{ value }}" {% if scope == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div id="grade-field" style="display: {% if scope == 'grade' %}block{% else %}none{% endif %};">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Grade</label>
+                <select name="grade"
+                        class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                    <option value="">— Select grade —</option>
+                    {% for g in available_grades %}
+                    <option value="{{ g }}" {% if grade == g %}selected{% endif %}>{{ g }}</option>
+                    {% endfor %}
+                </select>
+                <p class="text-xs text-gray-500 mt-1">Merges all streams of that grade</p>
+            </div>
+
+            <div id="class-field" style="display: {% if scope == 'class' %}block{% else %}none{% endif %};">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Class</label>
+                <select name="class"
+                        class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                    <option value="">— Select class —</option>
+                    {% for c in available_classes %}
+                    <option value="{{ c }}" {% if class_level == c %}selected{% endif %}>{{ c }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Date From</label>
+                <input type="date" name="date_from" value="{{ date_from }}"
+                       class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Date To</label>
+                <input type="date" name="date_to" value="{{ date_to }}"
+                       class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+            </div>
+        </div>
+
+        <div class="flex gap-3">
+            <button type="submit"
+                    class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700">
+                Preview Report
+            </button>
+            {% if applied %}
+            <a href="{% url 'dpa_discipline_report_pdf' %}?scope={{ scope }}&grade={{ grade }}&class={{ class_level }}&date_from={{ date_from }}&date_to={{ date_to }}"
+               class="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700">
+                Download PDF
+            </a>
+            {% endif %}
+        </div>
+    </form>
+
+    {% if applied and report %}
+    <!-- Summary -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div class="bg-white rounded-xl border border-gray-200 p-5">
+            <div class="text-xs font-medium text-gray-500 uppercase">Total Cases</div>
+            <div class="text-3xl font-bold text-gray-900 mt-1">{{ report.total }}</div>
+        </div>
+        {% for sev in report.severities %}
+        <div class="bg-white rounded-xl border border-gray-200 p-5">
+            <div class="text-xs font-medium text-gray-500 uppercase">{{ sev.label }}</div>
+            <div class="text-3xl font-bold text-gray-900 mt-1">{{ sev.count }}</div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Category + Status -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <div class="bg-white rounded-xl border border-gray-200 p-6">
+            <h2 class="font-semibold text-gray-900 mb-4">Cases by Category</h2>
+            <div class="space-y-2">
+                {% for cat in report.categories %}
+                <div class="flex justify-between text-sm">
+                    <span class="text-gray-700">{{ cat.label }}</span>
+                    <span class="font-medium text-gray-900">{{ cat.count }}</span>
+                </div>
+                {% empty %}
+                <p class="text-sm text-gray-500">No cases in this period</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl border border-gray-200 p-6">
+            <h2 class="font-semibold text-gray-900 mb-4">Status</h2>
+            <div class="space-y-2">
+                {% for st in report.statuses %}
+                <div class="flex justify-between text-sm">
+                    <span class="text-gray-700">{{ st.label }}</span>
+                    <span class="font-medium text-gray-900">{{ st.count }}</span>
+                </div>
+                {% empty %}
+                <p class="text-sm text-gray-500">No cases in this period</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    {% if report.per_class and scope != 'class' %}
+    <!-- Per-class breakdown -->
+    <div class="bg-white rounded-xl border border-gray-200 mb-6 overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="font-semibold text-gray-900">Per-Class Breakdown</h2>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead class="bg-gray-50 text-left text-xs uppercase text-gray-500">
+                    <tr>
+                        <th class="px-5 py-3 font-medium">Class</th>
+                        <th class="px-5 py-3 font-medium">Students with Cases</th>
+                        <th class="px-5 py-3 font-medium">Total Cases</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    {% for row in report.per_class %}
+                    <tr>
+                        <td class="px-5 py-3 text-gray-900">{{ row.class_level }}</td>
+                        <td class="px-5 py-3 text-gray-700">{{ row.student_count }}</td>
+                        <td class="px-5 py-3 text-gray-700">{{ row.count }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if report.top_offenders %}
+    <!-- Top repeat offenders -->
+    <div class="bg-white rounded-xl border border-gray-200 mb-6 overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="font-semibold text-gray-900">Top Repeat Offenders</h2>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead class="bg-gray-50 text-left text-xs uppercase text-gray-500">
+                    <tr>
+                        <th class="px-5 py-3 font-medium">Student</th>
+                        <th class="px-5 py-3 font-medium">Class</th>
+                        <th class="px-5 py-3 font-medium">Total Cases</th>
+                        <th class="px-5 py-3 font-medium">Latest</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    {% for row in report.top_offenders %}
+                    <tr>
+                        <td class="px-5 py-3 text-gray-900">{{ row.student.first_name }} {{ row.student.last_name }}</td>
+                        <td class="px-5 py-3 text-gray-700">{{ row.class_level }}</td>
+                        <td class="px-5 py-3 text-gray-700">{{ row.count }}</td>
+                        <td class="px-5 py-3 text-gray-500">{{ row.latest_date|date:"j M Y" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Individual cases -->
+    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="font-semibold text-gray-900">All Cases ({{ report.total }})</h2>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead class="bg-gray-50 text-left text-xs uppercase text-gray-500">
+                    <tr>
+                        <th class="px-5 py-3 font-medium">Date</th>
+                        <th class="px-5 py-3 font-medium">Student</th>
+                        <th class="px-5 py-3 font-medium">Class</th>
+                        <th class="px-5 py-3 font-medium">Category</th>
+                        <th class="px-5 py-3 font-medium">Severity</th>
+                        <th class="px-5 py-3 font-medium">Status</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    {% for r in report.records %}
+                    <tr>
+                        <td class="px-5 py-3 text-gray-500">{{ r.incident_date|date:"j M Y" }}</td>
+                        <td class="px-5 py-3 text-gray-900">{{ r.student.first_name }} {{ r.student.last_name }}</td>
+                        <td class="px-5 py-3 text-gray-700">{{ r.student.class_level }}</td>
+                        <td class="px-5 py-3 text-gray-700">{{ r.get_category_display }}</td>
+                        <td class="px-5 py-3 text-gray-700">{{ r.get_severity_display }}</td>
+                        <td class="px-5 py-3 text-gray-700">{{ r.get_status_display }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="px-5 py-12 text-center text-sm text-gray-500">
+                            No cases match these filters
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% elif applied %}
+    <div class="bg-white rounded-xl border border-gray-200 p-12 text-center">
+        <p class="text-sm text-gray-500">No cases match these filters</p>
+    </div>
+    {% endif %}
+
+</div>
+
+<script>
+document.getElementById('scope-select')?.addEventListener('change', function() {
+    const gradeField = document.getElementById('grade-field');
+    const classField = document.getElementById('class-field');
+    gradeField.style.display = (this.value === 'grade') ? 'block' : 'none';
+    classField.style.display = (this.value === 'class') ? 'block' : 'none';
+});
+</script>
+{% endblock %}

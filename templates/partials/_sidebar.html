@@ -273,6 +273,11 @@
         {% include 'partials/icons.html' with name="bell" size=18 %}
         <span class="sidebar-link-text">Notifications</span>
       </a>
+            <a href="{% url 'dpa_discipline_report' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="bar-chart" size=18 %}
+        <span class="sidebar-link-text">Reports</span>
+      </a>
+
     {% endif %}
 
 

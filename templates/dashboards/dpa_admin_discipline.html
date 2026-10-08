@@ -5,12 +5,19 @@
 {% block content %}
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
-    <div class="mb-6 flex items-center justify-between">
+    <!-- Header -->
+    <div class="mb-6 flex items-center justify-between flex-wrap gap-3">
         <div>
-            <a href="{% url 'dpa_admin_dashboard' %}" class="text-xs text-indigo-600 hover:text-indigo-700">← Back to dashboard</a>
+            <a href="{% url 'dpa_admin_dashboard' %}" class="text-xs text-indigo-600 hover:text-indigo-700">
+                ← Back to dashboard
+            </a>
             <h1 class="text-2xl font-bold text-gray-900 mt-1">Discipline Cases</h1>
             <p class="text-sm text-gray-500 mt-1">{{ total }} record{{ total|pluralize }}</p>
         </div>
+        <a href="{% url 'dpa_discipline_create' %}"
+           class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700">
+            + Record New Case
+        </a>
     </div>
 
     <!-- Filters -->
@@ -29,9 +36,16 @@
             <option value="{{ value }}" {% if severity_filter == value %}selected{% endif %}>{{ label }}</option>
             {% endfor %}
         </select>
-        <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700">
+        <button type="submit"
+                class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700">
             Filter
         </button>
+        {% if search or status_filter or severity_filter %}
+        <a href="{% url 'dpa_discipline_list' %}"
+           class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
+            Clear
+        </a>
+        {% endif %}
     </form>
 
     <!-- Table -->
@@ -46,13 +60,17 @@
                         <th class="px-5 py-3 font-medium">Date</th>
                         <th class="px-5 py-3 font-medium">Status</th>
                         <th class="px-5 py-3 font-medium">Guardian</th>
+                        <th class="px-5 py-3 font-medium"></th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
                     {% for record in records %}
                     <tr class="hover:bg-gray-50">
                         <td class="px-5 py-3 text-gray-900">
-                            {{ record.student.first_name }} {{ record.student.last_name }}
+                            <a href="{% url 'dpa_discipline_detail' record.id %}" class="hover:text-indigo-600">
+                                {{ record.student.first_name }} {{ record.student.last_name }}
+                            </a>
+                            <div class="text-xs text-gray-400">{{ record.student.admission_number }}</div>
                         </td>
                         <td class="px-5 py-3 text-gray-700">{{ record.get_category_display }}</td>
                         <td class="px-5 py-3">
@@ -68,16 +86,26 @@
                         <td class="px-5 py-3 text-gray-700">{{ record.get_status_display }}</td>
                         <td class="px-5 py-3">
                             {% if record.guardian_notified %}
-                            <span class="text-xs text-green-700">Notified</span>
+                            <span class="text-xs font-medium text-green-700">Notified</span>
                             {% else %}
-                            <span class="text-xs text-amber-700">Pending</span>
+                            <span class="text-xs font-medium text-amber-700">Pending</span>
                             {% endif %}
+                        </td>
+                        <td class="px-5 py-3 text-right">
+                            <a href="{% url 'dpa_discipline_detail' record.id %}"
+                               class="text-xs text-indigo-600 hover:text-indigo-700">
+                                View →
+                            </a>
                         </td>
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="6" class="px-5 py-12 text-center text-sm text-gray-500">
-                            No discipline records found
+                        <td colspan="7" class="px-5 py-12 text-center text-sm text-gray-500">
+                            <div class="mb-3">No discipline records found</div>
+                            <a href="{% url 'dpa_discipline_create' %}"
+                               class="inline-block px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700">
+                                + Record First Case
+                            </a>
                         </td>
                     </tr>
                     {% endfor %}

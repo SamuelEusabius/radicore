@@ -1,0 +1,148 @@
+{% load static %}
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  @page { size: A4 portrait; margin: 12mm 10mm; }
+  * { box-sizing: border-box; }
+  body { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 9pt; color: #1a1a1a; margin: 0; }
+
+  .header { border-bottom: 2pt solid #00695c; padding-bottom: 8px; margin-bottom: 12px; }
+  .header-table { width: 100%; border-collapse: collapse; }
+  .header-table td { vertical-align: middle; padding: 0; }
+  .coat { width: 60px; }
+  .school-name { font-size: 14pt; font-weight: bold; }
+  .school-meta { font-size: 8pt; color: #555; }
+  .logo { width: 60px; text-align: right; }
+
+  .report-title { font-size: 13pt; font-weight: bold; margin: 8px 0 4px 0; text-align: center; }
+  .report-meta { text-align: center; font-size: 8.5pt; color: #555; margin-bottom: 10px; }
+
+  h2 { font-size: 11pt; margin: 14px 0 6px 0; border-bottom: 1pt solid #ccc; padding-bottom: 3px; }
+
+  table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+  th, td { border: 0.5pt solid #999; padding: 4px 6px; text-align: left; font-size: 8.5pt; }
+  th { background: #f0f0f0; font-weight: bold; }
+
+  .summary-grid { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
+  .summary-grid td { border: 1pt solid #999; padding: 8px; text-align: center; }
+  .summary-num { font-size: 16pt; font-weight: bold; color: #00695c; }
+  .summary-label { font-size: 8pt; color: #555; text-transform: uppercase; }
+
+  .footer { position: fixed; bottom: 0; left: 0; right: 0; text-align: center; font-size: 7.5pt; color: #777; border-top: 0.5pt solid #ccc; padding-top: 4px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <table class="header-table">
+    <tr>
+      <td class="coat"><img src="{% static 'images/coat-of-arms.png' %}" style="width: 55px;"></td>
+      <td>
+        <div class="school-name">{{ school.name }}</div>
+        <div class="school-meta">{{ school.code|default:"" }}{% if school.county %} · {{ school.county }}{% endif %}</div>
+      </td>
+      <td class="logo">{% if school.logo %}<img src="{{ school.logo.url }}" style="width: 55px;">{% endif %}</td>
+    </tr>
+  </table>
+</div>
+
+<div class="report-title">DISCIPLINE REPORT — ENTIRE SCHOOL</div>
+<div class="report-meta">
+  Period: {{ period }} &nbsp;·&nbsp;
+  Generated: {{ generated_on|date:"j F Y, H:i" }} by {{ generated_by.get_full_name|default:generated_by.email }}
+</div>
+
+<table class="summary-grid">
+  <tr>
+    <td><div class="summary-num">{{ report.total }}</div><div class="summary-label">Total Cases</div></td>
+    {% for sev in report.severities %}
+    <td><div class="summary-num">{{ sev.count }}</div><div class="summary-label">{{ sev.label }}</div></td>
+    {% endfor %}
+  </tr>
+</table>
+
+<h2>Cases by Class</h2>
+<table>
+  <thead>
+    <tr><th>Class</th><th style="width: 100px; text-align: center;">Students</th><th style="width: 100px; text-align: center;">Cases</th></tr>
+  </thead>
+  <tbody>
+    {% for row in report.per_class %}
+    <tr>
+      <td>{{ row.class_level }}</td>
+      <td style="text-align: center;">{{ row.student_count }}</td>
+      <td style="text-align: center;">{{ row.count }}</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="3" style="text-align: center; color: #888;">No data</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<h2>Cases by Category</h2>
+<table>
+  <thead>
+    <tr><th>Category</th><th style="width: 100px; text-align: right;">Cases</th></tr>
+  </thead>
+  <tbody>
+    {% for cat in report.categories %}
+    <tr><td>{{ cat.label }}</td><td style="text-align: right;">{{ cat.count }}</td></tr>
+    {% empty %}
+    <tr><td colspan="2" style="text-align: center; color: #888;">No cases</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{% if report.top_offenders %}
+<h2>Top Repeat Offenders</h2>
+<table>
+  <thead>
+    <tr><th>Student</th><th>Class</th><th style="width: 60px; text-align: center;">Cases</th><th style="width: 90px;">Latest</th></tr>
+  </thead>
+  <tbody>
+    {% for row in report.top_offenders %}
+    <tr>
+      <td>{{ row.student.first_name }} {{ row.student.last_name }}</td>
+      <td>{{ row.class_level }}</td>
+      <td style="text-align: center;">{{ row.count }}</td>
+      <td>{{ row.latest_date|date:"j M Y" }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+<h2>All Cases</h2>
+<table>
+  <thead>
+    <tr>
+      <th style="width: 70px;">Date</th>
+      <th>Student</th>
+      <th>Class</th>
+      <th>Category</th>
+      <th style="width: 70px;">Severity</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for r in report.records %}
+    <tr>
+      <td>{{ r.incident_date|date:"j M Y" }}</td>
+      <td>{{ r.student.first_name }} {{ r.student.last_name }}</td>
+      <td>{{ r.student.class_level }}</td>
+      <td>{{ r.get_category_display }}</td>
+      <td>{{ r.get_severity_display }}</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="5" style="text-align: center; color: #888;">No cases</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<div class="footer">
+  ElimuCore · Discipline Report — Entire School · {{ generated_on|date:"Y-m-d H:i" }}
+</div>
+
+</body>
+</html>

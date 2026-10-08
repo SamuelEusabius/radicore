@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+
+{% block title %}Leave-Out — {{ leave.student.first_name }}{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+    <nav class="text-xs text-gray-500 mb-4">
+        <a href="{% url 'dpa_admin_dashboard' %}" class="hover:text-indigo-600">DPA Dashboard</a>
+        <span class="mx-2">/</span>
+        <a href="{% url 'dpa_leave_out_list' %}" class="hover:text-indigo-600">Leave-Outs</a>
+        <span class="mx-2">/</span>
+        <span class="text-gray-700">#{{ leave.id }}</span>
+    </nav>
+
+    <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+        <div class="flex items-start justify-between gap-4 flex-wrap">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900">
+                    {{ leave.get_leave_out_type_display }}
+                </h1>
+                <p class="text-sm text-gray-500 mt-1">
+                    {{ leave.student.first_name }} {{ leave.student.last_name }}
+                    · Adm {{ leave.student.admission_number }}
+                </p>
+            </div>
+            <span class="px-3 py-1 text-xs font-medium rounded-full
+                {% if leave.status == 'approved' or leave.status == 'active' %}bg-green-100 text-green-800
+                {% elif leave.status == 'pending' %}bg-amber-100 text-amber-800
+                {% elif leave.status == 'rejected' or leave.status == 'cancelled' %}bg-red-100 text-red-800
+                {% else %}bg-gray-100 text-gray-700{% endif %}">
+                {{ leave.get_status_display }}
+            </span>
+        </div>
+
+        {% if leave.suspension_reason %}
+        <p class="mt-4 text-sm text-gray-700">
+            <span class="text-gray-500">Reason:</span>
+            <span class="font-medium">{{ leave.get_suspension_reason_display }}</span>
+        </p>
+        {% endif %}
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <div class="bg-white rounded-xl border border-gray-200 p-6">
+            <h2 class="font-semibold text-gray-900 mb-4">Dates</h2>
+            <dl class="space-y-3 text-sm">
+                <div class="flex justify-between">
+                    <dt class="text-gray-500">Start</dt>
+                    <dd class="text-gray-900 font-medium">{{ leave.start_date|date:"j F Y" }}</dd>
+                </div>
+                {% if leave.end_date %}
+                <div class="flex justify-between">
+                    <dt class="text-gray-500">Expected End</dt>
+                    <dd class="text-gray-900">{{ leave.end_date|date:"j F Y" }}</dd>
+                </div>
+                {% endif %}
+                {% if leave.actual_return_date %}
+                <div class="flex justify-between">
+                    <dt class="text-gray-500">Actual Return</dt>
+                    <dd class="text-gray-900">{{ leave.actual_return_date|date:"j F Y" }}</dd>
+                </div>
+                {% endif %}
+                <div class="flex justify-between">
+                    <dt class="text-gray-500">Days Out</dt>
+                    <dd class="text-gray-900">{{ leave.days_out }}</dd>
+                </div>
+            </dl>
+        </div>
+
+        <div class="bg-white rounded-xl border border-gray-200 p-6">
+            <h2 class="font-semibold text-gray-900 mb-4">Approval</h2>
+            <dl class="space-y-3 text-sm">
+                <div class="flex justify-between">
+                    <dt class="text-gray-500">Requested By</dt>
+                    <dd class="text-gray-900">
+                        {% if leave.requested_by %}{{ leave.requested_by.get_full_name|default:leave.requested_by.email }}{% else %}—{% endif %}
+                    </dd>
+                </div>
+                <div class="flex justify-between">
+                    <dt class="text-gray-500">DPA</dt>
+                    <dd>
+                        {% if leave.dpa_approved_at %}
+                        <span class="text-xs font-medium text-green-700">
+                            ✓ {{ leave.dpa_approved_by.get_full_name|default:leave.dpa_approved_by.email }}
+                        </span>
+                        {% else %}
+                        <span class="text-xs text-amber-700">Pending</span>
+                        {% endif %}
+                    </dd>
+                </div>
+                {% if is_expulsion %}
+                <div class="flex justify-between">
+                    <dt class="text-gray-500">Principal</dt>
+                    <dd>
+                        {% if leave.principal_approved_at %}
+                        <span class="text-xs font-medium text-green-700">
+                            ✓ {{ leave.principal_approved_by.get_full_name|default:leave.principal_approved_by.email }}
+                        </span>
+                        {% else %}
+                        <span class="text-xs text-amber-700">Pending</span>
+                        {% endif %}
+                    </dd>
+                </div>
+                {% endif %}
+            </dl>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+        <h2 class="font-semibold text-gray-900 mb-3">Reason</h2>
+        <p class="text-sm text-gray-700 whitespace-pre-line">{{ leave.reason_description }}</p>
+    </div>
+
+    {% if leave.guardian_notified %}
+    <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+        <h2 class="font-semibold text-gray-900 mb-3">Guardian Notification</h2>
+        <p class="text-sm text-gray-700">
+            Notified via <span class="font-medium">{{ leave.guardian_notification_method }}</span>
+            on {{ leave.guardian_notified_at|date:"j M Y H:i" }}
+            {% if leave.guardian_acknowledged %}· <span class="text-green-700">✓ Acknowledged</span>{% endif %}
+        </p>
+    </div>
+    {% endif %}
+
+    {% if can_approve %}
+    <div class="bg-white rounded-xl border border-gray-200 p-6">
+        <h2 class="font-semibold text-gray-900 mb-4">Actions</h2>
+        <div class="flex flex-wrap gap-3">
+            {% if not leave.dpa_approved_at %}
+            <form method="post" action="{% url 'dpa_leave_out_approve' leave.id %}">
+                {% csrf_token %}
+                <input type="hidden" name="comment" value="">
+                <button type="submit"
+                        class="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700">
+                    Approve Leave-Out
+                </button>
+            </form>
+            {% endif %}
+
+            {% if not leave.guardian_notified %}
+            <form method="post" action="{% url 'dpa_leave_out_toggle_notify' leave.id %}" class="flex items-center gap-2">
+                {% csrf_token %}
+                <select name="method" class="px-3 py-2 text-sm border border-gray-300 rounded-lg">
+                    <option value="call">Call</option>
+                    <option value="sms">SMS</option>
+                    <option value="email">Email</option>
+                    <option value="in_person">In Person</option>
+                </select>
+                <label class="flex items-center gap-1 text-sm">
+                    <input type="checkbox" name="acknowledged"> Guardian acknowledged
+                </label>
+                <button type="submit"
+                        class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700">
+                    Mark Notified
+                </button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

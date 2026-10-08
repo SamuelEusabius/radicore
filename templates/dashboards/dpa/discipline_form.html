@@ -1,0 +1,355 @@
+{% extends "base.html" %}
+
+{% block title %}{% if record %}Edit Case{% else %}Record Discipline Case{% endif %}{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+    <nav class="text-xs text-gray-500 mb-4">
+        <a href="{% url 'dpa_admin_dashboard' %}" class="hover:text-indigo-600">DPA Dashboard</a>
+        <span class="mx-2">/</span>
+        <a href="{% url 'dpa_discipline_list' %}" class="hover:text-indigo-600">Discipline</a>
+        <span class="mx-2">/</span>
+        <span class="text-gray-700">{% if record %}Edit Case #{{ record.id }}{% else %}New Case{% endif %}</span>
+    </nav>
+
+    <div class="bg-white rounded-xl border border-gray-200 p-6 sm:p-8">
+        <h1 class="text-2xl font-bold text-gray-900 mb-6">
+            {% if record %}Edit Discipline Case{% else %}Record Discipline Case{% endif %}
+        </h1>
+
+        {% if messages %}
+            {% for msg in messages %}
+            <div class="mb-4 rounded-lg px-4 py-3 text-sm
+                {% if msg.tags == 'error' %}bg-red-50 text-red-800 border border-red-200
+                {% else %}bg-green-50 text-green-800 border border-green-200{% endif %}">
+                {{ msg }}
+            </div>
+            {% endfor %}
+        {% endif %}
+
+        <form method="post" id="discipline-form" class="space-y-5">
+            {% csrf_token %}
+
+            {% if not record %}
+            <!-- =====================================================
+                 STEP 1 — Student picker
+                 ===================================================== -->
+            <div id="student-picker">
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                    Student <span class="text-red-500">*</span>
+                </label>
+
+                <!-- Search bar -->
+                <div class="relative">
+                    <input type="text" id="student-search"
+                           placeholder="Search by name, admission number, or class…"
+                           autocomplete="off"
+                           class="w-full px-3 py-2 pl-9 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                    <svg class="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2"
+                         fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                </div>
+
+                <!-- Filter chips -->
+                <div class="flex flex-wrap gap-2 mt-3">
+                    <button type="button" data-class-filter=""
+                            class="class-chip px-3 py-1 text-xs font-medium rounded-full bg-indigo-600 text-white">
+                        All classes
+                    </button>
+                    <div id="class-chips" class="flex flex-wrap gap-2"></div>
+                </div>
+
+                <!-- Results -->
+                <div id="student-results"
+                     class="mt-3 max-h-72 overflow-y-auto border border-gray-200 rounded-lg divide-y divide-gray-100">
+                    <!-- Populated by JS -->
+                </div>
+
+                <p class="text-xs text-gray-500 mt-2" id="student-count">
+                    Type to search or filter by class
+                </p>
+
+                <!-- Hidden input carries selected student id -->
+                <input type="hidden" name="student_id" id="student-id-input" required>
+            </div>
+
+            <!-- =====================================================
+                 STEP 2 — Selected student + case form
+                 ===================================================== -->
+            <div id="case-form" class="hidden space-y-5 pt-5 border-t border-gray-200">
+
+                <!-- Selected student card -->
+                <div class="flex items-center justify-between bg-indigo-50 rounded-lg p-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-white font-semibold"
+                             id="selected-student-initials">
+                            --
+                        </div>
+                        <div>
+                            <p class="font-medium text-gray-900" id="selected-student-name">—</p>
+                            <p class="text-xs text-gray-600" id="selected-student-meta">—</p>
+                        </div>
+                    </div>
+                    <button type="button" id="change-student-btn"
+                            class="text-xs font-medium text-indigo-700 hover:text-indigo-800">
+                        Change
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Category <span class="text-red-500">*</span></label>
+                        <select name="category" required
+                                class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                            {% for value, label in categories %}
+                            <option value="{{ value }}">{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Severity <span class="text-red-500">*</span></label>
+                        <select name="severity" required
+                                class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                            {% for value, label in severities %}
+                            <option value="{{ value }}">{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Incident Date <span class="text-red-500">*</span></label>
+                        <input type="date" name="incident_date" required value="{{ today|date:'Y-m-d' }}"
+                               class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Time (optional)</label>
+                        <input type="time" name="incident_time"
+                               class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Location (optional)</label>
+                    <input type="text" name="location" placeholder="e.g. Dining hall"
+                           class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Description <span class="text-red-500">*</span></label>
+                    <textarea name="description" rows="4" required placeholder="Describe what happened"
+                              class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"></textarea>
+                </div>
+            </div>
+
+            {% else %}
+
+            <!-- =====================================================
+                 EDIT MODE — no student picker, just case fields
+                 ===================================================== -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Student</label>
+                <div class="px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg text-gray-700">
+                    {{ record.student.first_name }} {{ record.student.last_name }}
+                    ({{ record.student.admission_number }}{% if record.student.class_level %} · {{ record.student.class_level }}{% endif %})
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                    <select name="category" required
+                            class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg">
+                        {% for value, label in categories %}
+                        <option value="{{ value }}" {% if record.category == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Severity</label>
+                    <select name="severity" required
+                            class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg">
+                        {% for value, label in severities %}
+                        <option value="{{ value }}" {% if record.severity == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Incident Date</label>
+                    <input type="date" name="incident_date" required value="{{ record.incident_date|date:'Y-m-d' }}"
+                           class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Time</label>
+                    <input type="time" name="incident_time" value="{{ record.incident_time|time:'H:i'|default:'' }}"
+                           class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                <input type="text" name="location" value="{{ record.location|default:'' }}"
+                       class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                <textarea name="description" rows="4" required
+                          class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg">{{ record.description }}</textarea>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                <select name="status"
+                        class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg">
+                    {% for value, label in statuses %}
+                    <option value="{{ value }}" {% if record.status == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Resolution Notes</label>
+                <textarea name="resolution_notes" rows="3"
+                          class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg">{{ record.resolution_notes }}</textarea>
+            </div>
+
+            {% endif %}
+
+            <div class="flex items-center justify-end gap-3 pt-4 border-t border-gray-100">
+                <a href="{% if record %}{% url 'dpa_discipline_detail' record.id %}{% else %}{% url 'dpa_discipline_list' %}{% endif %}"
+                   class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
+                    Cancel
+                </a>
+                <button type="submit" id="submit-btn"
+                        class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                        {% if not record %}disabled{% endif %}>
+                    {% if record %}Save Changes{% else %}Record Case{% endif %}
+                </button>
+            </div>
+        </form>
+    </div>
+
+</div>
+
+{% if not record %}
+<script>
+(function() {
+    const students = {{ students_json|safe }};
+    const searchInput = document.getElementById('student-search');
+    const resultsBox = document.getElementById('student-results');
+    const countLabel = document.getElementById('student-count');
+    const chipsBox = document.getElementById('class-chips');
+    const picker = document.getElementById('student-picker');
+    const form = document.getElementById('case-form');
+    const hiddenInput = document.getElementById('student-id-input');
+    const submitBtn = document.getElementById('submit-btn');
+    const selectedName = document.getElementById('selected-student-name');
+    const selectedMeta = document.getElementById('selected-student-meta');
+    const selectedInitials = document.getElementById('selected-student-initials');
+    const changeBtn = document.getElementById('change-student-btn');
+
+    let currentClassFilter = '';
+    let currentQuery = '';
+
+    // Build class chips
+    const classes = [...new Set(students.map(s => s.cls).filter(Boolean))].sort();
+    classes.forEach(cls => {
+        const chip = document.createElement('button');
+        chip.type = 'button';
+        chip.textContent = cls;
+        chip.dataset.classFilter = cls;
+        chip.className = 'class-chip px-3 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-700 hover:bg-gray-200';
+        chipsBox.appendChild(chip);
+    });
+
+    // All chips (including "All classes")
+    document.querySelectorAll('.class-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+            document.querySelectorAll('.class-chip').forEach(c => {
+                c.classList.remove('bg-indigo-600', 'text-white');
+                c.classList.add('bg-gray-100', 'text-gray-700');
+            });
+            chip.classList.remove('bg-gray-100', 'text-gray-700');
+            chip.classList.add('bg-indigo-600', 'text-white');
+            currentClassFilter = chip.dataset.classFilter || '';
+            renderResults();
+        });
+    });
+
+    // Search input
+    searchInput.addEventListener('input', e => {
+        currentQuery = e.target.value.toLowerCase().trim();
+        renderResults();
+    });
+
+    function renderResults() {
+        const filtered = students.filter(s => {
+            if (currentClassFilter && s.cls !== currentClassFilter) return false;
+            if (!currentQuery) return true;
+            return (
+                s.name.toLowerCase().includes(currentQuery) ||
+                s.adm.toLowerCase().includes(currentQuery) ||
+                s.cls.toLowerCase().includes(currentQuery)
+            );
+        });
+
+        const shown = filtered.slice(0, 100);
+        resultsBox.innerHTML = '';
+
+        if (shown.length === 0) {
+            resultsBox.innerHTML = '<div class="px-4 py-6 text-center text-sm text-gray-500">No students match</div>';
+        } else {
+            shown.forEach(s => {
+                const row = document.createElement('button');
+                row.type = 'button';
+                row.className = 'w-full text-left px-4 py-2 hover:bg-indigo-50 flex items-center justify-between';
+                row.innerHTML = `
+                    <div>
+                        <p class="text-sm font-medium text-gray-900">${s.name}</p>
+                        <p class="text-xs text-gray-500">${s.adm || '—'} · ${s.cls || 'No class'}</p>
+                    </div>
+                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
+                `;
+                row.addEventListener('click', () => selectStudent(s));
+                resultsBox.appendChild(row);
+            });
+        }
+
+        countLabel.textContent = `${filtered.length} student${filtered.length === 1 ? '' : 's'} found`;
+    }
+
+    function selectStudent(s) {
+        hiddenInput.value = s.id;
+        selectedName.textContent = s.name;
+        selectedMeta.textContent = `${s.adm || '—'} · ${s.cls || 'No class'}`;
+        selectedInitials.textContent = (s.name[0] || '?') + (s.name.split(' ')[1] ? s.name.split(' ')[1][0] : '');
+        picker.classList.add('hidden');
+        form.classList.remove('hidden');
+        submitBtn.disabled = false;
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    changeBtn.addEventListener('click', () => {
+        picker.classList.remove('hidden');
+        form.classList.add('hidden');
+        hiddenInput.value = '';
+        submitBtn.disabled = true;
+        searchInput.value = '';
+        currentQuery = '';
+        renderResults();
+        searchInput.focus();
+    });
+
+    // Initial render
+    renderResults();
+})();
+</script>
+{% endif %}
+{% endblock %}

@@ -8,11 +8,24 @@ urlpatterns = [
      url='/dashboard/subscriptions/', permanent=False
     )),
     
-        # Deputy Principal — Administration
+           # Deputy Principal — Administration
     path('dpa-admin/', views.dpa_admin_dashboard, name='dpa_admin_dashboard'),
     path('dpa-admin/discipline/', views.dpa_discipline_list, name='dpa_discipline_list'),
+    path('dpa-admin/discipline/new/', views.dpa_discipline_create, name='dpa_discipline_create'),
+    path('dpa-admin/discipline/<int:record_id>/', views.dpa_discipline_detail, name='dpa_discipline_detail'),
+    path('dpa-admin/discipline/<int:record_id>/edit/', views.dpa_discipline_edit, name='dpa_discipline_edit'),
+    path('dpa-admin/discipline/<int:record_id>/escalate/', views.dpa_discipline_escalate, name='dpa_discipline_escalate'),
+    path('dpa-admin/discipline/<int:record_id>/leave-out/new/', views.dpa_leave_out_create, name='dpa_leave_out_create'),
+    path('dpa-admin/leave-outs/', views.dpa_leave_out_list, name='dpa_leave_out_list'),
+    path('dpa-admin/leave-outs/<int:leave_out_id>/', views.dpa_leave_out_detail, name='dpa_leave_out_detail'),
+    path('dpa-admin/leave-outs/<int:leave_out_id>/approve/', views.dpa_leave_out_approve, name='dpa_leave_out_approve'),
+    path('dpa-admin/leave-outs/<int:leave_out_id>/notify/', views.dpa_leave_out_toggle_notify, name='dpa_leave_out_toggle_notify'),
     path('dpa-admin/leave/<int:leave_id>/approve/', views.dpa_approve_leave, name='dpa_approve_leave'),
     path('dpa-admin/leave/<int:leave_id>/reject/', views.dpa_reject_leave, name='dpa_reject_leave'),
+    path('dpa-admin/reports/discipline/',
+         views.dpa_discipline_report, name='dpa_discipline_report'),
+    path('dpa-admin/reports/discipline/pdf/',
+         views.dpa_discipline_report_pdf, name='dpa_discipline_report_pdf'),
     
     
     path('placeholder/', views.dashboard_placeholder, name='dashboard_placeholder'),
