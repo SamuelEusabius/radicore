@@ -7,6 +7,14 @@ urlpatterns = [
     path('subscribe/', RedirectView.as_view(
      url='/dashboard/subscriptions/', permanent=False
     )),
+    
+        # Deputy Principal — Administration
+    path('dpa-admin/', views.dpa_admin_dashboard, name='dpa_admin_dashboard'),
+    path('dpa-admin/discipline/', views.dpa_discipline_list, name='dpa_discipline_list'),
+    path('dpa-admin/leave/<int:leave_id>/approve/', views.dpa_approve_leave, name='dpa_approve_leave'),
+    path('dpa-admin/leave/<int:leave_id>/reject/', views.dpa_reject_leave, name='dpa_reject_leave'),
+    
+    
     path('placeholder/', views.dashboard_placeholder, name='dashboard_placeholder'),
     path('', views.redirect_dashboard, name='dashboard_home'),
     path('timetable/pdf/', views.timetable_pdf, name='timetable_pdf'),

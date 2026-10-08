@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block title %}Discipline Cases{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+    <div class="mb-6 flex items-center justify-between">
+        <div>
+            <a href="{% url 'dpa_admin_dashboard' %}" class="text-xs text-indigo-600 hover:text-indigo-700">← Back to dashboard</a>
+            <h1 class="text-2xl font-bold text-gray-900 mt-1">Discipline Cases</h1>
+            <p class="text-sm text-gray-500 mt-1">{{ total }} record{{ total|pluralize }}</p>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <form method="get" class="bg-white rounded-xl border border-gray-200 p-4 mb-6 flex flex-wrap gap-3">
+        <input type="text" name="q" value="{{ search }}" placeholder="Search student or description"
+               class="flex-1 min-w-[200px] px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+        <select name="status" class="px-3 py-2 text-sm border border-gray-300 rounded-lg">
+            <option value="">All statuses</option>
+            {% for value, label in status_choices %}
+            <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+        <select name="severity" class="px-3 py-2 text-sm border border-gray-300 rounded-lg">
+            <option value="">All severities</option>
+            {% for value, label in severity_choices %}
+            <option value="{{ value }}" {% if severity_filter == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700">
+            Filter
+        </button>
+    </form>
+
+    <!-- Table -->
+    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead class="bg-gray-50 text-left text-xs uppercase text-gray-500">
+                    <tr>
+                        <th class="px-5 py-3 font-medium">Student</th>
+                        <th class="px-5 py-3 font-medium">Category</th>
+                        <th class="px-5 py-3 font-medium">Severity</th>
+                        <th class="px-5 py-3 font-medium">Date</th>
+                        <th class="px-5 py-3 font-medium">Status</th>
+                        <th class="px-5 py-3 font-medium">Guardian</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    {% for record in records %}
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-5 py-3 text-gray-900">
+                            {{ record.student.first_name }} {{ record.student.last_name }}
+                        </td>
+                        <td class="px-5 py-3 text-gray-700">{{ record.get_category_display }}</td>
+                        <td class="px-5 py-3">
+                            <span class="px-2 py-0.5 text-xs font-medium rounded-full
+                                {% if record.severity == 'critical' %}bg-red-100 text-red-800
+                                {% elif record.severity == 'serious' %}bg-orange-100 text-orange-800
+                                {% elif record.severity == 'moderate' %}bg-amber-100 text-amber-800
+                                {% else %}bg-gray-100 text-gray-700{% endif %}">
+                                {{ record.get_severity_display }}
+                            </span>
+                        </td>
+                        <td class="px-5 py-3 text-gray-500">{{ record.incident_date|date:"j M Y" }}</td>
+                        <td class="px-5 py-3 text-gray-700">{{ record.get_status_display }}</td>
+                        <td class="px-5 py-3">
+                            {% if record.guardian_notified %}
+                            <span class="text-xs text-green-700">Notified</span>
+                            {% else %}
+                            <span class="text-xs text-amber-700">Pending</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="px-5 py-12 text-center text-sm text-gray-500">
+                            No discipline records found
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

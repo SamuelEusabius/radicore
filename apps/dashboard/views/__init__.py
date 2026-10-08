@@ -205,3 +205,9 @@ from .departments_admin import (
 
 )
 from . import dos_views
+from .dpa_admin import (
+    dpa_admin_dashboard,
+    dpa_approve_leave,
+    dpa_reject_leave,
+    dpa_discipline_list,
+)
