@@ -12,7 +12,7 @@ from django.utils import timezone
 
 def _school_admin_required(request):
     """Only School Admin can access department pages. Super Admin is blocked."""
-    return request.user.role == 'school_admin'
+    return request.user.role == 'principal'
 
 # ============================================================
 # HUB — 5 department cards

@@ -13,7 +13,7 @@ from .models import (
 
 def _driver_required(request):
     """Return True if user is a driver or admin."""
-    return request.user.role in ('driver', 'school_admin', 'super_admin')
+    return request.user.role in ('driver', 'principal', 'super_admin')
 
 
 @login_required

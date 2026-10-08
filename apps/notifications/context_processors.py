@@ -10,7 +10,7 @@ def topbar_badge_count(request):
             recipient=request.user, is_read=False
         ).count()
 
-        if request.user.role in ('school_admin', 'super_admin'):
+        if request.user.role in ('principal', 'super_admin'):
             unresolved_alerts = 0
             if getattr(request.user, 'school', None):
                 unresolved_alerts = Alert.objects.filter(

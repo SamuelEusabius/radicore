@@ -27,7 +27,7 @@
       </div>
     </div>
 
-    {% if user.role == 'school_admin' or user.role == 'super_admin' %}
+    {% if user.role == 'principal' or user.role == 'super_admin' %}
     <a href="{% url 'compose_message' %}" class="pro-btn pro-btn-orange">
       {% include 'partials/icons.html' with name="send" size=15 %}
       <span>Compose New</span>

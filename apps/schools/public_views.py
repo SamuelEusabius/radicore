@@ -72,7 +72,7 @@ def school_signup(request):
             username=admin_email,
             email=admin_email,
             password=admin_password,
-            role='school_admin',
+            role='principal',
             school=school,
         )
 

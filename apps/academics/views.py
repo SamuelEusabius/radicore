@@ -108,7 +108,7 @@ def timetable_manage(request):
     Manage timetable entries — create/edit/delete.
     Only school admins can access.
     """
-    if request.user.role not in ('school_admin', 'super_admin'):
+    if request.user.role not in ('principal', 'super_admin'):
         return redirect('dashboard_home')
 
     school = request.user.school
@@ -124,7 +124,7 @@ def timetable_manage(request):
 @login_required
 def timetable_add(request):
     """Add a new timetable entry."""
-    if request.user.role not in ('school_admin', 'super_admin'):
+    if request.user.role not in ('principal', 'super_admin'):
         return redirect('dashboard_home')
 
     school = request.user.school
@@ -155,7 +155,7 @@ def timetable_add(request):
 @login_required
 def timetable_edit(request, entry_id):
     """Edit a timetable entry."""
-    if request.user.role not in ('school_admin', 'super_admin'):
+    if request.user.role not in ('principal', 'super_admin'):
         return redirect('dashboard_home')
 
     school = request.user.school
@@ -187,7 +187,7 @@ def timetable_edit(request, entry_id):
 @login_required
 def timetable_delete(request, entry_id):
     """Delete a timetable entry."""
-    if request.user.role not in ('school_admin', 'super_admin'):
+    if request.user.role not in ('principal', 'super_admin'):
         return redirect('dashboard_home')
 
     entry = get_object_or_404(Timetable, id=entry_id, school=request.user.school)

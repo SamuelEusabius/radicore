@@ -117,7 +117,7 @@ def run_absence_check(school=None, threshold=3, as_of_date=None):
 
             if not existing_open:
                 # Get admins for this school
-                admins = student.school.users.filter(role__in=['school_admin', 'super_admin']) \
+                admins = student.school.users.filter(role__in=['principal', 'super_admin']) \
                     if hasattr(student.school, 'users') else []
 
                 # Create the alert (school-scoped, not per-user)

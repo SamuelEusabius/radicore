@@ -21,7 +21,7 @@ from .unallocated_models import UnallocatedPayment, UnallocatedAllocation
 
 
 def _bursar_required(request):
-    return request.user.role in ('accountant', 'school_admin')
+    return request.user.role in ('accountant', 'principal')
 
 
 # ============================================================

@@ -22,7 +22,7 @@ from apps.accounts.decorators import (
 
 @login_required
 def manage_exams(request):
-    if request.user.role not in ('teacher', 'school_admin', 'super_admin'):
+    if request.user.role not in ('teacher', 'principal', 'super_admin'):
         return redirect('dashboard_home')
 
     from apps.grades.models import Exam
@@ -44,7 +44,7 @@ def manage_exams(request):
 
 @login_required
 def enter_grades(request):
-    if request.user.role not in ('teacher', 'school_admin', 'super_admin'):
+    if request.user.role not in ('teacher', 'principal', 'super_admin'):
         return redirect('dashboard_home')
 
     from apps.grades.models import Exam, Grade
@@ -117,7 +117,7 @@ def enter_grades(request):
 @login_required
 @login_required
 def class_results(request):
-    if request.user.role not in ('teacher', 'school_admin', 'super_admin'):
+    if request.user.role not in ('teacher', 'principal', 'super_admin'):
         return redirect('dashboard_home')
 
     from apps.academics.models import ClassLevel, Subject
@@ -255,7 +255,7 @@ def class_results(request):
 
 @login_required
 def class_results_pdf(request):
-    if request.user.role not in ('teacher', 'school_admin', 'super_admin'):
+    if request.user.role not in ('teacher', 'principal', 'super_admin'):
         return redirect('dashboard_home')
 
     from apps.academics.models import ClassLevel

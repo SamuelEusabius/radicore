@@ -21,7 +21,7 @@ def subscription_view(request):
     """Subscription page — accessible only to Super Admin and School Admin."""
     user = request.user
 
-    if user.role not in ('super_admin', 'school_admin'):
+    if user.role not in ('super_admin', 'principal'):
         messages.error(request, 'Access denied.')
         return redirect('dashboard_home')
 
@@ -30,7 +30,7 @@ def subscription_view(request):
     from datetime import timedelta
 
     all_schools = School.objects.all().order_by('name') if user.role == 'super_admin' else School.objects.none()
-    school = user.school if user.role == 'school_admin' else None
+    school = user.school if user.role == 'principal' else None
 
     if user.role == 'super_admin':
         school_id = request.GET.get('school')
@@ -326,13 +326,13 @@ def subscription_payment_pending(request, school_id):
     """Show payment instructions after school admin selects method."""
     from apps.schools.models import School, SchoolSubscription
 
-    if request.user.role not in ('school_admin', 'super_admin'):
+    if request.user.role not in ('principal', 'super_admin'):
         return redirect('dashboard_home')
 
     school = get_object_or_404(School, id=school_id)
 
     # Security — school admins only see their own school
-    if request.user.role == 'school_admin' and request.user.school != school:
+    if request.user.role == 'principal' and request.user.school != school:
         return redirect('dashboard_home')
 
     try:
@@ -362,12 +362,12 @@ def subscription_payment_status(request, school_id):
     """Check the current status of the subscription payment."""
     from apps.schools.models import School, SchoolSubscription
 
-    if request.user.role not in ('school_admin', 'super_admin'):
+    if request.user.role not in ('principal', 'super_admin'):
         return redirect('dashboard_home')
 
     school = get_object_or_404(School, id=school_id)
 
-    if request.user.role == 'school_admin' and request.user.school != school:
+    if request.user.role == 'principal' and request.user.school != school:
         return redirect('dashboard_home')
 
     try:
@@ -423,7 +423,7 @@ def confirm_subscription_payment(request, school_id):
 
         # Notify school admin
         try:
-            school_admins = school.users.filter(role='school_admin')
+            school_admins = school.users.filter(role='principal')
             for admin in school_admins:
                 Notification.objects.create(
                     recipient=admin,
@@ -467,7 +467,7 @@ Thank you for using School MS.
 @login_required
 def subscription_plans(request):
     """Redesigned subscription page with tier-based pricing."""
-    if request.user.role not in ('school_admin', 'super_admin'):
+    if request.user.role not in ('principal', 'super_admin'):
         return redirect('dashboard_home')
 
     from apps.schools.models import SubscriptionPlan, SchoolSubscription, School
@@ -523,7 +523,7 @@ def subscription_plans(request):
 @login_required
 def subscription_confirm(request):
     """Handle subscription plan selection + payment."""
-    if request.user.role not in ('school_admin', 'super_admin'):
+    if request.user.role not in ('principal', 'super_admin'):
         return redirect('dashboard_home')
 
     if request.method != 'POST':
@@ -598,7 +598,7 @@ def subscription_confirm(request):
 @login_required
 def subscription_payment(request):
     """Payment page after plan selection."""
-    if request.user.role not in ('school_admin', 'super_admin'):
+    if request.user.role not in ('principal', 'super_admin'):
         return redirect('dashboard_home')
 
     pending = request.session.get('pending_subscription')

@@ -13,7 +13,7 @@ from .models import Book, BookIssue, DepartmentChoices
 
 def _librarian_required(request):
     """Librarian, School Admin, or Super Admin can manage the library."""
-    return request.user.role in ('librarian', 'school_admin')
+    return request.user.role in ('librarian', 'principal')
 
 
 def _admin_required(request):

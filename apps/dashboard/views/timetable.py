@@ -104,7 +104,7 @@ def timetable_view(request):
 @login_required
 def timetable_add(request):
     """Add a timetable entry."""
-    if request.user.role != 'school_admin':
+    if request.user.role != 'principal':
         return redirect('dashboard_home')
 
     from apps.academics.models import ClassLevel, Subject, Timetable
@@ -158,7 +158,7 @@ def timetable_add(request):
 @login_required
 def timetable_delete(request, entry_id):
     """Delete a timetable entry."""
-    if request.user.role != 'school_admin':
+    if request.user.role != 'principal':
         return redirect('dashboard_home')
 
     from apps.academics.models import Timetable
@@ -173,7 +173,7 @@ def timetable_delete(request, entry_id):
 @login_required
 def timetable_pdf(request):
     """Generate a timetable PDF (A4 landscape)."""
-    if request.user.role not in ('teacher', 'school_admin', 'accountant'):
+    if request.user.role not in ('teacher', 'principal', 'accountant'):
         return redirect('dashboard_home')
 
     from apps.academics.models import ClassLevel, Subject, Timetable

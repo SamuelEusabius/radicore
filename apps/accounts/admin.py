@@ -60,6 +60,6 @@ class CustomUserAdmin(UserAdmin):
 
     def save_model(self, request, obj, form, change):
         """Auto-set school for school admins."""
-        if not obj.school_id and request.user.role == 'school_admin':
+        if not obj.school_id and request.user.role == 'principal':
             obj.school = request.user.school
         super().save_model(request, obj, form, change)

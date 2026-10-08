@@ -32,7 +32,7 @@ def _get_or_create_wallet(student):
 
 
 def _accountant_required(request):
-    return request.user.role in ('accountant', 'school_admin')
+    return request.user.role in ('accountant', 'principal')
 
 
 def _class_teacher_required(request):
@@ -146,7 +146,7 @@ def wallet_detail(request, wallet_id):
         StudentWallet, id=wallet_id, school=request.user.school
     )
 
-    if request.user.role not in ('accountant', 'school_admin', 'teacher'):
+    if request.user.role not in ('accountant', 'principal', 'teacher'):
         return redirect('dashboard_home')
 
     transactions = wallet.transactions.select_related(
@@ -233,7 +233,7 @@ def wallet_topup(request, wallet_id):
 @login_required
 def wallet_withdraw(request, wallet_id):
     """Withdraw money from a student's wallet."""
-    if request.user.role not in ('accountant', 'school_admin', 'teacher'):
+    if request.user.role not in ('accountant', 'principal', 'teacher'):
         return redirect('dashboard_home')
 
     wallet = get_object_or_404(
@@ -322,7 +322,7 @@ def wallet_withdraw(request, wallet_id):
 @login_required
 def wallet_mark_collected(request, tx_id):
     """Mark a pending withdrawal as collected."""
-    if request.user.role not in ('accountant', 'school_admin', 'teacher'):
+    if request.user.role not in ('accountant', 'principal', 'teacher'):
         return redirect('dashboard_home')
 
     tx = get_object_or_404(

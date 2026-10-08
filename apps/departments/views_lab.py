@@ -14,7 +14,7 @@ from .models import LabEquipment, LabIncident, PracticalSchedule
 
 def _lab_required(request):
     """Lab Tech or School Admin can access lab pages."""
-    return request.user.role in ('lab_technician', 'school_admin')
+    return request.user.role in ('lab_technician', 'principal')
 
 
 def _lab_only(request):

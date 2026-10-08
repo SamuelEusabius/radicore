@@ -12,10 +12,10 @@
     </p>
   </div>
   <div style="display: flex; gap: 8px;">
-    {% if user.role in 'accountant,school_admin' or user.role == 'accountant' or user.role == 'school_admin' %}
+    {% if user.role in 'accountant,principal' or user.role == 'accountant' or user.role == 'principal' %}
       <a href="{% url 'wallet_topup' wallet.id %}" class="btn btn-primary">+ Top Up</a>
     {% endif %}
-    {% if user.role in 'accountant,teacher' or user.role == 'accountant' or user.role == 'teacher' or user.role == 'school_admin' %}
+    {% if user.role in 'accountant,teacher' or user.role == 'accountant' or user.role == 'teacher' or user.role == 'principal' %}
       <a href="{% url 'wallet_withdraw' wallet.id %}" class="btn btn-secondary">− Withdraw</a>
     {% endif %}
     <a href="{% url 'wallet_list' %}" class="btn btn-secondary">← All Wallets</a>

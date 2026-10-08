@@ -7,6 +7,7 @@ urlpatterns = [
     path('subscribe/', RedirectView.as_view(
      url='/dashboard/subscriptions/', permanent=False
     )),
+    path('placeholder/', views.dashboard_placeholder, name='dashboard_placeholder'),
     path('', views.redirect_dashboard, name='dashboard_home'),
     path('timetable/pdf/', views.timetable_pdf, name='timetable_pdf'),
     

@@ -17,7 +17,7 @@ from .models import (
 
 def _chef_required(request):
     """Chef or School Admin can access kitchen pages."""
-    return request.user.role in ('chief_chef', 'school_admin')
+    return request.user.role in ('chief_chef', 'principal')
 
 
 def _chef_only(request):

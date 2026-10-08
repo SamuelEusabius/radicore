@@ -10,7 +10,7 @@
       <p class="sidebar-brand-name">{{ current_school.name|default:"School MS"|truncatechars:18 }}</p>
           <p class="sidebar-brand-role">
       {% if user.role == 'super_admin' %}Super Admin
-      {% elif user.role == 'school_admin' %}Admin
+      {% elif user.role == 'principal' %}Admin
       {% elif user.role == 'teacher' %}Teacher
       {% elif user.role == 'accountant' %}Accountant
       {% elif user.role == 'parent' %}Parent
@@ -75,7 +75,7 @@
     <!-- ============================================ -->
     <!-- SCHOOL ADMIN                                  -->
     <!-- ============================================ -->
-    {% if user.role == 'school_admin' %}
+    {% if user.role == 'principal' %}
       <div class="sidebar-section-label">Overview</div>
       <a href="{% url 'dashboard_home' %}" class="sidebar-link">
         {% include 'partials/icons.html' with name="home" size=18 %}

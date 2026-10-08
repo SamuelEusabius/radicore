@@ -85,7 +85,7 @@ def department_report_create(request, department_code):
     user = request.user
     allowed = ROLE_DEPARTMENT_MAP.get(user.role)
     
-    if allowed != department_code and user.role not in ('school_admin', 'super_admin'):
+    if allowed != department_code and user.role not in ('principal', 'super_admin'):
         messages.error(request, 'You cannot submit reports for this department.')
         return redirect('dashboard_home')
     
@@ -130,7 +130,7 @@ def department_report_create(request, department_code):
 @login_required
 def department_reports_inbox(request):
     """School admin — see all department reports."""
-    if request.user.role not in ('school_admin', 'super_admin'):
+    if request.user.role not in ('principal', 'super_admin'):
         messages.error(request, 'Access denied.')
         return redirect('dashboard_home')
     
@@ -183,7 +183,7 @@ def _reports_queryset(request):
 @login_required
 def report_pdf(request, report_id):
     """Download a single report as PDF."""
-    if request.user.role not in ('school_admin', 'super_admin'):
+    if request.user.role not in ('principal', 'super_admin'):
         return redirect('dashboard_home')
 
     from .models import DepartmentReport
@@ -222,7 +222,7 @@ def report_pdf(request, report_id):
 @login_required
 def reports_bulk_pdf(request):
     """Download all filtered reports as one PDF."""
-    if request.user.role not in ('school_admin', 'super_admin'):
+    if request.user.role not in ('principal', 'super_admin'):
         return redirect('dashboard_home')
 
     from django.http import HttpResponse
@@ -266,7 +266,7 @@ def reports_bulk_pdf(request):
 @login_required
 def reports_print(request):
     """Print-friendly view of filtered reports."""
-    if request.user.role not in ('school_admin', 'super_admin'):
+    if request.user.role not in ('principal', 'super_admin'):
         return redirect('dashboard_home')
 
     reports, dept_filter, status_filter = _reports_queryset(request)
@@ -293,7 +293,7 @@ def reports_print(request):
 @login_required
 def department_report_review(request, report_id):
     """School Admin reviews a single department report."""
-    if request.user.role not in ('school_admin', 'super_admin'):
+    if request.user.role not in ('principal', 'super_admin'):
         messages.error(request, 'Access denied.')
         return redirect('dashboard_home')
 

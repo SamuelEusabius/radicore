@@ -10,15 +10,15 @@ from django.contrib import messages
 # ============================================================
 
 SCHOOL_ROLES = (
-    'school_admin', 'teacher', 'accountant', 'parent', 'student',
+    'principal', 'teacher', 'accountant', 'parent', 'student',
     'driver', 'librarian', 'lab_technician', 'nurse', 'chief_chef',
 )
 
-DASHBOARD_ROLES = ('school_admin', 'teacher', 'accountant', 'parent', 'student')
+DASHBOARD_ROLES = ('principal', 'teacher', 'accountant', 'parent', 'student')
 
 DEPARTMENT_ROLES = ('driver', 'librarian', 'lab_technician', 'nurse', 'chief_chef')
 
-SCHOOL_MANAGEMENT_ROLES = ('school_admin',)  # ← NO super_admin
+SCHOOL_MANAGEMENT_ROLES = ('principal',)  # ← NO super_admin
 
 
 # ============================================================
@@ -32,7 +32,7 @@ def is_school_staff(user):
 
 def is_school_admin(user):
     """True only for school admins."""
-    return user.is_authenticated and user.role == 'school_admin'
+    return user.is_authenticated and user.role == 'principal'
 
 
 def is_super_admin(user):

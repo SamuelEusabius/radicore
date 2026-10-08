@@ -5,9 +5,13 @@ Re-exports all views so that `from . import views` continues to work in urls.py.
 """
 
 from .core import (
+    redirect_dashboard,
     redirect_to_own_dashboard,
+    dashboard_placeholder,
     super_admin_dash,
     school_admin_dash,
+    store_keeper_dashboard_placeholder,
+    boarding_dashboard_placeholder,
 )
 
 from .subscription import (
@@ -172,14 +176,7 @@ from .timetable import (
     timetable_delete,
     timetable_pdf,
 )
-from .core import (
-    redirect_dashboard,
-    redirect_to_own_dashboard,
-    super_admin_dash,
-    school_admin_dash,
-    store_keeper_dashboard_placeholder,
-    boarding_dashboard_placeholder,
-)
+
 from .modules import *
 from .departments_admin import (
     departments_hub,

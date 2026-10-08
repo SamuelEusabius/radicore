@@ -7,6 +7,7 @@ User & Staff views:
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from apps.accounts.roles import Role
 from django.contrib.auth import get_user_model
 from django.http import HttpResponse, JsonResponse
 from django.db.models import Q, Count, Sum
@@ -15,6 +16,7 @@ from django.core.paginator import Paginator
 
 from apps.accounts.decorators import (
     role_required, school_staff_only, super_admin_only,
+    
 )
 
 User = get_user_model()
@@ -27,7 +29,7 @@ User = get_user_model()
 @login_required
 def staff_list(request):
     """List non-teaching staff with filters and stats."""
-    if request.user.role not in ('school_admin', 'super_admin'):
+    if request.user.role not in ('principal', 'super_admin'):
         return redirect('dashboard_home')
 
     from apps.staff.models import NonTeachingStaff
@@ -84,7 +86,7 @@ def staff_list(request):
 
 @login_required
 def add_staff(request):
-    if request.user.role not in ('school_admin', 'super_admin'):
+    if request.user.role not in ('principal', 'super_admin'):
         return redirect('dashboard_home')
 
     from apps.staff.models import NonTeachingStaff
@@ -144,7 +146,7 @@ def add_staff(request):
 
 @login_required
 def delete_staff(request, staff_id):
-    if request.user.role not in ('school_admin', 'super_admin'):
+    if request.user.role not in ('principal', 'super_admin'):
         return redirect('dashboard_home')
 
     from apps.staff.models import NonTeachingStaff
@@ -166,7 +168,7 @@ def delete_staff(request, staff_id):
 @login_required
 def user_deactivate(request, user_id):
     """Toggle user is_active (deactivate or reactivate)."""
-    if request.user.role not in ('school_admin', 'super_admin'):
+    if request.user.role not in ('principal', 'super_admin'):
         return redirect('dashboard_home')
 
     from apps.accounts.models import User
@@ -209,7 +211,7 @@ def user_deactivate(request, user_id):
 @login_required
 def user_delete(request, user_id):
     """Hard-delete a user (with safety checks)."""
-    if request.user.role not in ('school_admin', 'super_admin'):
+    if request.user.role not in ('principal', 'super_admin'):
         return redirect('dashboard_home')
 
     from apps.accounts.models import User
@@ -246,7 +248,7 @@ def user_delete(request, user_id):
 @login_required
 def user_change_role(request, user_id):
     """Change a user's role."""
-    if request.user.role not in ('school_admin', 'super_admin'):
+    if request.user.role not in ('principal', 'super_admin'):
         return redirect('dashboard_home')
 
     from apps.accounts.models import User
@@ -265,12 +267,12 @@ def user_change_role(request, user_id):
         'teacher', 'accountant', 'parent', 'student',
         'driver', 'librarian', 'lab_technician', 'nurse', 'chief_chef', 'director_of_studies', 'store_keeper', 'boarding_master',
     )
-    ALLOWED_FOR_SUPER_ADMIN = ('school_admin', 'director_of_studies', 'store_keeper', 'boarding_master')
+    ALLOWED_FOR_SUPER_ADMIN = ('principal', 'director_of_studies', 'store_keeper', 'boarding_master')
 
     if request.method == 'POST':
         new_role = request.POST.get('role', '').strip()
 
-        if request.user.role == 'school_admin' and new_role not in ALLOWED_FOR_SCHOOL_ADMIN:
+        if request.user.role == 'principal' and new_role not in ALLOWED_FOR_SCHOOL_ADMIN:
             messages.error(request, 'You are not allowed to assign that role.')
             return redirect('manage_users')
 
@@ -278,7 +280,7 @@ def user_change_role(request, user_id):
             messages.error(request, 'Super Admin can only assign School Admin role.')
             return redirect('manage_users')
 
-        if new_role not in dict(User.Role.choices):
+        if new_role not in dict(Role.choices):
             messages.error(request, 'Invalid role.')
             return redirect('manage_users')
 
@@ -293,9 +295,9 @@ def user_change_role(request, user_id):
         return redirect('manage_users')
 
     # GET — render role selection
-    role_choices = list(User.Role.choices)
+        role_choices = list(Role.choices)
 
-    if request.user.role == 'school_admin':
+    if request.user.role == 'principal':
         role_choices = [(v, l) for v, l in role_choices if v in ALLOWED_FOR_SCHOOL_ADMIN]
     elif request.user.role == 'super_admin':
         role_choices = [(v, l) for v, l in role_choices if v in ALLOWED_FOR_SUPER_ADMIN]
@@ -314,7 +316,7 @@ def user_change_role(request, user_id):
 @login_required
 def user_change_password(request, user_id):
     """School Admin changes password for a user in their school."""
-    if request.user.role not in ('school_admin', 'super_admin'):
+    if request.user.role not in ('principal', 'super_admin'):
         messages.error(request, 'Access denied.')
         return redirect('dashboard_home')
 

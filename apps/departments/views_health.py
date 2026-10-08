@@ -14,7 +14,7 @@ from .models import HealthVisit, Medicine, MedicineLog, DepartmentChoices
 
 def _nurse_required(request):
     """Nurse or School Admin can access health pages."""
-    return request.user.role in ('nurse', 'school_admin')
+    return request.user.role in ('nurse', 'principal')
 
 
 def _nurse_only(request):

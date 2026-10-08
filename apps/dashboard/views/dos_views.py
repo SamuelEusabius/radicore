@@ -15,7 +15,7 @@ from apps.accounts.models import User
 
 def _dos_required(request):
     """DOS or School Admin can access."""
-    return request.user.role in ('director_of_studies', 'school_admin')
+    return request.user.role in ('director_of_studies', 'principal')
 
 
 # ============================================================

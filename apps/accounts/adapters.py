@@ -15,7 +15,7 @@ class CustomAccountAdapter(DefaultAccountAdapter):
         # Role → URL name mapping
         role_redirects = {
             'super_admin':         'dashboard_home',
-            'school_admin':        'dashboard_home',
+            'principal':        'dashboard_home',
             'teacher':             'dashboard_home',
             'accountant':          'dashboard_home',
             'parent':              'dashboard_home',

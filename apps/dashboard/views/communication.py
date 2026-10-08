@@ -157,7 +157,7 @@ def alerts_dashboard(request):
 def alert_resolve(request, alert_id):
     from apps.notifications.models import Alert
 
-    if request.user.role not in ('school_admin', 'super_admin'):
+    if request.user.role not in ('principal', 'super_admin'):
         return redirect('dashboard_home')
 
     alert = get_object_or_404(Alert, id=alert_id)
@@ -178,7 +178,7 @@ def alert_resolve(request, alert_id):
 def alert_dismiss(request, alert_id):
     from apps.notifications.models import Alert
 
-    if request.user.role not in ('school_admin', 'super_admin'):
+    if request.user.role not in ('principal', 'super_admin'):
         return redirect('dashboard_home')
 
     alert = get_object_or_404(Alert, id=alert_id)
@@ -197,7 +197,7 @@ def alert_dismiss(request, alert_id):
 
 @login_required
 def run_scan(request):
-    if request.user.role not in ('school_admin', 'super_admin'):
+    if request.user.role not in ('principal', 'super_admin'):
         return redirect('dashboard_home')
 
     from apps.notifications.services.smart_alerts import run_all_detections
@@ -218,7 +218,7 @@ def run_scan(request):
 @login_required
 def send_test_sms_view(request):
     """Admin page to send a test SMS."""
-    if request.user.role not in ('school_admin', 'super_admin'):
+    if request.user.role not in ('principal', 'super_admin'):
         return redirect('dashboard_home')
 
     result = None
@@ -247,7 +247,7 @@ def send_test_sms_view(request):
 @login_required
 def bulk_sms(request):
     """Send bulk SMS to groups of parents."""
-    if request.user.role not in ('school_admin', 'super_admin'):
+    if request.user.role not in ('principal', 'super_admin'):
         return redirect('dashboard_home')
 
     from apps.parents.models import Parent
@@ -394,7 +394,7 @@ def message_archive(request, recipient_id):
 @login_required
 def compose_message(request):
     """School Admin composes a new message."""
-    if request.user.role not in ('school_admin', 'super_admin'):
+    if request.user.role not in ('principal', 'super_admin'):
         return redirect('dashboard_home')
 
     from apps.notifications.models import Message, MessageRecipient
@@ -510,7 +510,7 @@ def compose_message(request):
 @login_required
 def messages_sent(request):
     """School Admin sees their sent messages."""
-    if request.user.role not in ('school_admin', 'super_admin'):
+    if request.user.role not in ('principal', 'super_admin'):
         return redirect('dashboard_home')
 
     from apps.notifications.models import Message
@@ -527,7 +527,7 @@ def messages_sent(request):
 @login_required
 def message_delete(request, message_id):
     """Sender can delete a message."""
-    if request.user.role not in ('school_admin', 'super_admin'):
+    if request.user.role not in ('principal', 'super_admin'):
         return redirect('dashboard_home')
 
     from apps.notifications.models import Message
@@ -541,7 +541,7 @@ def message_delete(request, message_id):
 @login_required
 def admin_alerts_list(request):
     """List all alerts for the school admin."""
-    if request.user.role not in ('school_admin', 'super_admin'):
+    if request.user.role not in ('principal', 'super_admin'):
         return redirect('dashboard_home')
 
     from apps.notifications.models import Alert
@@ -583,7 +583,7 @@ def admin_alerts_list(request):
 @login_required
 def admin_alert_resolve(request, alert_id):
     """Resolve or dismiss an alert."""
-    if request.user.role not in ('school_admin', 'super_admin'):
+    if request.user.role not in ('principal', 'super_admin'):
         return redirect('dashboard_home')
 
     from apps.notifications.models import Alert

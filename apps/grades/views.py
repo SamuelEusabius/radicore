@@ -76,7 +76,7 @@ _attach_serializers()
 # ============================================================
 
 @login_required
-@role_required('teacher', 'school_admin')
+@role_required('teacher', 'principal')
 def class_teacher_all_report_cards_merged(request):
     """Generate one PDF containing report cards for ALL students in a class."""
     from apps.students.models import Student
@@ -97,7 +97,7 @@ def class_teacher_all_report_cards_merged(request):
     # School admin can pass ?class=<id>; class teacher uses their own class
     class_id = request.GET.get('class')
 
-    if request.user.role == 'school_admin' and class_id:
+    if request.user.role == 'principal' and class_id:
         from apps.academics.models import ClassLevel
         class_level_obj = get_object_or_404(ClassLevel, id=class_id, school=school)
         class_level_name = class_level_obj.name
@@ -310,7 +310,7 @@ def _render_single_report_card(student, exam, school, rankings, positions, class
 
 
 @login_required
-@role_required('teacher', 'school_admin')
+@role_required('teacher', 'principal')
 def enter_grades(request):
     """Enter grades for a class + exam + subject."""
     from apps.students.models import Student
@@ -587,7 +587,7 @@ def report_card_pdf(request, student_id, exam_id):
 # ============================================================
 
 @login_required
-@role_required('teacher', 'school_admin')
+@role_required('teacher', 'principal')
 def class_results(request):
     from apps.academics.models import ClassLevel
     from apps.students.models import Student
@@ -639,7 +639,7 @@ def class_results(request):
 
 
 @login_required
-@role_required('teacher', 'school_admin')
+@role_required('teacher', 'principal')
 def class_results_pdf(request):
     """Generate a class results sheet PDF with all students + subjects."""
     from apps.academics.models import ClassLevel, Subject
@@ -734,44 +734,44 @@ def class_results_pdf(request):
 # ============================================================
 
 @login_required
-@role_required('teacher', 'school_admin')
+@role_required('teacher', 'principal')
 def class_teacher_grades(request):
     return redirect('enter_grades')
 
 
 @login_required
-@role_required('teacher', 'school_admin')
+@role_required('teacher', 'principal')
 def class_teacher_new_exam(request):
     return redirect('manage_exams')
 
 
 @login_required
-@role_required('teacher', 'school_admin')
+@role_required('teacher', 'principal')
 def class_teacher_rankings(request):
     return redirect('class_results')
 
 
 @login_required
-@role_required('teacher', 'school_admin')
+@role_required('teacher', 'principal')
 def class_teacher_rankings_download(request):
     return redirect('class_results_pdf')
 
 
 @login_required
-@role_required('teacher', 'school_admin')
+@role_required('teacher', 'principal')
 def class_teacher_results_sheet_pdf(request):
     return redirect('class_results_pdf')
 
 
 @login_required
-@role_required('teacher', 'school_admin')
+@role_required('teacher', 'principal')
 def class_teacher_all_report_cards_zip(request):
     messages.info(request, 'Bulk report cards ZIP — coming soon.')
     return redirect('class_results')
 
 
 @login_required
-@role_required('teacher', 'school_admin')
+@role_required('teacher', 'principal')
 def class_teacher_all_report_cards_merged(request):
     messages.info(request, 'Merged report cards PDF — coming soon.')
     return redirect('class_results')

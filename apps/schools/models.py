@@ -1,5 +1,7 @@
 from django.db import models
 from django.utils.text import slugify
+from apps.schools.managers import TenantManager
+
 
 
 # ==========================================================
@@ -534,6 +536,7 @@ class SchoolModule(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    objects = TenantManager()
 
     class Meta:
         unique_together = ('school', 'module')

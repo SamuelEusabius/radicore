@@ -1,4 +1,5 @@
 from django.db import models
+from apps.schools.managers import TenantManager
 
 
 class Student(models.Model):
@@ -85,6 +86,7 @@ class Student(models.Model):
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    objects = TenantManager()
 
     class Meta:
         ordering = ['first_name', 'last_name']

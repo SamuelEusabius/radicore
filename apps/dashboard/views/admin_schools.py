@@ -15,6 +15,7 @@ from django.http import HttpResponse, JsonResponse
 from django.db.models import Q, Count, Sum
 from django.utils import timezone
 from django.contrib.auth import get_user_model
+from apps.accounts.roles import Role
 
 from apps.accounts.decorators import (
     role_required, super_admin_only,
@@ -43,7 +44,7 @@ def super_admin_dash(request):
 @login_required
 def manage_users(request):
     """List users with filters, search, and role breakdown."""
-    if request.user.role not in ('school_admin', 'super_admin'):
+    if request.user.role not in ('principal', 'super_admin'):
         return redirect('dashboard_home')
 
     from apps.accounts.models import User
@@ -83,7 +84,7 @@ def manage_users(request):
     stats = {
         'total': base_qs.count(),
         'teachers': base_qs.filter(role='teacher').count(),
-        'school_admins': base_qs.filter(role='school_admin').count(),
+        'school_admins': base_qs.filter(role='principal').count(),
         'accountants': base_qs.filter(role='accountant').count(),
         'parents': base_qs.filter(role='parent').count(),
         'students': base_qs.filter(role='student').count(),
@@ -96,10 +97,10 @@ def manage_users(request):
     page_obj = paginator.get_page(request.GET.get('page', 1))
 
     # ---------- Role choices ----------
-    from apps.accounts.models import User as U
-    role_choices = list(U.Role.choices)
+    from apps.accounts.roles import Role
+    role_choices = list(Role.choices)
     if request.user.role != 'super_admin':
-        ALLOWED_FOR_SUPER_ADMIN = ('school_admin', 'director_of_studies', 'store_keeper', 'boarding_master')
+        ALLOWED_FOR_SUPER_ADMIN = ('principal', 'director_of_studies', 'store_keeper', 'boarding_master')
         ALLOWED_FOR_SCHOOL_ADMIN = (
            'teacher', 'accountant', 'parent', 'student',
            'driver', 'librarian', 'lab_technician', 'nurse', 'chief_chef', 'director_of_studies', 'store_keeper', 'boarding_master',
@@ -126,7 +127,7 @@ def create_user(request):
     if not request.user.is_authenticated:
         return redirect('/accounts/login/')
 
-    if getattr(request.user, 'role', None) not in ('school_admin', 'super_admin'):
+    if getattr(request.user, 'role', None) not in ('principal', 'super_admin'):
         return redirect('dashboard_home')
 
     from apps.accounts.models import User
@@ -136,12 +137,12 @@ def create_user(request):
         'teacher', 'accountant', 'parent', 'student',
         'driver', 'librarian', 'lab_technician', 'nurse', 'chief_chef', 'director_of_studies', 'store_keeper', 'boarding_master',
     )
-    ALLOWED_FOR_SUPER_ADMIN = ('school_admin', 'director_of_studies', 'store_keeper', 'boarding_master')
+    ALLOWED_FOR_SUPER_ADMIN = ('principal', 'director_of_studies', 'store_keeper', 'boarding_master')
 
     # ---------- Build role_choices ALWAYS (no matter what) ----------
-    all_role_choices = list(User.Role.choices)
-
-    if request.user.role == 'school_admin':
+    all_role_choices = list(Role.choices)
+    
+    if request.user.role == 'principal':
         role_choices = [(v, l) for v, l in all_role_choices if v in ALLOWED_FOR_SCHOOL_ADMIN]
     elif request.user.role == 'super_admin':
         role_choices = [(v, l) for v, l in all_role_choices if v in ALLOWED_FOR_SUPER_ADMIN]
@@ -174,7 +175,7 @@ def create_user(request):
 
         # Determine school
         assigned_school = None
-        if request.user.role == 'school_admin':
+        if request.user.role == 'principal':
             assigned_school = request.user.school
         elif request.user.role == 'super_admin' and school_id:
             from apps.schools.models import School
@@ -320,7 +321,7 @@ def school_add(request):
         User.objects.create_user(
             username=admin_email, email=admin_email, password=admin_password,
             first_name=admin_first_name, last_name=admin_last_name,
-            role='school_admin', school=school,
+            role='principal', school=school,
         )
 
         messages.success(request, f'School "{school.name}" created with code {school.code}.')
@@ -352,7 +353,7 @@ def school_change_admin_password(request, school_id):
 
     from apps.schools.models import School
     school = get_object_or_404(School, id=school_id)
-    admins = User.objects.filter(school=school, role='school_admin')
+    admins = User.objects.filter(school=school, role='principal')
 
     if request.method == 'POST':
         user_id = request.POST.get('user_id')

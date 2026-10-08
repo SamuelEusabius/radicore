@@ -40,7 +40,7 @@
         {% include 'partials/icons.html' with name="user-plus" size=18 %}
       </div>
     </div>
-    <div class="stat-value" style="color: #7C3AED;">{{ stats.school_admins }}</div>
+    <div class="stat-value" style="color: #7C3AED;">{{ stats.principals }}</div>
     <div class="stat-meta">School admins</div>
   </div>
 
@@ -138,7 +138,7 @@
           <tr>
             <td>
               <div style="display: flex; align-items: center; gap: var(--s-3);">
-                <div class="avatar avatar-sm" style="background: {% if u.role == 'school_admin' %}#7C3AED{% elif u.role == 'teacher' %}#2563EB{% elif u.role == 'accountant' %}#059669{% elif u.role == 'super_admin' %}#0A8A5F{% else %}#64748B{% endif %};">
+                <div class="avatar avatar-sm" style="background: {% if u.role == 'principal' %}#7C3AED{% elif u.role == 'teacher' %}#2563EB{% elif u.role == 'accountant' %}#059669{% elif u.role == 'super_admin' %}#0A8A5F{% else %}#64748B{% endif %};">
                   {{ u.email|first|upper }}
                 </div>
                 <div style="min-width: 0;">
@@ -154,7 +154,7 @@
             <td>
               <span class="badge
                 {% if u.role == 'super_admin' %}badge-primary
-                {% elif u.role == 'school_admin' %}badge-primary
+                {% elif u.role == 'principal' %}badge-primary
                 {% elif u.role == 'teacher' %}badge-info
                 {% elif u.role == 'accountant' %}badge-success
                 {% elif u.role == 'staff' %}badge-neutral

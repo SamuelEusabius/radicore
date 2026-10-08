@@ -21,7 +21,7 @@ from apps.accounts.decorators import (
 @login_required
 def parents_list(request):
     """List all parents with filters, stats, and pagination."""
-    if request.user.role != 'school_admin':
+    if request.user.role != 'principal':
         return redirect('dashboard_home')
 
     from apps.parents.models import Parent

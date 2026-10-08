@@ -22,7 +22,7 @@ def redirect_to_own_dashboard(request):
 
     redirect_map = {
         'super_admin':    'dash_super_admin',
-        'school_admin':   'dash_school_admin',
+        'principal':   'dash_school_admin',
         'teacher':        'dash_teacher',
         'parent':         'dash_parent',
         'accountant':     'dash_accountant',
@@ -107,25 +107,81 @@ def school_admin_dash(request):
     })
     
 
+from django.urls import reverse, NoReverseMatch
+# Every role → the URL name it should land on after login.
+# Roles without a real dashboard yet point at 'dashboard_placeholder',
+# which renders a "coming soon" page.
+ROLE_DASHBOARD_MAP = {
+    # platform
+    'super_admin':           'dash_super_admin',
+
+    # school leadership
+    'principal':             'dash_school_admin',
+    'deputy_admin':          'dashboard_placeholder',
+    'deputy_academics':      'dashboard_placeholder',
+    'director_of_studies':   'dos_dashboard',
+
+    # teaching
+    'class_teacher':         'class_teacher_dashboard',
+    'teacher':               'dash_teacher',
+
+    # admin / finance
+    'accountant':            'dash_accountant',
+    'secretary':             'dashboard_placeholder',
+
+    # operations
+    'store_keeper':          'dashboard_placeholder',
+    'boarding_master':       'dashboard_placeholder',
+    'chief_chef':            'dashboard_placeholder',
+    'security_officer':      'dashboard_placeholder',
+    'driver':                'dashboard_placeholder',
+    'lab_technician':        'dashboard_placeholder',
+    'librarian':             'dashboard_placeholder',
+    'nurse':                 'dashboard_placeholder',
+
+    # end users
+    'student':               'dash_student',
+    'parent':                'dash_parent',
+}
+
+
 def redirect_dashboard(request):
-    """Send user to their own dashboard based on role."""
+    """Send an authenticated user to the dashboard for their role."""
+    if not request.user.is_authenticated:
+        return redirect('account_login')
+
     role = request.user.role
-    return redirect({
-        'super_admin':         'dash_super_admin',
-        'school_admin':        'dash_school_admin',
-        'teacher':             'dash_teacher',
-        'parent':              'dash_parent',
-        'accountant':          'dash_accountant',
-        'student':             'dash_student',
-        'driver':              'driver_dashboard',
-        'librarian':           'librarian_dashboard',
-        'lab_technician':      'lab_technician_dashboard',
-        'nurse':               'nurse_dashboard',
-        'chief_chef':          'chief_chef_dashboard',
-        'director_of_studies': 'dos_dashboard',
-        'store_keeper':        'store_keeper_dashboard',
-        'boarding_master':     'boarding_dashboard',
-    }.get(role, 'landing'))
+    target = ROLE_DASHBOARD_MAP.get(role)
+
+    if target is None:
+        # Unknown role — show placeholder rather than loop
+        return redirect('dashboard_placeholder')
+
+    try:
+        return redirect(target)
+    except NoReverseMatch:
+        # Named URL doesn't exist yet — fall back to placeholder
+        return redirect('dashboard_placeholder')
+
+
+@login_required
+def dashboard_placeholder(request):
+    """
+    Generic "coming soon" page.
+
+    Every role that doesn't have a real dashboard yet lands here.
+    Once a dashboard is built, update ROLE_DASHBOARD_MAP to point at
+    the real URL, and this view stops receiving that role.
+    """
+    from apps.accounts.roles import Role
+
+    role_labels = dict(Role.choices)
+    role_label = role_labels.get(request.user.role, request.user.role)
+
+    return render(request, 'dashboards/placeholder.html', {
+        'role_label': role_label,
+        'school': getattr(request.user, 'school', None),
+    })
     
     # ============================================================
 # PLACEHOLDER DASHBOARDS (until full modules are built)
@@ -134,7 +190,7 @@ def redirect_dashboard(request):
 @login_required
 def store_keeper_dashboard_placeholder(request):
     """Temporary — shows a 'coming soon' page for Store Keepers."""
-    if request.user.role not in ('store_keeper', 'school_admin'):
+    if request.user.role not in ('store_keeper', 'principal'):
         return redirect('dashboard_home')
     messages.info(
         request,
@@ -146,7 +202,7 @@ def store_keeper_dashboard_placeholder(request):
 @login_required
 def boarding_dashboard_placeholder(request):
     """Temporary — shows a 'coming soon' page for Boarding Masters."""
-    if request.user.role not in ('boarding_master', 'school_admin'):
+    if request.user.role not in ('boarding_master', 'principal'):
         return redirect('dashboard_home')
     messages.info(
         request,

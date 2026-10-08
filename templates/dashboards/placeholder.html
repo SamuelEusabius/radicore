@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ role_label }} — ElimuCore</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen flex items-center justify-center p-6">
+    <div class="max-w-lg w-full bg-white rounded-2xl shadow-sm border border-gray-200 p-8 text-center">
+        <div class="w-16 h-16 mx-auto mb-6 rounded-full bg-indigo-100 flex items-center justify-center">
+            <svg class="w-8 h-8 text-indigo-600" fill="none" stroke="currentColor" stroke-width="2"
+                 viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M12 6v6l4 2M12 22a10 10 0 100-20 10 10 0 000 20z"/>
+            </svg>
+        </div>
+
+        <h1 class="text-2xl font-bold text-gray-900 mb-2">
+            {{ role_label }} Dashboard
+        </h1>
+
+        {% if school %}
+            <p class="text-sm text-gray-500 mb-1">{{ school.name }}</p>
+        {% endif %}
+
+        <p class="text-gray-600 mb-8">
+            This dashboard is being built. Check back soon.
+        </p>
+
+        <div class="flex items-center justify-center gap-3">
+            <a href="/"
+               class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
+                Back to Home
+            </a>
+            <a href="/accounts/logout/"
+               class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700">
+                Log Out
+            </a>
+        </div>
+    </div>
+</body>
+</html>

@@ -16,7 +16,7 @@ def role_required(*allowed_roles):
         @role_required('teacher')
         def teacher_dash(request): ...
 
-        @role_required('school_admin', 'super_admin')
+        @role_required('principal', 'super_admin')
         def school_admin_dash(request): ...
     """
     def decorator(view_func):
@@ -49,7 +49,7 @@ def super_admin_only(view_func):
 
 def school_staff_only(view_func):
     """School admins + super admins (support access)."""
-    return role_required('school_admin', 'super_admin')(view_func)
+    return role_required('principal', 'super_admin')(view_func)
 
 
 def teacher_only(view_func):

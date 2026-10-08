@@ -20,7 +20,7 @@ from apps.accounts.decorators import (
 @login_required
 def students_list(request):
     """List all students with filters, search, and pagination."""
-    if request.user.role != 'school_admin':
+    if request.user.role != 'principal':
         return redirect('dashboard_home')
 
     from apps.students.models import Student
@@ -142,7 +142,7 @@ def student_dash(request):
 
 @login_required
 def add_student(request):
-    if request.user.role != 'school_admin':
+    if request.user.role != 'principal':
         return redirect('dashboard_home')
 
     from apps.students.models import Student
@@ -239,7 +239,7 @@ def add_student(request):
 
 @login_required
 def delete_student(request, student_id):
-    if request.user.role != 'school_admin':
+    if request.user.role != 'principal':
         return redirect('dashboard_home')
 
     from apps.students.models import Student
@@ -258,7 +258,7 @@ def delete_student(request, student_id):
 @login_required
 def clear_student(request, student_id):
     """Mark a student as cleared and open the leaving certificate editor."""
-    if request.user.role != 'school_admin':
+    if request.user.role != 'principal':
         return redirect('dashboard_home')
 
     from apps.students.models import Student
@@ -283,7 +283,7 @@ def clear_student(request, student_id):
 @login_required
 def leaving_certificate(request, student_id):
     """Editor for the leaving certificate."""
-    if request.user.role != 'school_admin':
+    if request.user.role != 'principal':
         return redirect('dashboard_home')
 
     from apps.students.models import Student
@@ -299,7 +299,7 @@ def leaving_certificate(request, student_id):
 @login_required
 def leaving_certificate_pdf(request, student_id):
     """Generate the leaving certificate PDF with rich content and Coat of Arms."""
-    if request.user.role != 'school_admin':
+    if request.user.role != 'principal':
         return redirect('dashboard_home')
 
     from apps.students.models import Student
@@ -376,7 +376,7 @@ def leaving_certificate_pdf(request, student_id):
 @login_required
 def student_biodata_pdf(request, student_id):
     """Generate a downloadable PDF of the student's bio data."""
-    if request.user.role not in ('school_admin', 'accountant'):
+    if request.user.role not in ('principal', 'accountant'):
         return redirect('dashboard_home')
 
     from apps.students.models import Student
@@ -398,7 +398,7 @@ def student_biodata_pdf(request, student_id):
 @login_required
 def student_detail(request, student_id):
     """Full student profile — admin/teacher/accountant view."""
-    if request.user.role not in ('school_admin', 'accountant', 'teacher'):
+    if request.user.role not in ('principal', 'accountant', 'teacher'):
         return redirect('dashboard_home')
 
     from apps.students.models import Student

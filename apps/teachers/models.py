@@ -1,5 +1,6 @@
 from django.db import models
 
+from apps.schools.managers import TenantManager
 
 class Teacher(models.Model):
     class EmploymentType(models.TextChoices):
@@ -36,6 +37,7 @@ class Teacher(models.Model):
 
     hire_date = models.DateField(null=True, blank=True)
     is_active = models.BooleanField(default=True)
+    objects = TenantManager()
 
     class Meta:
         unique_together = [('school', 'employee_number')]
