@@ -1,209 +1,333 @@
 {% extends "base.html" %}
+{% load static %}
 
-{% block title %}{{ record.student.first_name }} — Discipline Case{% endblock %}
+{% block title %}Discipline Case #{{ record.id }}{% endblock %}
+{% block header_title %}
+  {{ record.student.first_name }} {{ record.student.last_name }}
+{% endblock %}
+{% block header_sub %}
+  Case #{{ record.id }} · {{ record.get_category_display }}
+{% endblock %}
 
 {% block content %}
-<div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
-    <!-- Breadcrumb -->
-    <nav class="text-xs text-gray-500 mb-4">
-        <a href="{% url 'dpa_admin_dashboard' %}" class="hover:text-indigo-600">DPA Dashboard</a>
-        <span class="mx-2">/</span>
-        <a href="{% url 'dpa_discipline_list' %}" class="hover:text-indigo-600">Discipline</a>
-        <span class="mx-2">/</span>
-        <span class="text-gray-700">Case #{{ record.id }}</span>
-    </nav>
+<!-- ============================================================= -->
+<!-- TOP BAR                                                       -->
+<!-- ============================================================= -->
+<div class="flex flex-wrap items-center justify-between gap-3 mb-6">
+  <a href="{% url 'dpa_discipline_list' %}" class="btn btn-secondary">
+    {% include 'partials/icons.html' with name="arrow-right" size=16 %}
+    Back to Cases
+  </a>
+  <div class="flex flex-wrap gap-2">
+    {% if record.severity == 'critical' %}
+      <span class="badge badge-danger" style="font-size: var(--text-sm); padding: 6px 14px;">Critical</span>
+    {% elif record.severity == 'serious' %}
+      <span class="badge" style="background: var(--warning-light); color: var(--warning); font-size: var(--text-sm); padding: 6px 14px;">Serious</span>
+    {% elif record.severity == 'moderate' %}
+      <span class="badge badge-warning" style="font-size: var(--text-sm); padding: 6px 14px;">Moderate</span>
+    {% else %}
+      <span class="badge badge-neutral" style="font-size: var(--text-sm); padding: 6px 14px;">Minor</span>
+    {% endif %}
 
-    <!-- Header -->
-    <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-        <div class="flex items-start justify-between gap-4 flex-wrap">
-            <div>
-                <h1 class="text-2xl font-bold text-gray-900">
-                    {{ record.student.first_name }} {{ record.student.last_name }}
-                </h1>
-                <p class="text-sm text-gray-500 mt-1">
-                    Adm: {{ record.student.admission_number }} · Recorded {{ record.created_at|date:"j M Y" }}
-                </p>
-            </div>
-            <div class="flex gap-2 flex-wrap">
-                <span class="px-3 py-1 text-xs font-medium rounded-full
-                    {% if record.severity == 'critical' %}bg-red-100 text-red-800
-                    {% elif record.severity == 'serious' %}bg-orange-100 text-orange-800
-                    {% elif record.severity == 'moderate' %}bg-amber-100 text-amber-800
-                    {% else %}bg-gray-100 text-gray-700{% endif %}">
-                    {{ record.get_severity_display }}
-                </span>
-                <span class="px-3 py-1 text-xs font-medium rounded-full bg-indigo-100 text-indigo-800">
-                    {{ record.get_status_display }}
-                </span>
-            </div>
-        </div>
+    {% if record.status == 'open' %}
+      <span class="badge badge-warning" style="font-size: var(--text-sm); padding: 6px 14px;">Open</span>
+    {% elif record.status == 'investigating' %}
+      <span class="badge badge-info" style="font-size: var(--text-sm); padding: 6px 14px;">Investigating</span>
+    {% elif record.status == 'resolved' %}
+      <span class="badge badge-success" style="font-size: var(--text-sm); padding: 6px 14px;">Resolved</span>
+    {% elif record.status == 'escalated' %}
+      <span class="badge badge-danger" style="font-size: var(--text-sm); padding: 6px 14px;">Escalated</span>
+    {% else %}
+      <span class="badge badge-neutral" style="font-size: var(--text-sm); padding: 6px 14px;">{{ record.get_status_display }}</span>
+    {% endif %}
+  </div>
+</div>
 
-        {% if can_edit %}
-        <div class="flex gap-2 mt-4 pt-4 border-t border-gray-100 flex-wrap">
-            <a href="{% url 'dpa_discipline_edit' record.id %}"
-               class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
-                Edit Case
-            </a>
-            <form method="post" action="{% url 'dpa_discipline_escalate' record.id %}" class="inline">
-                {% csrf_token %}
-                <input type="hidden" name="comment" value="Escalated to Principal">
-                <button type="submit"
-                        class="px-3 py-1.5 text-sm font-medium text-white bg-amber-600 rounded-lg hover:bg-amber-700">
-                    Escalate to Principal
-                </button>
-            </form>
-            <a href="{% url 'dpa_leave_out_create' record.id %}"
-               class="px-3 py-1.5 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700">
-                Record Leave-Out / Suspension
-            </a>
-        </div>
-        {% endif %}
-    </div>
+<!-- ============================================================= -->
+<!-- ACTION BAR                                                    -->
+<!-- ============================================================= -->
+{% if can_edit %}
+<div class="card mb-6">
+  <div class="flex flex-wrap gap-2">
+    <a href="{% url 'dpa_discipline_edit' record.id %}" class="btn btn-secondary">
+      {% include 'partials/icons.html' with name="edit" size=16 %}
+      Edit Case
+    </a>
+
+    {% if record.status != 'escalated' and record.status != 'resolved' and record.status != 'closed' %}
+    <form method="post" action="{% url 'dpa_discipline_escalate' record.id %}" style="display: inline;">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-secondary"
+              onclick="return confirm('Escalate this case to the Principal?');">
+        {% include 'partials/icons.html' with name="alert-circle" size=16 %}
+        Escalate to Principal
+      </button>
+    </form>
+    {% endif %}
+
+    <a href="{% url 'dpa_leave_out_create' record.id %}" class="btn btn-danger">
+      {% include 'partials/icons.html' with name="alert-triangle" size=16 %}
+      Record Leave-Out / Suspension
+    </a>
+  </div>
+</div>
+{% endif %}
+
+<!-- ============================================================= -->
+<!-- MAIN GRID                                                     -->
+<!-- ============================================================= -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+  <!-- LEFT COLUMN — CASE INFO -->
+  <div class="lg:col-span-2">
 
     <!-- Case details -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-        <div class="bg-white rounded-xl border border-gray-200 p-6">
-            <h2 class="font-semibold text-gray-900 mb-4">Case Details</h2>
-            <dl class="space-y-3 text-sm">
-                <div class="flex justify-between">
-                    <dt class="text-gray-500">Category</dt>
-                    <dd class="text-gray-900 font-medium">{{ record.get_category_display }}</dd>
-                </div>
-                <div class="flex justify-between">
-                    <dt class="text-gray-500">Incident Date</dt>
-                    <dd class="text-gray-900">{{ record.incident_date|date:"j F Y" }}</dd>
-                </div>
-                {% if record.incident_time %}
-                <div class="flex justify-between">
-                    <dt class="text-gray-500">Time</dt>
-                    <dd class="text-gray-900">{{ record.incident_time|time:"H:i" }}</dd>
-                </div>
-                {% endif %}
-                {% if record.location %}
-                <div class="flex justify-between">
-                    <dt class="text-gray-500">Location</dt>
-                    <dd class="text-gray-900">{{ record.location }}</dd>
-                </div>
-                {% endif %}
-                <div class="flex justify-between">
-                    <dt class="text-gray-500">Reported By</dt>
-                    <dd class="text-gray-900">
-                        {% if record.reported_by %}{{ record.reported_by.get_full_name|default:record.reported_by.email }}{% else %}—{% endif %}
-                    </dd>
-                </div>
-                <div class="flex justify-between">
-                    <dt class="text-gray-500">Guardian Notified</dt>
-                    <dd>
-                        {% if record.guardian_notified %}
-                        <span class="text-xs font-medium text-green-700">✓ Yes</span>
-                        {% else %}
-                        <span class="text-xs font-medium text-amber-700">Pending</span>
-                        {% endif %}
-                    </dd>
-                </div>
-            </dl>
+    <div class="card mb-6">
+      <h3 class="card-title mb-5">
+        {% include 'partials/icons.html' with name="file-text" size=18 %}
+        Case Details
+      </h3>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-5">
+        <div>
+          <div class="text-xs font-semibold uppercase tracking-wider mb-1" style="color: var(--ink-500);">
+            Category
+          </div>
+          <div style="color: var(--ink-800); font-weight: 600;">
+            {{ record.get_category_display }}
+          </div>
         </div>
 
-        <div class="bg-white rounded-xl border border-gray-200 p-6">
-            <h2 class="font-semibold text-gray-900 mb-4">Description</h2>
-            <p class="text-sm text-gray-700 whitespace-pre-line">{{ record.description }}</p>
-            {% if record.resolution_notes %}
-            <div class="mt-4 pt-4 border-t border-gray-100">
-                <h3 class="text-xs font-medium text-gray-500 uppercase mb-2">Resolution Notes</h3>
-                <p class="text-sm text-gray-700 whitespace-pre-line">{{ record.resolution_notes }}</p>
-            </div>
-            {% endif %}
+        <div>
+          <div class="text-xs font-semibold uppercase tracking-wider mb-1" style="color: var(--ink-500);">
+            Incident Date
+          </div>
+          <div style="color: var(--ink-800); font-weight: 600;">
+            {{ record.incident_date|date:"j F Y" }}
+          </div>
+          {% if record.incident_time %}
+          <div class="text-xs" style="color: var(--ink-500);">
+            {{ record.incident_time|time:"H:i" }}
+          </div>
+          {% endif %}
         </div>
+
+        {% if record.location %}
+        <div>
+          <div class="text-xs font-semibold uppercase tracking-wider mb-1" style="color: var(--ink-500);">
+            Location
+          </div>
+          <div style="color: var(--ink-800);">
+            {{ record.location }}
+          </div>
+        </div>
+        {% endif %}
+
+        <div>
+          <div class="text-xs font-semibold uppercase tracking-wider mb-1" style="color: var(--ink-500);">
+            Reported By
+          </div>
+          <div style="color: var(--ink-800);">
+            {{ record.reported_by.get_full_name|default:record.reported_by.email|default:"—" }}
+          </div>
+          <div class="text-xs" style="color: var(--ink-500);">
+            {{ record.reported_at|date:"j M Y H:i" }}
+          </div>
+        </div>
+      </div>
+
+      <div class="pt-5" style="border-top: 1px solid var(--border);">
+        <div class="text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-500);">
+          Description
+        </div>
+        <p class="text-sm" style="color: var(--ink-700); white-space: pre-line; margin: 0;">
+          {{ record.description }}
+        </p>
+      </div>
+
+      {% if record.resolution_notes %}
+      <div class="mt-5 pt-5" style="border-top: 1px solid var(--border);">
+        <div class="text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-500);">
+          Resolution Notes
+        </div>
+        <p class="text-sm" style="color: var(--ink-700); white-space: pre-line; margin: 0;">
+          {{ record.resolution_notes }}
+        </p>
+      </div>
+      {% endif %}
     </div>
 
     <!-- Leave-outs -->
     {% if leave_outs %}
-    <div class="bg-white rounded-xl border border-gray-200 mb-6">
-        <div class="px-6 py-4 border-b border-gray-200">
-            <h2 class="font-semibold text-gray-900">Leave-Outs / Suspensions</h2>
-        </div>
-        <div class="divide-y divide-gray-100">
-            {% for lo in leave_outs %}
-            <div class="px-6 py-4">
-                <div class="flex items-start justify-between gap-4 flex-wrap">
-                    <div>
-                        <p class="font-medium text-gray-900">
-                            {{ lo.get_leave_out_type_display }}
-                            {% if lo.suspension_reason %}
-                            <span class="text-sm text-gray-500">— {{ lo.get_suspension_reason_display }}</span>
-                            {% endif %}
-                        </p>
-                        <p class="text-xs text-gray-500 mt-1">
-                            {{ lo.start_date|date:"j M Y" }}
-                            {% if lo.end_date %} → {{ lo.end_date|date:"j M Y" }}{% endif %}
-                            {% if lo.actual_return_date %} (returned {{ lo.actual_return_date|date:"j M Y" }}){% endif %}
-                        </p>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <span class="px-2 py-0.5 text-xs font-medium rounded-full
-                            {% if lo.status == 'approved' or lo.status == 'active' %}bg-green-100 text-green-800
-                            {% elif lo.status == 'pending' %}bg-amber-100 text-amber-800
-                            {% elif lo.status == 'rejected' or lo.status == 'cancelled' %}bg-red-100 text-red-800
-                            {% else %}bg-gray-100 text-gray-700{% endif %}">
-                            {{ lo.get_status_display }}
-                        </span>
-                        <a href="{% url 'dpa_leave_out_detail' lo.id %}"
-                           class="text-xs text-indigo-600 hover:text-indigo-700">
-                            View →
-                        </a>
-                    </div>
-                </div>
+    <div class="card mb-6">
+      <h3 class="card-title mb-5">
+        {% include 'partials/icons.html' with name="alert-triangle" size=18 %}
+        Leave-Outs & Suspensions
+      </h3>
+
+      <div class="space-y-4">
+        {% for lo in leave_outs %}
+        <div style="padding: var(--s-4); background: var(--surface-muted); border-radius: var(--radius);">
+          <div class="flex justify-between items-start flex-wrap gap-3">
+            <div>
+              <div style="font-weight: 600; color: var(--ink-900);">
+                {{ lo.get_leave_out_type_display }}
+                {% if lo.suspension_reason %}
+                <span class="text-sm" style="color: var(--ink-500); font-weight: normal;">
+                  — {{ lo.get_suspension_reason_display }}
+                </span>
+                {% endif %}
+              </div>
+              <div class="text-xs mt-1" style="color: var(--ink-500);">
+                {{ lo.start_date|date:"j M Y" }}
+                {% if lo.end_date %} → {{ lo.end_date|date:"j M Y" }}{% endif %}
+                {% if lo.actual_return_date %} · Returned {{ lo.actual_return_date|date:"j M Y" }}{% endif %}
+              </div>
             </div>
-            {% endfor %}
+            <div class="flex items-center gap-2">
+              {% if lo.status == 'approved' or lo.status == 'active' %}
+                <span class="badge badge-success">{{ lo.get_status_display }}</span>
+              {% elif lo.status == 'pending' %}
+                <span class="badge badge-warning">{{ lo.get_status_display }}</span>
+              {% elif lo.status == 'rejected' or lo.status == 'cancelled' %}
+                <span class="badge badge-danger">{{ lo.get_status_display }}</span>
+              {% else %}
+                <span class="badge badge-neutral">{{ lo.get_status_display }}</span>
+              {% endif %}
+              <a href="{% url 'dpa_leave_out_detail' lo.id %}" class="btn btn-secondary btn-sm">
+                View
+              </a>
+            </div>
+          </div>
         </div>
+        {% endfor %}
+      </div>
     </div>
     {% endif %}
 
     <!-- Committee decisions -->
     {% if committee_decisions %}
-    <div class="bg-white rounded-xl border border-gray-200 mb-6">
-        <div class="px-6 py-4 border-b border-gray-200">
-            <h2 class="font-semibold text-gray-900">Committee Decisions</h2>
+    <div class="card mb-6">
+      <h3 class="card-title mb-5">
+        {% include 'partials/icons.html' with name="users" size=18 %}
+        Committee Decisions
+      </h3>
+
+      <div class="space-y-4">
+        {% for decision in committee_decisions %}
+        <div style="padding: var(--s-4); background: var(--surface-muted); border-radius: var(--radius);">
+          <div style="font-weight: 600; color: var(--ink-900);">
+            {{ decision.get_decision_display }}
+          </div>
+          <div class="text-xs mt-1" style="color: var(--ink-500);">
+            {{ decision.meeting.committee.name }} · {{ decision.meeting.meeting_date|date:"j M Y" }}
+          </div>
+          {% if decision.rationale %}
+          <p class="text-sm mt-3" style="color: var(--ink-700); margin: 0;">
+            {{ decision.rationale }}
+          </p>
+          {% endif %}
         </div>
-        <div class="divide-y divide-gray-100">
-            {% for decision in committee_decisions %}
-            <div class="px-6 py-4">
-                <p class="font-medium text-gray-900">{{ decision.get_decision_display }}</p>
-                <p class="text-xs text-gray-500 mt-1">
-                    {{ decision.meeting.committee.name }} · {{ decision.meeting.meeting_date|date:"j M Y" }}
-                </p>
-                {% if decision.rationale %}
-                <p class="text-sm text-gray-700 mt-2">{{ decision.rationale }}</p>
-                {% endif %}
-            </div>
-            {% endfor %}
-        </div>
+        {% endfor %}
+      </div>
     </div>
     {% endif %}
 
-    <!-- Actions -->
+    <!-- Actions taken -->
     {% if actions %}
-    <div class="bg-white rounded-xl border border-gray-200">
-        <div class="px-6 py-4 border-b border-gray-200">
-            <h2 class="font-semibold text-gray-900">Actions Taken</h2>
+    <div class="card">
+      <h3 class="card-title mb-5">
+        {% include 'partials/icons.html' with name="check-circle" size=18 %}
+        Actions Taken
+      </h3>
+
+      <div class="space-y-4">
+        {% for action in actions %}
+        <div style="padding: var(--s-4); background: var(--surface-muted); border-radius: var(--radius);">
+          <div style="font-weight: 600; color: var(--ink-900);">
+            {{ action.get_action_type_display }}
+          </div>
+          <div class="text-xs mt-1" style="color: var(--ink-500);">
+            {% if action.performed_by %}
+            {{ action.performed_by.get_full_name|default:action.performed_by.email }} ·
+            {% endif %}
+            {{ action.performed_at|date:"j M Y H:i" }}
+          </div>
+          {% if action.description %}
+          <p class="text-sm mt-3" style="color: var(--ink-700); margin: 0;">
+            {{ action.description }}
+          </p>
+          {% endif %}
         </div>
-        <div class="divide-y divide-gray-100">
-            {% for action in actions %}
-            <div class="px-6 py-4">
-                <p class="font-medium text-gray-900">{{ action.get_action_type_display }}</p>
-                <p class="text-xs text-gray-500 mt-1">
-                    {% if action.performed_by %}{{ action.performed_by.get_full_name|default:action.performed_by.email }} · {% endif %}
-                    {{ action.performed_at|date:"j M Y H:i" }}
-                </p>
-                {% if action.description %}
-                <p class="text-sm text-gray-700 mt-2">{{ action.description }}</p>
-                {% endif %}
-            </div>
-            {% endfor %}
-        </div>
+        {% endfor %}
+      </div>
     </div>
     {% endif %}
+
+  </div>
+
+  <!-- RIGHT COLUMN — STUDENT SIDEBAR -->
+  <div class="lg:col-span-1">
+
+    <!-- Student card -->
+    <div class="card mb-6">
+      <h3 class="card-title mb-4">
+        {% include 'partials/icons.html' with name="user" size=18 %}
+        Student
+      </h3>
+
+      <div style="font-weight: 600; color: var(--ink-900); font-size: var(--text-base);">
+        {{ record.student.first_name }} {{ record.student.last_name }}
+      </div>
+      <div class="text-xs mt-1" style="color: var(--ink-500);">
+        {{ record.student.class_level|default:"No class" }}
+      </div>
+      {% if record.student.admission_number %}
+      <div class="text-xs mt-1" style="color: var(--ink-500); font-family: var(--font-mono);">
+        Adm: {{ record.student.admission_number }}
+      </div>
+      {% endif %}
+
+      <div class="mt-4 pt-4" style="border-top: 1px solid var(--border);">
+        <a href="{% url 'student_detail' record.student.id %}" class="btn btn-secondary btn-sm w-full">
+          {% include 'partials/icons.html' with name="eye" size=14 %}
+          View Full Profile
+        </a>
+      </div>
+    </div>
+
+    <!-- Guardian notification -->
+    <div class="card">
+      <h3 class="card-title mb-4">
+        {% include 'partials/icons.html' with name="bell" size=18 %}
+        Guardian Notification
+      </h3>
+
+      {% if record.guardian_notified %}
+        <div class="flex items-center gap-2 mb-3">
+          <span class="badge badge-success">Notified</span>
+        </div>
+        <div class="text-xs" style="color: var(--ink-500);">
+          {{ record.guardian_notified_at|date:"j M Y H:i" }}
+        </div>
+        {% if record.guardian_notification_method %}
+        <div class="text-xs mt-1" style="color: var(--ink-500);">
+          via {{ record.guardian_notification_method }}
+        </div>
+        {% endif %}
+      {% else %}
+        <div class="flex items-center gap-2 mb-3">
+          <span class="badge badge-warning">Pending</span>
+        </div>
+        <p class="text-xs" style="color: var(--ink-500); margin: 0;">
+          Guardian has not yet been notified of this case.
+        </p>
+      {% endif %}
+    </div>
+
+  </div>
 
 </div>
+
 {% endblock %}

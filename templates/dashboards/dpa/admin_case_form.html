@@ -3,64 +3,150 @@
 
 {% block title %}Open Admin Case{% endblock %}
 {% block header_title %}Open Student Admin Case{% endblock %}
+{% block header_sub %}
+  Record a non-discipline administrative matter
+{% endblock %}
 
 {% block content %}
 
-<div class="card" style="max-width: 720px;">
-  <form method="post">
-    {% csrf_token %}
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-    {% if messages %}
-      {% for msg in messages %}
-      <div style="padding: var(--s-3); margin-bottom: var(--s-4); border-radius: 8px; background: rgba(239, 68, 68, 0.1); color: #DC2626; font-size: var(--text-sm);">{{ msg }}</div>
-      {% endfor %}
-    {% endif %}
+  <!-- ============================================================= -->
+  <!-- FORM                                                          -->
+  <!-- ============================================================= -->
+  <div class="lg:col-span-2">
+    <div class="card">
+      <form method="post" class="space-y-5">
+        {% csrf_token %}
 
-    <div style="margin-bottom: var(--s-5);">
-      <label style="display: block; font-size: var(--text-xs); font-weight: 600; color: var(--ink-600); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: var(--s-1);">Student <span style="color: #DC2626;">*</span></label>
-      <select name="student_id" required class="select">
-        <option value="">— Select student —</option>
-        {% for s in students %}
-        <option value="{{ s.id }}">{{ s.first_name }} {{ s.last_name }} ({{ s.class_level }} · {{ s.admission_number }})</option>
-        {% endfor %}
-      </select>
-    </div>
-
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-5); margin-bottom: var(--s-5);">
-      <div>
-        <label style="display: block; font-size: var(--text-xs); font-weight: 600; color: var(--ink-600); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: var(--s-1);">Case Type <span style="color: #DC2626;">*</span></label>
-        <select name="case_type" required class="select">
-          {% for value, label in case_types %}
-          <option value="{{ value }}">{{ label }}</option>
+        {% if messages %}
+          {% for msg in messages %}
+          <div style="padding: var(--s-3); border-radius: var(--radius); background: var(--danger-light); color: var(--danger); font-size: var(--text-sm);">
+            {{ msg }}
+          </div>
           {% endfor %}
-        </select>
+        {% endif %}
+
+        <!-- Student -->
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider mb-2"
+                 style="color: var(--ink-600);">
+            Student <span style="color: var(--danger);">*</span>
+          </label>
+          <select name="student_id" required class="select w-full">
+            <option value="">— Select student —</option>
+            {% for s in students %}
+            <option value="{{ s.id }}">
+              {{ s.first_name }} {{ s.last_name }}
+              {% if s.class_level %} — {{ s.class_level }}{% endif %}
+              {% if s.admission_number %} ({{ s.admission_number }}){% endif %}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Type and Priority -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-wider mb-2"
+                   style="color: var(--ink-600);">
+              Case Type <span style="color: var(--danger);">*</span>
+            </label>
+            <select name="case_type" required class="select w-full">
+              {% for value, label in case_types %}
+              <option value="{{ value }}">{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-wider mb-2"
+                   style="color: var(--ink-600);">
+              Priority
+            </label>
+            <select name="priority" class="select w-full">
+              {% for value, label in priorities %}
+              <option value="{{ value }}" {% if value == 'normal' %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <!-- Title -->
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider mb-2"
+                 style="color: var(--ink-600);">
+            Case Title <span style="color: var(--danger);">*</span>
+          </label>
+          <input type="text" name="title" required maxlength="200"
+                 class="input w-full"
+                 placeholder="Short summary, e.g. 'Request for medical leave extension'">
+          <p class="text-xs mt-2" style="color: var(--ink-500);">
+            Keep it short — this becomes the case reference.
+          </p>
+        </div>
+
+        <!-- Description -->
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider mb-2"
+                 style="color: var(--ink-600);">
+            Description <span style="color: var(--danger);">*</span>
+          </label>
+          <textarea name="description" rows="6" required class="textarea w-full"
+                    placeholder="Full details — what happened, who's involved, what action is needed"></textarea>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex justify-end gap-3 pt-4" style="border-top: 1px solid var(--border);">
+          <a href="{% url 'dpa_admin_cases' %}" class="btn btn-secondary">
+            Cancel
+          </a>
+          <button type="submit" class="btn btn-primary">
+            {% include 'partials/icons.html' with name="save" size=16 %}
+            Open Case
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+  <!-- ============================================================= -->
+  <!-- SIDEBAR GUIDE                                                 -->
+  <!-- ============================================================= -->
+  <div class="lg:col-span-1">
+    <div class="card">
+      <h3 class="card-title mb-4">
+        {% include 'partials/icons.html' with name="info" size=18 %}
+        When to Use This
+      </h3>
+      <div class="space-y-4">
+        <div>
+          <div class="text-xs font-semibold uppercase tracking-wider mb-1"
+               style="color: var(--ink-500);">Not for discipline</div>
+          <p class="text-sm" style="color: var(--ink-700); margin: 0;">
+            Use this page for medical, family, welfare, transport, financial, and other administrative matters.
+            For discipline issues, use the Discipline module instead.
+          </p>
+        </div>
+        <div>
+          <div class="text-xs font-semibold uppercase tracking-wider mb-1"
+               style="color: var(--ink-500);">Document as you go</div>
+          <p class="text-sm" style="color: var(--ink-700); margin: 0;">
+            Update the case as new information comes in. Every update is timestamped and saved in the case history.
+          </p>
+        </div>
+        <div>
+          <div class="text-xs font-semibold uppercase tracking-wider mb-1"
+               style="color: var(--ink-500);">Escalate if needed</div>
+          <p class="text-sm" style="color: var(--ink-700); margin: 0;">
+            Serious cases can be marked "Referred" to the Principal for a formal decision.
+          </p>
+        </div>
       </div>
-      <div>
-        <label style="display: block; font-size: var(--text-xs); font-weight: 600; color: var(--ink-600); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: var(--s-1);">Priority</label>
-        <select name="priority" class="select">
-          {% for value, label in priorities %}
-          <option value="{{ value }}" {% if value == 'normal' %}selected{% endif %}>{{ label }}</option>
-          {% endfor %}
-        </select>
-      </div>
     </div>
+  </div>
 
-    <div style="margin-bottom: var(--s-5);">
-      <label style="display: block; font-size: var(--text-xs); font-weight: 600; color: var(--ink-600); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: var(--s-1);">Title <span style="color: #DC2626;">*</span></label>
-      <input type="text" name="title" required class="input" style="width: 100%;" placeholder="Short summary of the case">
-    </div>
-
-    <div style="margin-bottom: var(--s-5);">
-      <label style="display: block; font-size: var(--text-xs); font-weight: 600; color: var(--ink-600); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: var(--s-1);">Description <span style="color: #DC2626;">*</span></label>
-      <textarea name="description" rows="5" required class="input" style="width: 100%;" placeholder="Full details of the situation"></textarea>
-    </div>
-
-    <div style="display: flex; justify-content: flex-end; gap: var(--s-3); padding-top: var(--s-4); border-top: 1px solid var(--surface-3);">
-      <a href="{% url 'dpa_admin_cases' %}" class="btn btn-secondary">Cancel</a>
-      <button type="submit" class="btn btn-primary">Open Case</button>
-    </div>
-
-  </form>
 </div>
 
 {% endblock %}

@@ -1,81 +1,180 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Log Staff Movement{% endblock %}
+{% block header_title %}Log Staff Movement{% endblock %}
+{% block header_sub %}
+  Record a staff member leaving or returning to campus
+{% endblock %}
 
 {% block content %}
-<div class="max-w-xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
-    <nav class="text-xs text-gray-500 mb-4">
-        <a href="{% url 'dpa_admin_dashboard' %}" class="hover:text-indigo-600">DPA Dashboard</a>
-        <span class="mx-2">/</span>
-        <a href="{% url 'dpa_staff_movement' %}" class="hover:text-indigo-600">Movement</a>
-        <span class="mx-2">/</span>
-        <span class="text-gray-700">New</span>
-    </nav>
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-    <div class="bg-white rounded-xl border border-gray-200 p-6 sm:p-8">
-        <h1 class="text-2xl font-bold text-gray-900 mb-6">Log Staff Movement</h1>
+  <!-- ============================================================= -->
+  <!-- FORM                                                          -->
+  <!-- ============================================================= -->
+  <div class="lg:col-span-2">
+    <div class="card">
+      <form method="post" class="space-y-5">
+        {% csrf_token %}
 
         {% if messages %}
-            {% for msg in messages %}
-            <div class="mb-4 rounded-lg px-4 py-3 text-sm bg-red-50 text-red-800 border border-red-200">
-                {{ msg }}
-            </div>
-            {% endfor %}
+          {% for msg in messages %}
+          <div style="padding: var(--s-3); border-radius: var(--radius); background: var(--danger-light); color: var(--danger); font-size: var(--text-sm);">
+            {{ msg }}
+          </div>
+          {% endfor %}
         {% endif %}
 
-        <form method="post" class="space-y-5">
-            {% csrf_token %}
+        <!-- Staff -->
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider mb-2"
+                 style="color: var(--ink-600);">
+            Staff Member <span style="color: var(--danger);">*</span>
+          </label>
+          <select name="staff_id" required class="select w-full">
+            <option value="">— Select staff —</option>
+            {% for s in staff_list %}
+            <option value="{{ s.id }}">
+              {{ s.get_full_name|default:s.email }} — {{ s.get_role_display|default:s.role }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
 
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Staff <span class="text-red-500">*</span></label>
-                <select name="staff_id" required
-                        class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg">
-                    <option value="">— Select staff —</option>
-                    {% for s in staff_list %}
-                    <option value="{{ s.id }}">{{ s.get_full_name|default:s.email }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Direction <span class="text-red-500">*</span></label>
-                <div class="flex gap-2">
-                    <label class="flex-1 cursor-pointer">
-                        <input type="radio" name="direction" value="out" class="peer sr-only" checked>
-                        <div class="px-4 py-2 text-sm text-center border border-gray-300 rounded-lg peer-checked:bg-amber-600 peer-checked:text-white peer-checked:border-amber-600">Out</div>
-                    </label>
-                    <label class="flex-1 cursor-pointer">
-                        <input type="radio" name="direction" value="in" class="peer sr-only">
-                        <div class="px-4 py-2 text-sm text-center border border-gray-300 rounded-lg peer-checked:bg-green-600 peer-checked:text-white peer-checked:border-green-600">In</div>
-                    </label>
+        <!-- Direction -->
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider mb-2"
+                 style="color: var(--ink-600);">
+            Direction <span style="color: var(--danger);">*</span>
+          </label>
+          <div class="grid grid-cols-2 gap-3">
+            <label class="cursor-pointer">
+              <input type="radio" name="direction" value="out" class="sr-only direction-radio" checked>
+              <div class="direction-pill active">
+                <div style="font-weight: 600; font-size: var(--text-base);">Out</div>
+                <div class="text-xs" style="color: inherit; opacity: 0.8; margin-top: 2px;">
+                  Leaving campus
                 </div>
-            </div>
+              </div>
+            </label>
+            <label class="cursor-pointer">
+              <input type="radio" name="direction" value="in" class="sr-only direction-radio">
+              <div class="direction-pill">
+                <div style="font-weight: 600; font-size: var(--text-base);">In</div>
+                <div class="text-xs" style="color: inherit; opacity: 0.8; margin-top: 2px;">
+                  Returning to campus
+                </div>
+              </div>
+            </label>
+          </div>
+        </div>
 
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Reason</label>
-                <textarea name="reason" rows="2" placeholder="e.g. Medical appointment"
-                          class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg"></textarea>
-            </div>
+        <!-- Reason -->
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider mb-2"
+                 style="color: var(--ink-600);">
+            Reason
+          </label>
+          <textarea name="reason" rows="3" class="textarea w-full"
+                    placeholder="e.g. Medical appointment, family emergency, official errand"></textarea>
+        </div>
 
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Expected Return Time</label>
-                <input type="time" name="expected_return"
-                       class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg">
-            </div>
+        <!-- Expected Return -->
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider mb-2"
+                 style="color: var(--ink-600);">
+            Expected Return Time
+          </label>
+          <input type="time" name="expected_return" class="input w-full">
+          <p class="text-xs mt-2" style="color: var(--ink-500);">
+            Only relevant for "Out" movements.
+          </p>
+        </div>
 
-            <div class="flex items-center justify-end gap-3 pt-4 border-t border-gray-100">
-                <a href="{% url 'dpa_staff_movement' %}"
-                   class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
-                    Cancel
-                </a>
-                <button type="submit"
-                        class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700">
-                    Log Movement
-                </button>
-            </div>
-        </form>
+        <!-- Actions -->
+        <div class="flex justify-end gap-3 pt-4" style="border-top: 1px solid var(--border);">
+          <a href="{% url 'dpa_staff_movement' %}" class="btn btn-secondary">
+            Cancel
+          </a>
+          <button type="submit" class="btn btn-primary">
+            {% include 'partials/icons.html' with name="save" size=16 %}
+            Log Movement
+          </button>
+        </div>
+
+      </form>
     </div>
+  </div>
+
+  <!-- ============================================================= -->
+  <!-- SIDEBAR TIPS                                                  -->
+  <!-- ============================================================= -->
+  <div class="lg:col-span-1">
+    <div class="card">
+      <h3 class="card-title mb-4">
+        {% include 'partials/icons.html' with name="info" size=18 %}
+        Quick Guide
+      </h3>
+      <div class="space-y-3">
+        <div>
+          <div class="text-xs font-semibold uppercase tracking-wider mb-1"
+               style="color: var(--ink-500);">Out</div>
+          <p class="text-sm" style="color: var(--ink-700); margin: 0;">
+            Use when a staff member leaves the school compound — official duty, medical, personal matter.
+          </p>
+        </div>
+        <div>
+          <div class="text-xs font-semibold uppercase tracking-wider mb-1"
+               style="color: var(--ink-500);">In</div>
+          <p class="text-sm" style="color: var(--ink-700); margin: 0;">
+            Use when a staff member returns. Both Out and In entries create a full record for the day.
+          </p>
+        </div>
+        <div>
+          <div class="text-xs font-semibold uppercase tracking-wider mb-1"
+               style="color: var(--ink-500);">Today's Total</div>
+          <p class="text-sm" style="color: var(--ink-700); margin: 0;">
+            Every log creates a permanent timestamped record — visible in the movement history.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
 
 </div>
+
+<style>
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
+  .direction-pill {
+    padding: var(--s-4);
+    border-radius: var(--radius);
+    border: 2px solid var(--border);
+    background: var(--surface);
+    text-align: center;
+    color: var(--ink-700);
+    transition: all var(--t-fast);
+  }
+  .direction-pill:hover {
+    border-color: var(--primary);
+    background: var(--surface-hover);
+  }
+  .direction-radio:checked + .direction-pill {
+    border-color: var(--primary);
+    background: var(--primary-light);
+    color: var(--primary);
+  }
+</style>
+
 {% endblock %}

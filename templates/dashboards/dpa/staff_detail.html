@@ -3,157 +3,266 @@
 
 {% block title %}{{ staff.get_full_name|default:staff.email }}{% endblock %}
 {% block header_title %}{{ staff.get_full_name|default:staff.email }}{% endblock %}
-{% block header_sub %}{{ staff.get_role_display|default:staff.role }}{% endblock %}
+{% block header_sub %}
+  {{ staff.get_role_display|default:staff.role }} · {{ school.name }}
+{% endblock %}
 
 {% block content %}
 
-<!-- PROFILE CARD -->
+<!-- ============================================================= -->
+<!-- PROFILE HEADER                                                -->
+<!-- ============================================================= -->
 <div class="card mb-6">
-  <div style="display: flex; gap: var(--s-5); align-items: flex-start; flex-wrap: wrap;">
+  <div class="flex flex-col md:flex-row gap-6 items-start">
 
-    <div style="width: 80px; height: 80px; border-radius: 50%; background: var(--primary-soft); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+    <!-- Avatar -->
+    <div style="width: 96px; height: 96px; border-radius: 50%; background: var(--primary-light); display: flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden;">
       {% if staff.avatar %}
-        <img src="{{ staff.avatar.url }}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+        <img src="{{ staff.avatar.url }}" style="width: 100%; height: 100%; object-fit: cover;">
       {% else %}
-        <span style="font-size: 28px; font-weight: 700; color: var(--primary);">
+        <span style="font-size: 32px; font-weight: 700; color: var(--primary);">
           {{ staff.first_name|slice:":1" }}{{ staff.last_name|slice:":1" }}
         </span>
       {% endif %}
     </div>
 
-    <div style="flex: 1; min-width: 240px;">
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: var(--s-4);">
-        <div>
-          <div style="font-size: var(--text-xs); text-transform: uppercase; color: var(--ink-500); font-weight: 600; letter-spacing: 0.05em;">Role</div>
-          <div style="color: var(--ink-900); font-weight: 500; margin-top: 2px;">{{ staff.get_role_display|default:staff.role }}</div>
-        </div>
-        <div>
-          <div style="font-size: var(--text-xs); text-transform: uppercase; color: var(--ink-500); font-weight: 600; letter-spacing: 0.05em;">Employer</div>
-          <div style="color: var(--ink-900); font-weight: 500; margin-top: 2px;">{{ staff.get_employer_type_display|default:"—" }}</div>
-        </div>
-        <div>
-          <div style="font-size: var(--text-xs); text-transform: uppercase; color: var(--ink-500); font-weight: 600; letter-spacing: 0.05em;">Employment No.</div>
-          <div style="color: var(--ink-900); font-weight: 500; margin-top: 2px;">{{ staff.employment_number|default:"—" }}</div>
-        </div>
-        <div>
-          <div style="font-size: var(--text-xs); text-transform: uppercase; color: var(--ink-500); font-weight: 600; letter-spacing: 0.05em;">TSC No.</div>
-          <div style="color: var(--ink-900); font-weight: 500; margin-top: 2px;">{{ staff.tsc_number|default:"—" }}</div>
-        </div>
-        <div>
-          <div style="font-size: var(--text-xs); text-transform: uppercase; color: var(--ink-500); font-weight: 600; letter-spacing: 0.05em;">Phone</div>
-          <div style="color: var(--ink-900); font-weight: 500; margin-top: 2px;">{{ staff.phone|default:"—" }}</div>
-        </div>
-        <div>
-          <div style="font-size: var(--text-xs); text-transform: uppercase; color: var(--ink-500); font-weight: 600; letter-spacing: 0.05em;">Email</div>
-          <div style="color: var(--ink-900); font-weight: 500; margin-top: 2px;">{{ staff.email }}</div>
-        </div>
-        <div>
-          <div style="font-size: var(--text-xs); text-transform: uppercase; color: var(--ink-500); font-weight: 600; letter-spacing: 0.05em;">Joined</div>
-          <div style="color: var(--ink-900); font-weight: 500; margin-top: 2px;">{{ staff.date_joined|date:"j M Y" }}</div>
+    <!-- Details grid -->
+    <div class="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+
+      <div>
+        <div class="text-xs font-semibold uppercase tracking-wider mb-1" style="color: var(--ink-500);">Role</div>
+        <div style="color: var(--ink-900); font-weight: 600;">
+          {{ staff.get_role_display|default:staff.role }}
         </div>
       </div>
+
+      <div>
+        <div class="text-xs font-semibold uppercase tracking-wider mb-1" style="color: var(--ink-500);">Employer</div>
+        <div>
+          {% if staff.employer_type == 'tsc' %}
+            <span class="badge badge-primary">TSC (Government)</span>
+          {% elif staff.employer_type == 'bom' %}
+            <span class="badge badge-success">BOM (Board)</span>
+          {% elif staff.employer_type == 'pta' %}
+            <span class="badge badge-warning">PTA</span>
+          {% elif staff.employer_type == 'intern' %}
+            <span class="badge badge-info">Intern</span>
+          {% elif staff.employer_type %}
+            <span class="badge badge-neutral">{{ staff.get_employer_type_display }}</span>
+          {% else %}
+            <span style="color: var(--ink-400);">—</span>
+          {% endif %}
+        </div>
+      </div>
+
+      <div>
+        <div class="text-xs font-semibold uppercase tracking-wider mb-1" style="color: var(--ink-500);">Employment No.</div>
+        <div style="font-family: var(--font-mono); color: var(--ink-800);">
+          {{ staff.employment_number|default:"—" }}
+        </div>
+      </div>
+
+      <div>
+        <div class="text-xs font-semibold uppercase tracking-wider mb-1" style="color: var(--ink-500);">TSC No.</div>
+        <div style="font-family: var(--font-mono); color: var(--ink-800);">
+          {{ staff.tsc_number|default:"—" }}
+        </div>
+      </div>
+
+      <div>
+        <div class="text-xs font-semibold uppercase tracking-wider mb-1" style="color: var(--ink-500);">Phone</div>
+        <div style="color: var(--ink-800);">
+          {% if staff.phone %}
+            <a href="tel:{{ staff.phone }}" style="color: var(--primary); text-decoration: none;">{{ staff.phone }}</a>
+          {% else %}—{% endif %}
+        </div>
+      </div>
+
+      <div>
+        <div class="text-xs font-semibold uppercase tracking-wider mb-1" style="color: var(--ink-500);">Email</div>
+        <div style="color: var(--ink-800); word-break: break-all;">
+          <a href="mailto:{{ staff.email }}" style="color: var(--primary); text-decoration: none;">{{ staff.email }}</a>
+        </div>
+      </div>
+
+      <div>
+        <div class="text-xs font-semibold uppercase tracking-wider mb-1" style="color: var(--ink-500);">Joined</div>
+        <div style="color: var(--ink-800);">{{ staff.date_joined|date:"j F Y" }}</div>
+      </div>
+
+      <div>
+        <div class="text-xs font-semibold uppercase tracking-wider mb-1" style="color: var(--ink-500);">Status</div>
+        <div>
+          {% if staff.is_active %}
+            <span class="badge badge-success">Active</span>
+          {% else %}
+            <span class="badge badge-neutral">Inactive</span>
+          {% endif %}
+        </div>
+      </div>
+
     </div>
 
   </div>
 </div>
 
-<!-- RECENT ACTIVITY GRID -->
+<!-- ============================================================= -->
+<!-- ACTIVITY PANELS                                               -->
+<!-- ============================================================= -->
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-  <!-- Recent attendance -->
+  <!-- Recent Attendance -->
   <div class="card">
-    <h2 style="font-weight: 600; color: var(--ink-900); margin-bottom: var(--s-4);">Recent Attendance</h2>
-    <div style="max-height: 300px; overflow-y: auto;">
-      {% for a in recent_attendance %}
-      <div style="display: flex; justify-content: space-between; padding: var(--s-2) 0; border-bottom: 1px solid var(--surface-2); font-size: var(--text-sm);">
-        <span style="color: var(--ink-700);">{{ a.date|date:"j M Y" }}</span>
-        <span style="font-weight: 500; color:
-          {% if a.status == 'present' %}#16A34A
-          {% elif a.status == 'absent' %}#DC2626
-          {% elif a.status == 'late' %}#D97706
-          {% else %}var(--ink-600){% endif %};">
-          {{ a.get_status_display }}
-        </span>
-      </div>
-      {% empty %}
-      <p style="color: var(--ink-500); font-size: var(--text-sm);">No attendance records</p>
-      {% endfor %}
-    </div>
-  </div>
-
-  <!-- Recent duties -->
-  <div class="card">
-    <h2 style="font-weight: 600; color: var(--ink-900); margin-bottom: var(--s-4);">Recent Duties</h2>
-    <div style="max-height: 300px; overflow-y: auto;">
-      {% for d in recent_duties %}
-      <div style="display: flex; justify-content: space-between; padding: var(--s-2) 0; border-bottom: 1px solid var(--surface-2); font-size: var(--text-sm);">
-        <div>
-          <div style="color: var(--ink-900); font-weight: 500;">{{ d.get_duty_type_display }}</div>
-          <div style="font-size: var(--text-xs); color: var(--ink-500);">{{ d.duty_date|date:"j M Y" }}</div>
-        </div>
-        <span style="font-size: var(--text-xs); color: {% if d.completed %}#16A34A{% else %}var(--ink-500){% endif %};">
-          {% if d.completed %}Done{% else %}Pending{% endif %}
-        </span>
-      </div>
-      {% empty %}
-      <p style="color: var(--ink-500); font-size: var(--text-sm);">No duty records</p>
-      {% endfor %}
-    </div>
-  </div>
-
-  <!-- Recent leave -->
-  <div class="card">
-    <h2 style="font-weight: 600; color: var(--ink-900); margin-bottom: var(--s-4);">Recent Leave</h2>
-    <div style="max-height: 300px; overflow-y: auto;">
-      {% for l in recent_leave %}
-      <div style="padding: var(--s-2) 0; border-bottom: 1px solid var(--surface-2); font-size: var(--text-sm);">
-        <div style="display: flex; justify-content: space-between;">
-          <span style="color: var(--ink-900); font-weight: 500;">{{ l.get_leave_type_display }}</span>
-          <span style="font-size: var(--text-xs); color:
-            {% if l.status == 'approved' %}#16A34A
-            {% elif l.status == 'pending' %}#D97706
-            {% elif l.status == 'rejected' %}#DC2626
-            {% else %}var(--ink-500){% endif %};">
-            {{ l.get_status_display }}
-          </span>
-        </div>
-        <div style="font-size: var(--text-xs); color: var(--ink-500);">
-          {{ l.start_date|date:"j M" }} → {{ l.end_date|date:"j M Y" }}
-        </div>
-      </div>
-      {% empty %}
-      <p style="color: var(--ink-500); font-size: var(--text-sm);">No leave records</p>
-      {% endfor %}
-    </div>
-  </div>
-
-  <!-- Recent movements -->
-  <div class="card">
-    <h2 style="font-weight: 600; color: var(--ink-900); margin-bottom: var(--s-4);">Recent Movements</h2>
-    <div style="max-height: 300px; overflow-y: auto;">
-      {% for m in recent_movements %}
-      <div style="display: flex; justify-content: space-between; padding: var(--s-2) 0; border-bottom: 1px solid var(--surface-2); font-size: var(--text-sm);">
-        <div>
-          <div style="color: var(--ink-900); font-weight: 500;">
-            {% if m.direction == 'out' %}Out{% else %}In{% endif %}
+    <h3 class="card-title mb-4">
+      {% include 'partials/icons.html' with name="check-circle" size=18 %}
+      Recent Attendance
+    </h3>
+    {% if recent_attendance %}
+      <div style="max-height: 320px; overflow-y: auto;">
+        {% for a in recent_attendance %}
+        <div class="flex justify-between items-center py-3 border-b" style="border-color: var(--border);">
+          <div>
+            <div style="color: var(--ink-800); font-weight: 500; font-size: var(--text-sm);">
+              {{ a.date|date:"l, j M Y" }}
+            </div>
+            {% if a.check_in_time or a.check_out_time %}
+            <div class="text-xs" style="color: var(--ink-500);">
+              {% if a.check_in_time %}In {{ a.check_in_time|time:"H:i" }}{% endif %}
+              {% if a.check_out_time %} · Out {{ a.check_out_time|time:"H:i" }}{% endif %}
+            </div>
+            {% endif %}
           </div>
-          <div style="font-size: var(--text-xs); color: var(--ink-500);">{{ m.reason|default:"—" }}</div>
+          <div>
+            {% if a.status == 'present' %}
+              <span class="badge badge-success">Present</span>
+            {% elif a.status == 'absent' %}
+              <span class="badge badge-danger">Absent</span>
+            {% elif a.status == 'late' %}
+              <span class="badge badge-warning">Late</span>
+            {% elif a.status == 'on_leave' %}
+              <span class="badge badge-info">On Leave</span>
+            {% else %}
+              <span class="badge badge-neutral">{{ a.get_status_display }}</span>
+            {% endif %}
+          </div>
         </div>
-        <div style="font-size: var(--text-xs); color: var(--ink-500);">
-          {{ m.movement_date|date:"j M" }} {{ m.movement_time|time:"H:i" }}
-        </div>
+        {% endfor %}
       </div>
-      {% empty %}
-      <p style="color: var(--ink-500); font-size: var(--text-sm);">No movement records</p>
-      {% endfor %}
-    </div>
+    {% else %}
+      <p class="text-sm" style="color: var(--ink-500);">No attendance records yet.</p>
+    {% endif %}
+  </div>
+
+  <!-- Recent Duties -->
+  <div class="card">
+    <h3 class="card-title mb-4">
+      {% include 'partials/icons.html' with name="clipboard" size=18 %}
+      Recent Duties
+    </h3>
+    {% if recent_duties %}
+      <div style="max-height: 320px; overflow-y: auto;">
+        {% for d in recent_duties %}
+        <div class="flex justify-between items-start py-3 border-b" style="border-color: var(--border);">
+          <div>
+            <div style="color: var(--ink-800); font-weight: 500; font-size: var(--text-sm);">
+              {{ d.get_duty_type_display }}
+            </div>
+            <div class="text-xs" style="color: var(--ink-500);">
+              {{ d.duty_date|date:"j M Y" }}
+              {% if d.start_time %} · {{ d.start_time|time:"H:i" }}{% endif %}
+              {% if d.location %} · {{ d.location }}{% endif %}
+            </div>
+          </div>
+          <div>
+            {% if d.completed %}
+              <span class="badge badge-success">Done</span>
+            {% else %}
+              <span class="badge badge-warning">Pending</span>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="text-sm" style="color: var(--ink-500);">No duty assignments yet.</p>
+    {% endif %}
+  </div>
+
+  <!-- Recent Leave -->
+  <div class="card">
+    <h3 class="card-title mb-4">
+      {% include 'partials/icons.html' with name="calendar" size=18 %}
+      Recent Leave
+    </h3>
+    {% if recent_leave %}
+      <div style="max-height: 320px; overflow-y: auto;">
+        {% for l in recent_leave %}
+        <div class="flex justify-between items-start py-3 border-b" style="border-color: var(--border);">
+          <div>
+            <div style="color: var(--ink-800); font-weight: 500; font-size: var(--text-sm);">
+              {{ l.get_leave_type_display }}
+            </div>
+            <div class="text-xs" style="color: var(--ink-500);">
+              {{ l.start_date|date:"j M" }} → {{ l.end_date|date:"j M Y" }} · {{ l.days_requested }} day{{ l.days_requested|pluralize }}
+            </div>
+          </div>
+          <div>
+            {% if l.status == 'approved' %}
+              <span class="badge badge-success">Approved</span>
+            {% elif l.status == 'pending' %}
+              <span class="badge badge-warning">Pending</span>
+            {% elif l.status == 'rejected' %}
+              <span class="badge badge-danger">Rejected</span>
+            {% else %}
+              <span class="badge badge-neutral">{{ l.get_status_display }}</span>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="text-sm" style="color: var(--ink-500);">No leave records yet.</p>
+    {% endif %}
+  </div>
+
+  <!-- Recent Movements -->
+  <div class="card">
+    <h3 class="card-title mb-4">
+      {% include 'partials/icons.html' with name="activity" size=18 %}
+      Recent Movements
+    </h3>
+    {% if recent_movements %}
+      <div style="max-height: 320px; overflow-y: auto;">
+        {% for m in recent_movements %}
+        <div class="flex justify-between items-start py-3 border-b" style="border-color: var(--border);">
+          <div>
+            <div style="color: var(--ink-800); font-weight: 500; font-size: var(--text-sm);">
+              {% if m.direction == 'out' %}Went out{% else %}Returned{% endif %}
+            </div>
+            <div class="text-xs" style="color: var(--ink-500);">
+              {{ m.reason|default:"—" }}
+            </div>
+          </div>
+          <div class="text-xs" style="color: var(--ink-500); text-align: right;">
+            {{ m.movement_date|date:"j M Y" }}<br>
+            {{ m.movement_time|time:"H:i" }}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="text-sm" style="color: var(--ink-500);">No movement records yet.</p>
+    {% endif %}
   </div>
 
 </div>
 
 <!-- Back link -->
-<div style="margin-top: var(--s-6);">
-  <a href="{% url 'dpa_staff_directory' %}" class="btn btn-secondary">← Back to Staff Directory</a>
+<div class="mt-6">
+  <a href="{% url 'dpa_staff_directory' %}" class="btn btn-secondary">
+    {% include 'partials/icons.html' with name="arrow-right" size=16 %}
+    Back to Staff Directory
+  </a>
 </div>
 
 {% endblock %}

@@ -1,247 +1,350 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Discipline Reports{% endblock %}
+{% block header_title %}Discipline Reports{% endblock %}
+{% block header_sub %}
+  Filter by class, grade, or school-wide · {{ school.name }}
+{% endblock %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
-    <nav class="text-xs text-gray-500 mb-4">
-        <a href="{% url 'dpa_admin_dashboard' %}" class="hover:text-indigo-600">DPA Dashboard</a>
-        <span class="mx-2">/</span>
-        <a href="{% url 'dpa_discipline_list' %}" class="hover:text-indigo-600">Discipline</a>
-        <span class="mx-2">/</span>
-        <span class="text-gray-700">Reports</span>
-    </nav>
+<!-- ============================================================= -->
+<!-- FILTER FORM                                                   -->
+<!-- ============================================================= -->
+<div class="card mb-6">
+  <form method="get">
+    <input type="hidden" name="apply" value="1">
 
-    <div class="mb-6">
-        <h1 class="text-2xl font-bold text-gray-900">Discipline Reports</h1>
-        <p class="text-sm text-gray-500 mt-1">Generate discipline reports by class, grade, or entire school</p>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-5">
+
+      <div>
+        <label class="block text-xs font-semibold uppercase tracking-wider mb-2"
+               style="color: var(--ink-600);">Report Scope</label>
+        <select name="scope" id="scope-select" class="select w-full">
+          {% for value, label in scope_choices %}
+          <option value="{{ value }}" {% if scope == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div id="grade-field" style="{% if scope != 'grade' %}display: none;{% endif %}">
+        <label class="block text-xs font-semibold uppercase tracking-wider mb-2"
+               style="color: var(--ink-600);">Grade</label>
+        <select name="grade" class="select w-full">
+          <option value="">— Select grade —</option>
+          {% for g in available_grades %}
+          <option value="{{ g }}" {% if grade == g %}selected{% endif %}>{{ g }}</option>
+          {% endfor %}
+        </select>
+        <p class="text-xs mt-2" style="color: var(--ink-500);">Merges all streams</p>
+      </div>
+
+      <div id="class-field" style="{% if scope != 'class' %}display: none;{% endif %}">
+        <label class="block text-xs font-semibold uppercase tracking-wider mb-2"
+               style="color: var(--ink-600);">Class</label>
+        <select name="class" class="select w-full">
+          <option value="">— Select class —</option>
+          {% for c in available_classes %}
+          <option value="{{ c }}" {% if class_level == c %}selected{% endif %}>{{ c }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-xs font-semibold uppercase tracking-wider mb-2"
+               style="color: var(--ink-600);">Date From</label>
+        <input type="date" name="date_from" value="{{ date_from }}" class="input w-full">
+      </div>
+
+      <div>
+        <label class="block text-xs font-semibold uppercase tracking-wider mb-2"
+               style="color: var(--ink-600);">Date To</label>
+        <input type="date" name="date_to" value="{{ date_to }}" class="input w-full">
+      </div>
+
     </div>
 
-    <!-- Filter form -->
-    <form method="get" class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-        <input type="hidden" name="apply" value="1">
-
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Report Scope</label>
-                <select name="scope" id="scope-select"
-                        class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
-                    {% for value, label in scope_choices %}
-                    <option value="{{ value }}" {% if scope == value %}selected{% endif %}>{{ label }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <div id="grade-field" style="display: {% if scope == 'grade' %}block{% else %}none{% endif %};">
-                <label class="block text-sm font-medium text-gray-700 mb-1">Grade</label>
-                <select name="grade"
-                        class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
-                    <option value="">— Select grade —</option>
-                    {% for g in available_grades %}
-                    <option value="{{ g }}" {% if grade == g %}selected{% endif %}>{{ g }}</option>
-                    {% endfor %}
-                </select>
-                <p class="text-xs text-gray-500 mt-1">Merges all streams of that grade</p>
-            </div>
-
-            <div id="class-field" style="display: {% if scope == 'class' %}block{% else %}none{% endif %};">
-                <label class="block text-sm font-medium text-gray-700 mb-1">Class</label>
-                <select name="class"
-                        class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
-                    <option value="">— Select class —</option>
-                    {% for c in available_classes %}
-                    <option value="{{ c }}" {% if class_level == c %}selected{% endif %}>{{ c }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Date From</label>
-                <input type="date" name="date_from" value="{{ date_from }}"
-                       class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
-            </div>
-
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Date To</label>
-                <input type="date" name="date_to" value="{{ date_to }}"
-                       class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
-            </div>
-        </div>
-
-        <div class="flex gap-3">
-            <button type="submit"
-                    class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700">
-                Preview Report
-            </button>
-            {% if applied %}
-            <a href="{% url 'dpa_discipline_report_pdf' %}?scope={{ scope }}&grade={{ grade }}&class={{ class_level }}&date_from={{ date_from }}&date_to={{ date_to }}"
-               class="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700">
-                Download PDF
-            </a>
-            {% endif %}
-        </div>
-    </form>
-
-    {% if applied and report %}
-    <!-- Summary -->
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <div class="bg-white rounded-xl border border-gray-200 p-5">
-            <div class="text-xs font-medium text-gray-500 uppercase">Total Cases</div>
-            <div class="text-3xl font-bold text-gray-900 mt-1">{{ report.total }}</div>
-        </div>
-        {% for sev in report.severities %}
-        <div class="bg-white rounded-xl border border-gray-200 p-5">
-            <div class="text-xs font-medium text-gray-500 uppercase">{{ sev.label }}</div>
-            <div class="text-3xl font-bold text-gray-900 mt-1">{{ sev.count }}</div>
-        </div>
-        {% endfor %}
+    <div class="flex flex-wrap gap-3">
+      <button type="submit" class="btn btn-primary">
+        {% include 'partials/icons.html' with name="search" size=16 %}
+        Preview Report
+      </button>
+      {% if applied %}
+      <a href="{% url 'dpa_discipline_report_pdf' %}?scope={{ scope }}&grade={{ grade }}&class={{ class_level }}&date_from={{ date_from }}&date_to={{ date_to }}"
+         target="_blank" class="btn btn-success">
+        {% include 'partials/icons.html' with name="download" size=16 %}
+        Download PDF
+      </a>
+      {% endif %}
     </div>
 
-    <!-- Category + Status -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-        <div class="bg-white rounded-xl border border-gray-200 p-6">
-            <h2 class="font-semibold text-gray-900 mb-4">Cases by Category</h2>
-            <div class="space-y-2">
-                {% for cat in report.categories %}
-                <div class="flex justify-between text-sm">
-                    <span class="text-gray-700">{{ cat.label }}</span>
-                    <span class="font-medium text-gray-900">{{ cat.count }}</span>
-                </div>
-                {% empty %}
-                <p class="text-sm text-gray-500">No cases in this period</p>
-                {% endfor %}
-            </div>
-        </div>
+  </form>
+</div>
 
-        <div class="bg-white rounded-xl border border-gray-200 p-6">
-            <h2 class="font-semibold text-gray-900 mb-4">Status</h2>
-            <div class="space-y-2">
-                {% for st in report.statuses %}
-                <div class="flex justify-between text-sm">
-                    <span class="text-gray-700">{{ st.label }}</span>
-                    <span class="font-medium text-gray-900">{{ st.count }}</span>
-                </div>
-                {% empty %}
-                <p class="text-sm text-gray-500">No cases in this period</p>
-                {% endfor %}
-            </div>
-        </div>
-    </div>
+{% if applied and report %}
+<!-- ============================================================= -->
+<!-- SUMMARY CARDS                                                 -->
+<!-- ============================================================= -->
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
 
-    {% if report.per_class and scope != 'class' %}
-    <!-- Per-class breakdown -->
-    <div class="bg-white rounded-xl border border-gray-200 mb-6 overflow-hidden">
-        <div class="px-6 py-4 border-b border-gray-200">
-            <h2 class="font-semibold text-gray-900">Per-Class Breakdown</h2>
-        </div>
-        <div class="overflow-x-auto">
-            <table class="w-full text-sm">
-                <thead class="bg-gray-50 text-left text-xs uppercase text-gray-500">
-                    <tr>
-                        <th class="px-5 py-3 font-medium">Class</th>
-                        <th class="px-5 py-3 font-medium">Students with Cases</th>
-                        <th class="px-5 py-3 font-medium">Total Cases</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-100">
-                    {% for row in report.per_class %}
-                    <tr>
-                        <td class="px-5 py-3 text-gray-900">{{ row.class_level }}</td>
-                        <td class="px-5 py-3 text-gray-700">{{ row.student_count }}</td>
-                        <td class="px-5 py-3 text-gray-700">{{ row.count }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Total Cases</span>
+      <div class="stat-icon" style="background: var(--primary-light); color: var(--primary);">
+        {% include 'partials/icons.html' with name="alert-triangle" size=18 %}
+      </div>
     </div>
-    {% endif %}
+    <div class="stat-value">{{ report.total }}</div>
+    <div class="stat-meta">in period</div>
+  </div>
 
-    {% if report.top_offenders %}
-    <!-- Top repeat offenders -->
-    <div class="bg-white rounded-xl border border-gray-200 mb-6 overflow-hidden">
-        <div class="px-6 py-4 border-b border-gray-200">
-            <h2 class="font-semibold text-gray-900">Top Repeat Offenders</h2>
-        </div>
-        <div class="overflow-x-auto">
-            <table class="w-full text-sm">
-                <thead class="bg-gray-50 text-left text-xs uppercase text-gray-500">
-                    <tr>
-                        <th class="px-5 py-3 font-medium">Student</th>
-                        <th class="px-5 py-3 font-medium">Class</th>
-                        <th class="px-5 py-3 font-medium">Total Cases</th>
-                        <th class="px-5 py-3 font-medium">Latest</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-100">
-                    {% for row in report.top_offenders %}
-                    <tr>
-                        <td class="px-5 py-3 text-gray-900">{{ row.student.first_name }} {{ row.student.last_name }}</td>
-                        <td class="px-5 py-3 text-gray-700">{{ row.class_level }}</td>
-                        <td class="px-5 py-3 text-gray-700">{{ row.count }}</td>
-                        <td class="px-5 py-3 text-gray-500">{{ row.latest_date|date:"j M Y" }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+  {% for sev in report.severities %}
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">{{ sev.label }}</span>
+      <div class="stat-icon" style="
+        {% if sev.label == 'Critical' %}background: var(--danger-light); color: var(--danger);
+        {% elif sev.label == 'Serious' %}background: var(--warning-light); color: var(--warning);
+        {% elif sev.label == 'Moderate' %}background: var(--warning-light); color: var(--warning);
+        {% else %}background: var(--surface-muted); color: var(--ink-600);{% endif %}">
+        {% include 'partials/icons.html' with name="alert-circle" size=18 %}
+      </div>
     </div>
-    {% endif %}
-
-    <!-- Individual cases -->
-    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div class="px-6 py-4 border-b border-gray-200">
-            <h2 class="font-semibold text-gray-900">All Cases ({{ report.total }})</h2>
-        </div>
-        <div class="overflow-x-auto">
-            <table class="w-full text-sm">
-                <thead class="bg-gray-50 text-left text-xs uppercase text-gray-500">
-                    <tr>
-                        <th class="px-5 py-3 font-medium">Date</th>
-                        <th class="px-5 py-3 font-medium">Student</th>
-                        <th class="px-5 py-3 font-medium">Class</th>
-                        <th class="px-5 py-3 font-medium">Category</th>
-                        <th class="px-5 py-3 font-medium">Severity</th>
-                        <th class="px-5 py-3 font-medium">Status</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-100">
-                    {% for r in report.records %}
-                    <tr>
-                        <td class="px-5 py-3 text-gray-500">{{ r.incident_date|date:"j M Y" }}</td>
-                        <td class="px-5 py-3 text-gray-900">{{ r.student.first_name }} {{ r.student.last_name }}</td>
-                        <td class="px-5 py-3 text-gray-700">{{ r.student.class_level }}</td>
-                        <td class="px-5 py-3 text-gray-700">{{ r.get_category_display }}</td>
-                        <td class="px-5 py-3 text-gray-700">{{ r.get_severity_display }}</td>
-                        <td class="px-5 py-3 text-gray-700">{{ r.get_status_display }}</td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="6" class="px-5 py-12 text-center text-sm text-gray-500">
-                            No cases match these filters
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-    {% elif applied %}
-    <div class="bg-white rounded-xl border border-gray-200 p-12 text-center">
-        <p class="text-sm text-gray-500">No cases match these filters</p>
-    </div>
-    {% endif %}
+    <div class="stat-value">{{ sev.count }}</div>
+    <div class="stat-meta">cases</div>
+  </div>
+  {% endfor %}
 
 </div>
 
+<!-- ============================================================= -->
+<!-- BREAKDOWN PANELS                                              -->
+<!-- ============================================================= -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+
+  <!-- Category breakdown -->
+  <div class="card">
+    <h3 class="card-title mb-4">
+      {% include 'partials/icons.html' with name="bar-chart" size=18 %}
+      Cases by Category
+    </h3>
+    {% if report.categories %}
+      <div class="space-y-3">
+        {% for cat in report.categories %}
+        <div>
+          <div class="flex justify-between items-center mb-1">
+            <span class="text-sm" style="color: var(--ink-700);">{{ cat.label }}</span>
+            <span class="text-sm" style="color: var(--ink-900); font-weight: 600;">{{ cat.count }}</span>
+          </div>
+          <div style="height: 6px; background: var(--surface-muted); border-radius: 3px; overflow: hidden;">
+            <div style="width: {% widthratio cat.count report.total 100 %}%; height: 100%; background: var(--primary);"></div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="text-sm" style="color: var(--ink-500);">No cases in this period.</p>
+    {% endif %}
+  </div>
+
+  <!-- Status breakdown -->
+  <div class="card">
+    <h3 class="card-title mb-4">
+      {% include 'partials/icons.html' with name="check-circle" size=18 %}
+      Cases by Status
+    </h3>
+    {% if report.statuses %}
+      <div class="space-y-3">
+        {% for st in report.statuses %}
+        <div class="flex justify-between items-center py-2" style="border-bottom: 1px solid var(--border);">
+          <span class="text-sm" style="color: var(--ink-700);">{{ st.label }}</span>
+          <span class="text-sm" style="color: var(--ink-900); font-weight: 600;">{{ st.count }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="text-sm" style="color: var(--ink-500);">No cases in this period.</p>
+    {% endif %}
+  </div>
+
+</div>
+
+<!-- ============================================================= -->
+<!-- PER-CLASS BREAKDOWN                                           -->
+<!-- ============================================================= -->
+{% if report.per_class and scope != 'class' %}
+<div class="card mb-6" style="padding: 0; overflow: hidden;">
+  <div style="padding: var(--s-5); border-bottom: 1px solid var(--border);">
+    <h3 class="card-title" style="margin: 0;">
+      {% include 'partials/icons.html' with name="grid" size=18 %}
+      Per-Class Breakdown
+    </h3>
+  </div>
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Class</th>
+          <th style="width: 200px; text-align: center;">Students with Cases</th>
+          <th style="width: 150px; text-align: center;">Total Cases</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in report.per_class %}
+        <tr>
+          <td style="font-weight: 600; color: var(--ink-900);">{{ row.class_level }}</td>
+          <td style="text-align: center; color: var(--ink-700);">{{ row.student_count }}</td>
+          <td style="text-align: center;">
+            <span style="font-weight: 600; color: var(--ink-900);">{{ row.count }}</span>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+<!-- ============================================================= -->
+<!-- TOP REPEAT OFFENDERS                                          -->
+<!-- ============================================================= -->
+{% if report.top_offenders %}
+<div class="card mb-6" style="padding: 0; overflow: hidden;">
+  <div style="padding: var(--s-5); border-bottom: 1px solid var(--border);">
+    <h3 class="card-title" style="margin: 0;">
+      {% include 'partials/icons.html' with name="alert-triangle" size=18 %}
+      Top Repeat Offenders
+    </h3>
+  </div>
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Student</th>
+          <th style="width: 200px;">Class</th>
+          <th style="width: 130px; text-align: center;">Total Cases</th>
+          <th style="width: 130px;">Latest Case</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in report.top_offenders %}
+        <tr>
+          <td style="font-weight: 600; color: var(--ink-900);">
+            {{ row.student.first_name }} {{ row.student.last_name }}
+          </td>
+          <td style="color: var(--ink-700);">{{ row.class_level }}</td>
+          <td style="text-align: center;">
+            <span class="badge badge-danger">{{ row.count }} cases</span>
+          </td>
+          <td style="color: var(--ink-600); font-size: var(--text-sm);">
+            {{ row.latest_date|date:"j M Y" }}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+<!-- ============================================================= -->
+<!-- ALL CASES                                                     -->
+<!-- ============================================================= -->
+<div class="card" style="padding: 0; overflow: hidden;">
+  <div style="padding: var(--s-5); border-bottom: 1px solid var(--border);">
+    <h3 class="card-title" style="margin: 0;">
+      {% include 'partials/icons.html' with name="file-text" size=18 %}
+      All Cases ({{ report.total }})
+    </h3>
+  </div>
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th style="width: 130px;">Date</th>
+          <th>Student</th>
+          <th style="width: 180px;">Class</th>
+          <th>Category</th>
+          <th style="width: 100px;">Severity</th>
+          <th style="width: 130px;">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in report.records %}
+        <tr>
+          <td style="color: var(--ink-600); font-size: var(--text-sm);">
+            {{ r.incident_date|date:"j M Y" }}
+          </td>
+          <td>
+            <a href="{% url 'dpa_discipline_detail' r.id %}"
+               style="font-weight: 600; color: var(--ink-900); text-decoration: none;">
+              {{ r.student.first_name }} {{ r.student.last_name }}
+            </a>
+          </td>
+          <td style="color: var(--ink-700); font-size: var(--text-sm);">
+            {{ r.student.class_level }}
+          </td>
+          <td style="color: var(--ink-700);">{{ r.get_category_display }}</td>
+          <td>
+            {% if r.severity == 'critical' %}
+              <span class="badge badge-danger">Critical</span>
+            {% elif r.severity == 'serious' %}
+              <span class="badge" style="background: var(--warning-light); color: var(--warning);">Serious</span>
+            {% elif r.severity == 'moderate' %}
+              <span class="badge badge-warning">Moderate</span>
+            {% else %}
+              <span class="badge badge-neutral">Minor</span>
+            {% endif %}
+          </td>
+          <td style="color: var(--ink-700); font-size: var(--text-sm);">
+            {{ r.get_status_display }}
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="6" style="text-align: center; padding: var(--s-8); color: var(--ink-500);">
+            No cases match these filters
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% elif applied %}
+<!-- No results -->
+<div class="card">
+  <div class="empty">
+    {% include 'partials/icons.html' with name="alert-triangle" size=56 %}
+    <h3>No cases found</h3>
+    <p>No discipline cases match the selected filters. Try a wider date range or a different scope.</p>
+  </div>
+</div>
+
+{% else %}
+<!-- Intro state -->
+<div class="card">
+  <div class="empty">
+    {% include 'partials/icons.html' with name="bar-chart" size=56 %}
+    <h3>Generate a discipline report</h3>
+    <p>Choose a scope — entire school, a specific grade (merges all streams), or a single class. Filter by date and preview before downloading the PDF.</p>
+  </div>
+</div>
+{% endif %}
+
 <script>
-document.getElementById('scope-select')?.addEventListener('change', function() {
-    const gradeField = document.getElementById('grade-field');
-    const classField = document.getElementById('class-field');
+(function() {
+  const scopeSelect = document.getElementById('scope-select');
+  const gradeField = document.getElementById('grade-field');
+  const classField = document.getElementById('class-field');
+
+  scopeSelect?.addEventListener('change', function() {
     gradeField.style.display = (this.value === 'grade') ? 'block' : 'none';
     classField.style.display = (this.value === 'class') ? 'block' : 'none';
-});
+  });
+})();
 </script>
+
 {% endblock %}

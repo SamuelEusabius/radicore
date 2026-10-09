@@ -23,6 +23,12 @@ from apps.staff.models import (
     LeaveType, LeaveStatus,
     DutyType, StaffAttendanceStatus, MovementDirection,
 )
+from apps.students.models import (
+    Student, StudentMovement, StudentAdminCase,
+    StudentMovementDirection, StudentMovementReason,
+    AdminCaseType, AdminCaseStatus, AdminCasePriority,
+)
+from apps.attendance.models import Attendance
 
 def _require_dpa(request):
     """Return True if current user may see the DPA dashboard."""
@@ -1055,12 +1061,23 @@ def dpa_leave_list(request):
     if status:
         qs = qs.filter(status=status)
 
+    # Accurate status counts (from the base queryset, before status filter)
+    all_requests = LeaveRequest.objects.filter(school=request.user.school)
+
     context = {
         'school': request.user.school,
         'leave_requests': qs[:200],
         'total': qs.count(),
         'status_filter': status,
         'status_choices': LeaveStatus.choices,
+        # Accurate status breakdown
+        'pending_count': all_requests.filter(status=LeaveStatus.PENDING).count(),
+        'approved_count': all_requests.filter(status=LeaveStatus.APPROVED).count(),
+        'rejected_count': all_requests.filter(status=LeaveStatus.REJECTED).count(),
+        'awaiting_dpa_count': all_requests.filter(
+            status=LeaveStatus.PENDING,
+            dpa_approved_at__isnull=True,
+        ).count(),
     }
     return render(request, 'dashboards/dpa/leave_list.html', context)
 
@@ -1343,12 +1360,21 @@ def dpa_student_attendance_class(request, class_level):
     }
 
     rows = []
+    present_count = absent_count = late_count = 0
     for s in students:
         a = attendance_map.get(s.id)
+        status = a.status if a else '—'
+        if status == 'present':
+            present_count += 1
+        elif status == 'absent':
+            absent_count += 1
+        elif status == 'late':
+            late_count += 1
+
         rows.append({
             'student': s,
             'attendance': a,
-            'status': a.status if a else '—',
+            'status': status,
             'check_in': getattr(a, 'check_in_time', None) if a else None,
         })
 
@@ -1358,45 +1384,13 @@ def dpa_student_attendance_class(request, class_level):
         'selected_date': selected_date,
         'rows': rows,
         'total': len(rows),
+        'present_count': present_count,
+        'absent_count': absent_count,
+        'late_count': late_count,
         'prev_date': selected_date - timedelta(days=1),
         'next_date': selected_date + timedelta(days=1),
     }
     return render(request, 'dashboards/dpa/student_attendance_class.html', context)
-
-
-# ---------- STUDENT MOVEMENT ----------
-
-@dpa_required
-def dpa_student_movement(request):
-    """Student movement log for a chosen date."""
-    selected_date_str = request.GET.get('date', '')
-    selected_date = parse_date(selected_date_str) if selected_date_str else timezone.localdate()
-
-    movements = StudentMovement.objects.filter(
-        school=request.user.school,
-        movement_date=selected_date,
-    ).select_related('student', 'authorized_by', 'released_by').order_by('-movement_time')
-
-    out_count = movements.filter(direction=StudentMovementDirection.OUT).count()
-    in_count = movements.filter(direction=StudentMovementDirection.IN).count()
-    still_out = movements.filter(
-        direction=StudentMovementDirection.OUT,
-        actual_return_time__isnull=True,
-    ).count()
-
-    context = {
-        'school': request.user.school,
-        'selected_date': selected_date,
-        'movements': movements,
-        'out_count': out_count,
-        'in_count': in_count,
-        'still_out': still_out,
-        'total': movements.count(),
-        'prev_date': selected_date - timedelta(days=1),
-        'next_date': selected_date + timedelta(days=1),
-    }
-    return render(request, 'dashboards/dpa/student_movement.html', context)
-
 
 @dpa_required
 def dpa_student_movement_create(request):
@@ -1676,3 +1670,36 @@ def dpa_duty_roster_pdf(request):
 
     filename = f"duty_roster_{week_start.strftime('%Y%m%d')}.pdf"
     return html_to_pdf_response(html_string, filename)
+
+
+
+@dpa_required
+def dpa_student_movement(request):
+    """Student movement log for a chosen date."""
+    selected_date_str = request.GET.get('date', '')
+    selected_date = parse_date(selected_date_str) if selected_date_str else timezone.localdate()
+
+    movements = StudentMovement.objects.filter(
+        school=request.user.school,
+        movement_date=selected_date,
+    ).select_related('student', 'authorized_by', 'released_by').order_by('-movement_time')
+
+    out_count = movements.filter(direction=StudentMovementDirection.OUT).count()
+    in_count = movements.filter(direction=StudentMovementDirection.IN).count()
+    still_out = movements.filter(
+        direction=StudentMovementDirection.OUT,
+        actual_return_time__isnull=True,
+    ).count()
+
+    context = {
+        'school': request.user.school,
+        'selected_date': selected_date,
+        'movements': movements,
+        'out_count': out_count,
+        'in_count': in_count,
+        'still_out': still_out,
+        'total': movements.count(),
+        'prev_date': selected_date - timedelta(days=1),
+        'next_date': selected_date + timedelta(days=1),
+    }
+    return render(request, 'dashboards/dpa/student_movement.html', context)

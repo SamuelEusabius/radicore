@@ -3,17 +3,21 @@
 
 {% block title %}Staff Directory{% endblock %}
 {% block header_title %}Staff Directory{% endblock %}
-{% block header_sub %}{{ stats.total }} staff member{{ stats.total|pluralize }}{% endblock %}
+{% block header_sub %}
+  {{ stats.total }} staff member{{ stats.total|pluralize }} · {{ school.name }}
+{% endblock %}
 
 {% block content %}
 
-<!-- STATS ROW -->
+<!-- ============================================================= -->
+<!-- STATS ROW                                                     -->
+<!-- ============================================================= -->
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
 
   <div class="stat">
     <div class="stat-header">
       <span class="stat-label">Total Staff</span>
-      <div class="stat-icon" style="background: rgba(10, 138, 95, 0.1); color: var(--primary);">
+      <div class="stat-icon" style="background: var(--primary-light); color: var(--primary);">
         {% include 'partials/icons.html' with name="users" size=18 %}
       </div>
     </div>
@@ -24,54 +28,56 @@
   <div class="stat">
     <div class="stat-header">
       <span class="stat-label">Teachers</span>
-      <div class="stat-icon" style="background: rgba(37, 99, 235, 0.1); color: #2563EB;">
+      <div class="stat-icon" style="background: var(--info-light); color: var(--info);">
         {% include 'partials/icons.html' with name="teacher" size=18 %}
       </div>
     </div>
-    <div class="stat-value" style="color: #2563EB;">{{ stats.teachers }}</div>
+    <div class="stat-value" style="color: var(--info);">{{ stats.teachers }}</div>
     <div class="stat-meta">in view</div>
   </div>
 
   <div class="stat">
     <div class="stat-header">
-      <span class="stat-label">TSC</span>
-      <div class="stat-icon" style="background: rgba(236, 72, 153, 0.1); color: #EC4899;">
-        {% include 'partials/icons.html' with name="briefcase" size=18 %}
+      <span class="stat-label">TSC Employed</span>
+      <div class="stat-icon" style="background: var(--primary-light); color: var(--primary);">
+        {% include 'partials/icons.html' with name="award" size=18 %}
       </div>
     </div>
-    <div class="stat-value" style="color: #EC4899;">{{ stats.tsc }}</div>
-    <div class="stat-meta">government</div>
+    <div class="stat-value">{{ stats.tsc }}</div>
+    <div class="stat-meta">government teachers</div>
   </div>
 
   <div class="stat">
     <div class="stat-header">
-      <span class="stat-label">BOM</span>
-      <div class="stat-icon" style="background: rgba(124, 58, 237, 0.1); color: #7C3AED;">
+      <span class="stat-label">BOM Employed</span>
+      <div class="stat-icon" style="background: var(--warning-light); color: var(--warning);">
         {% include 'partials/icons.html' with name="briefcase" size=18 %}
       </div>
     </div>
-    <div class="stat-value" style="color: #7C3AED;">{{ stats.bom }}</div>
+    <div class="stat-value" style="color: var(--warning);">{{ stats.bom }}</div>
     <div class="stat-meta">board-hired</div>
   </div>
 
 </div>
 
-<!-- FILTERS -->
+<!-- ============================================================= -->
+<!-- FILTER CARD                                                   -->
+<!-- ============================================================= -->
 <div class="card mb-6">
-  <form method="get" style="display: flex; flex-wrap: wrap; gap: var(--s-3); align-items: flex-end;">
+  <form method="get" class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
 
-    <div style="flex: 1; min-width: 240px;">
-      <label style="display: block; font-size: var(--text-xs); font-weight: 600; color: var(--ink-600); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: var(--s-1);">
-        Search
-      </label>
-      <input name="q" value="{{ search }}" placeholder="Name, phone, employment no, TSC no..." class="input">
+    <div class="md:col-span-5">
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2"
+             style="color: var(--ink-600);">Search</label>
+      <input type="text" name="q" value="{{ search }}"
+             placeholder="Name, phone, employment no, TSC no..."
+             class="input w-full">
     </div>
 
-    <div style="min-width: 180px;">
-      <label style="display: block; font-size: var(--text-xs); font-weight: 600; color: var(--ink-600); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: var(--s-1);">
-        Role
-      </label>
-      <select name="role" class="select">
+    <div class="md:col-span-3">
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2"
+             style="color: var(--ink-600);">Role</label>
+      <select name="role" class="select w-full">
         <option value="">All Roles</option>
         {% for value, label in role_choices %}
         <option value="{{ value }}" {% if role_filter == value %}selected{% endif %}>{{ label }}</option>
@@ -79,92 +85,124 @@
       </select>
     </div>
 
-    <div style="min-width: 180px;">
-      <label style="display: block; font-size: var(--text-xs); font-weight: 600; color: var(--ink-600); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: var(--s-1);">
-        Employer
-      </label>
-      <select name="employer" class="select">
-        <option value="">All Employers</option>
+    <div class="md:col-span-2">
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2"
+             style="color: var(--ink-600);">Employer</label>
+      <select name="employer" class="select w-full">
+        <option value="">All</option>
         {% for value, label in employer_choices %}
         <option value="{{ value }}" {% if employer_filter == value %}selected{% endif %}>{{ label }}</option>
         {% endfor %}
       </select>
     </div>
 
-    <div>
-      <button type="submit" class="btn btn-primary">Filter</button>
+    <div class="md:col-span-2 flex gap-2">
+      <button type="submit" class="btn btn-primary flex-1">
+        {% include 'partials/icons.html' with name="search" size=16 %}
+        Filter
+      </button>
+      {% if search or role_filter or employer_filter %}
+      <a href="{% url 'dpa_staff_directory' %}" class="btn btn-secondary" title="Clear filters">
+        {% include 'partials/icons.html' with name="x-circle" size=16 %}
+      </a>
+      {% endif %}
     </div>
-
-    {% if search or role_filter or employer_filter %}
-    <div>
-      <a href="{% url 'dpa_staff_directory' %}" class="btn btn-secondary">Clear</a>
-    </div>
-    {% endif %}
 
   </form>
 </div>
 
-<!-- TABLE -->
-<div class="card">
-  <div style="overflow-x: auto;">
-    <table style="width: 100%; font-size: var(--text-sm); border-collapse: collapse;">
+<!-- ============================================================= -->
+<!-- RESULTS COUNT                                                 -->
+<!-- ============================================================= -->
+<div class="flex items-center justify-between mb-4">
+  <p class="text-sm" style="color: var(--ink-500);">
+    Showing <strong style="color: var(--ink-900);">{{ total }}</strong>
+    staff member{{ total|pluralize }}
+    {% if search or role_filter or employer_filter %}<span style="color: var(--ink-400);">(filtered)</span>{% endif %}
+  </p>
+</div>
+
+<!-- ============================================================= -->
+<!-- STAFF TABLE                                                   -->
+<!-- ============================================================= -->
+{% if staff_list %}
+<div class="card" style="padding: 0; overflow: hidden;">
+  <div class="table-wrap">
+    <table class="table">
       <thead>
-        <tr style="background: var(--surface-2); text-align: left;">
-          <th style="padding: var(--s-3) var(--s-4); font-weight: 600; font-size: var(--text-xs); text-transform: uppercase; color: var(--ink-600); letter-spacing: 0.05em;">Staff</th>
-          <th style="padding: var(--s-3) var(--s-4); font-weight: 600; font-size: var(--text-xs); text-transform: uppercase; color: var(--ink-600); letter-spacing: 0.05em;">Role</th>
-          <th style="padding: var(--s-3) var(--s-4); font-weight: 600; font-size: var(--text-xs); text-transform: uppercase; color: var(--ink-600); letter-spacing: 0.05em;">Employer</th>
-          <th style="padding: var(--s-3) var(--s-4); font-weight: 600; font-size: var(--text-xs); text-transform: uppercase; color: var(--ink-600); letter-spacing: 0.05em;">Employment No.</th>
-          <th style="padding: var(--s-3) var(--s-4); font-weight: 600; font-size: var(--text-xs); text-transform: uppercase; color: var(--ink-600); letter-spacing: 0.05em;">TSC No.</th>
-          <th style="padding: var(--s-3) var(--s-4); font-weight: 600; font-size: var(--text-xs); text-transform: uppercase; color: var(--ink-600); letter-spacing: 0.05em;">Phone</th>
-          <th style="padding: var(--s-3) var(--s-4); font-weight: 600; font-size: var(--text-xs); text-transform: uppercase; color: var(--ink-600); letter-spacing: 0.05em;">Email</th>
-          <th style="padding: var(--s-3) var(--s-4); font-weight: 600; font-size: var(--text-xs); text-transform: uppercase; color: var(--ink-600); letter-spacing: 0.05em;">Actions</th>
+        <tr>
+          <th>Staff</th>
+          <th>Role</th>
+          <th>Employer</th>
+          <th>Employment No.</th>
+          <th>TSC No.</th>
+          <th>Contact</th>
+          <th style="text-align: right;">Actions</th>
         </tr>
       </thead>
       <tbody>
         {% for s in staff_list %}
-        <tr style="border-top: 1px solid var(--surface-3);">
-          <td style="padding: var(--s-3) var(--s-4);">
-            <a href="{% url 'dpa_staff_detail' s.id %}" style="color: var(--ink-900); font-weight: 500; text-decoration: none;">
+        <tr>
+          <td>
+            <a href="{% url 'dpa_staff_detail' s.id %}"
+               style="font-weight: 600; color: var(--ink-900); text-decoration: none;">
               {{ s.get_full_name|default:s.email }}
             </a>
-          </td>
-          <td style="padding: var(--s-3) var(--s-4); font-size: var(--text-xs); color: var(--ink-600);">
-            {{ s.get_role_display|default:s.role }}
-          </td>
-          <td style="padding: var(--s-3) var(--s-4);">
-            {% if s.employer_type %}
-            <span style="display: inline-block; padding: 2px 8px; font-size: var(--text-xs); font-weight: 600; border-radius: 12px;
-              {% if s.employer_type == 'tsc' %}background: rgba(37, 99, 235, 0.1); color: #2563EB;
-              {% elif s.employer_type == 'bom' %}background: rgba(10, 138, 95, 0.1); color: var(--primary);
-              {% elif s.employer_type == 'pta' %}background: rgba(236, 72, 153, 0.1); color: #EC4899;
-              {% elif s.employer_type == 'intern' %}background: rgba(124, 58, 237, 0.1); color: #7C3AED;
-              {% else %}background: var(--surface-2); color: var(--ink-600);{% endif %}">
-              {{ s.get_employer_type_display }}
-            </span>
-            {% else %}
-            <span style="color: var(--ink-400); font-size: var(--text-xs);">—</span>
+            {% if s.email %}
+            <div class="text-xs" style="color: var(--ink-500);">{{ s.email }}</div>
             {% endif %}
           </td>
-          <td style="padding: var(--s-3) var(--s-4); color: var(--ink-700); font-size: var(--text-xs);">
-            {{ s.employment_number|default:"—" }}
+          <td>
+            <span style="font-size: var(--text-sm); color: var(--ink-700);">
+              {{ s.get_role_display|default:s.role }}
+            </span>
           </td>
-          <td style="padding: var(--s-3) var(--s-4); color: var(--ink-700); font-size: var(--text-xs);">
-            {{ s.tsc_number|default:"—" }}
+          <td>
+            {% if s.employer_type == 'tsc' %}
+              <span class="badge badge-primary">TSC</span>
+            {% elif s.employer_type == 'bom' %}
+              <span class="badge badge-success">BOM</span>
+            {% elif s.employer_type == 'pta' %}
+              <span class="badge badge-warning">PTA</span>
+            {% elif s.employer_type == 'intern' %}
+              <span class="badge badge-info">Intern</span>
+            {% elif s.employer_type == 'volunteer' %}
+              <span class="badge badge-neutral">Volunteer</span>
+            {% elif s.employer_type == 'contract' %}
+              <span class="badge badge-neutral">Contract</span>
+            {% elif s.employer_type %}
+              <span class="badge badge-neutral">{{ s.get_employer_type_display }}</span>
+            {% else %}
+              <span style="color: var(--ink-400); font-size: var(--text-sm);">—</span>
+            {% endif %}
           </td>
-          <td style="padding: var(--s-3) var(--s-4); color: var(--ink-700); font-size: var(--text-xs);">
-            {{ s.phone|default:"—" }}
+          <td style="color: var(--ink-700); font-size: var(--text-sm);">
+            {% if s.employment_number %}
+              <span style="font-family: var(--font-mono);">{{ s.employment_number }}</span>
+            {% else %}
+              <span style="color: var(--ink-400);">—</span>
+            {% endif %}
           </td>
-          <td style="padding: var(--s-3) var(--s-4); color: var(--ink-700); font-size: var(--text-xs);">
-            {{ s.email }}
+          <td style="color: var(--ink-700); font-size: var(--text-sm);">
+            {% if s.tsc_number %}
+              <span style="font-family: var(--font-mono);">{{ s.tsc_number }}</span>
+            {% else %}
+              <span style="color: var(--ink-400);">—</span>
+            {% endif %}
           </td>
-          <td style="padding: var(--s-3) var(--s-4);">
-            <a href="{% url 'dpa_staff_detail' s.id %}" class="btn btn-secondary" style="padding: 4px 12px; font-size: var(--text-xs);">View</a>
+          <td style="font-size: var(--text-sm);">
+            {% if s.phone %}
+              <div style="color: var(--ink-700);">{{ s.phone }}</div>
+            {% else %}
+              <span style="color: var(--ink-400);">—</span>
+            {% endif %}
           </td>
-        </tr>
-        {% empty %}
-        <tr>
-          <td colspan="8" style="padding: var(--s-8); text-align: center; color: var(--ink-500); font-size: var(--text-sm);">
-            No staff match these filters
+          <td>
+            <div class="table-actions" style="justify-content: flex-end;">
+              <a href="{% url 'dpa_staff_detail' s.id %}" class="view" title="View profile">
+                {% include 'partials/icons.html' with name="eye" size=14 %}
+              </a>
+            </div>
           </td>
         </tr>
         {% endfor %}
@@ -172,5 +210,31 @@
     </table>
   </div>
 </div>
+
+{% else %}
+<!-- ============================================================= -->
+<!-- EMPTY STATE                                                   -->
+<!-- ============================================================= -->
+<div class="card">
+  <div class="empty">
+    {% include 'partials/icons.html' with name="users" size=56 %}
+    {% if search or role_filter or employer_filter %}
+      <h3>No matching staff</h3>
+      <p>No staff members match the current filters. Try a different search term or clear the filters.</p>
+      <a href="{% url 'dpa_staff_directory' %}" class="btn btn-primary">
+        {% include 'partials/icons.html' with name="x-circle" size=16 %}
+        Clear filters
+      </a>
+    {% else %}
+      <h3>No staff yet</h3>
+      <p>Once staff members are added to {{ school.name }}, they will appear here with their roles, employer information, and contact details.</p>
+      <a href="{% url 'create_user' %}" class="btn btn-primary">
+        {% include 'partials/icons.html' with name="plus" size=16 %}
+        Add first staff member
+      </a>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
 
 {% endblock %}

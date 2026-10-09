@@ -1,82 +1,171 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Staff Attendance History{% endblock %}
+{% block header_title %}Staff Attendance History{% endblock %}
+{% block header_sub %}
+  {{ total }} record{{ total|pluralize }} · {{ school.name }}
+{% endblock %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
-    <nav class="text-xs text-gray-500 mb-4">
-        <a href="{% url 'dpa_admin_dashboard' %}" class="hover:text-indigo-600">DPA Dashboard</a>
-        <span class="mx-2">/</span>
-        <a href="{% url 'dpa_staff_attendance' %}" class="hover:text-indigo-600">Attendance</a>
-        <span class="mx-2">/</span>
-        <span class="text-gray-700">History</span>
-    </nav>
+<!-- ============================================================= -->
+<!-- FILTER CARD                                                   -->
+<!-- ============================================================= -->
+<div class="card mb-6">
+  <form method="get" class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
 
-    <div class="mb-6">
-        <h1 class="text-2xl font-bold text-gray-900">Staff Attendance History</h1>
-        <p class="text-sm text-gray-500 mt-1">{{ total }} record{{ total|pluralize }}</p>
+    <div class="md:col-span-3">
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2"
+             style="color: var(--ink-600);">From</label>
+      <input type="date" name="from" value="{{ date_from }}" class="input w-full">
     </div>
 
-    <form method="get" class="bg-white rounded-xl border border-gray-200 p-4 mb-6 flex flex-wrap gap-3">
-        <input type="date" name="from" value="{{ date_from }}" class="px-3 py-2 text-sm border border-gray-300 rounded-lg">
-        <input type="date" name="to" value="{{ date_to }}" class="px-3 py-2 text-sm border border-gray-300 rounded-lg">
-        <select name="status" class="px-3 py-2 text-sm border border-gray-300 rounded-lg">
-            <option value="">All statuses</option>
-            {% for value, label in status_choices %}
-            <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
-            {% endfor %}
-        </select>
-        <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700">
-            Filter
-        </button>
-    </form>
-
-    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div class="overflow-x-auto">
-            <table class="w-full text-sm">
-                <thead class="bg-gray-50 text-left text-xs uppercase text-gray-500">
-                    <tr>
-                        <th class="px-5 py-3 font-medium">Date</th>
-                        <th class="px-5 py-3 font-medium">Staff</th>
-                        <th class="px-5 py-3 font-medium">Status</th>
-                        <th class="px-5 py-3 font-medium">Check In</th>
-                        <th class="px-5 py-3 font-medium">Check Out</th>
-                        <th class="px-5 py-3 font-medium">Recorded By</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-100">
-                    {% for r in records %}
-                    <tr>
-                        <td class="px-5 py-3 text-gray-700">{{ r.date|date:"j M Y" }}</td>
-                        <td class="px-5 py-3 text-gray-900">{{ r.staff.get_full_name|default:r.staff.email }}</td>
-                        <td class="px-5 py-3">
-                            <span class="px-2 py-0.5 text-xs font-medium rounded-full
-                                {% if r.status == 'present' %}bg-green-100 text-green-800
-                                {% elif r.status == 'absent' %}bg-red-100 text-red-800
-                                {% elif r.status == 'late' %}bg-amber-100 text-amber-800
-                                {% elif r.status == 'on_leave' %}bg-indigo-100 text-indigo-800
-                                {% else %}bg-gray-100 text-gray-700{% endif %}">
-                                {{ r.get_status_display }}
-                            </span>
-                        </td>
-                        <td class="px-5 py-3 text-gray-500">{{ r.check_in_time|time:"H:i"|default:"—" }}</td>
-                        <td class="px-5 py-3 text-gray-500">{{ r.check_out_time|time:"H:i"|default:"—" }}</td>
-                        <td class="px-5 py-3 text-gray-500 text-xs">
-                            {{ r.recorded_by.get_full_name|default:r.recorded_by.email|default:"—" }}
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="6" class="px-5 py-12 text-center text-sm text-gray-500">
-                            No attendance records found
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+    <div class="md:col-span-3">
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2"
+             style="color: var(--ink-600);">To</label>
+      <input type="date" name="to" value="{{ date_to }}" class="input w-full">
     </div>
 
+    <div class="md:col-span-3">
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2"
+             style="color: var(--ink-600);">Status</label>
+      <select name="status" class="select w-full">
+        <option value="">All Statuses</option>
+        {% for value, label in status_choices %}
+        <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="md:col-span-3 flex gap-2">
+      <button type="submit" class="btn btn-primary flex-1">
+        {% include 'partials/icons.html' with name="search" size=16 %}
+        Filter
+      </button>
+      {% if date_from or date_to or status_filter %}
+      <a href="{% url 'dpa_staff_attendance_history' %}" class="btn btn-secondary" title="Clear filters">
+        {% include 'partials/icons.html' with name="x-circle" size=16 %}
+      </a>
+      {% endif %}
+    </div>
+
+  </form>
 </div>
+
+<!-- ============================================================= -->
+<!-- RESULTS COUNT                                                 -->
+<!-- ============================================================= -->
+<div class="flex items-center justify-between mb-4">
+  <p class="text-sm" style="color: var(--ink-500);">
+    Showing <strong style="color: var(--ink-900);">{{ total }}</strong>
+    record{{ total|pluralize }}
+    {% if date_from or date_to or status_filter %}<span style="color: var(--ink-400);">(filtered)</span>{% endif %}
+  </p>
+  <a href="{% url 'dpa_staff_attendance' %}" class="btn btn-secondary">
+    {% include 'partials/icons.html' with name="arrow-right" size=16 %}
+    Today's Attendance
+  </a>
+</div>
+
+<!-- ============================================================= -->
+<!-- HISTORY TABLE                                                 -->
+<!-- ============================================================= -->
+{% if records %}
+<div class="card" style="padding: 0; overflow: hidden;">
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th style="width: 130px;">Date</th>
+          <th>Staff</th>
+          <th style="width: 150px;">Role</th>
+          <th style="width: 120px;">Status</th>
+          <th style="width: 90px;">In</th>
+          <th style="width: 90px;">Out</th>
+          <th style="width: 180px;">Recorded By</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in records %}
+        <tr>
+          <td>
+            <span style="color: var(--ink-800); font-weight: 500; font-size: var(--text-sm);">
+              {{ r.date|date:"j M Y" }}
+            </span>
+            <div class="text-xs" style="color: var(--ink-500);">{{ r.date|date:"l" }}</div>
+          </td>
+          <td>
+            <a href="{% url 'dpa_staff_detail' r.staff.id %}"
+               style="color: var(--ink-900); font-weight: 600; text-decoration: none;">
+              {{ r.staff.get_full_name|default:r.staff.email }}
+            </a>
+            {% if r.staff.employment_number %}
+            <div class="text-xs" style="color: var(--ink-500); font-family: var(--font-mono);">
+              {{ r.staff.employment_number }}
+            </div>
+            {% endif %}
+          </td>
+          <td>
+            <span style="font-size: var(--text-sm); color: var(--ink-700);">
+              {{ r.staff.get_role_display|default:r.staff.role }}
+            </span>
+          </td>
+          <td>
+            {% if r.status == 'present' %}
+              <span class="badge badge-success">Present</span>
+            {% elif r.status == 'absent' %}
+              <span class="badge badge-danger">Absent</span>
+            {% elif r.status == 'late' %}
+              <span class="badge badge-warning">Late</span>
+            {% elif r.status == 'on_leave' %}
+              <span class="badge badge-info">On Leave</span>
+            {% else %}
+              <span class="badge badge-neutral">{{ r.get_status_display }}</span>
+            {% endif %}
+          </td>
+          <td style="font-family: var(--font-mono); color: var(--ink-700); font-size: var(--text-sm);">
+            {% if r.check_in_time %}{{ r.check_in_time|time:"H:i" }}{% else %}<span style="color: var(--ink-400);">—</span>{% endif %}
+          </td>
+          <td style="font-family: var(--font-mono); color: var(--ink-700); font-size: var(--text-sm);">
+            {% if r.check_out_time %}{{ r.check_out_time|time:"H:i" }}{% else %}<span style="color: var(--ink-400);">—</span>{% endif %}
+          </td>
+          <td>
+            <span class="text-xs" style="color: var(--ink-600);">
+              {{ r.recorded_by.get_full_name|default:r.recorded_by.email|default:"—" }}
+            </span>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% else %}
+<!-- ============================================================= -->
+<!-- EMPTY STATE                                                   -->
+<!-- ============================================================= -->
+<div class="card">
+  <div class="empty">
+    {% include 'partials/icons.html' with name="file-text" size=56 %}
+    {% if date_from or date_to or status_filter %}
+      <h3>No matching records</h3>
+      <p>No attendance records match the current filters. Try a wider date range or clear the filters.</p>
+      <a href="{% url 'dpa_staff_attendance_history' %}" class="btn btn-primary">
+        {% include 'partials/icons.html' with name="x-circle" size=16 %}
+        Clear filters
+      </a>
+    {% else %}
+      <h3>No attendance records yet</h3>
+      <p>Once you start recording daily staff attendance, the history will appear here for review and reporting.</p>
+      <a href="{% url 'dpa_staff_attendance' %}" class="btn btn-primary">
+        {% include 'partials/icons.html' with name="check-circle" size=16 %}
+        Record today's attendance
+      </a>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+
 {% endblock %}

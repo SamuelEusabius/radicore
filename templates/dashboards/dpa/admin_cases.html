@@ -3,143 +3,203 @@
 
 {% block title %}Student Administrative Cases{% endblock %}
 {% block header_title %}Student Administrative Cases{% endblock %}
-{% block header_sub %}{{ total }} case{{ total|pluralize }}{% endblock %}
+{% block header_sub %}
+  {{ total }} case{{ total|pluralize }} · {{ school.name }}
+{% endblock %}
 
 {% block content %}
 
+<!-- ============================================================= -->
+<!-- STATS ROW                                                     -->
+<!-- ============================================================= -->
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
 
   <div class="stat">
     <div class="stat-header">
-      <span class="stat-label">Total</span>
-      <div class="stat-icon" style="background: rgba(10, 138, 95, 0.1); color: var(--primary);">
+      <span class="stat-label">Total Cases</span>
+      <div class="stat-icon" style="background: var(--primary-light); color: var(--primary);">
         {% include 'partials/icons.html' with name="clipboard" size=18 %}
       </div>
     </div>
     <div class="stat-value">{{ total }}</div>
-    <div class="stat-meta">in view</div>
+    <div class="stat-meta">
+      {% if status_filter or type_filter or search %}filtered{% else %}all cases{% endif %}
+    </div>
   </div>
 
   <div class="stat">
     <div class="stat-header">
       <span class="stat-label">Open</span>
-      <div class="stat-icon" style="background: rgba(245, 158, 11, 0.1); color: #D97706;">
+      <div class="stat-icon" style="background: var(--warning-light); color: var(--warning);">
         {% include 'partials/icons.html' with name="alert-circle" size=18 %}
       </div>
     </div>
-    <div class="stat-value" style="color: #D97706;">{{ open_count }}</div>
-    <div class="stat-meta">needs action</div>
+    <div class="stat-value" style="color: var(--warning);">{{ open_count }}</div>
+    <div class="stat-meta">need action</div>
   </div>
 
   <div class="stat">
     <div class="stat-header">
       <span class="stat-label">Urgent</span>
-      <div class="stat-icon" style="background: rgba(239, 68, 68, 0.1); color: #DC2626;">
+      <div class="stat-icon" style="background: var(--danger-light); color: var(--danger);">
         {% include 'partials/icons.html' with name="alert-triangle" size=18 %}
       </div>
     </div>
-    <div class="stat-value" style="color: #DC2626;">{{ urgent_count }}</div>
+    <div class="stat-value" style="color: var(--danger);">{{ urgent_count }}</div>
     <div class="stat-meta">high priority</div>
   </div>
 
   <div class="stat">
     <div class="stat-header">
       <span class="stat-label">Resolved</span>
-      <div class="stat-icon" style="background: rgba(34, 197, 94, 0.1); color: #16A34A;">
+      <div class="stat-icon" style="background: var(--success-light); color: var(--success);">
         {% include 'partials/icons.html' with name="check-circle" size=18 %}
       </div>
     </div>
-    <div class="stat-value" style="color: #16A34A;">{{ resolved_count }}</div>
+    <div class="stat-value" style="color: var(--success);">{{ resolved_count }}</div>
     <div class="stat-meta">completed</div>
   </div>
 
 </div>
 
+<!-- ============================================================= -->
+<!-- FILTER CARD                                                   -->
+<!-- ============================================================= -->
 <div class="card mb-6">
-  <form method="get" style="display: flex; flex-wrap: wrap; gap: var(--s-3); align-items: flex-end;">
-    <div style="flex: 1; min-width: 240px;">
-      <label style="display: block; font-size: var(--text-xs); font-weight: 600; color: var(--ink-600); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: var(--s-1);">Search</label>
-      <input name="q" value="{{ search }}" placeholder="Student name or case title..." class="input">
+  <form method="get" class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
+
+    <div class="md:col-span-4">
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2"
+             style="color: var(--ink-600);">Search</label>
+      <input type="text" name="q" value="{{ search }}"
+             placeholder="Student name or case title"
+             class="input w-full">
     </div>
-    <div style="min-width: 180px;">
-      <label style="display: block; font-size: var(--text-xs); font-weight: 600; color: var(--ink-600); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: var(--s-1);">Type</label>
-      <select name="type" class="select">
+
+    <div class="md:col-span-2">
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2"
+             style="color: var(--ink-600);">Type</label>
+      <select name="type" class="select w-full">
         <option value="">All Types</option>
         {% for value, label in type_choices %}
         <option value="{{ value }}" {% if type_filter == value %}selected{% endif %}>{{ label }}</option>
         {% endfor %}
       </select>
     </div>
-    <div style="min-width: 160px;">
-      <label style="display: block; font-size: var(--text-xs); font-weight: 600; color: var(--ink-600); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: var(--s-1);">Status</label>
-      <select name="status" class="select">
+
+    <div class="md:col-span-2">
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2"
+             style="color: var(--ink-600);">Status</label>
+      <select name="status" class="select w-full">
         <option value="">All Statuses</option>
         {% for value, label in status_choices %}
         <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
         {% endfor %}
       </select>
     </div>
-    <button type="submit" class="btn btn-primary">Filter</button>
-    <a href="{% url 'dpa_admin_case_create' %}" class="btn btn-primary" style="margin-left: auto;">+ Open Case</a>
+
+    <div class="md:col-span-2 flex gap-2">
+      <button type="submit" class="btn btn-primary">
+        {% include 'partials/icons.html' with name="search" size=16 %}
+        Filter
+      </button>
+      {% if search or status_filter or type_filter %}
+      <a href="{% url 'dpa_admin_cases' %}" class="btn btn-secondary">
+        {% include 'partials/icons.html' with name="x-circle" size=16 %}
+      </a>
+      {% endif %}
+    </div>
+
+    <div class="md:col-span-2 flex justify-end">
+      <a href="{% url 'dpa_admin_case_create' %}" class="btn btn-primary">
+        {% include 'partials/icons.html' with name="plus" size=16 %}
+        Open Case
+      </a>
+    </div>
+
   </form>
 </div>
 
-<div class="card">
-  <div style="overflow-x: auto;">
-    <table style="width: 100%; font-size: var(--text-sm); border-collapse: collapse;">
+<!-- ============================================================= -->
+<!-- CASES TABLE                                                   -->
+<!-- ============================================================= -->
+{% if cases %}
+<div class="card" style="padding: 0; overflow: hidden;">
+  <div class="table-wrap">
+    <table class="table">
       <thead>
-        <tr style="background: var(--surface-2); text-align: left;">
-          <th style="padding: var(--s-3) var(--s-4); font-weight: 600; font-size: var(--text-xs); text-transform: uppercase; color: var(--ink-600); letter-spacing: 0.05em;">Student</th>
-          <th style="padding: var(--s-3) var(--s-4); font-weight: 600; font-size: var(--text-xs); text-transform: uppercase; color: var(--ink-600); letter-spacing: 0.05em;">Case</th>
-          <th style="padding: var(--s-3) var(--s-4); font-weight: 600; font-size: var(--text-xs); text-transform: uppercase; color: var(--ink-600); letter-spacing: 0.05em;">Type</th>
-          <th style="padding: var(--s-3) var(--s-4); font-weight: 600; font-size: var(--text-xs); text-transform: uppercase; color: var(--ink-600); letter-spacing: 0.05em;">Priority</th>
-          <th style="padding: var(--s-3) var(--s-4); font-weight: 600; font-size: var(--text-xs); text-transform: uppercase; color: var(--ink-600); letter-spacing: 0.05em;">Status</th>
-          <th style="padding: var(--s-3) var(--s-4); font-weight: 600; font-size: var(--text-xs); text-transform: uppercase; color: var(--ink-600); letter-spacing: 0.05em;">Opened</th>
-          <th style="padding: var(--s-3) var(--s-4);"></th>
+        <tr>
+          <th>Student</th>
+          <th>Case</th>
+          <th style="width: 140px;">Type</th>
+          <th style="width: 100px;">Priority</th>
+          <th style="width: 110px;">Status</th>
+          <th style="width: 110px;">Opened</th>
+          <th style="text-align: right;">Actions</th>
         </tr>
       </thead>
       <tbody>
         {% for c in cases %}
-        <tr style="border-top: 1px solid var(--surface-3);">
-          <td style="padding: var(--s-3) var(--s-4); color: var(--ink-900); font-weight: 500;">
-            {{ c.student.first_name }} {{ c.student.last_name }}
-            <div style="font-size: var(--text-xs); color: var(--ink-500); font-weight: normal;">{{ c.student.class_level }}</div>
-          </td>
-          <td style="padding: var(--s-3) var(--s-4); color: var(--ink-700);">{{ c.title }}</td>
-          <td style="padding: var(--s-3) var(--s-4); color: var(--ink-600); font-size: var(--text-xs);">{{ c.get_case_type_display }}</td>
-          <td style="padding: var(--s-3) var(--s-4);">
-            {% if c.priority == 'urgent' %}
-            <span style="display: inline-block; padding: 2px 8px; font-size: var(--text-xs); font-weight: 600; border-radius: 12px; background: rgba(239, 68, 68, 0.15); color: #DC2626;">Urgent</span>
-            {% elif c.priority == 'high' %}
-            <span style="display: inline-block; padding: 2px 8px; font-size: var(--text-xs); font-weight: 600; border-radius: 12px; background: rgba(245, 158, 11, 0.15); color: #D97706;">High</span>
-            {% elif c.priority == 'low' %}
-            <span style="display: inline-block; padding: 2px 8px; font-size: var(--text-xs); font-weight: 600; border-radius: 12px; background: var(--surface-2); color: var(--ink-600);">Low</span>
-            {% else %}
-            <span style="display: inline-block; padding: 2px 8px; font-size: var(--text-xs); font-weight: 600; border-radius: 12px; background: var(--surface-2); color: var(--ink-600);">Normal</span>
-            {% endif %}
-          </td>
-          <td style="padding: var(--s-3) var(--s-4);">
-            {% if c.status == 'open' %}
-            <span style="display: inline-block; padding: 2px 8px; font-size: var(--text-xs); font-weight: 600; border-radius: 12px; background: rgba(245, 158, 11, 0.1); color: #D97706;">Open</span>
-            {% elif c.status == 'in_review' %}
-            <span style="display: inline-block; padding: 2px 8px; font-size: var(--text-xs); font-weight: 600; border-radius: 12px; background: rgba(37, 99, 235, 0.1); color: #2563EB;">In Review</span>
-            {% elif c.status == 'resolved' %}
-            <span style="display: inline-block; padding: 2px 8px; font-size: var(--text-xs); font-weight: 600; border-radius: 12px; background: rgba(34, 197, 94, 0.1); color: #16A34A;">Resolved</span>
-            {% elif c.status == 'referred' %}
-            <span style="display: inline-block; padding: 2px 8px; font-size: var(--text-xs); font-weight: 600; border-radius: 12px; background: rgba(124, 58, 237, 0.1); color: #7C3AED;">Referred</span>
-            {% else %}
-            <span style="display: inline-block; padding: 2px 8px; font-size: var(--text-xs); font-weight: 600; border-radius: 12px; background: var(--surface-2); color: var(--ink-600);">Closed</span>
-            {% endif %}
-          </td>
-          <td style="padding: var(--s-3) var(--s-4); color: var(--ink-500); font-size: var(--text-xs);">{{ c.opened_at|date:"j M Y" }}</td>
-          <td style="padding: var(--s-3) var(--s-4); text-align: right;">
-            <a href="{% url 'dpa_admin_case_detail' c.id %}" class="btn btn-secondary" style="padding: 4px 12px; font-size: var(--text-xs);">View →</a>
-          </td>
-        </tr>
-        {% empty %}
         <tr>
-          <td colspan="7" style="padding: var(--s-8); text-align: center; color: var(--ink-500); font-size: var(--text-sm);">
-            No administrative cases
+          <td>
+            <span style="font-weight: 600; color: var(--ink-900);">
+              {{ c.student.first_name }} {{ c.student.last_name }}
+            </span>
+            <div class="text-xs" style="color: var(--ink-500);">
+              {{ c.student.class_level }}{% if c.student.admission_number %} · {{ c.student.admission_number }}{% endif %}
+            </div>
+          </td>
+          <td>
+            <a href="{% url 'dpa_admin_case_detail' c.id %}"
+               style="color: var(--ink-900); font-weight: 500; text-decoration: none;">
+              {{ c.title }}
+            </a>
+            {% if c.description %}
+            <div class="text-xs mt-1" style="color: var(--ink-500);">
+              {{ c.description|truncatechars:80 }}
+            </div>
+            {% endif %}
+          </td>
+          <td>
+            <span style="font-size: var(--text-sm); color: var(--ink-700);">
+              {{ c.get_case_type_display }}
+            </span>
+          </td>
+          <td>
+            {% if c.priority == 'urgent' %}
+              <span class="badge badge-danger">Urgent</span>
+            {% elif c.priority == 'high' %}
+              <span class="badge badge-warning">High</span>
+            {% elif c.priority == 'low' %}
+              <span class="badge badge-neutral">Low</span>
+            {% else %}
+              <span class="badge badge-neutral">Normal</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if c.status == 'open' %}
+              <span class="badge badge-warning">Open</span>
+            {% elif c.status == 'in_review' %}
+              <span class="badge badge-info">In Review</span>
+            {% elif c.status == 'resolved' %}
+              <span class="badge badge-success">Resolved</span>
+            {% elif c.status == 'referred' %}
+              <span class="badge badge-primary">Referred</span>
+            {% else %}
+              <span class="badge badge-neutral">Closed</span>
+            {% endif %}
+          </td>
+          <td>
+            <span style="font-size: var(--text-sm); color: var(--ink-600);">
+              {{ c.opened_at|date:"j M Y" }}
+            </span>
+          </td>
+          <td>
+            <div class="table-actions" style="justify-content: flex-end;">
+              <a href="{% url 'dpa_admin_case_detail' c.id %}" class="view" title="View case">
+                {% include 'partials/icons.html' with name="eye" size=14 %}
+              </a>
+            </div>
           </td>
         </tr>
         {% endfor %}
@@ -147,5 +207,31 @@
     </table>
   </div>
 </div>
+
+{% else %}
+<!-- ============================================================= -->
+<!-- EMPTY STATE                                                   -->
+<!-- ============================================================= -->
+<div class="card">
+  <div class="empty">
+    {% include 'partials/icons.html' with name="clipboard" size=56 %}
+    {% if search or status_filter or type_filter %}
+      <h3>No matching cases</h3>
+      <p>No administrative cases match the current filters. Try a different search term or clear the filters.</p>
+      <a href="{% url 'dpa_admin_cases' %}" class="btn btn-primary">
+        {% include 'partials/icons.html' with name="x-circle" size=16 %}
+        Clear filters
+      </a>
+    {% else %}
+      <h3>No administrative cases yet</h3>
+      <p>Track student welfare, medical, family, financial, and other non-discipline matters here. Administrative cases are kept separate from discipline records.</p>
+      <a href="{% url 'dpa_admin_case_create' %}" class="btn btn-primary">
+        {% include 'partials/icons.html' with name="plus" size=16 %}
+        Open first case
+      </a>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
 
 {% endblock %}

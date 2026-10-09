@@ -1,118 +1,254 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Discipline Cases{% endblock %}
+{% block header_title %}Discipline Cases{% endblock %}
+{% block header_sub %}
+  {{ total }} case{{ total|pluralize }} · {{ school.name }}
+{% endblock %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
-    <!-- Header -->
-    <div class="mb-6 flex items-center justify-between flex-wrap gap-3">
-        <div>
-            <a href="{% url 'dpa_admin_dashboard' %}" class="text-xs text-indigo-600 hover:text-indigo-700">
-                ← Back to dashboard
-            </a>
-            <h1 class="text-2xl font-bold text-gray-900 mt-1">Discipline Cases</h1>
-            <p class="text-sm text-gray-500 mt-1">{{ total }} record{{ total|pluralize }}</p>
-        </div>
-        <a href="{% url 'dpa_discipline_create' %}"
-           class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700">
-            + Record New Case
-        </a>
+<!-- ============================================================= -->
+<!-- STATS ROW                                                     -->
+<!-- ============================================================= -->
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Total Cases</span>
+      <div class="stat-icon" style="background: var(--primary-light); color: var(--primary);">
+        {% include 'partials/icons.html' with name="alert-triangle" size=18 %}
+      </div>
     </div>
-
-    <!-- Filters -->
-    <form method="get" class="bg-white rounded-xl border border-gray-200 p-4 mb-6 flex flex-wrap gap-3">
-        <input type="text" name="q" value="{{ search }}" placeholder="Search student or description"
-               class="flex-1 min-w-[200px] px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
-        <select name="status" class="px-3 py-2 text-sm border border-gray-300 rounded-lg">
-            <option value="">All statuses</option>
-            {% for value, label in status_choices %}
-            <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
-            {% endfor %}
-        </select>
-        <select name="severity" class="px-3 py-2 text-sm border border-gray-300 rounded-lg">
-            <option value="">All severities</option>
-            {% for value, label in severity_choices %}
-            <option value="{{ value }}" {% if severity_filter == value %}selected{% endif %}>{{ label }}</option>
-            {% endfor %}
-        </select>
-        <button type="submit"
-                class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700">
-            Filter
-        </button>
-        {% if search or status_filter or severity_filter %}
-        <a href="{% url 'dpa_discipline_list' %}"
-           class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
-            Clear
-        </a>
-        {% endif %}
-    </form>
-
-    <!-- Table -->
-    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div class="overflow-x-auto">
-            <table class="w-full text-sm">
-                <thead class="bg-gray-50 text-left text-xs uppercase text-gray-500">
-                    <tr>
-                        <th class="px-5 py-3 font-medium">Student</th>
-                        <th class="px-5 py-3 font-medium">Category</th>
-                        <th class="px-5 py-3 font-medium">Severity</th>
-                        <th class="px-5 py-3 font-medium">Date</th>
-                        <th class="px-5 py-3 font-medium">Status</th>
-                        <th class="px-5 py-3 font-medium">Guardian</th>
-                        <th class="px-5 py-3 font-medium"></th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-100">
-                    {% for record in records %}
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-5 py-3 text-gray-900">
-                            <a href="{% url 'dpa_discipline_detail' record.id %}" class="hover:text-indigo-600">
-                                {{ record.student.first_name }} {{ record.student.last_name }}
-                            </a>
-                            <div class="text-xs text-gray-400">{{ record.student.admission_number }}</div>
-                        </td>
-                        <td class="px-5 py-3 text-gray-700">{{ record.get_category_display }}</td>
-                        <td class="px-5 py-3">
-                            <span class="px-2 py-0.5 text-xs font-medium rounded-full
-                                {% if record.severity == 'critical' %}bg-red-100 text-red-800
-                                {% elif record.severity == 'serious' %}bg-orange-100 text-orange-800
-                                {% elif record.severity == 'moderate' %}bg-amber-100 text-amber-800
-                                {% else %}bg-gray-100 text-gray-700{% endif %}">
-                                {{ record.get_severity_display }}
-                            </span>
-                        </td>
-                        <td class="px-5 py-3 text-gray-500">{{ record.incident_date|date:"j M Y" }}</td>
-                        <td class="px-5 py-3 text-gray-700">{{ record.get_status_display }}</td>
-                        <td class="px-5 py-3">
-                            {% if record.guardian_notified %}
-                            <span class="text-xs font-medium text-green-700">Notified</span>
-                            {% else %}
-                            <span class="text-xs font-medium text-amber-700">Pending</span>
-                            {% endif %}
-                        </td>
-                        <td class="px-5 py-3 text-right">
-                            <a href="{% url 'dpa_discipline_detail' record.id %}"
-                               class="text-xs text-indigo-600 hover:text-indigo-700">
-                                View →
-                            </a>
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="7" class="px-5 py-12 text-center text-sm text-gray-500">
-                            <div class="mb-3">No discipline records found</div>
-                            <a href="{% url 'dpa_discipline_create' %}"
-                               class="inline-block px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700">
-                                + Record First Case
-                            </a>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+    <div class="stat-value">{{ total }}</div>
+    <div class="stat-meta">
+      {% if search or status_filter or severity_filter %}filtered{% else %}all cases{% endif %}
     </div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Critical</span>
+      <div class="stat-icon" style="background: var(--danger-light); color: var(--danger);">
+        {% include 'partials/icons.html' with name="alert-circle" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--danger);">
+      {% for r in records %}{% if r.severity == 'critical' %}1{% endif %}{% endfor %}
+    </div>
+    <div class="stat-meta">severity</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Serious</span>
+      <div class="stat-icon" style="background: var(--warning-light); color: var(--warning);">
+        {% include 'partials/icons.html' with name="alert-circle" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--warning);">
+      {% for r in records %}{% if r.severity == 'serious' %}1{% endif %}{% endfor %}
+    </div>
+    <div class="stat-meta">severity</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Open</span>
+      <div class="stat-icon" style="background: var(--info-light); color: var(--info);">
+        {% include 'partials/icons.html' with name="activity" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--info);">
+      {% for r in records %}{% if r.status == 'open' or r.status == 'investigating' %}1{% endif %}{% endfor %}
+    </div>
+    <div class="stat-meta">active</div>
+  </div>
 
 </div>
+
+<!-- ============================================================= -->
+<!-- FILTER CARD                                                   -->
+<!-- ============================================================= -->
+<div class="card mb-6">
+  <form method="get" class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
+
+    <div class="md:col-span-4">
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2"
+             style="color: var(--ink-600);">Search</label>
+      <input type="text" name="q" value="{{ search }}"
+             placeholder="Student name or description"
+             class="input w-full">
+    </div>
+
+    <div class="md:col-span-2">
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2"
+             style="color: var(--ink-600);">Status</label>
+      <select name="status" class="select w-full">
+        <option value="">All</option>
+        {% for value, label in status_choices %}
+        <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="md:col-span-2">
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2"
+             style="color: var(--ink-600);">Severity</label>
+      <select name="severity" class="select w-full">
+        <option value="">All</option>
+        {% for value, label in severity_choices %}
+        <option value="{{ value }}" {% if severity_filter == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="md:col-span-2 flex gap-2">
+      <button type="submit" class="btn btn-primary">
+        {% include 'partials/icons.html' with name="search" size=16 %}
+        Filter
+      </button>
+      {% if search or status_filter or severity_filter %}
+      <a href="{% url 'dpa_discipline_list' %}" class="btn btn-secondary">
+        {% include 'partials/icons.html' with name="x-circle" size=16 %}
+      </a>
+      {% endif %}
+    </div>
+
+    <div class="md:col-span-2 flex justify-end">
+      <a href="{% url 'dpa_discipline_create' %}" class="btn btn-primary">
+        {% include 'partials/icons.html' with name="plus" size=16 %}
+        Record Case
+      </a>
+    </div>
+
+  </form>
+</div>
+
+<!-- ============================================================= -->
+<!-- CASES TABLE                                                   -->
+<!-- ============================================================= -->
+{% if records %}
+<div class="card" style="padding: 0; overflow: hidden;">
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Student</th>
+          <th style="width: 200px;">Category</th>
+          <th style="width: 120px;">Severity</th>
+          <th style="width: 130px;">Incident Date</th>
+          <th style="width: 130px;">Status</th>
+          <th style="width: 110px;">Guardian</th>
+          <th style="text-align: right;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in records %}
+        <tr>
+          <td>
+            <a href="{% url 'dpa_discipline_detail' r.id %}"
+               style="color: var(--ink-900); font-weight: 600; text-decoration: none;">
+              {{ r.student.first_name }} {{ r.student.last_name }}
+            </a>
+            <div class="text-xs" style="color: var(--ink-500);">
+              {{ r.student.class_level }}{% if r.student.admission_number %} · {{ r.student.admission_number }}{% endif %}
+            </div>
+          </td>
+          <td>
+            <span style="font-size: var(--text-sm); color: var(--ink-700);">
+              {{ r.get_category_display }}
+            </span>
+            {% if r.description %}
+            <div class="text-xs mt-1" style="color: var(--ink-500);">
+              {{ r.description|truncatechars:60 }}
+            </div>
+            {% endif %}
+          </td>
+          <td>
+            {% if r.severity == 'critical' %}
+              <span class="badge badge-danger">Critical</span>
+            {% elif r.severity == 'serious' %}
+              <span class="badge" style="background: var(--warning-light); color: var(--warning);">Serious</span>
+            {% elif r.severity == 'moderate' %}
+              <span class="badge badge-warning">Moderate</span>
+            {% else %}
+              <span class="badge badge-neutral">Minor</span>
+            {% endif %}
+          </td>
+          <td>
+            <span style="font-size: var(--text-sm); color: var(--ink-700);">
+              {{ r.incident_date|date:"j M Y" }}
+            </span>
+            {% if r.incident_time %}
+            <div class="text-xs" style="color: var(--ink-500);">
+              {{ r.incident_time|time:"H:i" }}
+            </div>
+            {% endif %}
+          </td>
+          <td>
+            {% if r.status == 'open' %}
+              <span class="badge badge-warning">Open</span>
+            {% elif r.status == 'investigating' %}
+              <span class="badge badge-info">Investigating</span>
+            {% elif r.status == 'resolved' %}
+              <span class="badge badge-success">Resolved</span>
+            {% elif r.status == 'escalated' %}
+              <span class="badge badge-danger">Escalated</span>
+            {% elif r.status == 'closed' %}
+              <span class="badge badge-neutral">Closed</span>
+            {% elif r.status == 'appealed' %}
+              <span class="badge badge-primary">Appealed</span>
+            {% else %}
+              <span class="badge badge-neutral">{{ r.get_status_display }}</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if r.guardian_notified %}
+              <span class="badge badge-success">Notified</span>
+            {% else %}
+              <span class="badge badge-neutral">Pending</span>
+            {% endif %}
+          </td>
+          <td>
+            <div class="table-actions" style="justify-content: flex-end;">
+              <a href="{% url 'dpa_discipline_detail' r.id %}" class="view" title="View case">
+                {% include 'partials/icons.html' with name="eye" size=14 %}
+              </a>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% else %}
+<!-- ============================================================= -->
+<!-- EMPTY STATE                                                   -->
+<!-- ============================================================= -->
+<div class="card">
+  <div class="empty">
+    {% include 'partials/icons.html' with name="alert-triangle" size=56 %}
+    {% if search or status_filter or severity_filter %}
+      <h3>No matching cases</h3>
+      <p>No discipline cases match the current filters. Try a different search term or clear the filters.</p>
+      <a href="{% url 'dpa_discipline_list' %}" class="btn btn-primary">
+        {% include 'partials/icons.html' with name="x-circle" size=16 %}
+        Clear filters
+      </a>
+    {% else %}
+      <h3>No discipline cases yet</h3>
+      <p>Record student discipline incidents here. Each case can lead to actions, committee decisions, or leave-outs.</p>
+      <a href="{% url 'dpa_discipline_create' %}" class="btn btn-primary">
+        {% include 'partials/icons.html' with name="plus" size=16 %}
+        Record first case
+      </a>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+
 {% endblock %}
