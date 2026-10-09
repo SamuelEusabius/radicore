@@ -19,6 +19,29 @@ class User(AbstractUser):
         related_name='users',
     )
     avatar = models.ImageField(upload_to='avatars/', blank=True, null=True)
+    
+        # ---------- Employment ----------
+    class EmployerType(models.TextChoices):
+        TSC       = 'tsc',       'TSC (Government)'
+        BOM       = 'bom',       'BOM (Board of Management)'
+        PTA       = 'pta',       'PTA'
+        CONTRACT  = 'contract',  'Contract'
+        INTERN    = 'intern',    'Intern'
+        VOLUNTEER = 'volunteer', 'Volunteer'
+        OTHER     = 'other',     'Other'
+
+    employment_number = models.CharField(
+        max_length=30, blank=True, default='',
+        help_text="School-assigned staff number, if any",
+    )
+    employer_type = models.CharField(
+        max_length=15, choices=EmployerType.choices,
+        blank=True, default='',
+    )
+    tsc_number = models.CharField(
+        max_length=30, blank=True, default='',
+        help_text="TSC registration number for TSC teachers",
+    )
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username']

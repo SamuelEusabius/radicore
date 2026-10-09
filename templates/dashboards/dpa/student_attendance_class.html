@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ class_level }} Attendance{% endblock %}
+{% block header_title %}{{ class_level }}{% endblock %}
+{% block header_sub %}{{ selected_date|date:"l, j F Y" }} · {{ total }} student{{ total|pluralize }}{% endblock %}
+
+{% block content %}
+
+<div class="card mb-6">
+  <div style="display: flex; flex-wrap: wrap; gap: var(--s-3); align-items: flex-end; justify-content: space-between;">
+    <div style="display: flex; gap: var(--s-2); align-items: flex-end;">
+      <div>
+        <label style="display: block; font-size: var(--text-xs); font-weight: 600; color: var(--ink-600); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: var(--s-1);">Date</label>
+        <input type="date" value="{{ selected_date|date:'Y-m-d' }}" class="input"
+               onchange="window.location='?date='+this.value">
+      </div>
+      <a href="?date={{ prev_date|date:'Y-m-d' }}" class="btn btn-secondary">← Prev</a>
+      <a href="?date={{ next_date|date:'Y-m-d' }}" class="btn btn-secondary">Next →</a>
+    </div>
+    <a href="{% url 'dpa_student_attendance' %}?date={{ selected_date|date:'Y-m-d' }}" class="btn btn-secondary">← Back</a>
+  </div>
+</div>
+
+<div class="card">
+  <div style="overflow-x: auto;">
+    <table style="width: 100%; font-size: var(--text-sm); border-collapse: collapse;">
+      <thead>
+        <tr style="background: var(--surface-2); text-align: left;">
+          <th style="padding: var(--s-3) var(--s-4); font-weight: 600; font-size: var(--text-xs); text-transform: uppercase; color: var(--ink-600); letter-spacing: 0.05em;">Student</th>
+          <th style="padding: var(--s-3) var(--s-4); font-weight: 600; font-size: var(--text-xs); text-transform: uppercase; color: var(--ink-600); letter-spacing: 0.05em;">Admission No.</th>
+          <th style="padding: var(--s-3) var(--s-4); font-weight: 600; font-size: var(--text-xs); text-transform: uppercase; color: var(--ink-600); letter-spacing: 0.05em;">Status</th>
+          <th style="padding: var(--s-3) var(--s-4); font-weight: 600; font-size: var(--text-xs); text-transform: uppercase; color: var(--ink-600); letter-spacing: 0.05em;">Check In</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in rows %}
+        <tr style="border-top: 1px solid var(--surface-3);">
+          <td style="padding: var(--s-3) var(--s-4); color: var(--ink-900);">
+            {{ r.student.first_name }} {{ r.student.last_name }}
+          </td>
+          <td style="padding: var(--s-3) var(--s-4); color: var(--ink-600); font-size: var(--text-xs);">{{ r.student.admission_number }}</td>
+          <td style="padding: var(--s-3) var(--s-4);">
+            {% if r.status == 'present' %}
+            <span style="display: inline-block; padding: 2px 8px; font-size: var(--text-xs); font-weight: 600; border-radius: 12px; background: rgba(34, 197, 94, 0.1); color: #16A34A;">Present</span>
+            {% elif r.status == 'absent' %}
+            <span style="display: inline-block; padding: 2px 8px; font-size: var(--text-xs); font-weight: 600; border-radius: 12px; background: rgba(239, 68, 68, 0.1); color: #DC2626;">Absent</span>
+            {% elif r.status == 'late' %}
+            <span style="display: inline-block; padding: 2px 8px; font-size: var(--text-xs); font-weight: 600; border-radius: 12px; background: rgba(245, 158, 11, 0.1); color: #D97706;">Late</span>
+            {% else %}
+            <span style="color: var(--ink-400); font-size: var(--text-xs);">Not recorded</span>
+            {% endif %}
+          </td>
+          <td style="padding: var(--s-3) var(--s-4); color: var(--ink-600); font-size: var(--text-xs);">
+            {{ r.check_in|time:"H:i"|default:"—" }}
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="4" style="padding: var(--s-8); text-align: center; color: var(--ink-500); font-size: var(--text-sm);">
+            No students in this class
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}

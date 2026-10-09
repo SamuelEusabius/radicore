@@ -10,6 +10,7 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Count, Q
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
+from django.db.models import Q
 
 from apps.accounts.roles import Role
 from apps.discipline.models import (
@@ -18,11 +19,10 @@ from apps.discipline.models import (
     StudentLeaveOut, LeaveOutType, LeaveOutStatus, SuspensionReason,
 )
 from apps.staff.models import (
-    LeaveRequest, DutyRoster, StaffAttendance,
+    LeaveRequest, DutyRoster, StaffAttendance, StaffMovement,
     LeaveType, LeaveStatus,
-    DutyType, StaffAttendanceStatus,
+    DutyType, StaffAttendanceStatus, MovementDirection,
 )
-
 
 def _require_dpa(request):
     """Return True if current user may see the DPA dashboard."""
@@ -752,4 +752,927 @@ def dpa_discipline_report_pdf(request):
     })
 
     filename = f"discipline_{filename_scope}_{timezone.now().strftime('%Y%m%d_%H%M')}.pdf"
+    return html_to_pdf_response(html_string, filename)
+
+# ==========================================================
+# STAFF MANAGEMENT — attendance, duty roster, leave, movement
+# ==========================================================
+
+from datetime import timedelta
+from django.utils.dateparse import parse_date
+
+
+def _school_staff(request):
+    """All active non-student/non-parent users for this school."""
+    from apps.accounts.models import User
+    from apps.accounts.roles import Role
+    return User.objects.filter(
+        school=request.user.school,
+        is_active=True,
+    ).exclude(
+        role__in=[Role.STUDENT, Role.PARENT, Role.SUPER_ADMIN]
+    ).order_by('first_name', 'last_name', 'email')
+
+
+# ==========================================================
+# STAFF ATTENDANCE
+# ==========================================================
+
+@dpa_required
+def dpa_staff_attendance(request):
+    """Daily attendance grid — one row per staff member for a chosen date."""
+    selected_date_str = request.GET.get('date', '')
+    selected_date = parse_date(selected_date_str) if selected_date_str else timezone.localdate()
+
+    if request.method == 'POST':
+        # Bulk save
+        for key, value in request.POST.items():
+            if not key.startswith('status_'):
+                continue
+            staff_id = key.replace('status_', '')
+            check_in = request.POST.get(f'check_in_{staff_id}', '').strip() or None
+            check_out = request.POST.get(f'check_out_{staff_id}', '').strip() or None
+
+            StaffAttendance.objects.update_or_create(
+                school=request.user.school,
+                staff_id=staff_id,
+                date=selected_date,
+                defaults={
+                    'status': value,
+                    'check_in_time': check_in,
+                    'check_out_time': check_out,
+                    'recorded_by': request.user,
+                },
+            )
+        messages.success(request, f'Attendance saved for {selected_date}.')
+        return redirect(f"{request.path}?date={selected_date.isoformat()}")
+
+    staff_list = _school_staff(request)
+    existing = {
+        a.staff_id: a
+        for a in StaffAttendance.objects.filter(
+            school=request.user.school, date=selected_date
+        )
+    }
+
+    rows = []
+    for staff in staff_list:
+        att = existing.get(staff.id)
+        rows.append({
+            'staff': staff,
+            'attendance': att,
+            'status': att.status if att else 'present',
+            'check_in': att.check_in_time if att else None,
+            'check_out': att.check_out_time if att else None,
+        })
+
+    summary = {
+        'present':  sum(1 for r in rows if r['status'] == StaffAttendanceStatus.PRESENT),
+        'absent':   sum(1 for r in rows if r['status'] == StaffAttendanceStatus.ABSENT),
+        'late':     sum(1 for r in rows if r['status'] == StaffAttendanceStatus.LATE),
+        'on_leave': sum(1 for r in rows if r['status'] == StaffAttendanceStatus.ON_LEAVE),
+        'total':    len(rows),
+    }
+
+    context = {
+        'school': request.user.school,
+        'selected_date': selected_date,
+        'rows': rows,
+        'summary': summary,
+        'status_choices': StaffAttendanceStatus.choices,
+        'prev_date': selected_date - timedelta(days=1),
+        'next_date': selected_date + timedelta(days=1),
+    }
+    return render(request, 'dashboards/dpa/staff_attendance.html', context)
+
+
+@dpa_required
+def dpa_staff_attendance_history(request):
+    """All staff attendance records with filters."""
+    qs = StaffAttendance.objects.filter(
+        school=request.user.school
+    ).select_related('staff', 'recorded_by').order_by('-date', 'staff__first_name')
+
+    date_from = request.GET.get('from', '').strip()
+    date_to = request.GET.get('to', '').strip()
+    status = request.GET.get('status', '').strip()
+
+    if date_from:
+        qs = qs.filter(date__gte=date_from)
+    if date_to:
+        qs = qs.filter(date__lte=date_to)
+    if status:
+        qs = qs.filter(status=status)
+
+    context = {
+        'school': request.user.school,
+        'records': qs[:500],
+        'total': qs.count(),
+        'date_from': date_from,
+        'date_to': date_to,
+        'status_filter': status,
+        'status_choices': StaffAttendanceStatus.choices,
+    }
+    return render(request, 'dashboards/dpa/staff_attendance_history.html', context)
+
+
+# ==========================================================
+# DUTY ROSTER
+# ==========================================================
+
+@dpa_required
+def dpa_duty_roster(request):
+    """Weekly duty roster view."""
+    # Anchor date — defaults to today
+    anchor_str = request.GET.get('week', '')
+    anchor = parse_date(anchor_str) if anchor_str else timezone.localdate()
+
+    # Start of week (Monday)
+    week_start = anchor - timedelta(days=anchor.weekday())
+    week_end = week_start + timedelta(days=6)
+
+    duties = DutyRoster.objects.filter(
+        school=request.user.school,
+        duty_date__gte=week_start,
+        duty_date__lte=week_end,
+    ).select_related('staff', 'assigned_by').order_by('duty_date', 'start_time')
+
+    # Group by date
+    by_day = {}
+    for i in range(7):
+        day = week_start + timedelta(days=i)
+        by_day[day] = [d for d in duties if d.duty_date == day]
+
+    context = {
+        'school': request.user.school,
+        'week_start': week_start,
+        'week_end': week_end,
+        'by_day': by_day,
+        'prev_week': week_start - timedelta(days=7),
+        'next_week': week_start + timedelta(days=7),
+        'total_duties': duties.count(),
+    }
+    return render(request, 'dashboards/dpa/duty_roster.html', context)
+
+
+@dpa_required
+def dpa_duty_create(request):
+    """Create duty assignments for multiple staff over a date range."""
+    if request.method == 'POST':
+        staff_ids = request.POST.getlist('staff_ids')
+        duty_type = request.POST.get('duty_type')
+        date_from = request.POST.get('date_from')
+        date_to = request.POST.get('date_to')
+        start_time = request.POST.get('start_time') or None
+        end_time = request.POST.get('end_time') or None
+        location = request.POST.get('location', '').strip()
+        notes = request.POST.get('notes', '').strip()
+        skip_weekends = request.POST.get('skip_weekends') == 'on'
+        skip_holidays = request.POST.get('skip_holidays') == 'on'
+
+        if not staff_ids or not duty_type or not date_from or not date_to:
+            messages.error(request, 'Please select at least one staff, duty type, and date range.')
+        else:
+            try:
+                df = parse_date(date_from)
+                dt = parse_date(date_to)
+
+                if dt < df:
+                    messages.error(request, 'End date must be on or after start date.')
+                else:
+                    # Build list of dates in range
+                    dates = []
+                    current = df
+                    one_day = timedelta(days=1)
+                    while current <= dt:
+                        if not (skip_weekends and current.weekday() >= 5):
+                            dates.append(current)
+                        current += one_day
+
+                    created = 0
+                    skipped = 0
+                    for staff_id in staff_ids:
+                        for d in dates:
+                            _, was_created = DutyRoster.objects.get_or_create(
+                                school=request.user.school,
+                                staff_id=staff_id,
+                                duty_date=d,
+                                duty_type=duty_type,
+                                defaults={
+                                    'start_time': start_time,
+                                    'end_time': end_time,
+                                    'location': location,
+                                    'notes': notes,
+                                    'assigned_by': request.user,
+                                },
+                            )
+                            if was_created:
+                                created += 1
+                            else:
+                                skipped += 1
+
+                    msg = f'{created} dut{"y" if created == 1 else "ies"} assigned.'
+                    if skipped:
+                        msg += f' {skipped} already existed and were skipped.'
+                    messages.success(request, msg)
+                    return redirect(f"/dashboard/dpa-admin/staff/duty-roster/?week={date_from}")
+            except Exception as e:
+                messages.error(request, f'Error: {e}')
+
+    context = {
+        'school': request.user.school,
+        'staff_list': _school_staff(request),
+        'duty_types': DutyType.choices,
+        'today': timezone.localdate(),
+    }
+    return render(request, 'dashboards/dpa/duty_form.html', context)
+
+@dpa_required
+def dpa_duty_toggle_complete(request, duty_id):
+    """Mark duty as complete/incomplete."""
+    if request.method != 'POST':
+        return redirect('dpa_duty_roster')
+
+    duty = get_object_or_404(DutyRoster, pk=duty_id, school=request.user.school)
+    duty.completed = not duty.completed
+    duty.completed_at = timezone.now() if duty.completed else None
+    duty.save(update_fields=['completed', 'completed_at'])
+    return redirect(request.META.get('HTTP_REFERER', 'dpa_duty_roster'))
+
+
+@dpa_required
+def dpa_duty_delete(request, duty_id):
+    """Delete a duty assignment."""
+    if request.method != 'POST':
+        return redirect('dpa_duty_roster')
+
+    duty = get_object_or_404(DutyRoster, pk=duty_id, school=request.user.school)
+    duty.delete()
+    messages.success(request, 'Duty removed.')
+    return redirect(request.META.get('HTTP_REFERER', 'dpa_duty_roster'))
+
+
+# ==========================================================
+# LEAVE REQUEST DETAIL + APPROVE/REJECT
+# ==========================================================
+
+@dpa_required
+def dpa_leave_detail(request, leave_id):
+    """Full detail of a leave request with approval actions."""
+    leave = get_object_or_404(
+        LeaveRequest.objects.select_related(
+            'staff', 'dpa_approved_by', 'principal_approved_by'
+        ),
+        pk=leave_id, school=request.user.school,
+    )
+
+    context = {
+        'school': request.user.school,
+        'leave': leave,
+        'can_approve_dpa': (
+            request.user.role == Role.DEPUTY_ADMIN
+            and leave.dpa_approved_at is None
+            and leave.status == LeaveStatus.PENDING
+        ),
+        'can_approve_principal': (
+            request.user.role == Role.PRINCIPAL
+            and leave.dpa_approved_at is not None
+            and leave.principal_approved_at is None
+            and leave.status == LeaveStatus.PENDING
+        ),
+    }
+    return render(request, 'dashboards/dpa/leave_detail.html', context)
+
+
+@dpa_required
+def dpa_leave_list(request):
+    """All leave requests."""
+    qs = LeaveRequest.objects.filter(
+        school=request.user.school
+    ).select_related('staff', 'dpa_approved_by', 'principal_approved_by').order_by('-requested_at')
+
+    status = request.GET.get('status', '').strip()
+    if status:
+        qs = qs.filter(status=status)
+
+    context = {
+        'school': request.user.school,
+        'leave_requests': qs[:200],
+        'total': qs.count(),
+        'status_filter': status,
+        'status_choices': LeaveStatus.choices,
+    }
+    return render(request, 'dashboards/dpa/leave_list.html', context)
+
+
+@dpa_required
+def dpa_leave_principal_approve(request, leave_id):
+    """Principal final approval of a leave request."""
+    if request.method != 'POST':
+        return redirect('dpa_leave_detail', leave_id=leave_id)
+
+    if request.user.role != Role.PRINCIPAL:
+        return HttpResponseForbidden("Only the Principal can perform this action.")
+
+    leave = get_object_or_404(LeaveRequest, pk=leave_id, school=request.user.school)
+    leave.principal_approved_by = request.user
+    leave.principal_approved_at = timezone.now()
+    leave.principal_comment = request.POST.get('comment', '').strip()
+    leave.status = LeaveStatus.APPROVED
+    leave.save(update_fields=['principal_approved_by', 'principal_approved_at',
+                              'principal_comment', 'status', 'updated_at'])
+    messages.success(request, 'Leave finally approved.')
+    return redirect('dpa_leave_detail', leave_id=leave.id)
+
+
+# ==========================================================
+# STAFF MOVEMENT LOG
+# ==========================================================
+
+@dpa_required
+def dpa_staff_movement(request):
+    """Staff in/out movement log for a chosen date."""
+    selected_date_str = request.GET.get('date', '')
+    selected_date = parse_date(selected_date_str) if selected_date_str else timezone.localdate()
+
+    movements = StaffMovement.objects.filter(
+        school=request.user.school,
+        movement_date=selected_date,
+    ).select_related('staff', 'recorded_by').order_by('-created_at')
+
+    context = {
+        'school': request.user.school,
+        'selected_date': selected_date,
+        'movements': movements,
+        'total': movements.count(),
+        'prev_date': selected_date - timedelta(days=1),
+        'next_date': selected_date + timedelta(days=1),
+    }
+    return render(request, 'dashboards/dpa/staff_movement.html', context)
+
+
+@dpa_required
+def dpa_staff_movement_create(request):
+    """Log a staff movement."""
+    if request.method == 'POST':
+        staff_id = request.POST.get('staff_id')
+        direction = request.POST.get('direction')
+        reason = request.POST.get('reason', '').strip()
+        expected_return = request.POST.get('expected_return') or None
+
+        if not staff_id or not direction:
+            messages.error(request, 'Staff and direction are required.')
+        else:
+            StaffMovement.objects.create(
+                school=request.user.school,
+                staff_id=staff_id,
+                direction=direction,
+                movement_date=timezone.localdate(),
+                reason=reason,
+                expected_return_time=expected_return,
+                recorded_by=request.user,
+            )
+            messages.success(request, 'Movement logged.')
+            return redirect('dpa_staff_movement')
+
+    context = {
+        'school': request.user.school,
+        'staff_list': _school_staff(request),
+        'today': timezone.localdate(),
+    }
+    return render(request, 'dashboards/dpa/staff_movement_form.html', context)
+
+
+
+# ==========================================================
+# STAFF DIRECTORY
+# ==========================================================
+
+@dpa_required
+def dpa_staff_directory(request):
+    """Searchable staff directory with employment info."""
+    from apps.accounts.models import User
+    from apps.accounts.roles import Role
+
+    qs = User.objects.filter(
+        school=request.user.school,
+        is_active=True,
+    ).exclude(
+        role__in=[Role.STUDENT, Role.PARENT, Role.SUPER_ADMIN]
+    ).order_by('role', 'first_name', 'last_name')
+
+    # Filters
+    q = request.GET.get('q', '').strip()
+    role_filter = request.GET.get('role', '').strip()
+    employer_filter = request.GET.get('employer', '').strip()
+
+    if q:
+        qs = qs.filter(
+            Q(first_name__icontains=q)
+            | Q(last_name__icontains=q)
+            | Q(email__icontains=q)
+            | Q(phone__icontains=q)
+            | Q(employment_number__icontains=q)
+            | Q(tsc_number__icontains=q)
+        )
+    if role_filter:
+        qs = qs.filter(role=role_filter)
+    if employer_filter:
+        qs = qs.filter(employer_type=employer_filter)
+
+    # Stats
+    total_staff = User.objects.filter(
+        school=request.user.school, is_active=True,
+    ).exclude(role__in=[Role.STUDENT, Role.PARENT, Role.SUPER_ADMIN]).count()
+
+    stats = {
+        'total': total_staff,
+        'teachers': qs.filter(role__in=[Role.TEACHER, Role.CLASS_TEACHER]).count(),
+        'tsc': qs.filter(employer_type='tsc').count(),
+        'bom': qs.filter(employer_type='bom').count(),
+    }
+
+    # Build role choices limited to staff roles
+    from apps.accounts.roles import SCHOOL_STAFF
+    role_choices = [
+        (r.value, r.label) for r in SCHOOL_STAFF
+    ]
+
+    context = {
+        'school': request.user.school,
+        'staff_list': qs,
+        'total': qs.count(),
+        'stats': stats,
+        'search': q,
+        'role_filter': role_filter,
+        'employer_filter': employer_filter,
+        'role_choices': role_choices,
+        'employer_choices': User.EmployerType.choices,
+    }
+    return render(request, 'dashboards/dpa/staff_directory.html', context)
+
+
+@dpa_required
+def dpa_staff_detail(request, user_id):
+    """Staff profile — details, duties, leave, movements."""
+    from apps.accounts.models import User
+
+    staff = get_object_or_404(
+        User, pk=user_id, school=request.user.school,
+    )
+
+    recent_duties = DutyRoster.objects.filter(
+        school=request.user.school, staff=staff,
+    ).order_by('-duty_date')[:10]
+
+    recent_leave = LeaveRequest.objects.filter(
+        school=request.user.school, staff=staff,
+    ).order_by('-requested_at')[:10]
+
+    recent_movements = StaffMovement.objects.filter(
+        school=request.user.school, staff=staff,
+    ).order_by('-movement_date', '-movement_time')[:10]
+
+    recent_attendance = StaffAttendance.objects.filter(
+        school=request.user.school, staff=staff,
+    ).order_by('-date')[:30]
+
+    context = {
+        'school': request.user.school,
+        'staff': staff,
+        'recent_duties': recent_duties,
+        'recent_leave': recent_leave,
+        'recent_movements': recent_movements,
+        'recent_attendance': recent_attendance,
+    }
+    return render(request, 'dashboards/dpa/staff_detail.html', context)
+
+
+
+# ==========================================================
+# STUDENT ADMINISTRATION
+# ==========================================================
+
+from apps.students.models import (
+    Student, StudentMovement, StudentAdminCase,
+    StudentMovementDirection, StudentMovementReason,
+    AdminCaseType, AdminCaseStatus, AdminCasePriority,
+)
+from apps.attendance.models import Attendance
+
+
+@dpa_required
+def dpa_student_attendance(request):
+    """Attendance overview by class for a chosen date."""
+    from apps.academics.models import ClassLevel
+
+    selected_date_str = request.GET.get('date', '')
+    selected_date = parse_date(selected_date_str) if selected_date_str else timezone.localdate()
+
+    school = request.user.school
+
+    # Get all classes with students
+    classes = ClassLevel.objects.filter(school=school).order_by('order', 'name')
+
+    # Build per-class summary
+    rows = []
+    for cls in classes:
+        students_in_class = Student.objects.for_user(request.user).filter(
+            class_level=cls.name, is_active=True,
+        )
+        student_count = students_in_class.count()
+        if student_count == 0:
+            continue
+
+        student_ids = list(students_in_class.values_list('id', flat=True))
+        attendance_today = Attendance.objects.filter(
+            student_id__in=student_ids,
+            date=selected_date,
+        )
+
+        present = attendance_today.filter(status='present').count()
+        absent = attendance_today.filter(status='absent').count()
+        late = attendance_today.filter(status='late').count()
+        recorded = attendance_today.count()
+
+        rows.append({
+            'class_level': cls.name,
+            'students': student_count,
+            'recorded': recorded,
+            'present': present,
+            'absent': absent,
+            'late': late,
+            'coverage': round((recorded / student_count) * 100) if student_count else 0,
+        })
+
+    total_students = sum(r['students'] for r in rows)
+    total_present = sum(r['present'] for r in rows)
+    total_absent = sum(r['absent'] for r in rows)
+    total_late = sum(r['late'] for r in rows)
+
+    context = {
+        'school': school,
+        'selected_date': selected_date,
+        'rows': rows,
+        'total_students': total_students,
+        'total_present': total_present,
+        'total_absent': total_absent,
+        'total_late': total_late,
+        'prev_date': selected_date - timedelta(days=1),
+        'next_date': selected_date + timedelta(days=1),
+        'attendance_recorded': sum(r['recorded'] for r in rows),
+    }
+    return render(request, 'dashboards/dpa/student_attendance.html', context)
+
+
+@dpa_required
+def dpa_student_attendance_class(request, class_level):
+    """Per-student attendance for one class on one date."""
+    selected_date_str = request.GET.get('date', '')
+    selected_date = parse_date(selected_date_str) if selected_date_str else timezone.localdate()
+
+    students = Student.objects.for_user(request.user).filter(
+        class_level=class_level, is_active=True,
+    ).order_by('first_name', 'last_name')
+
+    attendance_map = {
+        a.student_id: a
+        for a in Attendance.objects.filter(
+            student__in=students, date=selected_date,
+        )
+    }
+
+    rows = []
+    for s in students:
+        a = attendance_map.get(s.id)
+        rows.append({
+            'student': s,
+            'attendance': a,
+            'status': a.status if a else '—',
+            'check_in': getattr(a, 'check_in_time', None) if a else None,
+        })
+
+    context = {
+        'school': request.user.school,
+        'class_level': class_level,
+        'selected_date': selected_date,
+        'rows': rows,
+        'total': len(rows),
+        'prev_date': selected_date - timedelta(days=1),
+        'next_date': selected_date + timedelta(days=1),
+    }
+    return render(request, 'dashboards/dpa/student_attendance_class.html', context)
+
+
+# ---------- STUDENT MOVEMENT ----------
+
+@dpa_required
+def dpa_student_movement(request):
+    """Student movement log for a chosen date."""
+    selected_date_str = request.GET.get('date', '')
+    selected_date = parse_date(selected_date_str) if selected_date_str else timezone.localdate()
+
+    movements = StudentMovement.objects.filter(
+        school=request.user.school,
+        movement_date=selected_date,
+    ).select_related('student', 'authorized_by', 'released_by').order_by('-movement_time')
+
+    out_count = movements.filter(direction=StudentMovementDirection.OUT).count()
+    in_count = movements.filter(direction=StudentMovementDirection.IN).count()
+    still_out = movements.filter(
+        direction=StudentMovementDirection.OUT,
+        actual_return_time__isnull=True,
+    ).count()
+
+    context = {
+        'school': request.user.school,
+        'selected_date': selected_date,
+        'movements': movements,
+        'out_count': out_count,
+        'in_count': in_count,
+        'still_out': still_out,
+        'total': movements.count(),
+        'prev_date': selected_date - timedelta(days=1),
+        'next_date': selected_date + timedelta(days=1),
+    }
+    return render(request, 'dashboards/dpa/student_movement.html', context)
+
+
+@dpa_required
+def dpa_student_movement_create(request):
+    """Log a student movement."""
+    if request.method == 'POST':
+        student_id = request.POST.get('student_id')
+        direction = request.POST.get('direction')
+        reason = request.POST.get('reason')
+        reason_notes = request.POST.get('reason_notes', '').strip()
+        expected_return = request.POST.get('expected_return') or None
+        notify_guardian = request.POST.get('notify_guardian') == 'on'
+
+        if not all([student_id, direction, reason]):
+            messages.error(request, 'Student, direction, and reason are required.')
+        else:
+            try:
+                student = Student.objects.for_user(request.user).get(pk=student_id)
+                movement = StudentMovement.objects.create(
+                    school=request.user.school,
+                    student=student,
+                    direction=direction,
+                    movement_date=timezone.localdate(),
+                    reason=reason,
+                    reason_notes=reason_notes,
+                    expected_return_time=expected_return,
+                    authorized_by=request.user,
+                    released_by=request.user,
+                    guardian_notified=notify_guardian,
+                    guardian_notified_at=timezone.now() if notify_guardian else None,
+                )
+                messages.success(request, f"Movement logged for {student.first_name}.")
+                return redirect('dpa_student_movement')
+            except Student.DoesNotExist:
+                messages.error(request, 'Student not found.')
+
+    students = Student.objects.for_user(request.user).filter(
+        is_active=True
+    ).order_by('class_level', 'first_name', 'last_name')[:500]
+
+    context = {
+        'school': request.user.school,
+        'students': students,
+        'directions': StudentMovementDirection.choices,
+        'reasons': StudentMovementReason.choices,
+    }
+    return render(request, 'dashboards/dpa/student_movement_form.html', context)
+
+
+@dpa_required
+def dpa_student_movement_return(request, movement_id):
+    """Mark a student as returned (creates the paired IN entry)."""
+    if request.method != 'POST':
+        return redirect('dpa_student_movement')
+
+    out = get_object_or_404(
+        StudentMovement, pk=movement_id, school=request.user.school,
+        direction=StudentMovementDirection.OUT,
+    )
+    now = timezone.localtime().time()
+    out.actual_return_time = now
+    out.save(update_fields=['actual_return_time'])
+
+    StudentMovement.objects.create(
+        school=request.user.school,
+        student=out.student,
+        direction=StudentMovementDirection.IN,
+        movement_date=timezone.localdate(),
+        reason=out.reason,
+        reason_notes=f"Return logged against movement #{out.id}",
+        authorized_by=request.user,
+        released_by=request.user,
+    )
+    messages.success(request, f"{out.student.first_name} marked as returned.")
+    return redirect('dpa_student_movement')
+
+
+# ---------- ADMIN CASES ----------
+
+@dpa_required
+def dpa_admin_cases(request):
+    """List of student administrative cases."""
+    qs = StudentAdminCase.objects.filter(
+        school=request.user.school
+    ).select_related('student', 'opened_by', 'assigned_to').order_by('-created_at')
+
+    status = request.GET.get('status', '').strip()
+    case_type = request.GET.get('type', '').strip()
+    search = request.GET.get('q', '').strip()
+
+    if status:
+        qs = qs.filter(status=status)
+    if case_type:
+        qs = qs.filter(case_type=case_type)
+    if search:
+        qs = qs.filter(
+            Q(title__icontains=search)
+            | Q(description__icontains=search)
+            | Q(student__first_name__icontains=search)
+            | Q(student__last_name__icontains=search)
+        )
+
+    open_count = qs.filter(status__in=[AdminCaseStatus.OPEN, AdminCaseStatus.IN_REVIEW]).count()
+    urgent_count = qs.filter(priority=AdminCasePriority.URGENT).count()
+    resolved_count = qs.filter(status=AdminCaseStatus.RESOLVED).count()
+
+    context = {
+        'school': request.user.school,
+        'cases': qs[:200],
+        'total': qs.count(),
+        'open_count': open_count,
+        'urgent_count': urgent_count,
+        'resolved_count': resolved_count,
+        'status_filter': status,
+        'type_filter': case_type,
+        'search': search,
+        'status_choices': AdminCaseStatus.choices,
+        'type_choices': AdminCaseType.choices,
+    }
+    return render(request, 'dashboards/dpa/admin_cases.html', context)
+
+
+@dpa_required
+def dpa_admin_case_create(request):
+    """Create a new admin case."""
+    if request.method == 'POST':
+        student_id = request.POST.get('student_id')
+        case_type = request.POST.get('case_type')
+        priority = request.POST.get('priority', 'normal')
+        title = request.POST.get('title', '').strip()
+        description = request.POST.get('description', '').strip()
+
+        if not all([student_id, case_type, title, description]):
+            messages.error(request, 'All fields are required.')
+        else:
+            try:
+                student = Student.objects.for_user(request.user).get(pk=student_id)
+                case = StudentAdminCase.objects.create(
+                    school=request.user.school,
+                    student=student,
+                    case_type=case_type,
+                    priority=priority,
+                    title=title,
+                    description=description,
+                    opened_by=request.user,
+                    assigned_to=request.user,
+                )
+                messages.success(request, f"Case opened for {student.first_name}.")
+                return redirect('dpa_admin_case_detail', case_id=case.id)
+            except Student.DoesNotExist:
+                messages.error(request, 'Student not found.')
+
+    students = Student.objects.for_user(request.user).filter(
+        is_active=True
+    ).order_by('class_level', 'first_name', 'last_name')[:500]
+
+    context = {
+        'school': request.user.school,
+        'students': students,
+        'case_types': AdminCaseType.choices,
+        'priorities': AdminCasePriority.choices,
+    }
+    return render(request, 'dashboards/dpa/admin_case_form.html', context)
+
+
+@dpa_required
+def dpa_admin_case_detail(request, case_id):
+    """Detail view of one admin case."""
+    case = get_object_or_404(
+        StudentAdminCase.objects.select_related('student', 'opened_by', 'assigned_to', 'resolved_by'),
+        pk=case_id, school=request.user.school,
+    )
+
+    context = {
+        'school': request.user.school,
+        'case': case,
+        'can_edit': request.user.role in (Role.DEPUTY_ADMIN, Role.PRINCIPAL),
+        'status_choices': AdminCaseStatus.choices,
+    }
+    return render(request, 'dashboards/dpa/admin_case_detail.html', context)
+
+
+@dpa_required
+def dpa_admin_case_update(request, case_id):
+    """Update status/resolution of an admin case."""
+    if request.method != 'POST':
+        return redirect('dpa_admin_case_detail', case_id=case_id)
+
+    case = get_object_or_404(StudentAdminCase, pk=case_id, school=request.user.school)
+    new_status = request.POST.get('status', case.status)
+    notes = request.POST.get('resolution_notes', '').strip()
+
+    case.status = new_status
+    if notes:
+        case.resolution_notes = (case.resolution_notes + '\n\n' + notes).strip() if case.resolution_notes else notes
+
+    if new_status == AdminCaseStatus.RESOLVED:
+        case.resolved_by = request.user
+        case.resolved_at = timezone.now()
+
+    case.save()
+    messages.success(request, 'Case updated.')
+    return redirect('dpa_admin_case_detail', case_id=case.id)
+
+
+
+# ==========================================================
+# DUTY ROSTER PDF
+# ==========================================================
+
+@dpa_required
+def dpa_duty_roster_pdf(request):
+    """Generate PDF of the duty roster for a period — grouped by staff."""
+    anchor_str = request.GET.get('week', '')
+    anchor = parse_date(anchor_str) if anchor_str else timezone.localdate()
+
+    week_start = anchor - timedelta(days=anchor.weekday())
+    week_end = week_start + timedelta(days=6)
+
+    duties = DutyRoster.objects.filter(
+        school=request.user.school,
+        duty_date__gte=week_start,
+        duty_date__lte=week_end,
+    ).select_related('staff', 'assigned_by').order_by('staff__first_name', 'duty_date')
+
+    # Group by staff — one row per staff+duty_type
+    grouped = {}
+    for d in duties:
+        key = (d.staff_id, d.duty_type)
+        if key not in grouped:
+            grouped[key] = {
+                'staff': d.staff,
+                'duty_type': d.duty_type,
+                'duty_type_display': d.get_duty_type_display(),
+                'dates': [],
+                'start_time': d.start_time,
+                'end_time': d.end_time,
+                'location': d.location,
+                'completed_count': 0,
+                'total_count': 0,
+            }
+        grouped[key]['dates'].append(d.duty_date)
+        grouped[key]['total_count'] += 1
+        if d.completed:
+            grouped[key]['completed_count'] += 1
+        # Prefer earliest start time
+        if d.start_time and (grouped[key]['start_time'] is None or d.start_time < grouped[key]['start_time']):
+            grouped[key]['start_time'] = d.start_time
+
+    rows = []
+    for g in grouped.values():
+        g['dates'].sort()
+        g['date_from'] = g['dates'][0]
+        g['date_to'] = g['dates'][-1]
+        g['day_count'] = len(g['dates'])
+        # Format period label
+        if g['date_from'] == g['date_to']:
+            g['period'] = g['date_from'].strftime('%d %b %Y')
+        elif g['date_from'].month == g['date_to'].month and g['date_from'].year == g['date_to'].year:
+            g['period'] = f"{g['date_from'].strftime('%d')} – {g['date_to'].strftime('%d %b %Y')}"
+        else:
+            g['period'] = f"{g['date_from'].strftime('%d %b')} – {g['date_to'].strftime('%d %b %Y')}"
+        rows.append(g)
+
+    # Sort rows by staff name
+    rows.sort(key=lambda r: ((r['staff'].first_name or '').lower(), (r['staff'].last_name or '').lower()))
+
+    html_string = render_to_string('pdf/dpa_duty_roster.html', {
+        'school': request.user.school,
+        'week_start': week_start,
+        'week_end': week_end,
+        'rows': rows,
+        'generated_by': request.user,
+        'generated_on': timezone.now(),
+        'total_duties': duties.count(),
+        'unique_staff': len(set(d.staff_id for d in duties)),
+    })
+
+    filename = f"duty_roster_{week_start.strftime('%Y%m%d')}.pdf"
     return html_to_pdf_response(html_string, filename)

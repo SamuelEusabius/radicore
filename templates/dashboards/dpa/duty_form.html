@@ -1,0 +1,357 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Assign Duty{% endblock %}
+{% block header_title %}Assign Duty{% endblock %}
+{% block header_sub %}Select staff and assign duties over any period{% endblock %}
+
+{% block content %}
+
+<div class="card" style="max-width: 880px;">
+
+  <form method="post" id="duty-form">
+    {% csrf_token %}
+
+    {% if messages %}
+      {% for msg in messages %}
+      <div style="padding: var(--s-3); margin-bottom: var(--s-4); border-radius: 8px;
+        {% if msg.tags == 'error' %}background: rgba(239, 68, 68, 0.1); color: #DC2626;
+        {% else %}background: rgba(34, 197, 94, 0.1); color: #16A34A;{% endif %}
+        font-size: var(--text-sm);">
+        {{ msg }}
+      </div>
+      {% endfor %}
+    {% endif %}
+
+    <!-- ============================================================= -->
+    <!-- STEP 1: STAFF SELECTION                                       -->
+    <!-- ============================================================= -->
+    <div style="margin-bottom: var(--s-6);">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--s-3);">
+        <label style="font-size: var(--text-xs); font-weight: 600; color: var(--ink-600); text-transform: uppercase; letter-spacing: 0.05em;">
+          Step 1 — Select Staff <span style="color: #DC2626;">*</span>
+        </label>
+        <div style="display: flex; gap: var(--s-2); align-items: center;">
+          <button type="button" id="select-all-btn"
+                  class="btn btn-secondary" style="padding: 4px 12px; font-size: var(--text-xs);">
+            Select All
+          </button>
+          <button type="button" id="clear-all-btn"
+                  class="btn btn-secondary" style="padding: 4px 12px; font-size: var(--text-xs);">
+            Clear
+          </button>
+          <span id="selected-count" style="font-size: var(--text-xs); font-weight: 600; color: var(--primary);">
+            0 selected
+          </span>
+        </div>
+      </div>
+
+      <!-- Search filter for staff -->
+      <input type="text" id="staff-search" placeholder="Search staff by name or role..."
+             class="input" style="width: 100%; margin-bottom: var(--s-2);">
+
+      <!-- Staff checkbox grid -->
+      <div id="staff-grid"
+           style="border: 1px solid var(--surface-3); border-radius: 8px; max-height: 340px; overflow-y: auto; padding: var(--s-2);">
+        {% for s in staff_list %}
+        <label class="staff-row" data-search="{{ s.get_full_name|default:s.email|lower }} {{ s.role|lower }} {{ s.email|lower }}"
+               style="display: flex; align-items: center; gap: var(--s-3); padding: var(--s-2) var(--s-3); border-radius: 6px; cursor: pointer; transition: background 0.1s;">
+          <input type="checkbox" name="staff_ids" value="{{ s.id }}"
+                 onchange="updateCount()"
+                 style="width: 16px; height: 16px; accent-color: var(--primary);">
+          <div style="flex: 1; min-width: 0;">
+            <div style="font-weight: 500; color: var(--ink-900); font-size: var(--text-sm);">
+              {{ s.get_full_name|default:s.email }}
+            </div>
+            <div style="font-size: var(--text-xs); color: var(--ink-500);">
+              {{ s.get_role_display|default:s.role }}
+              {% if s.employer_type %} · {{ s.get_employer_type_display }}{% endif %}
+              {% if s.phone %} · {{ s.phone }}{% endif %}
+            </div>
+          </div>
+        </label>
+        {% empty %}
+        <p style="padding: var(--s-4); text-align: center; color: var(--ink-500); font-size: var(--text-sm);">
+          No staff found
+        </p>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- ============================================================= -->
+    <!-- STEP 2: DUTY DETAILS                                          -->
+    <!-- ============================================================= -->
+    <div style="margin-bottom: var(--s-6);">
+      <label style="display: block; font-size: var(--text-xs); font-weight: 600; color: var(--ink-600); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: var(--s-3);">
+        Step 2 — Duty Details
+      </label>
+
+      <div style="margin-bottom: var(--s-4);">
+        <label style="display: block; font-size: var(--text-sm); font-weight: 500; color: var(--ink-700); margin-bottom: var(--s-1);">
+          Duty Type <span style="color: #DC2626;">*</span>
+        </label>
+        <select name="duty_type" required class="select" style="width: 100%;">
+          {% for value, label in duty_types %}
+          <option value="{{ value }}">{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-4);">
+        <div>
+          <label style="display: block; font-size: var(--text-sm); font-weight: 500; color: var(--ink-700); margin-bottom: var(--s-1);">
+            Start Time
+          </label>
+          <input type="time" name="start_time" class="input" style="width: 100%;">
+        </div>
+        <div>
+          <label style="display: block; font-size: var(--text-sm); font-weight: 500; color: var(--ink-700); margin-bottom: var(--s-1);">
+            End Time
+          </label>
+          <input type="time" name="end_time" class="input" style="width: 100%;">
+        </div>
+      </div>
+
+      <div style="margin-top: var(--s-4);">
+        <label style="display: block; font-size: var(--text-sm); font-weight: 500; color: var(--ink-700); margin-bottom: var(--s-1);">
+          Location
+        </label>
+        <input type="text" name="location" placeholder="e.g. Dining hall, Gate, Dormitory" class="input" style="width: 100%;">
+      </div>
+    </div>
+
+    <!-- ============================================================= -->
+    <!-- STEP 3: PERIOD                                                -->
+    <!-- ============================================================= -->
+    <div style="margin-bottom: var(--s-6);">
+      <label style="display: block; font-size: var(--text-xs); font-weight: 600; color: var(--ink-600); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: var(--s-3);">
+        Step 3 — Duty Period
+      </label>
+
+      <!-- Quick duration buttons -->
+      <div style="display: flex; gap: var(--s-2); flex-wrap: wrap; margin-bottom: var(--s-4);">
+        <button type="button" class="duration-btn" data-days="1">1 Day</button>
+        <button type="button" class="duration-btn" data-days="7">1 Week</button>
+        <button type="button" class="duration-btn" data-days="14">2 Weeks</button>
+        <button type="button" class="duration-btn" data-days="30">1 Month</button>
+        <button type="button" class="duration-btn" data-days="90">3 Months</button>
+        <button type="button" class="duration-btn" data-days="0">Custom</button>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-4);">
+        <div>
+          <label style="display: block; font-size: var(--text-sm); font-weight: 500; color: var(--ink-700); margin-bottom: var(--s-1);">
+            Date From <span style="color: #DC2626;">*</span>
+          </label>
+          <input type="date" name="date_from" id="date-from" required
+                 value="{{ today|date:'Y-m-d' }}" class="input" style="width: 100%;">
+        </div>
+        <div>
+          <label style="display: block; font-size: var(--text-sm); font-weight: 500; color: var(--ink-700); margin-bottom: var(--s-1);">
+            Date To <span style="color: #DC2626;">*</span>
+          </label>
+          <input type="date" name="date_to" id="date-to" required
+                 value="{{ today|date:'Y-m-d' }}" class="input" style="width: 100%;">
+        </div>
+      </div>
+
+      <div style="display: flex; gap: var(--s-5); margin-top: var(--s-3); flex-wrap: wrap;">
+        <label style="display: flex; align-items: center; gap: var(--s-2); cursor: pointer; font-size: var(--text-sm);">
+          <input type="checkbox" name="skip_weekends" id="skip-weekends" checked>
+          <span>Skip weekends (Sat & Sun)</span>
+        </label>
+        <label style="display: flex; align-items: center; gap: var(--s-2); cursor: pointer; font-size: var(--text-sm);">
+          <input type="checkbox" name="skip_holidays">
+          <span>Skip public holidays</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- ============================================================= -->
+    <!-- LIVE PREVIEW                                                  -->
+    <!-- ============================================================= -->
+    <div id="preview-box" style="background: var(--surface-2); border-radius: 8px; padding: var(--s-4); margin-bottom: var(--s-5); display: flex; align-items: center; justify-content: space-between;">
+      <div>
+        <div style="font-size: var(--text-xs); color: var(--ink-500); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600;">
+          Preview
+        </div>
+        <div id="preview-text" style="font-size: var(--text-lg); font-weight: 600; color: var(--ink-900); margin-top: 2px;">
+          Select staff and dates
+        </div>
+      </div>
+      <div id="preview-detail" style="font-size: var(--text-sm); color: var(--ink-600); text-align: right;">
+        —
+      </div>
+    </div>
+
+    <!-- ============================================================= -->
+    <!-- NOTES + ACTIONS                                               -->
+    <!-- ============================================================= -->
+    <div style="margin-bottom: var(--s-5);">
+      <label style="display: block; font-size: var(--text-sm); font-weight: 500; color: var(--ink-700); margin-bottom: var(--s-1);">
+        Notes (optional)
+      </label>
+      <textarea name="notes" rows="2" class="input" style="width: 100%;"></textarea>
+    </div>
+
+    <div style="display: flex; justify-content: flex-end; gap: var(--s-3); padding-top: var(--s-4); border-top: 1px solid var(--surface-3);">
+      <a href="{% url 'dpa_duty_roster' %}" class="btn btn-secondary">Cancel</a>
+      <button type="submit" class="btn btn-primary">Assign Duty</button>
+    </div>
+
+  </form>
+</div>
+
+<style>
+  .staff-row:hover { background: var(--surface-2); }
+  .staff-row.checked { background: rgba(10, 138, 95, 0.08); }
+  .duration-btn {
+    padding: 6px 14px;
+    font-size: var(--text-sm);
+    font-weight: 500;
+    border: 1px solid var(--surface-3);
+    border-radius: 6px;
+    background: white;
+    color: var(--ink-700);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .duration-btn:hover { background: var(--surface-2); }
+  .duration-btn.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+  }
+</style>
+
+<script>
+(function() {
+  const form = document.getElementById('duty-form');
+  const staffRows = document.querySelectorAll('.staff-row');
+  const countLabel = document.getElementById('selected-count');
+  const dateFrom = document.getElementById('date-from');
+  const dateTo = document.getElementById('date-to');
+  const skipWeekends = document.getElementById('skip-weekends');
+  const previewText = document.getElementById('preview-text');
+  const previewDetail = document.getElementById('preview-detail');
+  const durationBtns = document.querySelectorAll('.duration-btn');
+  const searchInput = document.getElementById('staff-search');
+
+  // Sync checkbox with row highlight
+  function updateCount() {
+    let count = 0;
+    staffRows.forEach(row => {
+      const cb = row.querySelector('input[type=checkbox]');
+      if (cb.checked) {
+        count++;
+        row.classList.add('checked');
+      } else {
+        row.classList.remove('checked');
+      }
+    });
+    countLabel.textContent = count + ' selected';
+    updatePreview();
+  }
+
+  // Click entire row toggles the checkbox
+  staffRows.forEach(row => {
+    row.addEventListener('click', (e) => {
+      // If the click is directly on the checkbox, let default happen
+      if (e.target.tagName === 'INPUT') return;
+      const cb = row.querySelector('input[type=checkbox]');
+      cb.checked = !cb.checked;
+      updateCount();
+    });
+  });
+
+  // Select all / clear
+  document.getElementById('select-all-btn').addEventListener('click', () => {
+    staffRows.forEach(row => {
+      if (row.style.display !== 'none') {
+        row.querySelector('input[type=checkbox]').checked = true;
+      }
+    });
+    updateCount();
+  });
+
+  document.getElementById('clear-all-btn').addEventListener('click', () => {
+    staffRows.forEach(row => {
+      row.querySelector('input[type=checkbox]').checked = false;
+    });
+    updateCount();
+  });
+
+  // Search filter
+  searchInput.addEventListener('input', (e) => {
+    const q = e.target.value.toLowerCase().trim();
+    staffRows.forEach(row => {
+      const haystack = row.dataset.search || '';
+      row.style.display = (!q || haystack.includes(q)) ? '' : 'none';
+    });
+  });
+
+  // Duration quick buttons
+  durationBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      durationBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      const days = parseInt(btn.dataset.days);
+      if (days > 0) {
+        const from = new Date(dateFrom.value || new Date().toISOString().slice(0, 10));
+        const to = new Date(from);
+        to.setDate(to.getDate() + days - 1);
+
+        dateFrom.value = from.toISOString().slice(0, 10);
+        dateTo.value = to.toISOString().slice(0, 10);
+      }
+      updatePreview();
+    });
+  });
+
+  [dateFrom, dateTo, skipWeekends].forEach(el => {
+    el.addEventListener('change', updatePreview);
+  });
+
+  // Count working days between two dates
+  function workingDays(from, to, skipWE) {
+    let count = 0;
+    let d = new Date(from);
+    const end = new Date(to);
+    while (d <= end) {
+      if (!(skipWE && (d.getDay() === 0 || d.getDay() === 6))) count++;
+      d.setDate(d.getDate() + 1);
+    }
+    return count;
+  }
+
+  function updatePreview() {
+    const selected = document.querySelectorAll('input[name="staff_ids"]:checked').length;
+    const from = dateFrom.value;
+    const to = dateTo.value;
+
+    if (!selected || !from || !to) {
+      previewText.textContent = 'Select staff and dates';
+      previewDetail.textContent = '—';
+      return;
+    }
+
+    if (new Date(to) < new Date(from)) {
+      previewText.textContent = 'Invalid date range';
+      previewDetail.textContent = 'End date must be after start date';
+      return;
+    }
+
+    const days = workingDays(from, to, skipWeekends.checked);
+    const total = selected * days;
+
+    previewText.textContent = selected + ' staff × ' + days + ' day' + (days !== 1 ? 's' : '') + ' = ' + total + ' dut' + (total !== 1 ? 'ies' : 'y');
+    previewDetail.innerHTML = '<span style="color: var(--primary); font-weight: 600;">Will create ' + total + ' assignment' + (total !== 1 ? 's' : '') + '</span>';
+  }
+
+  updateCount();
+  updatePreview();
+})();
+</script>
+
+{% endblock %}

@@ -1,5 +1,6 @@
 from django.db import models
 from apps.schools.managers import TenantManager
+from django.conf import settings
 
 
 class Student(models.Model):
@@ -188,3 +189,163 @@ class CoCurricularActivity(models.Model):
 
     def __str__(self):
         return f"{self.name} — {self.student.full_name}"
+    
+    
+
+# ==========================================================
+# STUDENT MOVEMENT LOG (in/out during school hours)
+# ==========================================================
+
+class StudentMovementDirection(models.TextChoices):
+    OUT = 'out', 'Out'
+    IN = 'in', 'In'
+
+
+class StudentMovementReason(models.TextChoices):
+    SICK_BAY         = 'sick_bay',         'Sick Bay'
+    MEDICAL          = 'medical',          'Medical Appointment'
+    FAMILY_EMERGENCY = 'family_emergency', 'Family Emergency'
+    EARLY_DEPARTURE  = 'early_departure',  'Early Departure'
+    ERRAND           = 'errand',           'School Errand'
+    SPORTS           = 'sports',           'Sports / Competition'
+    SUSPENSION       = 'suspension',       'Suspension'
+    OTHER            = 'other',            'Other'
+
+
+class StudentMovement(models.Model):
+    """A student leaving or returning to school during the school day."""
+
+    school = models.ForeignKey(
+        'schools.School', on_delete=models.CASCADE, related_name='student_movements',
+    )
+    student = models.ForeignKey(
+        Student, on_delete=models.CASCADE, related_name='movements',
+    )
+    direction = models.CharField(max_length=5, choices=StudentMovementDirection.choices)
+    movement_date = models.DateField()
+    movement_time = models.TimeField(auto_now_add=True)
+    reason = models.CharField(max_length=25, choices=StudentMovementReason.choices)
+    reason_notes = models.TextField(blank=True, default='')
+
+    # Who authorized (deputy, nurse, principal)
+    authorized_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='student_movements_authorized',
+    )
+    # Who physically released/received the student (security, teacher on duty)
+    released_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='student_movements_released',
+    )
+
+    # Guardian notification
+    guardian_notified = models.BooleanField(default=False)
+    guardian_notified_at = models.DateTimeField(null=True, blank=True)
+
+    # For OUT entries — was the student expected back?
+    expected_return_time = models.TimeField(null=True, blank=True)
+    actual_return_time = models.TimeField(null=True, blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-movement_date', '-movement_time']
+        indexes = [
+            models.Index(fields=['school', 'movement_date']),
+            models.Index(fields=['student', 'movement_date']),
+            models.Index(fields=['school', 'direction']),
+        ]
+        verbose_name = 'Student Movement'
+        verbose_name_plural = 'Student Movements'
+
+    def __str__(self):
+        return f"{self.student} — {self.get_direction_display()} on {self.movement_date}"
+
+
+# ==========================================================
+# STUDENT ADMINISTRATIVE CASES (non-discipline)
+# ==========================================================
+
+class AdminCaseType(models.TextChoices):
+    MEDICAL       = 'medical',        'Medical'
+    FAMILY        = 'family',         'Family Matter'
+    FINANCIAL     = 'financial',      'Financial Hardship'
+    TRANSPORT     = 'transport',      'Transport Issue'
+    UNIFORM       = 'uniform',        'Uniform / Supplies'
+    ACCOMMODATION = 'accommodation',  'Accommodation'
+    WELFARE       = 'welfare',        'General Welfare'
+    TRANSFER      = 'transfer',       'Transfer Request'
+    OTHER         = 'other',          'Other'
+
+
+class AdminCaseStatus(models.TextChoices):
+    OPEN      = 'open',      'Open'
+    IN_REVIEW = 'in_review', 'In Review'
+    RESOLVED  = 'resolved',  'Resolved'
+    REFERRED  = 'referred',  'Referred to Principal'
+    CLOSED    = 'closed',    'Closed'
+
+
+class AdminCasePriority(models.TextChoices):
+    LOW    = 'low',    'Low'
+    NORMAL = 'normal', 'Normal'
+    HIGH   = 'high',   'High'
+    URGENT = 'urgent', 'Urgent'
+
+
+class StudentAdminCase(models.Model):
+    """An administrative case about a student — not discipline."""
+
+    school = models.ForeignKey(
+        'schools.School', on_delete=models.CASCADE, related_name='student_admin_cases',
+    )
+    student = models.ForeignKey(
+        Student, on_delete=models.CASCADE, related_name='admin_cases',
+    )
+
+    case_type = models.CharField(max_length=20, choices=AdminCaseType.choices)
+    priority = models.CharField(
+        max_length=10, choices=AdminCasePriority.choices, default=AdminCasePriority.NORMAL,
+    )
+    title = models.CharField(max_length=200)
+    description = models.TextField()
+
+    status = models.CharField(
+        max_length=15, choices=AdminCaseStatus.choices, default=AdminCaseStatus.OPEN,
+    )
+
+    opened_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='admin_cases_opened',
+    )
+    opened_at = models.DateTimeField(auto_now_add=True)
+
+    assigned_to = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='admin_cases_assigned',
+    )
+
+    resolved_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='admin_cases_resolved',
+    )
+    resolved_at = models.DateTimeField(null=True, blank=True)
+    resolution_notes = models.TextField(blank=True, default='')
+
+    guardian_informed = models.BooleanField(default=False)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['school', 'status']),
+            models.Index(fields=['school', 'case_type']),
+            models.Index(fields=['student', 'status']),
+        ]
+        verbose_name = 'Student Admin Case'
+        verbose_name_plural = 'Student Admin Cases'
+
+    def __str__(self):
+        return f"{self.student} — {self.title} ({self.get_status_display()})"

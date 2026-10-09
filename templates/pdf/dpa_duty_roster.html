@@ -1,0 +1,409 @@
+{% load static %}
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  /* ============================================================
+     PAGE SETUP — A4 landscape
+     ============================================================ */
+  @page {
+    size: A4 landscape;
+    margin: 12mm 10mm 14mm 10mm;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    font-family: 'DejaVu Sans', Arial, sans-serif;
+    font-size: 9pt;
+    color: #1a1a1a;
+    margin: 0;
+    padding: 0;
+    line-height: 1.35;
+  }
+
+  /* ============================================================
+     INSTITUTIONAL HEADER — table layout (xhtml2pdf safe)
+     ============================================================ */
+  table.report-header {
+    width: 100%;
+    border-collapse: collapse;
+    border-bottom: 2pt solid #00695c;
+    padding-bottom: 10px;
+    margin-bottom: 14px;
+  }
+  table.report-header td {
+    vertical-align: middle;
+    padding: 0 0 10px 0;
+  }
+  .rh-logo { width: 90px; }
+  .rh-logo img {
+    width: 72px;
+    height: 72px;
+  }
+  .rh-school { padding-left: 14px; }
+  .school-name {
+    font-size: 18pt;
+    font-weight: bold;
+    color: #00695c;
+    line-height: 1.1;
+    margin: 0;
+  }
+  .school-motto {
+    font-style: italic;
+    font-size: 9pt;
+    color: #555;
+    margin-top: 2px;
+  }
+  .school-meta {
+    font-size: 8.5pt;
+    color: #555;
+    margin-top: 3px;
+  }
+  .rh-meta {
+    width: 170px;
+    text-align: right;
+    font-size: 8.5pt;
+    color: #444;
+  }
+  .rh-meta .meta-label {
+    font-size: 7pt;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #888;
+    font-weight: bold;
+  }
+  .rh-meta .meta-value {
+    font-size: 9.5pt;
+    font-weight: bold;
+    color: #1a1a1a;
+    margin-top: 1px;
+  }
+  .rh-meta .meta-value-sm {
+    font-size: 8.5pt;
+    color: #555;
+  }
+
+  /* ============================================================
+     TITLE BLOCK
+     ============================================================ */
+  .title-block {
+    text-align: center;
+    padding: 6px 0 14px 0;
+  }
+  .report-title {
+    font-size: 20pt;
+    font-weight: bold;
+    letter-spacing: 0.06em;
+    color: #00695c;
+    margin: 0;
+    padding: 0;
+  }
+  .report-subtitle {
+    font-size: 9.5pt;
+    color: #555;
+    margin: 3px 0 0 0;
+  }
+  .report-period {
+    font-size: 10.5pt;
+    color: #1a1a1a;
+    margin: 8px 0 0 0;
+    font-weight: bold;
+  }
+
+  /* ============================================================
+     SUMMARY CARDS — table layout
+     ============================================================ */
+  table.summary {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 8px 0;
+    margin-bottom: 14px;
+  }
+  table.summary td {
+    background: #f5f7f6;
+    border: 0.5pt solid #d9e2de;
+    padding: 10px 12px;
+    text-align: center;
+    vertical-align: middle;
+    border-radius: 6px;
+  }
+  .summary-label {
+    font-size: 7.5pt;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #666;
+    font-weight: bold;
+    margin-bottom: 4px;
+  }
+  .summary-value {
+    font-size: 18pt;
+    font-weight: bold;
+    color: #00695c;
+    line-height: 1;
+  }
+  .summary-sub {
+    font-size: 7.5pt;
+    color: #888;
+    margin-top: 4px;
+  }
+
+  /* ============================================================
+     DUTY TABLE
+     ============================================================ */
+  table.roster {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 10px;
+  }
+  table.roster thead th {
+    background: #00695c;
+    color: #ffffff;
+    text-align: left;
+    font-size: 8.5pt;
+    font-weight: bold;
+    padding: 7px 10px;
+    border: 0.5pt solid #004d40;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  table.roster tbody td {
+    font-size: 9pt;
+    padding: 7px 10px;
+    border: 0.5pt solid #cfd8d4;
+    vertical-align: top;
+    color: #1a1a1a;
+  }
+  table.roster tbody tr:nth-child(even) td {
+    background: #f7f9f8;
+  }
+
+  .staff-cell strong {
+    color: #1a1a1a;
+    font-size: 9pt;
+  }
+  .staff-cell .sub {
+    font-size: 7.5pt;
+    color: #888;
+    margin-top: 1px;
+  }
+  .role-cell { color: #555; font-size: 8.5pt; }
+  .duty-cell { color: #1a1a1a; font-weight: bold; }
+  .time-cell { color: #333; font-size: 8.5pt; }
+  .location-cell { color: #555; font-size: 8.5pt; }
+
+  .status-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 7.5pt;
+    font-weight: bold;
+    border: 0.5pt solid #999;
+  }
+  .status-complete {
+    background: #e7f6ec;
+    color: #16A34A;
+    border-color: #16A34A;
+  }
+  .status-pending {
+    background: #fef4e2;
+    color: #B45309;
+    border-color: #B45309;
+  }
+  .status-overdue {
+    background: #fdecec;
+    color: #DC2626;
+    border-color: #DC2626;
+  }
+
+  /* ============================================================
+     FOOTER (xhtml2pdf does not support position:fixed, so this
+     appears at the bottom of the last page)
+     ============================================================ */
+  .footer {
+    margin-top: 16px;
+    padding-top: 8px;
+    border-top: 0.5pt solid #d9e2de;
+    text-align: center;
+    font-size: 7.5pt;
+    color: #777;
+  }
+
+  /* Notes box */
+  .notes-box {
+    margin-top: 12px;
+    padding: 8px 10px;
+    border-left: 2pt solid #00695c;
+    background: #f9f9f9;
+    font-size: 8pt;
+    color: #444;
+  }
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     INSTITUTIONAL HEADER
+     ============================================================ -->
+<table class="report-header">
+  <tr>
+    <td class="rh-logo">
+      {% if school.logo %}
+        <img src="{{ school.logo.url }}" alt="{{ school.name }}">
+      {% else %}
+        <img src="{% static 'images/coat_of_arms.png' %}" alt="Coat of Arms">
+      {% endif %}
+    </td>
+    <td class="rh-school">
+      <div class="school-name">{{ school.name }}</div>
+      {% if school.motto %}<div class="school-motto">"{{ school.motto }}"</div>{% endif %}
+      <div class="school-meta">
+        {% if school.code %}School Code: {{ school.code }}{% endif %}
+        {% if school.nemis_code %}{% if school.code %} · {% endif %}NEMIS: {{ school.nemis_code }}{% endif %}
+      </div>
+      <div class="school-meta">
+        {% if school.email %}{{ school.email }}{% endif %}
+        {% if school.phone %}{% if school.email %} · {% endif %}{{ school.phone }}{% endif %}
+      </div>
+      {% if school.physical_address or school.postal_address %}
+      <div class="school-meta">
+        {% if school.physical_address %}{{ school.physical_address }}{% endif %}
+        {% if school.postal_address %}{% if school.physical_address %} · {% endif %}{{ school.postal_address }}{% endif %}
+      </div>
+      {% endif %}
+      {% if school.county or school.sub_county %}
+      <div class="school-meta">
+        {% if school.sub_county %}{{ school.sub_county }} Sub-County{% endif %}
+        {% if school.county %}{% if school.sub_county %} · {% endif %}{{ school.county }} County{% endif %}
+      </div>
+      {% endif %}
+    </td>
+    <td class="rh-meta">
+      <div class="meta-label">Generated</div>
+      <div class="meta-value">{{ generated_on|date:"j F Y" }}</div>
+      <div class="meta-value-sm">{{ generated_on|date:"H:i" }}</div>
+      {% if generated_by %}
+      <div class="meta-label" style="margin-top: 6px;">By</div>
+      <div class="meta-value-sm">{{ generated_by.get_full_name|default:generated_by.email }}</div>
+      {% endif %}
+    </td>
+  </tr>
+</table>
+
+<!-- ============================================================
+     TITLE BLOCK
+     ============================================================ -->
+<div class="title-block">
+  <div class="report-title">DUTY ROSTER</div>
+  <div class="report-subtitle">Weekly Staff Duty Allocation</div>
+  <div class="report-period">
+    Week of {{ week_start|date:"j F Y" }} to {{ week_end|date:"j F Y" }}
+  </div>
+</div>
+
+<!-- ============================================================
+     SUMMARY CARDS
+     ============================================================ -->
+<table class="summary">
+  <tr>
+    <td>
+      <div class="summary-label">Total Duties</div>
+      <div class="summary-value">{{ total_duties }}</div>
+      <div class="summary-sub">assignments</div>
+    </td>
+    <td>
+      <div class="summary-label">Staff Assigned</div>
+      <div class="summary-value">{{ unique_staff }}</div>
+      <div class="summary-sub">member{{ unique_staff|pluralize }}</div>
+    </td>
+    <td>
+      <div class="summary-label">Days Covered</div>
+      <div class="summary-value">{{ by_day|length }}</div>
+      <div class="summary-sub">of 7</div>
+    </td>
+    <td>
+      <div class="summary-label">Period</div>
+      <div class="summary-value" style="font-size: 14pt;">7</div>
+      <div class="summary-sub">days · {{ week_start|date:"j M" }} – {{ week_end|date:"j M" }}</div>
+    </td>
+  </tr>
+</table>
+
+<!-- ============================================================
+     DUTY TABLE — one row per staff+duty with period range
+     ============================================================ -->
+<table class="roster">
+  <thead>
+    <tr>
+      <th style="width: 22%;">Staff</th>
+      <th style="width: 14%;">Role</th>
+      <th style="width: 14%;">Duty</th>
+      <th style="width: 18%;">Period</th>
+      <th style="width: 8%; text-align: center;">Days</th>
+      <th style="width: 11%;">Time</th>
+      <th style="width: 8%;">Location</th>
+      <th style="width: 7%;">Status</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in rows %}
+    <tr>
+      <td class="staff-cell">
+        <strong>{{ row.staff.get_full_name|default:row.staff.email }}</strong>
+        {% if row.staff.phone %}<div class="sub">{{ row.staff.phone }}</div>{% endif %}
+      </td>
+      <td class="role-cell">{{ row.staff.get_role_display|default:row.staff.role }}</td>
+      <td class="duty-cell">{{ row.duty_type_display }}</td>
+      <td class="time-cell">{{ row.period }}</td>
+      <td style="text-align: center; font-weight: bold; color: #00695c;">{{ row.day_count }}</td>
+      <td class="time-cell">
+        {% if row.start_time %}
+          {{ row.start_time|time:"H:i" }}{% if row.end_time %} – {{ row.end_time|time:"H:i" }}{% endif %}
+        {% else %}—{% endif %}
+      </td>
+      <td class="location-cell">{{ row.location|default:"—" }}</td>
+      <td>
+        {% if row.completed_count == row.total_count %}
+          <span class="status-badge status-complete">Done</span>
+        {% elif row.completed_count > 0 %}
+          <span class="status-badge status-pending">{{ row.completed_count }}/{{ row.total_count }}</span>
+        {% else %}
+          <span class="status-badge status-pending">Pending</span>
+        {% endif %}
+      </td>
+    </tr>
+    {% empty %}
+    <tr>
+      <td colspan="8" style="text-align: center; color: #888; padding: 20px;">
+        No duties scheduled for this week
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<!-- ============================================================
+     NOTES
+     ============================================================ -->
+<div class="notes-box">
+  <strong>Note:</strong> This roster covers the period
+  {{ week_start|date:"j F Y" }} to {{ week_end|date:"j F Y" }}.
+  Each row represents one staff member's duty assignment for the period.
+  The "Days" column shows how many days they are on duty.
+</div>
+
+<!-- ============================================================
+     FOOTER
+     ============================================================ -->
+<div class="footer">
+  {{ school.name }}{% if school.code %} · {{ school.code }}{% endif %}
+  &nbsp;·&nbsp;
+  Duty Roster · Week of {{ week_start|date:"j M Y" }}
+  &nbsp;·&nbsp;
+  Generated {{ generated_on|date:"Y-m-d H:i" }}
+  {% if generated_by %}by {{ generated_by.get_full_name|default:generated_by.email }}{% endif %}
+</div>
+
+</body>
+</html>

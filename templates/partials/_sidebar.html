@@ -249,19 +249,40 @@
         {% include 'partials/icons.html' with name="alert-triangle" size=18 %}
         <span class="sidebar-link-text">All Cases</span>
       </a>
+            <div class="sidebar-section-label">Students</div>
+      <a href="{% url 'dpa_student_attendance' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="check-circle" size=18 %}
+        <span class="sidebar-link-text">Attendance</span>
+      </a>
+      <a href="{% url 'dpa_student_movement' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="activity" size=18 %}
+        <span class="sidebar-link-text">Movement Log</span>
+      </a>
+      <a href="{% url 'dpa_admin_cases' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="clipboard" size=18 %}
+        <span class="sidebar-link-text">Admin Cases</span>
+      </a>
 
       <div class="sidebar-section-label">Staff</div>
-      <a href="#" class="sidebar-link">
+      <a href="{% url 'dpa_staff_directory' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="users" size=18 %}
+        <span class="sidebar-link-text">Staff Directory</span>
+      </a>
+      <a href="{% url 'dpa_leave_list' %}" class="sidebar-link">
         {% include 'partials/icons.html' with name="calendar" size=18 %}
         <span class="sidebar-link-text">Leave Requests</span>
       </a>
-      <a href="#" class="sidebar-link">
+      <a href="{% url 'dpa_duty_roster' %}" class="sidebar-link">
         {% include 'partials/icons.html' with name="clipboard" size=18 %}
         <span class="sidebar-link-text">Duty Roster</span>
       </a>
-      <a href="#" class="sidebar-link">
+      <a href="{% url 'dpa_staff_attendance' %}" class="sidebar-link">
         {% include 'partials/icons.html' with name="users" size=18 %}
         <span class="sidebar-link-text">Staff Attendance</span>
+      </a>
+      <a href="{% url 'dpa_staff_movement' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="arrow-right" size=18 %}
+        <span class="sidebar-link-text">Staff Movement</span>
       </a>
 
       <div class="sidebar-section-label">Communication</div>

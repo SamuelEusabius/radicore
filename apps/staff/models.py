@@ -2,6 +2,7 @@ from django.db import models
 from django.conf import settings
 
 
+
 class NonTeachingStaff(models.Model):
     class Role(models.TextChoices):
         SECURITY      = 'security',      'Security / Guard'
@@ -234,3 +235,50 @@ class StaffAttendance(models.Model):
 
     def __str__(self):
         return f"{self.staff} — {self.get_status_display()} on {self.date}"
+    
+    
+
+# ==========================================================
+# STAFF MOVEMENT LOG
+# ==========================================================
+
+class MovementDirection(models.TextChoices):
+    OUT = 'out', 'Out'
+    IN = 'in', 'In'
+
+
+class StaffMovement(models.Model):
+    """A staff member's movement in/out of the school campus."""
+
+    school = models.ForeignKey(
+        'schools.School', on_delete=models.CASCADE, related_name='staff_movements',
+    )
+    staff = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='staff_movements',
+    )
+    direction = models.CharField(max_length=5, choices=MovementDirection.choices)
+    movement_date = models.DateField()
+    movement_time = models.TimeField(auto_now_add=True)
+    reason = models.TextField(blank=True, default='')
+    expected_return_time = models.TimeField(null=True, blank=True)
+    actual_return_time = models.TimeField(null=True, blank=True)
+
+    recorded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='movements_recorded',
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-movement_date', '-movement_time']
+        indexes = [
+            models.Index(fields=['school', 'movement_date']),
+            models.Index(fields=['staff', 'movement_date']),
+        ]
+
+    def __str__(self):
+        return f"{self.staff} — {self.get_direction_display()} on {self.movement_date}"

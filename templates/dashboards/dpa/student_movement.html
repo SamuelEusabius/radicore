@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Student Movement{% endblock %}
+{% block header_title %}Student Movement{% endblock %}
+{% block header_sub %}{{ selected_date|date:"l, j F Y" }}{% endblock %}
+
+{% block content %}
+
+<!-- STATS ROW -->
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Total Today</span>
+      <div class="stat-icon" style="background: rgba(10, 138, 95, 0.1); color: var(--primary);">
+        {% include 'partials/icons.html' with name="activity" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value">{{ total }}</div>
+    <div class="stat-meta">movements logged</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Went Out</span>
+      <div class="stat-icon" style="background: rgba(245, 158, 11, 0.1); color: #D97706;">
+        {% include 'partials/icons.html' with name="arrow-right" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: #D97706;">{{ out_count }}</div>
+    <div class="stat-meta">exits</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Returned</span>
+      <div class="stat-icon" style="background: rgba(34, 197, 94, 0.1); color: #16A34A;">
+        {% include 'partials/icons.html' with name="check-circle" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: #16A34A;">{{ in_count }}</div>
+    <div class="stat-meta">back in</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Still Out</span>
+      <div class="stat-icon" style="background: rgba(239, 68, 68, 0.1); color: #DC2626;">
+        {% include 'partials/icons.html' with name="alert-triangle" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: #DC2626;">{{ still_out }}</div>
+    <div class="stat-meta">not returned</div>
+  </div>
+
+</div>
+
+<!-- FILTER CARD -->
+<div class="card mb-6">
+  <div style="display: flex; flex-wrap: wrap; gap: var(--s-3); align-items: flex-end; justify-content: space-between;">
+    <div style="display: flex; gap: var(--s-2); align-items: flex-end;">
+      <div>
+        <label style="display: block; font-size: var(--text-xs); font-weight: 600; color: var(--ink-600); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: var(--s-1);">Date</label>
+        <input type="date" value="{{ selected_date|date:'Y-m-d' }}" class="input"
+               onchange="window.location='?date='+this.value">
+      </div>
+      <a href="?date={{ prev_date|date:'Y-m-d' }}" class="btn btn-secondary">← Prev</a>
+      <a href="?date={{ next_date|date:'Y-m-d' }}" class="btn btn-secondary">Next →</a>
+    </div>
+    <a href="{% url 'dpa_student_movement_create' %}" class="btn btn-primary">+ Log Movement</a>
+  </div>
+</div>
+
+{% if messages %}
+  {% for msg in messages %}
+  <div class="card mb-6" style="border-left: 4px solid var(--primary); padding: var(--s-3);">
+    <p style="font-size: var(--text-sm); color: var(--ink-900);">{{ msg }}</p>
+  </div>
+  {% endfor %}
+{% endif %}
+
+<!-- TABLE -->
+<div class="card">
+  <div style="overflow-x: auto;">
+    <table style="width: 100%; font-size: var(--text-sm); border-collapse: collapse;">
+      <thead>
+        <tr style="background: var(--surface-2); text-align: left;">
+          <th style="padding: var(--s-3) var(--s-4); font-weight: 600; font-size: var(--text-xs); text-transform: uppercase; color: var(--ink-600); letter-spacing: 0.05em;">Time</th>
+          <th style="padding: var(--s-3) var(--s-4); font-weight: 600; font-size: var(--text-xs); text-transform: uppercase; color: var(--ink-600); letter-spacing: 0.05em;">Student</th>
+          <th style="padding: var(--s-3) var(--s-4); font-weight: 600; font-size: var(--text-xs); text-transform: uppercase; color: var(--ink-600); letter-spacing: 0.05em;">Direction</th>
+          <th style="padding: var(--s-3) var(--s-4); font-weight: 600; font-size: var(--text-xs); text-transform: uppercase; color: var(--ink-600); letter-spacing: 0.05em;">Reason</th>
+          <th style="padding: var(--s-3) var(--s-4); font-weight: 600; font-size: var(--text-xs); text-transform: uppercase; color: var(--ink-600); letter-spacing: 0.05em;">Guardian</th>
+          <th style="padding: var(--s-3) var(--s-4); font-weight: 600; font-size: var(--text-xs); text-transform: uppercase; color: var(--ink-600); letter-spacing: 0.05em;">By</th>
+          <th style="padding: var(--s-3) var(--s-4);"></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for m in movements %}
+        <tr style="border-top: 1px solid var(--surface-3);">
+          <td style="padding: var(--s-3) var(--s-4); color: var(--ink-600); font-size: var(--text-xs);">{{ m.movement_time|time:"H:i" }}</td>
+          <td style="padding: var(--s-3) var(--s-4); color: var(--ink-900); font-weight: 500;">
+            {{ m.student.first_name }} {{ m.student.last_name }}
+            <div style="font-size: var(--text-xs); color: var(--ink-500); font-weight: normal;">{{ m.student.class_level }}</div>
+          </td>
+          <td style="padding: var(--s-3) var(--s-4);">
+            {% if m.direction == 'out' %}
+            <span style="display: inline-block; padding: 2px 8px; font-size: var(--text-xs); font-weight: 600; border-radius: 12px; background: rgba(245, 158, 11, 0.1); color: #D97706;">Out</span>
+            {% else %}
+            <span style="display: inline-block; padding: 2px 8px; font-size: var(--text-xs); font-weight: 600; border-radius: 12px; background: rgba(34, 197, 94, 0.1); color: #16A34A;">In</span>
+            {% endif %}
+          </td>
+          <td style="padding: var(--s-3) var(--s-4); color: var(--ink-700); font-size: var(--text-xs);">
+            {{ m.get_reason_display }}
+          </td>
+          <td style="padding: var(--s-3) var(--s-4); font-size: var(--text-xs);">
+            {% if m.guardian_notified %}
+            <span style="color: #16A34A;">Notified</span>
+            {% else %}
+            <span style="color: var(--ink-400);">—</span>
+            {% endif %}
+          </td>
+          <td style="padding: var(--s-3) var(--s-4); color: var(--ink-600); font-size: var(--text-xs);">
+            {{ m.authorized_by.get_full_name|default:m.authorized_by.email|default:"—" }}
+          </td>
+          <td style="padding: var(--s-3) var(--s-4); text-align: right;">
+            {% if m.direction == 'out' and not m.actual_return_time %}
+            <form method="post" action="{% url 'dpa_student_movement_return' m.id %}" style="display: inline;">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-secondary" style="padding: 4px 12px; font-size: var(--text-xs);">
+                Mark Returned
+              </button>
+            </form>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="7" style="padding: var(--s-8); text-align: center; color: var(--ink-500); font-size: var(--text-sm);">
+            No movements logged for this date
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}

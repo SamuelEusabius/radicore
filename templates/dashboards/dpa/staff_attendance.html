@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Staff Attendance{% endblock %}
+{% block header_title %}Staff Attendance{% endblock %}
+{% block header_sub %}{{ selected_date|date:"l, j F Y" }} · {{ summary.total }} staff{% endblock %}
+
+{% block content %}
+
+<!-- STATS ROW -->
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Total Staff</span>
+      <div class="stat-icon" style="background: rgba(10, 138, 95, 0.1); color: var(--primary);">
+        {% include 'partials/icons.html' with name="users" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value">{{ summary.total }}</div>
+    <div class="stat-meta">on register</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Present</span>
+      <div class="stat-icon" style="background: rgba(34, 197, 94, 0.1); color: #16A34A;">
+        {% include 'partials/icons.html' with name="check-circle" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: #16A34A;">{{ summary.present }}</div>
+    <div class="stat-meta">
+      {% if summary.total %}{% widthratio summary.present summary.total 100 %}% of total{% endif %}
+    </div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Absent</span>
+      <div class="stat-icon" style="background: rgba(239, 68, 68, 0.1); color: #DC2626;">
+        {% include 'partials/icons.html' with name="x-circle" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: #DC2626;">{{ summary.absent }}</div>
+    <div class="stat-meta">today</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">On Leave</span>
+      <div class="stat-icon" style="background: rgba(124, 58, 237, 0.1); color: #7C3AED;">
+        {% include 'partials/icons.html' with name="calendar" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: #7C3AED;">{{ summary.on_leave }}</div>
+    <div class="stat-meta">{{ summary.late }} late today</div>
+  </div>
+
+</div>
+
+<!-- FILTER / DATE NAV -->
+<div class="card mb-6">
+  <div style="display: flex; flex-wrap: wrap; gap: var(--s-3); align-items: flex-end; justify-content: space-between;">
+
+    <div style="display: flex; gap: var(--s-2); align-items: flex-end;">
+      <div>
+        <label style="display: block; font-size: var(--text-xs); font-weight: 600; color: var(--ink-600); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: var(--s-1);">
+          Date
+        </label>
+        <input type="date" name="date" value="{{ selected_date|date:'Y-m-d' }}"
+               class="input" onchange="window.location='?date='+this.value">
+      </div>
+      <a href="?date={{ prev_date|date:'Y-m-d' }}" class="btn btn-secondary">← Prev</a>
+      <a href="?date={{ next_date|date:'Y-m-d' }}" class="btn btn-secondary">Next →</a>
+    </div>
+
+    <div style="display: flex; gap: var(--s-2);">
+      <a href="{% url 'dpa_staff_attendance_history' %}" class="btn btn-secondary">History</a>
+    </div>
+
+  </div>
+</div>
+
+{% if messages %}
+  {% for msg in messages %}
+  <div class="card mb-6" style="border-left: 4px solid var(--primary); padding: var(--s-3);">
+    <p style="font-size: var(--text-sm); color: var(--ink-900);">{{ msg }}</p>
+  </div>
+  {% endfor %}
+{% endif %}
+
+<!-- ATTENDANCE GRID -->
+<form method="post">
+  {% csrf_token %}
+
+  <div class="card">
+    <div style="overflow-x: auto;">
+      <table style="width: 100%; font-size: var(--text-sm); border-collapse: collapse;">
+        <thead>
+          <tr style="background: var(--surface-2); text-align: left;">
+            <th style="padding: var(--s-3) var(--s-4); font-weight: 600; font-size: var(--text-xs); text-transform: uppercase; color: var(--ink-600); letter-spacing: 0.05em;">Staff</th>
+            <th style="padding: var(--s-3) var(--s-4); font-weight: 600; font-size: var(--text-xs); text-transform: uppercase; color: var(--ink-600); letter-spacing: 0.05em;">Role</th>
+            <th style="padding: var(--s-3) var(--s-4); font-weight: 600; font-size: var(--text-xs); text-transform: uppercase; color: var(--ink-600); letter-spacing: 0.05em;">Employer</th>
+            <th style="padding: var(--s-3) var(--s-4); font-weight: 600; font-size: var(--text-xs); text-transform: uppercase; color: var(--ink-600); letter-spacing: 0.05em; min-width: 380px;">Status</th>
+            <th style="padding: var(--s-3) var(--s-4); font-weight: 600; font-size: var(--text-xs); text-transform: uppercase; color: var(--ink-600); letter-spacing: 0.05em; width: 100px;">In</th>
+            <th style="padding: var(--s-3) var(--s-4); font-weight: 600; font-size: var(--text-xs); text-transform: uppercase; color: var(--ink-600); letter-spacing: 0.05em; width: 100px;">Out</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in rows %}
+          <tr style="border-top: 1px solid var(--surface-3);">
+            <td style="padding: var(--s-3) var(--s-4);">
+              <a href="{% url 'dpa_staff_detail' row.staff.id %}" style="color: var(--ink-900); font-weight: 500; text-decoration: none;">
+                {{ row.staff.get_full_name|default:row.staff.email }}
+              </a>
+              {% if row.staff.employment_number %}
+              <div style="font-size: var(--text-xs); color: var(--ink-500);">{{ row.staff.employment_number }}</div>
+              {% endif %}
+            </td>
+            <td style="padding: var(--s-3) var(--s-4); font-size: var(--text-xs); color: var(--ink-600);">
+              {{ row.staff.get_role_display|default:row.staff.role }}
+            </td>
+            <td style="padding: var(--s-3) var(--s-4);">
+              {% if row.staff.employer_type %}
+              <span style="display: inline-block; padding: 2px 8px; font-size: var(--text-xs); font-weight: 600; border-radius: 12px;
+                {% if row.staff.employer_type == 'tsc' %}background: rgba(37, 99, 235, 0.1); color: #2563EB;
+                {% elif row.staff.employer_type == 'bom' %}background: rgba(10, 138, 95, 0.1); color: var(--primary);
+                {% elif row.staff.employer_type == 'pta' %}background: rgba(236, 72, 153, 0.1); color: #EC4899;
+                {% elif row.staff.employer_type == 'intern' %}background: rgba(124, 58, 237, 0.1); color: #7C3AED;
+                {% else %}background: var(--surface-2); color: var(--ink-600);{% endif %}">
+                {{ row.staff.get_employer_type_display }}
+              </span>
+              {% else %}
+              <span style="font-size: var(--text-xs); color: var(--ink-400);">—</span>
+              {% endif %}
+            </td>
+            <td style="padding: var(--s-3) var(--s-4);">
+              <div style="display: flex; gap: var(--s-1); flex-wrap: wrap;">
+                {% for value, label in status_choices %}
+                <label style="cursor: pointer;">
+                  <input type="radio" name="status_{{ row.staff.id }}" value="{{ value }}"
+                         {% if row.status == value %}checked{% endif %}
+                         style="position: absolute; opacity: 0; pointer-events: none;"
+                         onchange="this.parentElement.parentElement.querySelectorAll('span').forEach(el => el.classList.remove('active')); this.nextElementSibling.classList.add('active');">
+                  <span class="status-pill {% if row.status == value %}active{% endif %}">{{ label }}</span>
+                </label>
+                {% endfor %}
+              </div>
+            </td>
+            <td style="padding: var(--s-3) var(--s-4);">
+              <input type="time" name="check_in_{{ row.staff.id }}"
+                     value="{{ row.check_in|time:'H:i'|default:'' }}"
+                     class="input" style="padding: 4px 8px; font-size: var(--text-xs);">
+            </td>
+            <td style="padding: var(--s-3) var(--s-4);">
+              <input type="time" name="check_out_{{ row.staff.id }}"
+                     value="{{ row.check_out|time:'H:i'|default:'' }}"
+                     class="input" style="padding: 4px 8px; font-size: var(--text-xs);">
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="6" style="padding: var(--s-8); text-align: center; color: var(--ink-500); font-size: var(--text-sm);">
+              No staff found for this school
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  {% if rows %}
+  <div style="display: flex; justify-content: flex-end; margin-top: var(--s-4);">
+    <button type="submit" class="btn btn-primary">
+      Save Attendance for {{ selected_date|date:"j M" }}
+    </button>
+  </div>
+  {% endif %}
+</form>
+
+<!-- Small inline style for status pills -->
+<style>
+  .status-pill {
+    display: inline-block;
+    padding: 4px 12px;
+    font-size: var(--text-xs);
+    font-weight: 500;
+    border-radius: 12px;
+    background: var(--surface-2);
+    color: var(--ink-600);
+    border: 1px solid var(--surface-3);
+    transition: all 0.15s;
+  }
+  .status-pill.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+  }
+</style>
+
+{% endblock %}

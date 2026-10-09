@@ -4,6 +4,7 @@ from .models import (
     LeaveRequest,
     DutyRoster,
     StaffAttendance,
+    StaffMovement,
 )
 
 

@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ staff.get_full_name|default:staff.email }}{% endblock %}
+{% block header_title %}{{ staff.get_full_name|default:staff.email }}{% endblock %}
+{% block header_sub %}{{ staff.get_role_display|default:staff.role }}{% endblock %}
+
+{% block content %}
+
+<!-- PROFILE CARD -->
+<div class="card mb-6">
+  <div style="display: flex; gap: var(--s-5); align-items: flex-start; flex-wrap: wrap;">
+
+    <div style="width: 80px; height: 80px; border-radius: 50%; background: var(--primary-soft); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+      {% if staff.avatar %}
+        <img src="{{ staff.avatar.url }}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+      {% else %}
+        <span style="font-size: 28px; font-weight: 700; color: var(--primary);">
+          {{ staff.first_name|slice:":1" }}{{ staff.last_name|slice:":1" }}
+        </span>
+      {% endif %}
+    </div>
+
+    <div style="flex: 1; min-width: 240px;">
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: var(--s-4);">
+        <div>
+          <div style="font-size: var(--text-xs); text-transform: uppercase; color: var(--ink-500); font-weight: 600; letter-spacing: 0.05em;">Role</div>
+          <div style="color: var(--ink-900); font-weight: 500; margin-top: 2px;">{{ staff.get_role_display|default:staff.role }}</div>
+        </div>
+        <div>
+          <div style="font-size: var(--text-xs); text-transform: uppercase; color: var(--ink-500); font-weight: 600; letter-spacing: 0.05em;">Employer</div>
+          <div style="color: var(--ink-900); font-weight: 500; margin-top: 2px;">{{ staff.get_employer_type_display|default:"—" }}</div>
+        </div>
+        <div>
+          <div style="font-size: var(--text-xs); text-transform: uppercase; color: var(--ink-500); font-weight: 600; letter-spacing: 0.05em;">Employment No.</div>
+          <div style="color: var(--ink-900); font-weight: 500; margin-top: 2px;">{{ staff.employment_number|default:"—" }}</div>
+        </div>
+        <div>
+          <div style="font-size: var(--text-xs); text-transform: uppercase; color: var(--ink-500); font-weight: 600; letter-spacing: 0.05em;">TSC No.</div>
+          <div style="color: var(--ink-900); font-weight: 500; margin-top: 2px;">{{ staff.tsc_number|default:"—" }}</div>
+        </div>
+        <div>
+          <div style="font-size: var(--text-xs); text-transform: uppercase; color: var(--ink-500); font-weight: 600; letter-spacing: 0.05em;">Phone</div>
+          <div style="color: var(--ink-900); font-weight: 500; margin-top: 2px;">{{ staff.phone|default:"—" }}</div>
+        </div>
+        <div>
+          <div style="font-size: var(--text-xs); text-transform: uppercase; color: var(--ink-500); font-weight: 600; letter-spacing: 0.05em;">Email</div>
+          <div style="color: var(--ink-900); font-weight: 500; margin-top: 2px;">{{ staff.email }}</div>
+        </div>
+        <div>
+          <div style="font-size: var(--text-xs); text-transform: uppercase; color: var(--ink-500); font-weight: 600; letter-spacing: 0.05em;">Joined</div>
+          <div style="color: var(--ink-900); font-weight: 500; margin-top: 2px;">{{ staff.date_joined|date:"j M Y" }}</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- RECENT ACTIVITY GRID -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+  <!-- Recent attendance -->
+  <div class="card">
+    <h2 style="font-weight: 600; color: var(--ink-900); margin-bottom: var(--s-4);">Recent Attendance</h2>
+    <div style="max-height: 300px; overflow-y: auto;">
+      {% for a in recent_attendance %}
+      <div style="display: flex; justify-content: space-between; padding: var(--s-2) 0; border-bottom: 1px solid var(--surface-2); font-size: var(--text-sm);">
+        <span style="color: var(--ink-700);">{{ a.date|date:"j M Y" }}</span>
+        <span style="font-weight: 500; color:
+          {% if a.status == 'present' %}#16A34A
+          {% elif a.status == 'absent' %}#DC2626
+          {% elif a.status == 'late' %}#D97706
+          {% else %}var(--ink-600){% endif %};">
+          {{ a.get_status_display }}
+        </span>
+      </div>
+      {% empty %}
+      <p style="color: var(--ink-500); font-size: var(--text-sm);">No attendance records</p>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Recent duties -->
+  <div class="card">
+    <h2 style="font-weight: 600; color: var(--ink-900); margin-bottom: var(--s-4);">Recent Duties</h2>
+    <div style="max-height: 300px; overflow-y: auto;">
+      {% for d in recent_duties %}
+      <div style="display: flex; justify-content: space-between; padding: var(--s-2) 0; border-bottom: 1px solid var(--surface-2); font-size: var(--text-sm);">
+        <div>
+          <div style="color: var(--ink-900); font-weight: 500;">{{ d.get_duty_type_display }}</div>
+          <div style="font-size: var(--text-xs); color: var(--ink-500);">{{ d.duty_date|date:"j M Y" }}</div>
+        </div>
+        <span style="font-size: var(--text-xs); color: {% if d.completed %}#16A34A{% else %}var(--ink-500){% endif %};">
+          {% if d.completed %}Done{% else %}Pending{% endif %}
+        </span>
+      </div>
+      {% empty %}
+      <p style="color: var(--ink-500); font-size: var(--text-sm);">No duty records</p>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Recent leave -->
+  <div class="card">
+    <h2 style="font-weight: 600; color: var(--ink-900); margin-bottom: var(--s-4);">Recent Leave</h2>
+    <div style="max-height: 300px; overflow-y: auto;">
+      {% for l in recent_leave %}
+      <div style="padding: var(--s-2) 0; border-bottom: 1px solid var(--surface-2); font-size: var(--text-sm);">
+        <div style="display: flex; justify-content: space-between;">
+          <span style="color: var(--ink-900); font-weight: 500;">{{ l.get_leave_type_display }}</span>
+          <span style="font-size: var(--text-xs); color:
+            {% if l.status == 'approved' %}#16A34A
+            {% elif l.status == 'pending' %}#D97706
+            {% elif l.status == 'rejected' %}#DC2626
+            {% else %}var(--ink-500){% endif %};">
+            {{ l.get_status_display }}
+          </span>
+        </div>
+        <div style="font-size: var(--text-xs); color: var(--ink-500);">
+          {{ l.start_date|date:"j M" }} → {{ l.end_date|date:"j M Y" }}
+        </div>
+      </div>
+      {% empty %}
+      <p style="color: var(--ink-500); font-size: var(--text-sm);">No leave records</p>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Recent movements -->
+  <div class="card">
+    <h2 style="font-weight: 600; color: var(--ink-900); margin-bottom: var(--s-4);">Recent Movements</h2>
+    <div style="max-height: 300px; overflow-y: auto;">
+      {% for m in recent_movements %}
+      <div style="display: flex; justify-content: space-between; padding: var(--s-2) 0; border-bottom: 1px solid var(--surface-2); font-size: var(--text-sm);">
+        <div>
+          <div style="color: var(--ink-900); font-weight: 500;">
+            {% if m.direction == 'out' %}Out{% else %}In{% endif %}
+          </div>
+          <div style="font-size: var(--text-xs); color: var(--ink-500);">{{ m.reason|default:"—" }}</div>
+        </div>
+        <div style="font-size: var(--text-xs); color: var(--ink-500);">
+          {{ m.movement_date|date:"j M" }} {{ m.movement_time|time:"H:i" }}
+        </div>
+      </div>
+      {% empty %}
+      <p style="color: var(--ink-500); font-size: var(--text-sm);">No movement records</p>
+      {% endfor %}
+    </div>
+  </div>
+
+</div>
+
+<!-- Back link -->
+<div style="margin-top: var(--s-6);">
+  <a href="{% url 'dpa_staff_directory' %}" class="btn btn-secondary">← Back to Staff Directory</a>
+</div>
+
+{% endblock %}

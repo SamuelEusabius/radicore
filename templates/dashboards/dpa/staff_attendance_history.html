@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block title %}Staff Attendance History{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+    <nav class="text-xs text-gray-500 mb-4">
+        <a href="{% url 'dpa_admin_dashboard' %}" class="hover:text-indigo-600">DPA Dashboard</a>
+        <span class="mx-2">/</span>
+        <a href="{% url 'dpa_staff_attendance' %}" class="hover:text-indigo-600">Attendance</a>
+        <span class="mx-2">/</span>
+        <span class="text-gray-700">History</span>
+    </nav>
+
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold text-gray-900">Staff Attendance History</h1>
+        <p class="text-sm text-gray-500 mt-1">{{ total }} record{{ total|pluralize }}</p>
+    </div>
+
+    <form method="get" class="bg-white rounded-xl border border-gray-200 p-4 mb-6 flex flex-wrap gap-3">
+        <input type="date" name="from" value="{{ date_from }}" class="px-3 py-2 text-sm border border-gray-300 rounded-lg">
+        <input type="date" name="to" value="{{ date_to }}" class="px-3 py-2 text-sm border border-gray-300 rounded-lg">
+        <select name="status" class="px-3 py-2 text-sm border border-gray-300 rounded-lg">
+            <option value="">All statuses</option>
+            {% for value, label in status_choices %}
+            <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700">
+            Filter
+        </button>
+    </form>
+
+    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead class="bg-gray-50 text-left text-xs uppercase text-gray-500">
+                    <tr>
+                        <th class="px-5 py-3 font-medium">Date</th>
+                        <th class="px-5 py-3 font-medium">Staff</th>
+                        <th class="px-5 py-3 font-medium">Status</th>
+                        <th class="px-5 py-3 font-medium">Check In</th>
+                        <th class="px-5 py-3 font-medium">Check Out</th>
+                        <th class="px-5 py-3 font-medium">Recorded By</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    {% for r in records %}
+                    <tr>
+                        <td class="px-5 py-3 text-gray-700">{{ r.date|date:"j M Y" }}</td>
+                        <td class="px-5 py-3 text-gray-900">{{ r.staff.get_full_name|default:r.staff.email }}</td>
+                        <td class="px-5 py-3">
+                            <span class="px-2 py-0.5 text-xs font-medium rounded-full
+                                {% if r.status == 'present' %}bg-green-100 text-green-800
+                                {% elif r.status == 'absent' %}bg-red-100 text-red-800
+                                {% elif r.status == 'late' %}bg-amber-100 text-amber-800
+                                {% elif r.status == 'on_leave' %}bg-indigo-100 text-indigo-800
+                                {% else %}bg-gray-100 text-gray-700{% endif %}">
+                                {{ r.get_status_display }}
+                            </span>
+                        </td>
+                        <td class="px-5 py-3 text-gray-500">{{ r.check_in_time|time:"H:i"|default:"—" }}</td>
+                        <td class="px-5 py-3 text-gray-500">{{ r.check_out_time|time:"H:i"|default:"—" }}</td>
+                        <td class="px-5 py-3 text-gray-500 text-xs">
+                            {{ r.recorded_by.get_full_name|default:r.recorded_by.email|default:"—" }}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="px-5 py-12 text-center text-sm text-gray-500">
+                            No attendance records found
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

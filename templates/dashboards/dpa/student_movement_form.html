@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Log Student Movement{% endblock %}
+{% block header_title %}Log Student Movement{% endblock %}
+
+{% block content %}
+
+<div class="card" style="max-width: 640px;">
+  <form method="post">
+    {% csrf_token %}
+
+    {% if messages %}
+      {% for msg in messages %}
+      <div style="padding: var(--s-3); margin-bottom: var(--s-4); border-radius: 8px; background: rgba(239, 68, 68, 0.1); color: #DC2626; font-size: var(--text-sm);">
+        {{ msg }}
+      </div>
+      {% endfor %}
+    {% endif %}
+
+    <div style="margin-bottom: var(--s-5);">
+      <label style="display: block; font-size: var(--text-xs); font-weight: 600; color: var(--ink-600); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: var(--s-1);">
+        Student <span style="color: #DC2626;">*</span>
+      </label>
+      <select name="student_id" required class="select">
+        <option value="">— Select student —</option>
+        {% for s in students %}
+        <option value="{{ s.id }}">{{ s.first_name }} {{ s.last_name }} ({{ s.class_level }} · {{ s.admission_number }})</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div style="margin-bottom: var(--s-5);">
+      <label style="display: block; font-size: var(--text-xs); font-weight: 600; color: var(--ink-600); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: var(--s-1);">
+        Direction <span style="color: #DC2626;">*</span>
+      </label>
+      <div style="display: flex; gap: var(--s-2);">
+        {% for value, label in directions %}
+        <label style="flex: 1; cursor: pointer;">
+          <input type="radio" name="direction" value="{{ value }}" {% if forloop.first %}checked{% endif %} style="display: none;" onchange="this.parentElement.parentElement.querySelectorAll('div.pill').forEach(d=>d.classList.remove('active')); this.nextElementSibling.classList.add('active');">
+          <div class="pill {% if forloop.first %}active{% endif %}" style="text-align: center; padding: var(--s-3); border-radius: 8px; border: 1px solid var(--surface-3); font-weight: 500;">
+            {{ label }}
+          </div>
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div style="margin-bottom: var(--s-5);">
+      <label style="display: block; font-size: var(--text-xs); font-weight: 600; color: var(--ink-600); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: var(--s-1);">
+        Reason <span style="color: #DC2626;">*</span>
+      </label>
+      <select name="reason" required class="select">
+        {% for value, label in reasons %}
+        <option value="{{ value }}">{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div style="margin-bottom: var(--s-5);">
+      <label style="display: block; font-size: var(--text-xs); font-weight: 600; color: var(--ink-600); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: var(--s-1);">
+        Notes
+      </label>
+      <textarea name="reason_notes" rows="3" class="input" style="width: 100%;" placeholder="Additional details"></textarea>
+    </div>
+
+    <div style="margin-bottom: var(--s-5);">
+      <label style="display: block; font-size: var(--text-xs); font-weight: 600; color: var(--ink-600); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: var(--s-1);">
+        Expected Return Time
+      </label>
+      <input type="time" name="expected_return" class="input" style="width: 100%;">
+    </div>
+
+    <div style="margin-bottom: var(--s-5);">
+      <label style="display: flex; align-items: center; gap: var(--s-2); cursor: pointer; font-size: var(--text-sm);">
+        <input type="checkbox" name="notify_guardian">
+        <span>Guardian has been notified</span>
+      </label>
+    </div>
+
+    <div style="display: flex; justify-content: flex-end; gap: var(--s-3); padding-top: var(--s-4); border-top: 1px solid var(--surface-3);">
+      <a href="{% url 'dpa_student_movement' %}" class="btn btn-secondary">Cancel</a>
+      <button type="submit" class="btn btn-primary">Log Movement</button>
+    </div>
+
+  </form>
+</div>
+
+<style>
+  .pill.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+  }
+</style>
+
+{% endblock %}

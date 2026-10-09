@@ -1,0 +1,502 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Duty Roster{% endblock %}
+{% block header_title %}Duty Roster{% endblock %}
+{% block header_sub %}Week of {{ week_start|date:"j F Y" }} – {{ week_end|date:"j F Y" }}{% endblock %}
+
+{% block content %}
+
+<!-- ============================================================= -->
+<!-- ACTION BAR (hidden in print)                                  -->
+<!-- ============================================================= -->
+<div class="duty-actions" style="display: flex; flex-wrap: wrap; gap: var(--s-2); justify-content: space-between; align-items: center; margin-bottom: var(--s-5);">
+  <div style="display: flex; gap: var(--s-2); flex-wrap: wrap;">
+    <a href="?week={{ prev_week|date:'Y-m-d' }}" class="btn btn-secondary">← Prev Week</a>
+    <a href="?week={{ next_week|date:'Y-m-d' }}" class="btn btn-secondary">Next Week →</a>
+  </div>
+  <div style="display: flex; gap: var(--s-2); flex-wrap: wrap;">
+    <a href="{% url 'dpa_duty_roster_pdf' %}?week={{ week_start|date:'Y-m-d' }}"
+       target="_blank" class="btn btn-secondary">
+      🖨 Print Roster
+    </a>
+    <a href="{% url 'dpa_duty_create' %}" class="btn btn-primary">+ Assign Duty</a>
+  </div>
+</div>
+
+<!-- ============================================================= -->
+<!-- REPORT DOCUMENT (this is what prints)                         -->
+<!-- ============================================================= -->
+<div class="duty-report" id="duty-report">
+
+  <!-- ---------- INSTITUTIONAL HEADER ---------- -->
+  <header class="report-header">
+    <table class="report-header-table">
+      <tr>
+        <td class="rh-logo">
+          {% if school.logo %}
+            <img src="{{ school.logo.url }}" alt="{{ school.name }}" class="school-logo-img">
+          {% else %}
+            <img src="{% static 'images/coat_of_arms.png' %}" alt="Coat of Arms" class="school-logo-img">
+          {% endif %}
+        </td>
+        <td class="rh-school">
+          <div class="school-name">{{ school.name }}</div>
+          {% if school.motto %}
+          <div class="school-motto">"{{ school.motto }}"</div>
+          {% endif %}
+          <div class="school-meta">
+            {% if school.code %}<span>School Code: {{ school.code }}</span>{% endif %}
+            {% if school.nemis_code %}<span> · NEMIS: {{ school.nemis_code }}</span>{% endif %}
+          </div>
+          <div class="school-meta">
+            {% if school.email %}<span>{{ school.email }}</span>{% endif %}
+            {% if school.phone %}<span> · {{ school.phone }}</span>{% endif %}
+          </div>
+          {% if school.physical_address or school.postal_address %}
+          <div class="school-meta">
+            {% if school.physical_address %}{{ school.physical_address }}{% endif %}
+            {% if school.postal_address %} · {{ school.postal_address }}{% endif %}
+          </div>
+          {% endif %}
+          {% if school.county or school.sub_county %}
+          <div class="school-meta">
+            {% if school.sub_county %}{{ school.sub_county }} Sub-County{% endif %}
+            {% if school.county %} · {{ school.county }} County{% endif %}
+          </div>
+          {% endif %}
+        </td>
+        <td class="rh-meta">
+          <div class="meta-label">Generated</div>
+          <div class="meta-value">{% now "j F Y" %}</div>
+          <div class="meta-value-sm">{% now "H:i" %}</div>
+          {% if request.user %}
+          <div class="meta-label" style="margin-top: 8px;">By</div>
+          <div class="meta-value-sm">{{ request.user.get_full_name|default:request.user.email }}</div>
+          {% endif %}
+        </td>
+      </tr>
+    </table>
+  </header>
+
+  <!-- ---------- REPORT TITLE ---------- -->
+  <div class="report-title-block">
+    <h1 class="report-title">DUTY ROSTER</h1>
+    <p class="report-subtitle">Weekly Staff Duty Allocation</p>
+    <p class="report-period">
+      Week of {{ week_start|date:"j F Y" }} to {{ week_end|date:"j F Y" }}
+    </p>
+  </div>
+
+  <!-- ---------- SUMMARY CARDS ---------- -->
+  <div class="report-summary">
+    <table class="summary-table">
+      <tr>
+        <td class="summary-cell">
+          <div class="summary-label">Total Duties</div>
+          <div class="summary-value">{{ total_duties }}</div>
+          <div class="summary-sub">this week</div>
+        </td>
+        <td class="summary-cell">
+          <div class="summary-label">Staff Assigned</div>
+          <div class="summary-value">
+            {# Count unique staff across all days #}
+            {% with seen="" count=0 %}{% endwith %}
+            {% for day, duties in by_day.items %}{% for d in duties %}{% endfor %}{% endfor %}
+            {% for day, duties in by_day.items %}{% endfor %}
+            {{ by_day|length }}
+          </div>
+          <div class="summary-sub">day{{ by_day|length|pluralize }} with duties</div>
+        </td>
+        <td class="summary-cell">
+          <div class="summary-label">Duties Scheduled</div>
+          <div class="summary-value">{{ total_duties }}</div>
+          <div class="summary-sub">assignment{{ total_duties|pluralize }}</div>
+        </td>
+        <td class="summary-cell">
+          <div class="summary-label">Reporting Period</div>
+          <div class="summary-value" style="font-size: 14pt;">
+            7 days
+          </div>
+          <div class="summary-sub">{{ week_start|date:"j M" }} – {{ week_end|date:"j M" }}</div>
+        </td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- ---------- DAY SECTIONS ---------- -->
+  {% for day, duties in by_day.items %}
+  <section class="day-section">
+    <div class="day-heading">
+      <div class="day-heading-left">
+        <span class="day-name">{{ day|date:"l" }}</span>
+        <span class="day-date">{{ day|date:"j F Y" }}</span>
+      </div>
+      <div class="day-heading-right">
+        {{ duties|length }} dut{{ duties|length|pluralize:"y,ies" }}
+      </div>
+    </div>
+
+    {% if duties %}
+    <table class="duty-table">
+      <thead>
+        <tr>
+          <th style="width: 24%;">Staff</th>
+          <th style="width: 16%;">Role</th>
+          <th style="width: 18%;">Duty</th>
+          <th style="width: 12%;">Time</th>
+          <th style="width: 15%;">Location</th>
+          <th style="width: 15%;">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for duty in duties %}
+        <tr>
+          <td class="cell-staff">
+            <strong>{{ duty.staff.get_full_name|default:duty.staff.email }}</strong>
+            {% if duty.staff.phone %}
+            <div class="cell-sub">{{ duty.staff.phone }}</div>
+            {% endif %}
+          </td>
+          <td class="cell-role">
+            {{ duty.staff.get_role_display|default:duty.staff.role }}
+          </td>
+          <td class="cell-duty">{{ duty.get_duty_type_display }}</td>
+          <td class="cell-time">
+            {% if duty.start_time %}
+              {{ duty.start_time|time:"H:i" }}{% if duty.end_time %} – {{ duty.end_time|time:"H:i" }}{% endif %}
+            {% else %}
+              <span class="cell-empty">—</span>
+            {% endif %}
+          </td>
+          <td class="cell-location">{{ duty.location|default:"—" }}</td>
+          <td class="cell-status">
+            {% if duty.completed %}
+              <span class="status-badge status-complete">✓ Completed</span>
+            {% else %}
+              <span class="status-badge status-pending">Pending</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="empty-day">No duties scheduled for this day</div>
+    {% endif %}
+  </section>
+  {% endfor %}
+
+  <!-- ---------- FOOTER ---------- -->
+  <footer class="report-footer">
+    <div class="footer-left">
+      {{ school.name }}{% if school.code %} · {{ school.code }}{% endif %}
+    </div>
+    <div class="footer-center">
+      Duty Roster · Week of {{ week_start|date:"j M Y" }}
+    </div>
+    <div class="footer-right">
+      Generated {% now "Y-m-d H:i" %}
+    </div>
+  </footer>
+
+</div>
+
+<style>
+/* =============================================================
+   SCREEN STYLES — use existing design tokens
+   ============================================================= */
+.duty-report {
+  background: white;
+  border: 1px solid var(--surface-3);
+  border-radius: 12px;
+  padding: 32px 36px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+/* ---------- HEADER ---------- */
+.report-header-table {
+  width: 100%;
+  border-collapse: collapse;
+  border-bottom: 2px solid #00695c;
+  padding-bottom: 12px;
+  margin-bottom: 20px;
+}
+.report-header-table td { vertical-align: middle; padding: 0 0 12px 0; }
+.rh-logo { width: 90px; }
+.school-logo-img { width: 76px; height: 76px; object-fit: contain; }
+.rh-school { padding-left: 16px; }
+.school-name {
+  font-size: 20pt;
+  font-weight: 700;
+  color: #00695c;
+  line-height: 1.1;
+  margin: 0;
+}
+.school-motto {
+  font-style: italic;
+  color: #555;
+  font-size: 10pt;
+  margin-top: 2px;
+}
+.school-meta {
+  font-size: 9pt;
+  color: #555;
+  margin-top: 3px;
+}
+.school-meta span { white-space: nowrap; }
+.rh-meta { width: 180px; text-align: right; }
+.meta-label {
+  font-size: 7.5pt;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #888;
+  font-weight: 600;
+}
+.meta-value {
+  font-size: 10pt;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-top: 1px;
+}
+.meta-value-sm {
+  font-size: 9pt;
+  color: #555;
+  margin-top: 1px;
+}
+
+/* ---------- TITLE ---------- */
+.report-title-block {
+  text-align: center;
+  padding: 8px 0 20px 0;
+}
+.report-title {
+  font-size: 22pt;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: #00695c;
+  margin: 0;
+  padding: 0;
+}
+.report-subtitle {
+  font-size: 10pt;
+  color: #555;
+  margin: 4px 0 0 0;
+  font-weight: 500;
+}
+.report-period {
+  font-size: 11pt;
+  color: #1a1a1a;
+  margin: 10px 0 0 0;
+  font-weight: 500;
+}
+
+/* ---------- SUMMARY ---------- */
+.report-summary {
+  margin-bottom: 24px;
+}
+.summary-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 12px 0;
+  table-layout: fixed;
+}
+.summary-cell {
+  background: #f5f7f6;
+  border: 1px solid #d9e2de;
+  border-radius: 8px;
+  padding: 14px 16px;
+  text-align: center;
+  vertical-align: middle;
+}
+.summary-label {
+  font-size: 8pt;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #666;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+.summary-value {
+  font-size: 22pt;
+  font-weight: 700;
+  color: #00695c;
+  line-height: 1;
+}
+.summary-sub {
+  font-size: 8pt;
+  color: #888;
+  margin-top: 6px;
+}
+
+/* ---------- DAY SECTIONS ---------- */
+.day-section {
+  margin-bottom: 20px;
+  page-break-inside: avoid;
+}
+.day-heading {
+  background: #00695c;
+  color: white;
+  padding: 9px 14px;
+  border-radius: 6px 6px 0 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 600;
+}
+.day-heading-left { display: flex; gap: 12px; align-items: baseline; }
+.day-name { font-size: 12pt; text-transform: uppercase; letter-spacing: 0.05em; }
+.day-date { font-size: 10pt; opacity: 0.9; }
+.day-heading-right {
+  font-size: 9pt;
+  background: rgba(255, 255, 255, 0.15);
+  padding: 3px 10px;
+  border-radius: 12px;
+}
+
+/* ---------- DUTY TABLE ---------- */
+.duty-table {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid #d9e2de;
+  border-top: none;
+  border-radius: 0 0 6px 6px;
+  overflow: hidden;
+}
+.duty-table thead th {
+  background: #f5f7f6;
+  color: #1a1a1a;
+  text-align: left;
+  font-size: 8.5pt;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 9px 12px;
+  border-bottom: 1px solid #d9e2de;
+}
+.duty-table tbody td {
+  font-size: 9.5pt;
+  padding: 10px 12px;
+  border-bottom: 1px solid #eef1f0;
+  vertical-align: top;
+  color: #1a1a1a;
+}
+.duty-table tbody tr:last-child td { border-bottom: none; }
+.duty-table tbody tr:nth-child(even) { background: #fafbfa; }
+.duty-table tbody tr:hover { background: #f0f7f4; }
+
+.cell-staff strong { color: #1a1a1a; }
+.cell-sub { font-size: 8pt; color: #888; margin-top: 2px; }
+.cell-role { color: #555; font-size: 9pt; }
+.cell-duty { color: #1a1a1a; font-weight: 500; }
+.cell-time { font-variant-numeric: tabular-nums; color: #333; }
+.cell-empty { color: #bbb; }
+.cell-location { color: #555; font-size: 9pt; }
+
+.status-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 8pt;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.status-complete { background: #e7f6ec; color: #16A34A; }
+.status-pending { background: #fef4e2; color: #C27512; }
+
+.empty-day {
+  padding: 14px;
+  text-align: center;
+  font-size: 9pt;
+  color: #888;
+  background: #fafafa;
+  border: 1px solid #d9e2de;
+  border-top: none;
+  border-radius: 0 0 6px 6px;
+}
+
+/* ---------- FOOTER ---------- */
+.report-footer {
+  margin-top: 28px;
+  padding-top: 12px;
+  border-top: 1px solid #d9e2de;
+  display: flex;
+  justify-content: space-between;
+  font-size: 8pt;
+  color: #888;
+}
+
+/* =============================================================
+   PRINT STYLES — @media print
+   ============================================================= */
+@media print {
+  /* Hide navigation, sidebar, topbar, actions */
+  .duty-actions,
+  .sidebar,
+  .topbar,
+  nav,
+  aside,
+  header.topbar { display: none !important; }
+
+  /* Remove chrome from main container */
+  body,
+  main,
+  .content,
+  .main-content,
+  .page-wrapper,
+  .content-wrapper { padding: 0 !important; margin: 0 !important; background: white !important; }
+
+  .duty-report {
+    border: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    max-width: 100% !important;
+    box-shadow: none !important;
+  }
+
+  /* @page setup */
+  @page { size: A4 landscape; margin: 12mm 10mm; }
+
+  /* Keep colors that carry meaning */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Prevent sections from breaking mid-row */
+  .day-section { page-break-inside: avoid; break-inside: avoid; }
+  .duty-table thead { display: table-header-group; }
+  .duty-table tbody tr { page-break-inside: avoid; break-inside: avoid; }
+
+  /* Keep heading with its table */
+  .day-heading { page-break-after: avoid; break-after: avoid; }
+
+  /* Header stays at top of first page */
+  .report-header { page-break-after: avoid; break-after: avoid; }
+  .report-title-block { page-break-after: avoid; break-after: avoid; }
+
+  /* Footer at bottom */
+  .report-footer { page-break-inside: avoid; }
+
+  /* Font smoothing for print */
+  body, .duty-report {
+    font-family: 'DejaVu Sans', Arial, sans-serif;
+    font-size: 9.5pt;
+    color: #000;
+  }
+
+  /* Slightly tighten table padding for print */
+  .duty-table tbody td { padding: 7px 10px; font-size: 9pt; }
+  .duty-table thead th { padding: 7px 10px; font-size: 8pt; }
+
+  /* Hide hover */
+  .duty-table tbody tr:hover { background: transparent; }
+  .duty-table tbody tr:nth-child(even) { background: #f7f7f7; }
+
+  /* Ensure badges stay visible in grayscale */
+  .status-badge { border: 0.5pt solid #999; }
+}
+</style>
+
+{% endblock %}
