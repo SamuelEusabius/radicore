@@ -52,3 +52,202 @@ class Timetable(models.Model):
 
     def __str__(self):
         return f"{self.class_level} - {self.subject} ({self.get_day_of_week_display()})"
+    
+
+# ==========================================================
+# SYLLABUS COVERAGE
+# ==========================================================
+
+class CoverageStatus(models.TextChoices):
+    NOT_STARTED = 'not_started', 'Not Started'
+    IN_PROGRESS = 'in_progress', 'In Progress'
+    COMPLETED   = 'completed',   'Completed'
+    BEHIND      = 'behind',      'Behind Schedule'
+
+
+class SyllabusCoverage(models.Model):
+    """
+    Tracks syllabus coverage per subject/class/term.
+    Updated by teachers; reviewed by DPA Academics.
+    """
+
+    school = models.ForeignKey(
+        'schools.School', on_delete=models.CASCADE, related_name='syllabus_coverage',
+    )
+    class_level = models.ForeignKey(
+        ClassLevel, on_delete=models.CASCADE, related_name='syllabus_coverage',
+    )
+    subject = models.ForeignKey(
+        Subject, on_delete=models.CASCADE, related_name='syllabus_coverage',
+    )
+    teacher = models.ForeignKey(
+        'teachers.Teacher', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='syllabus_coverage',
+    )
+
+    term = models.CharField(max_length=20, blank=True, default='')
+    year = models.PositiveIntegerField()
+
+    topic = models.CharField(max_length=200)
+    status = models.CharField(
+        max_length=15, choices=CoverageStatus.choices, default=CoverageStatus.NOT_STARTED,
+    )
+    percent_complete = models.PositiveIntegerField(
+        default=0, help_text="0-100 progress of this topic",
+    )
+
+    planned_week = models.PositiveIntegerField(null=True, blank=True)
+    completed_date = models.DateField(null=True, blank=True)
+    notes = models.TextField(blank=True, default='')
+
+    updated_by = models.ForeignKey(
+        'accounts.User', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='syllabus_updates',
+    )
+    updated_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['class_level', 'subject', 'planned_week', 'topic']
+        verbose_name = 'Syllabus Coverage'
+        verbose_name_plural = 'Syllabus Coverage'
+        indexes = [
+            models.Index(fields=['school', 'year', 'term']),
+            models.Index(fields=['school', 'class_level', 'subject']),
+        ]
+
+    def __str__(self):
+        return f"{self.class_level} · {self.subject} · {self.topic}"
+
+
+# ==========================================================
+# LESSON PLANS
+# ==========================================================
+
+class LessonPlanStatus(models.TextChoices):
+    DRAFT      = 'draft',      'Draft'
+    SUBMITTED  = 'submitted',  'Submitted for Review'
+    APPROVED   = 'approved',   'Approved'
+    REVISION   = 'revision',   'Needs Revision'
+    REJECTED   = 'rejected',   'Rejected'
+
+
+class LessonPlan(models.Model):
+    """
+    A teacher's lesson plan for a specific class-period.
+    Reviewed and approved by DPA Academics.
+    """
+
+    school = models.ForeignKey(
+        'schools.School', on_delete=models.CASCADE, related_name='lesson_plans',
+    )
+    teacher = models.ForeignKey(
+        'teachers.Teacher', on_delete=models.CASCADE, related_name='lesson_plans',
+    )
+    class_level = models.ForeignKey(
+        ClassLevel, on_delete=models.CASCADE, related_name='lesson_plans',
+    )
+    subject = models.ForeignKey(
+        Subject, on_delete=models.CASCADE, related_name='lesson_plans',
+    )
+
+    title = models.CharField(max_length=200)
+    week_ending = models.DateField(help_text="Week the plan covers")
+    objectives = models.TextField(blank=True, default='')
+    activities = models.TextField(blank=True, default='')
+    resources = models.TextField(blank=True, default='')
+    assessment_method = models.TextField(blank=True, default='')
+
+    status = models.CharField(
+        max_length=15, choices=LessonPlanStatus.choices, default=LessonPlanStatus.DRAFT,
+    )
+
+    submitted_at = models.DateTimeField(null=True, blank=True)
+    reviewed_by = models.ForeignKey(
+        'accounts.User', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='lesson_plans_reviewed',
+    )
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    review_comment = models.TextField(blank=True, default='')
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-week_ending', 'teacher']
+        verbose_name = 'Lesson Plan'
+        verbose_name_plural = 'Lesson Plans'
+        indexes = [
+            models.Index(fields=['school', 'status']),
+            models.Index(fields=['school', 'week_ending']),
+            models.Index(fields=['teacher', 'status']),
+        ]
+
+    def __str__(self):
+        return f"{self.teacher} · {self.subject} · {self.week_ending}"
+
+
+# ==========================================================
+# REMEDIAL CLASSES
+# ==========================================================
+
+class RemedialStatus(models.TextChoices):
+    SCHEDULED = 'scheduled', 'Scheduled'
+    ONGOING   = 'ongoing',   'Ongoing'
+    COMPLETED = 'completed', 'Completed'
+    CANCELLED = 'cancelled', 'Cancelled'
+
+
+class RemedialClass(models.Model):
+    """
+    Remedial / extra-tuition session for a group of students.
+    """
+
+    school = models.ForeignKey(
+        'schools.School', on_delete=models.CASCADE, related_name='remedial_classes',
+    )
+    class_level = models.ForeignKey(
+        ClassLevel, on_delete=models.CASCADE, related_name='remedial_classes',
+    )
+    subject = models.ForeignKey(
+        Subject, on_delete=models.CASCADE, related_name='remedial_classes',
+    )
+    teacher = models.ForeignKey(
+        'teachers.Teacher', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='remedial_classes',
+    )
+
+    title = models.CharField(max_length=200)
+    focus_area = models.TextField(blank=True, default='', help_text="Topics or skills targeted")
+    scheduled_date = models.DateField()
+    start_time = models.TimeField(null=True, blank=True)
+    end_time = models.TimeField(null=True, blank=True)
+    location = models.CharField(max_length=120, blank=True, default='')
+
+    students = models.ManyToManyField(
+        'students.Student', blank=True, related_name='remedial_classes',
+    )
+
+    status = models.CharField(
+        max_length=15, choices=RemedialStatus.choices, default=RemedialStatus.SCHEDULED,
+    )
+    notes = models.TextField(blank=True, default='')
+
+    created_by = models.ForeignKey(
+        'accounts.User', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='remedial_created',
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-scheduled_date', 'start_time']
+        verbose_name = 'Remedial Class'
+        verbose_name_plural = 'Remedial Classes'
+        indexes = [
+            models.Index(fields=['school', 'status']),
+            models.Index(fields=['school', 'scheduled_date']),
+        ]
+
+    def __str__(self):
+        return f"{self.title} — {self.scheduled_date}"
