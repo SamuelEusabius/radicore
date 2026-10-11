@@ -1703,3 +1703,30 @@ def dpa_student_movement(request):
         'next_date': selected_date + timedelta(days=1),
     }
     return render(request, 'dashboards/dpa/student_movement.html', context)
+
+
+
+# ==========================================================
+# LEAVE-OUT PDF
+# ==========================================================
+
+@dpa_required
+def dpa_leave_out_pdf(request, leave_out_id):
+    """Generate professional PDF for a single leave-out / suspension."""
+    leave = get_object_or_404(
+        StudentLeaveOut.objects.select_related(
+            'student', 'discipline_record', 'requested_by',
+            'dpa_approved_by', 'principal_approved_by',
+        ),
+        pk=leave_out_id, school=request.user.school,
+    )
+
+    html_string = render_to_string('pdf/dpa_leave_out.html', {
+        'school': request.user.school,
+        'leave': leave,
+        'generated_by': request.user,
+        'generated_on': timezone.now(),
+    })
+
+    filename = f"leave_out_{leave.id}_{leave.student.admission_number or 'student'}.pdf"
+    return html_to_pdf_response(html_string, filename)

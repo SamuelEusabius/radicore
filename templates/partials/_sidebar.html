@@ -301,6 +301,71 @@
 
     {% endif %}
 
+        <!-- ============================================ -->
+    <!-- DEPUTY PRINCIPAL — ACADEMICS                  -->
+    <!-- ============================================ -->
+    {% if user.role == 'deputy_academics' %}
+      <div class="sidebar-section-label">Overview</div>
+      <a href="{% url 'dpa_acad_dashboard' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="home" size=18 %}
+        <span class="sidebar-link-text">Dashboard</span>
+      </a>
+
+      <div class="sidebar-section-label">Curriculum</div>
+      <a href="#" class="sidebar-link">
+        {% include 'partials/icons.html' with name="book-open" size=18 %}
+        <span class="sidebar-link-text">Syllabus Coverage</span>
+      </a>
+      <a href="#" class="sidebar-link">
+        {% include 'partials/icons.html' with name="file-text" size=18 %}
+        <span class="sidebar-link-text">Lesson Plans</span>
+      </a>
+      <a href="#" class="sidebar-link">
+        {% include 'partials/icons.html' with name="calendar" size=18 %}
+        <span class="sidebar-link-text">Timetable</span>
+      </a>
+
+      <div class="sidebar-section-label">Assessment</div>
+      <a href="#" class="sidebar-link">
+        {% include 'partials/icons.html' with name="clipboard" size=18 %}
+        <span class="sidebar-link-text">Exams</span>
+      </a>
+      <a href="#" class="sidebar-link">
+        {% include 'partials/icons.html' with name="check-circle" size=18 %}
+        <span class="sidebar-link-text">Mark Sheets</span>
+      </a>
+      <a href="#" class="sidebar-link">
+        {% include 'partials/icons.html' with name="bar-chart" size=18 %}
+        <span class="sidebar-link-text">Reports</span>
+      </a>
+
+      <div class="sidebar-section-label">Teaching</div>
+      <a href="#" class="sidebar-link">
+        {% include 'partials/icons.html' with name="teacher" size=18 %}
+        <span class="sidebar-link-text">Teacher Performance</span>
+      </a>
+      <a href="#" class="sidebar-link">
+        {% include 'partials/icons.html' with name="users" size=18 %}
+        <span class="sidebar-link-text">Subject Allocation</span>
+      </a>
+
+      <div class="sidebar-section-label">Students</div>
+      <a href="#" class="sidebar-link">
+        {% include 'partials/icons.html' with name="activity" size=18 %}
+        <span class="sidebar-link-text">Remedial Classes</span>
+      </a>
+
+      <div class="sidebar-section-label">Communication</div>
+      <a href="{% url 'messages_inbox' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="message-square" size=18 %}
+        <span class="sidebar-link-text">Messages</span>
+      </a>
+      <a href="{% url 'notifications_list' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="bell" size=18 %}
+        <span class="sidebar-link-text">Notifications</span>
+      </a>
+    {% endif %}
+
 
     <!-- ============================================ -->
     <!-- TEACHER                                       -->

@@ -231,6 +231,7 @@ from .dpa_admin import (
     dpa_leave_detail,
     dpa_leave_list,
     dpa_leave_principal_approve,
+    dpa_leave_out_pdf,
     dpa_staff_movement,
     dpa_staff_movement_create,
     dpa_staff_directory,
@@ -244,4 +245,8 @@ from .dpa_admin import (
     dpa_admin_case_create,
     dpa_admin_case_detail,
     dpa_admin_case_update,
+)
+
+from .dpa_academics import (
+    dpa_acad_dashboard,
 )

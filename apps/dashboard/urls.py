@@ -41,6 +41,7 @@ urlpatterns = [
     path('dpa-admin/staff/', views.dpa_staff_directory, name='dpa_staff_directory'),
     path('dpa-admin/staff/<int:user_id>/', views.dpa_staff_detail, name='dpa_staff_detail'),
     path('dpa-admin/staff/duty-roster/pdf/', views.dpa_duty_roster_pdf, name='dpa_duty_roster_pdf'),
+    path('dpa-admin/leave-outs/<int:leave_out_id>/pdf/',views.dpa_leave_out_pdf, name='dpa_leave_out_pdf'),
     
         # Student administration
     path('dpa-admin/students/attendance/', views.dpa_student_attendance, name='dpa_student_attendance'),
@@ -382,4 +383,7 @@ urlpatterns = [
         # Placeholder dashboards (until modules built)
     path('store-keeper/', views.store_keeper_dashboard_placeholder, name='store_keeper_dashboard'),
     path('boarding/', views.boarding_dashboard_placeholder, name='boarding_dashboard'),
+    
+        # Deputy Principal — Academics
+    path('dpa-acad/', views.dpa_acad_dashboard, name='dpa_acad_dashboard'),
 ]

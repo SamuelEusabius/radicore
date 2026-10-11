@@ -118,7 +118,7 @@ ROLE_DASHBOARD_MAP = {
     # school leadership
     'principal':             'dash_school_admin',
     'deputy_admin':          'dpa_admin_dashboard',
-    'deputy_academics':      'dashboard_placeholder',
+    'deputy_academics':      'dpa_acad_dashboard',
     'director_of_studies':   'dos_dashboard',
 
     # teaching

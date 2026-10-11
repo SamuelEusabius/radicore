@@ -1,0 +1,317 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}DPA Academics Dashboard{% endblock %}
+{% block header_title %}Deputy Principal — Academics{% endblock %}
+{% block header_sub %}
+  {{ school.name }} · {{ today|date:"l, j F Y" }}
+{% endblock %}
+
+{% block content %}
+
+{% if messages %}
+  {% for msg in messages %}
+  <div class="card mb-6" style="border-left: 4px solid var(--primary); padding: var(--s-4);">
+    <p class="text-sm" style="margin: 0; color: var(--ink-800);">{{ msg }}</p>
+  </div>
+  {% endfor %}
+{% endif %}
+
+<!-- ============================================================= -->
+<!-- KPI ROW                                                       -->
+<!-- ============================================================= -->
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Syllabus Coverage</span>
+      <div class="stat-icon" style="background: var(--primary-light); color: var(--primary);">
+        {% include 'partials/icons.html' with name="book-open" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value">{{ syllabus_stats.percent }}%</div>
+    <div class="stat-meta">
+      {{ syllabus_stats.completed }} of {{ syllabus_stats.total }} topics
+    </div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Lesson Plans</span>
+      <div class="stat-icon" style="background: var(--warning-light); color: var(--warning);">
+        {% include 'partials/icons.html' with name="file-text" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--warning);">{{ lesson_plan_stats.submitted }}</div>
+    <div class="stat-meta">awaiting approval</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Mark Sheets</span>
+      <div class="stat-icon" style="background: var(--info-light); color: var(--info);">
+        {% include 'partials/icons.html' with name="clipboard" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--info);">{{ mark_sheet_stats.submitted }}</div>
+    <div class="stat-meta">awaiting review</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Active Teachers</span>
+      <div class="stat-icon" style="background: var(--success-light); color: var(--success);">
+        {% include 'partials/icons.html' with name="teacher" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--success);">{{ teacher_count }}</div>
+    <div class="stat-meta">{{ observations_this_term }} observed this month</div>
+  </div>
+
+</div>
+
+<!-- ============================================================= -->
+<!-- CURRICULUM PROGRESS BAR                                       -->
+<!-- ============================================================= -->
+<div class="card mb-6">
+  <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+    <h3 class="card-title" style="margin: 0;">
+      {% include 'partials/icons.html' with name="trending-up" size=18 %}
+      Syllabus Progress ({{ today.year }})
+    </h3>
+    <span class="text-sm" style="color: var(--ink-500);">
+      {{ syllabus_stats.in_progress }} in progress · {{ syllabus_stats.behind }} behind schedule
+    </span>
+  </div>
+
+  <div style="height: 12px; background: var(--surface-muted); border-radius: 6px; overflow: hidden;">
+    <div style="width: {{ syllabus_stats.percent }}%; height: 100%; background: var(--primary); transition: width var(--t-base);"></div>
+  </div>
+
+  <div class="flex justify-between mt-2 text-xs" style="color: var(--ink-500);">
+    <span>0%</span>
+    <span>{{ syllabus_stats.percent }}% complete</span>
+    <span>100%</span>
+  </div>
+</div>
+
+<!-- ============================================================= -->
+<!-- PENDING QUEUES                                                -->
+<!-- ============================================================= -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+
+  <!-- Lesson plan queue -->
+  <div class="card" style="padding: 0; overflow: hidden;">
+    <div style="padding: var(--s-5); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+      <h3 class="card-title" style="margin: 0;">
+        {% include 'partials/icons.html' with name="file-text" size=18 %}
+        Lesson Plans to Review
+      </h3>
+      <span class="text-xs" style="color: var(--ink-500);">
+        {{ lesson_plan_stats.submitted }} pending
+      </span>
+    </div>
+
+    {% if pending_lesson_plans %}
+      {% for plan in pending_lesson_plans %}
+      <div style="padding: var(--s-4) var(--s-5); border-bottom: 1px solid var(--border);">
+        <div class="flex items-start justify-between gap-3 flex-wrap">
+          <div class="flex-1 min-w-0">
+            <div style="font-weight: 600; color: var(--ink-900); font-size: var(--text-sm);">
+              {{ plan.title }}
+            </div>
+            <div class="text-xs mt-1" style="color: var(--ink-500);">
+              {{ plan.teacher.first_name }} {{ plan.teacher.last_name }} · {{ plan.subject.name }} · {{ plan.class_level.name }}
+            </div>
+            <div class="text-xs mt-1" style="color: var(--ink-500);">
+              Week ending {{ plan.week_ending|date:"j M Y" }}
+            </div>
+          </div>
+          <span class="badge badge-warning">Submitted</span>
+        </div>
+      </div>
+      {% endfor %}
+
+      <div style="padding: var(--s-4) var(--s-5); text-align: center;">
+        <a href="#" class="text-sm" style="color: var(--primary); text-decoration: none; font-weight: 500;">
+          View all lesson plans →
+        </a>
+      </div>
+    {% else %}
+      <div style="padding: var(--s-8); text-align: center;">
+        <p class="text-sm" style="color: var(--ink-500); margin: 0;">
+          No lesson plans awaiting review
+        </p>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Mark sheet queue -->
+  <div class="card" style="padding: 0; overflow: hidden;">
+    <div style="padding: var(--s-5); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+      <h3 class="card-title" style="margin: 0;">
+        {% include 'partials/icons.html' with name="clipboard" size=18 %}
+        Mark Sheets to Review
+      </h3>
+      <span class="text-xs" style="color: var(--ink-500);">
+        {{ mark_sheet_stats.submitted }} pending
+      </span>
+    </div>
+
+    {% if pending_mark_sheets %}
+      {% for sheet in pending_mark_sheets %}
+      <div style="padding: var(--s-4) var(--s-5); border-bottom: 1px solid var(--border);">
+        <div class="flex items-start justify-between gap-3 flex-wrap">
+          <div class="flex-1 min-w-0">
+            <div style="font-weight: 600; color: var(--ink-900); font-size: var(--text-sm);">
+              {{ sheet.exam.name }} · {{ sheet.subject.name }}
+            </div>
+            <div class="text-xs mt-1" style="color: var(--ink-500);">
+              {{ sheet.class_level.name }}
+              {% if sheet.teacher %}· {{ sheet.teacher.first_name }} {{ sheet.teacher.last_name }}{% endif %}
+            </div>
+            <div class="text-xs mt-1" style="color: var(--ink-500);">
+              {{ sheet.total_graded }}/{{ sheet.total_students }} graded
+            </div>
+          </div>
+          <span class="badge badge-info">{{ sheet.completion_percent }}%</span>
+        </div>
+      </div>
+      {% endfor %}
+
+      <div style="padding: var(--s-4) var(--s-5); text-align: center;">
+        <a href="#" class="text-sm" style="color: var(--primary); text-decoration: none; font-weight: 500;">
+          View all mark sheets →
+        </a>
+      </div>
+    {% else %}
+      <div style="padding: var(--s-8); text-align: center;">
+        <p class="text-sm" style="color: var(--ink-500); margin: 0;">
+          No mark sheets awaiting review
+        </p>
+      </div>
+    {% endif %}
+  </div>
+
+</div>
+
+<!-- ============================================================= -->
+<!-- UPCOMING EXAMS + REMEDIAL                                     -->
+<!-- ============================================================= -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+
+  <!-- Upcoming exams -->
+  <div class="card">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="card-title" style="margin: 0;">
+        {% include 'partials/icons.html' with name="calendar" size=18 %}
+        Upcoming Exams
+      </h3>
+      <span class="text-xs" style="color: var(--ink-500);">
+        {{ upcoming_exams|length }} scheduled
+      </span>
+    </div>
+
+    {% if upcoming_exams %}
+      <div class="space-y-3">
+        {% for exam in upcoming_exams %}
+        <div style="padding: var(--s-3); background: var(--surface-muted); border-radius: var(--radius);">
+          <div class="flex justify-between items-center gap-2 flex-wrap">
+            <div>
+              <div style="font-weight: 600; color: var(--ink-900); font-size: var(--text-sm);">
+                {{ exam.name }}
+              </div>
+              <div class="text-xs mt-1" style="color: var(--ink-500);">
+                {{ exam.term }} · {{ exam.year }}
+              </div>
+            </div>
+            <span class="badge badge-primary">{{ exam.date|date:"j M Y" }}</span>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="text-sm" style="color: var(--ink-500); margin: 0;">No upcoming exams scheduled.</p>
+    {% endif %}
+  </div>
+
+  <!-- Remedial classes -->
+  <div class="card">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="card-title" style="margin: 0;">
+        {% include 'partials/icons.html' with name="activity" size=18 %}
+        Remedial Classes
+      </h3>
+      <span class="text-xs" style="color: var(--ink-500);">
+        {{ remedial_stats.this_week }} this week
+      </span>
+    </div>
+
+    {% if upcoming_remedial %}
+      <div class="space-y-3">
+        {% for rc in upcoming_remedial %}
+        <div style="padding: var(--s-3); background: var(--surface-muted); border-radius: var(--radius);">
+          <div class="flex justify-between items-center gap-2 flex-wrap">
+            <div>
+              <div style="font-weight: 600; color: var(--ink-900); font-size: var(--text-sm);">
+                {{ rc.title }}
+              </div>
+              <div class="text-xs mt-1" style="color: var(--ink-500);">
+                {{ rc.subject.name }} · {{ rc.class_level.name }}
+                {% if rc.teacher %}· {{ rc.teacher.first_name }} {{ rc.teacher.last_name }}{% endif %}
+              </div>
+            </div>
+            <span class="badge badge-primary">{{ rc.scheduled_date|date:"j M" }}</span>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="text-sm" style="color: var(--ink-500); margin: 0;">No remedial classes scheduled.</p>
+    {% endif %}
+  </div>
+
+</div>
+
+<!-- ============================================================= -->
+<!-- QUICK ACTIONS                                                 -->
+<!-- ============================================================= -->
+<div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+  <a href="#" class="card card-hover" style="text-decoration: none; text-align: center; padding: var(--s-5);">
+    <div style="font-weight: 600; color: var(--ink-900); font-size: var(--text-sm);">
+      Review Lesson Plans
+    </div>
+    <div class="text-xs mt-1" style="color: var(--ink-500);">
+      {{ lesson_plan_stats.submitted }} pending
+    </div>
+  </a>
+
+  <a href="#" class="card card-hover" style="text-decoration: none; text-align: center; padding: var(--s-5);">
+    <div style="font-weight: 600; color: var(--ink-900); font-size: var(--text-sm);">
+      Review Mark Sheets
+    </div>
+    <div class="text-xs mt-1" style="color: var(--ink-500);">
+      {{ mark_sheet_stats.submitted }} pending
+    </div>
+  </a>
+
+  <a href="#" class="card card-hover" style="text-decoration: none; text-align: center; padding: var(--s-5);">
+    <div style="font-weight: 600; color: var(--ink-900); font-size: var(--text-sm);">
+      Syllabus Tracker
+    </div>
+    <div class="text-xs mt-1" style="color: var(--ink-500);">
+      {{ syllabus_stats.percent }}% covered
+    </div>
+  </a>
+
+  <a href="#" class="card card-hover" style="text-decoration: none; text-align: center; padding: var(--s-5);">
+    <div style="font-weight: 600; color: var(--ink-900); font-size: var(--text-sm);">
+      Teacher Performance
+    </div>
+    <div class="text-xs mt-1" style="color: var(--ink-500);">
+      {{ teacher_count }} active
+    </div>
+  </a>
+</div>
+
+{% endblock %}
