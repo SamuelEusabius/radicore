@@ -429,4 +429,7 @@ urlpatterns = [
     path('dpa-acad/remedial/new/', views.dpa_acad_remedial_create, name='dpa_acad_remedial_create'),
     path('dpa-acad/remedial/<int:class_id>/update/', views.dpa_acad_remedial_update, name='dpa_acad_remedial_update'),
     path('dpa-acad/teachers/<int:teacher_id>/pdf/', views.dpa_acad_teacher_pdf, name='dpa_acad_teacher_pdf'),
+        # Stream-subject assignment
+    path('dpa-acad/stream-subjects/', views.dpa_acad_stream_subjects, name='dpa_acad_stream_subjects'),
+    path('dpa-acad/stream-subjects/assign/', views.dpa_acad_stream_subject_assign, name='dpa_acad_stream_subject_assign'),
 ]

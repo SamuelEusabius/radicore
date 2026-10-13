@@ -251,3 +251,66 @@ class RemedialClass(models.Model):
 
     def __str__(self):
         return f"{self.title} — {self.scheduled_date}"
+    
+    
+
+# ==========================================================
+# STREAM-SUBJECT TEACHER ASSIGNMENT
+# ==========================================================
+
+class StreamSubjectTeacher(models.Model):
+    """
+    Assigns a teacher to a subject in a specific stream (class_level).
+
+    Source of truth for "who teaches Mathematics in Grade 7 East".
+    Timetable entries look up this relationship when created or regenerated.
+    """
+
+    school = models.ForeignKey(
+        'schools.School', on_delete=models.CASCADE, related_name='stream_subject_teachers',
+    )
+    class_level = models.ForeignKey(
+        ClassLevel, on_delete=models.CASCADE, related_name='subject_assignments',
+    )
+    subject = models.ForeignKey(
+        Subject, on_delete=models.CASCADE, related_name='stream_assignments',
+    )
+    teacher = models.ForeignKey(
+        'teachers.Teacher', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='stream_subject_assignments',
+    )
+
+    academic_year = models.PositiveIntegerField(
+        help_text="Year this assignment applies to",
+    )
+    term = models.CharField(
+        max_length=20, blank=True, default='',
+        help_text="Optional term for term-scoped reassignments",
+    )
+
+    notes = models.TextField(blank=True, default='')
+
+    assigned_by = models.ForeignKey(
+        'accounts.User', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='subject_assignments_made',
+    )
+    assigned_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['class_level__order', 'subject__name']
+        unique_together = [('class_level', 'subject', 'academic_year', 'term')]
+        verbose_name = 'Stream Subject Teacher'
+        verbose_name_plural = 'Stream Subject Teachers'
+        indexes = [
+            models.Index(fields=['school', 'academic_year']),
+            models.Index(fields=['school', 'class_level', 'subject']),
+            models.Index(fields=['teacher', 'academic_year']),
+        ]
+
+    def __str__(self):
+        teacher_name = (
+            f"{self.teacher.first_name} {self.teacher.last_name}"
+            if self.teacher else "Unassigned"
+        )
+        return f"{self.class_level.name} · {self.subject.name} → {teacher_name}"

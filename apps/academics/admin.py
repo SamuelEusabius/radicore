@@ -5,7 +5,7 @@ admin.site.register(ClassLevel)
 admin.site.register(Subject)
 admin.site.register(Timetable)
 
-from .models import SyllabusCoverage, LessonPlan, RemedialClass
+from .models import SyllabusCoverage, LessonPlan, RemedialClass, StreamSubjectTeacher
 
 
 @admin.register(SyllabusCoverage)
@@ -31,3 +31,14 @@ class RemedialClassAdmin(admin.ModelAdmin):
     search_fields = ('title', 'focus_area')
     date_hierarchy = 'scheduled_date'
     filter_horizontal = ('students',)
+    
+    from .models import StreamSubjectTeacher
+
+
+@admin.register(StreamSubjectTeacher)
+class StreamSubjectTeacherAdmin(admin.ModelAdmin):
+    list_display = ('class_level', 'subject', 'teacher', 'academic_year', 'term')
+    list_filter = ('school', 'academic_year', 'term', 'class_level')
+    search_fields = ('subject__name', 'teacher__first_name', 'teacher__last_name', 'class_level__name')
+    list_editable = ('teacher',)
+    raw_id_fields = ('class_level', 'subject', 'teacher')

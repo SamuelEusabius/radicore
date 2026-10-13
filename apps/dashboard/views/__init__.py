@@ -270,4 +270,6 @@ from .dpa_academics import (
     dpa_acad_remedial_create,
     dpa_acad_remedial_update,
     dpa_acad_teacher_pdf,
+    dpa_acad_stream_subjects,
+    dpa_acad_stream_subject_assign,
 )

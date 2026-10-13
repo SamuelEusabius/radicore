@@ -6,6 +6,7 @@ Analytics belong to the Director of Studies module.
 """
 from datetime import timedelta
 from functools import wraps
+from django.http import JsonResponse
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -20,6 +21,7 @@ from apps.academics.models import (
     SyllabusCoverage, CoverageStatus,
     LessonPlan, LessonPlanStatus,
     RemedialClass, RemedialStatus,
+    StreamSubjectTeacher,
 )
 from apps.grades.models import Exam, Grade, MarkSheet, MarkSheetStatus
 from apps.teachers.models import Teacher, TeachingObservation
@@ -1071,3 +1073,155 @@ def dpa_acad_teacher_pdf(request, teacher_id):
 
     filename = f"teacher_performance_{teacher.id}.pdf"
     return html_to_pdf_response(html_string, filename)
+
+
+
+# ==========================================================
+# STREAM-SUBJECT ASSIGNMENT GRID
+# ==========================================================
+
+@dpa_acad_required
+def dpa_acad_stream_subjects(request):
+    """
+    Grid view: streams × subjects, showing currently-assigned teacher.
+    Click a cell to reassign.
+    """
+    school = request.user.school
+    today = timezone.localdate()
+
+    year_str = request.GET.get('year', str(today.year)).strip()
+    try:
+        year = int(year_str)
+    except ValueError:
+        year = today.year
+
+    term = request.GET.get('term', '').strip()
+
+    classes = ClassLevel.objects.filter(school=school).order_by('order', 'name')
+    subjects = Subject.objects.filter(school=school).order_by('name')
+    teachers = Teacher.objects.filter(school=school, is_active=True).order_by('first_name', 'last_name')
+
+    # Fetch existing assignments
+    qs = StreamSubjectTeacher.objects.filter(
+        school=school, academic_year=year,
+    ).select_related('class_level', 'subject', 'teacher')
+    if term:
+        qs = qs.filter(term=term)
+
+    # Build lookup map
+    assignment_map = {}
+    for a in qs:
+        assignment_map[(a.class_level_id, a.subject_id)] = a
+
+    # Build grid rows
+    rows = []
+    for cls in classes:
+        cells = []
+        for subj in subjects:
+            a = assignment_map.get((cls.id, subj.id))
+            cells.append({
+                'subject': subj,
+                'assignment': a,
+                'teacher': a.teacher if a else None,
+                'assignment_id': a.id if a else None,
+            })
+        rows.append({'class_level': cls, 'cells': cells})
+
+    # Stats
+    total_cells = classes.count() * subjects.count()
+    assigned = qs.count()
+    unassigned = max(0, total_cells - assigned)
+
+    # Years in use
+    years = list(
+        StreamSubjectTeacher.objects.filter(school=school)
+        .values_list('academic_year', flat=True)
+        .distinct()
+        .order_by('-academic_year')
+    )
+    if year not in years:
+        years.insert(0, year)
+
+    context = {
+        'school': school,
+        'rows': rows,
+        'subjects': subjects,
+        'teachers': teachers,
+        'year': year,
+        'term': term,
+        'years': years,
+        'total_cells': total_cells,
+        'assigned': assigned,
+        'unassigned': unassigned,
+    }
+    return render(request, 'dashboards/dpa_acad/stream_subjects.html', context)
+
+
+@dpa_acad_required
+def dpa_acad_stream_subject_assign(request):
+    """
+    Assign a teacher to a (class, subject, year, term).
+    Called via AJAX POST from the grid.
+    """
+    if request.method != 'POST':
+        return JsonResponse({'ok': False, 'error': 'POST required'}, status=405)
+
+    if request.user.role not in (Role.DEPUTY_ACADEMICS, Role.PRINCIPAL):
+        return JsonResponse({'ok': False, 'error': 'Not permitted'}, status=403)
+
+    class_level_id = request.POST.get('class_level')
+    subject_id = request.POST.get('subject')
+    teacher_id = request.POST.get('teacher') or None
+    academic_year = request.POST.get('year')
+    term = request.POST.get('term', '').strip()
+
+    if not class_level_id or not subject_id or not academic_year:
+        return JsonResponse({'ok': False, 'error': 'Missing fields'}, status=400)
+
+    try:
+        academic_year = int(academic_year)
+    except ValueError:
+        return JsonResponse({'ok': False, 'error': 'Invalid year'}, status=400)
+
+    try:
+        cls = ClassLevel.objects.get(pk=class_level_id, school=request.user.school)
+        subj = Subject.objects.get(pk=subject_id, school=request.user.school)
+    except (ClassLevel.DoesNotExist, Subject.DoesNotExist):
+        return JsonResponse({'ok': False, 'error': 'Invalid class/subject'}, status=404)
+
+    teacher = None
+    if teacher_id:
+        try:
+            teacher = Teacher.objects.get(pk=teacher_id, school=request.user.school)
+        except Teacher.DoesNotExist:
+            return JsonResponse({'ok': False, 'error': 'Teacher not found'}, status=404)
+
+    obj, created = StreamSubjectTeacher.objects.update_or_create(
+        school=request.user.school,
+        class_level=cls,
+        subject=subj,
+        academic_year=academic_year,
+        term=term,
+        defaults={
+            'teacher': teacher,
+            'assigned_by': request.user,
+        },
+    )
+
+    # Also keep Timetable in sync for any existing periods
+    Timetable.objects.filter(
+        school=request.user.school,
+        class_level=cls,
+        subject=subj,
+    ).update(teacher=teacher)
+
+    return JsonResponse({
+        'ok': True,
+        'created': created,
+        'teacher': (
+            f"{teacher.first_name} {teacher.last_name}"
+            if teacher else None
+        ),
+        'teacher_id': teacher.id if teacher else None,
+        'assignment_id': obj.id,
+    })

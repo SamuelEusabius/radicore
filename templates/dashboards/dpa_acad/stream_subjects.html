@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Stream-Subject Assignment{% endblock %}
+{% block header_title %}Stream-Subject Assignment{% endblock %}
+{% block header_sub %}
+  Assign teachers to subjects in each stream · {{ school.name }}
+{% endblock %}
+
+{% block content %}
+
+<!-- Stats row -->
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Total Combinations</span>
+      <div class="stat-icon" style="background: var(--primary-light); color: var(--primary);">
+        {% include 'partials/icons.html' with name="grid" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value">{{ total_cells }}</div>
+    <div class="stat-meta">stream × subject</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Assigned</span>
+      <div class="stat-icon" style="background: var(--success-light); color: var(--success);">
+        {% include 'partials/icons.html' with name="check-circle" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--success);">{{ assigned }}</div>
+    <div class="stat-meta">have a teacher</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Unassigned</span>
+      <div class="stat-icon" style="background: var(--warning-light); color: var(--warning);">
+        {% include 'partials/icons.html' with name="alert-circle" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--warning);">{{ unassigned }}</div>
+    <div class="stat-meta">need a teacher</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Coverage</span>
+      <div class="stat-icon" style="background: var(--info-light); color: var(--info);">
+        {% include 'partials/icons.html' with name="trending-up" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--info);">
+      {% if total_cells %}{% widthratio assigned total_cells 100 %}%{% else %}0%{% endif %}
+    </div>
+    <div class="stat-meta">of combinations</div>
+  </div>
+</div>
+
+<!-- Filter bar -->
+<div class="card mb-6">
+  <form method="get" class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
+    <div class="md:col-span-4">
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Academic Year</label>
+      <select name="year" class="select w-full" onchange="this.form.submit()">
+        {% for y in years %}
+        <option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="md:col-span-4">
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Term (optional)</label>
+      <input type="text" name="term" value="{{ term }}" placeholder="e.g. Term 1"
+             class="input w-full">
+    </div>
+
+    <div class="md:col-span-4 flex gap-2">
+      <button type="submit" class="btn btn-primary">
+        {% include 'partials/icons.html' with name="search" size=16 %}
+        Apply
+      </button>
+      {% if term %}
+      <a href="?year={{ year }}" class="btn btn-secondary">
+        {% include 'partials/icons.html' with name="x-circle" size=16 %}
+        Clear term
+      </a>
+      {% endif %}
+    </div>
+  </form>
+</div>
+
+<!-- Assignment grid -->
+{% if rows and subjects %}
+<div class="card" style="padding: 0; overflow: hidden;">
+  <div class="table-wrap" style="overflow-x: auto;">
+    <table class="table" style="min-width: 900px;">
+      <thead>
+        <tr>
+          <th style="width: 220px; position: sticky; left: 0; background: var(--surface); z-index: 2;">Stream</th>
+          {% for subj in subjects %}
+          <th style="min-width: 200px; text-align: center;">{{ subj.name }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+        <tr>
+          <td style="font-weight: 600; color: var(--ink-900); position: sticky; left: 0; background: var(--surface); z-index: 1; border-right: 1px solid var(--border);">
+            {{ row.class_level.name }}
+          </td>
+          {% for cell in row.cells %}
+          <td style="padding: var(--s-2);">
+            <div class="assignment-cell" data-class="{{ row.class_level.id }}" data-subject="{{ cell.subject.id }}">
+              <select class="select assignment-select"
+                      data-class="{{ row.class_level.id }}"
+                      data-subject="{{ cell.subject.id }}"
+                      data-year="{{ year }}"
+                      data-term="{{ term }}"
+                      style="width: 100%; padding: 6px 8px; font-size: var(--text-xs);">
+                <option value="">— Unassigned —</option>
+                {% for t in teachers %}
+                <option value="{{ t.id }}" {% if cell.teacher and cell.teacher.id == t.id %}selected{% endif %}>
+                  {{ t.first_name }} {{ t.last_name }}
+                </option>
+                {% endfor %}
+              </select>
+              <div class="assignment-status" style="margin-top: 3px; font-size: 10px; color: var(--ink-500); min-height: 12px;"></div>
+            </div>
+          </td>
+          {% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% else %}
+<div class="card">
+  <div class="empty">
+    {% include 'partials/icons.html' with name="grid" size=56 %}
+    <h3>Nothing to assign yet</h3>
+    <p>You need at least one stream and one subject before assignments can be made.</p>
+    <a href="{% url 'manage_classes' %}" class="btn btn-primary">
+      {% include 'partials/icons.html' with name="plus" size=16 %}
+      Manage Classes
+    </a>
+  </div>
+</div>
+{% endif %}
+
+<!-- Legend -->
+<div class="card mt-4" style="padding: var(--s-4);">
+  <p class="text-xs" style="margin: 0; color: var(--ink-500);">
+    <strong>Tip:</strong> Change a dropdown to assign or reassign a teacher.
+    Saving is automatic — the grid updates in the background.
+    When you later create timetable entries for a stream-subject, the assigned teacher will be used automatically.
+  </p>
+</div>
+
+<script>
+(function() {
+  const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value
+    || '{{ csrf_token }}';
+
+  document.querySelectorAll('.assignment-select').forEach(sel => {
+    let lastValue = sel.value;
+
+    sel.addEventListener('change', async () => {
+      const statusEl = sel.parentElement.querySelector('.assignment-status');
+      const previous = lastValue;
+
+      statusEl.textContent = 'Saving…';
+      statusEl.style.color = 'var(--ink-500)';
+
+      try {
+        const res = await fetch('{% url "dpa_acad_stream_subject_assign" %}', {
+          method: 'POST',
+          headers: {
+            'X-CSRFToken': csrfToken,
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: new URLSearchParams({
+            class_level: sel.dataset.class,
+            subject: sel.dataset.subject,
+            teacher: sel.value,
+            year: sel.dataset.year,
+            term: sel.dataset.term,
+          }),
+        });
+
+        const data = await res.json();
+        if (data.ok) {
+          statusEl.textContent = '✓ Saved';
+          statusEl.style.color = 'var(--success)';
+          lastValue = sel.value;
+          setTimeout(() => { statusEl.textContent = ''; }, 2000);
+        } else {
+          throw new Error(data.error || 'Save failed');
+        }
+      } catch (err) {
+        statusEl.textContent = '✗ ' + err.message;
+        statusEl.style.color = 'var(--danger)';
+        sel.value = previous;
+      }
+    });
+  });
+})();
+</script>
+
+{% endblock %}
