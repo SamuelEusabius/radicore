@@ -5,7 +5,7 @@ Communication views:
 - Smart alerts (dashboard, resolve, dismiss, run scan, admin)
 - SMS (bulk, test)
 """
-
+from apps.accounts.roles import Role, SCHOOL_STAFF
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -391,24 +391,36 @@ def message_archive(request, recipient_id):
     return redirect('messages_inbox')
 
 
-@login_required
 def compose_message(request):
     """School Admin composes a new message."""
     if request.user.role not in ('principal', 'super_admin'):
         return redirect('dashboard_home')
 
-    from apps.notifications.models import Message, MessageRecipient
+    from apps.notifications.models import Message, MessageRecipient, Notification
     from apps.accounts.models import User
 
     school = request.user.school
 
-    # Count recipients for each group
-    teachers = User.objects.filter(school=school, role='teacher', is_active=True)
-    staff_users = User.objects.filter(school=school, role='accountant', is_active=True)
-    class_teachers = User.objects.filter(
-        school=school, role='teacher', is_active=True,
-        teacher_profile__is_class_teacher=True
+    # Staff role values — single source of truth
+    staff_role_values = [r.value for r in SCHOOL_STAFF]
+
+    # Recipient groups — sender excluded from all groups to prevent self-delivery
+    base = User.objects.filter(school=school, is_active=True).exclude(pk=request.user.pk)
+
+    teachers = base.filter(role__in=[Role.TEACHER, Role.CLASS_TEACHER])
+    class_teachers = base.filter(role=Role.CLASS_TEACHER)
+    staff_users = base.filter(role__in=staff_role_values).exclude(
+        role__in=[Role.TEACHER, Role.CLASS_TEACHER]
     )
+    leadership = base.filter(
+        role__in=[
+            Role.PRINCIPAL,
+            Role.DEPUTY_ADMIN,
+            Role.DEPUTY_ACADEMICS,
+            Role.DIRECTOR_OF_STUDIES,
+        ],
+    )
+    all_staff = base.filter(role__in=staff_role_values)
 
     if request.method == 'POST':
         subject = request.POST.get('subject', '').strip()
@@ -433,15 +445,13 @@ def compose_message(request):
             recipients_qs = staff_users
         elif recipient_group == 'class_teachers':
             recipients_qs = class_teachers
+        elif recipient_group == 'leadership':
+            recipients_qs = leadership
         elif recipient_group == 'all':
-            recipients_qs = User.objects.filter(
-                school=school,
-                role__in=['teacher', 'accountant'],
-                is_active=True
-            )
+            recipients_qs = all_staff
         elif recipient_group == 'specific' and specific_id:
             recipients_qs = User.objects.filter(
-                id=specific_id, school=school, is_active=True
+                id=specific_id, school=school, is_active=True,
             )
 
         if not recipients_qs.exists():
@@ -469,7 +479,6 @@ def compose_message(request):
 
                 # Also create in-app notification
                 try:
-                    from apps.notifications.models import Notification
                     Notification.objects.create(
                         recipient=r,
                         channel='in_app',
@@ -488,16 +497,14 @@ def compose_message(request):
         'teachers': teachers.count(),
         'staff': staff_users.count(),
         'class_teachers': class_teachers.count(),
-        'all': User.objects.filter(
-            school=school,
-            role__in=['teacher', 'accountant'],
-            is_active=True
-        ).count(),
+        'leadership': leadership.count(),
+        'all': all_staff.count(),
     }
 
+    # Flat list for "specific recipient" dropdown
     all_recipients = User.objects.filter(
         school=school,
-        role__in=['teacher', 'accountant'],
+        role__in=staff_role_values,
         is_active=True,
     ).order_by('first_name', 'last_name')
 

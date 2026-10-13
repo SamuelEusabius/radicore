@@ -1,94 +1,231 @@
 {% extends "base.html" %}
+{% load static %}
 
-{% block title %}Leave-Outs{% endblock %}
+{% block title %}Leave-Outs & Suspensions{% endblock %}
+{% block header_title %}Leave-Outs & Suspensions{% endblock %}
+{% block header_sub %}
+  {{ total }} record{{ total|pluralize }} · {{ school.name }}
+{% endblock %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
-    <div class="mb-6">
-        <a href="{% url 'dpa_admin_dashboard' %}" class="text-xs text-indigo-600 hover:text-indigo-700">← Back to dashboard</a>
-        <h1 class="text-2xl font-bold text-gray-900 mt-1">Leave-Outs & Suspensions</h1>
-        <p class="text-sm text-gray-500 mt-1">{{ total }} record{{ total|pluralize }}</p>
+<!-- ============================================================= -->
+<!-- STATS ROW                                                     -->
+<!-- ============================================================= -->
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Total Records</span>
+      <div class="stat-icon" style="background: var(--primary-light); color: var(--primary);">
+        {% include 'partials/icons.html' with name="alert-triangle" size=18 %}
+      </div>
     </div>
-
-    <form method="get" class="bg-white rounded-xl border border-gray-200 p-4 mb-6 flex flex-wrap gap-3">
-        <select name="type" class="px-3 py-2 text-sm border border-gray-300 rounded-lg">
-            <option value="">All types</option>
-            {% for value, label in type_choices %}
-            <option value="{{ value }}" {% if type_filter == value %}selected{% endif %}>{{ label }}</option>
-            {% endfor %}
-        </select>
-        <select name="status" class="px-3 py-2 text-sm border border-gray-300 rounded-lg">
-            <option value="">All statuses</option>
-            {% for value, label in status_choices %}
-            <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
-            {% endfor %}
-        </select>
-        <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700">
-            Filter
-        </button>
-    </form>
-
-    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div class="overflow-x-auto">
-            <table class="w-full text-sm">
-                <thead class="bg-gray-50 text-left text-xs uppercase text-gray-500">
-                    <tr>
-                        <th class="px-5 py-3 font-medium">Student</th>
-                        <th class="px-5 py-3 font-medium">Type</th>
-                        <th class="px-5 py-3 font-medium">Reason</th>
-                        <th class="px-5 py-3 font-medium">Dates</th>
-                        <th class="px-5 py-3 font-medium">Status</th>
-                        <th class="px-5 py-3 font-medium">Guardian</th>
-                        <th class="px-5 py-3 font-medium"></th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-100">
-                    {% for lo in leave_outs %}
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-5 py-3 text-gray-900">
-                            {{ lo.student.first_name }} {{ lo.student.last_name }}
-                        </td>
-                        <td class="px-5 py-3 text-gray-700">{{ lo.get_leave_out_type_display }}</td>
-                        <td class="px-5 py-3 text-gray-500 text-xs">
-                            {{ lo.get_suspension_reason_display|default:"—" }}
-                        </td>
-                        <td class="px-5 py-3 text-gray-500 text-xs">
-                            {{ lo.start_date|date:"j M" }}
-                            {% if lo.end_date %}→ {{ lo.end_date|date:"j M" }}{% endif %}
-                        </td>
-                        <td class="px-5 py-3">
-                            <span class="px-2 py-0.5 text-xs font-medium rounded-full
-                                {% if lo.status == 'approved' or lo.status == 'active' %}bg-green-100 text-green-800
-                                {% elif lo.status == 'pending' %}bg-amber-100 text-amber-800
-                                {% elif lo.status == 'rejected' or lo.status == 'cancelled' %}bg-red-100 text-red-800
-                                {% else %}bg-gray-100 text-gray-700{% endif %}">
-                                {{ lo.get_status_display }}
-                            </span>
-                        </td>
-                        <td class="px-5 py-3">
-                            {% if lo.guardian_notified %}
-                            <span class="text-xs text-green-700">Notified</span>
-                            {% else %}
-                            <span class="text-xs text-amber-700">Pending</span>
-                            {% endif %}
-                        </td>
-                        <td class="px-5 py-3 text-right">
-                            <a href="{% url 'dpa_leave_out_detail' lo.id %}"
-                               class="text-xs text-indigo-600 hover:text-indigo-700">View →</a>
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="7" class="px-5 py-12 text-center text-sm text-gray-500">
-                            No leave-outs recorded yet
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+    <div class="stat-value">{{ total }}</div>
+    <div class="stat-meta">
+      {% if status_filter or type_filter %}filtered{% else %}all leave-outs{% endif %}
     </div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Suspensions</span>
+      <div class="stat-icon" style="background: var(--warning-light); color: var(--warning);">
+        {% include 'partials/icons.html' with name="alert-circle" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--warning);">
+      {% for lo in leave_outs %}{% if lo.leave_out_type == 'suspension' %}1{% endif %}{% endfor %}
+    </div>
+    <div class="stat-meta">temporary</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Expulsions</span>
+      <div class="stat-icon" style="background: var(--danger-light); color: var(--danger);">
+        {% include 'partials/icons.html' with name="x-circle" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--danger);">
+      {% for lo in leave_outs %}{% if lo.leave_out_type == 'expulsion' %}1{% endif %}{% endfor %}
+    </div>
+    <div class="stat-meta">permanent</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Currently Out</span>
+      <div class="stat-icon" style="background: var(--info-light); color: var(--info);">
+        {% include 'partials/icons.html' with name="activity" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--info);">
+      {% for lo in leave_outs %}{% if lo.is_currently_out %}1{% endif %}{% endfor %}
+    </div>
+    <div class="stat-meta">active</div>
+  </div>
 
 </div>
+
+<!-- ============================================================= -->
+<!-- FILTER CARD                                                   -->
+<!-- ============================================================= -->
+<div class="card mb-6">
+  <form method="get" class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
+
+    <div class="md:col-span-4">
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2"
+             style="color: var(--ink-600);">Type</label>
+      <select name="type" class="select w-full">
+        <option value="">All Types</option>
+        {% for value, label in type_choices %}
+        <option value="{{ value }}" {% if type_filter == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="md:col-span-4">
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2"
+             style="color: var(--ink-600);">Status</label>
+      <select name="status" class="select w-full">
+        <option value="">All Statuses</option>
+        {% for value, label in status_choices %}
+        <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="md:col-span-4 flex gap-2">
+      <button type="submit" class="btn btn-primary">
+        {% include 'partials/icons.html' with name="search" size=16 %}
+        Filter
+      </button>
+      {% if type_filter or status_filter %}
+      <a href="{% url 'dpa_leave_out_list' %}" class="btn btn-secondary">
+        {% include 'partials/icons.html' with name="x-circle" size=16 %}
+        Clear
+      </a>
+      {% endif %}
+    </div>
+
+  </form>
+</div>
+
+<!-- ============================================================= -->
+<!-- TABLE                                                         -->
+<!-- ============================================================= -->
+{% if leave_outs %}
+<div class="card" style="padding: 0; overflow: hidden;">
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Student</th>
+          <th style="width: 140px;">Type</th>
+          <th style="width: 200px;">Reason</th>
+          <th style="width: 180px;">Period</th>
+          <th style="width: 130px;">Status</th>
+          <th style="width: 110px;">Guardian</th>
+          <th style="text-align: right;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for lo in leave_outs %}
+        <tr>
+          <td>
+            <a href="{% url 'dpa_leave_out_detail' lo.id %}"
+               style="color: var(--ink-900); font-weight: 600; text-decoration: none;">
+              {{ lo.student.first_name }} {{ lo.student.last_name }}
+            </a>
+            <div class="text-xs" style="color: var(--ink-500);">
+              {{ lo.student.class_level }}{% if lo.student.admission_number %} · {{ lo.student.admission_number }}{% endif %}
+            </div>
+          </td>
+          <td>
+            {% if lo.leave_out_type == 'suspension' %}
+              <span class="badge badge-warning">Suspension</span>
+            {% elif lo.leave_out_type == 'expulsion' %}
+              <span class="badge badge-danger">Expulsion</span>
+            {% elif lo.leave_out_type == 'medical' %}
+              <span class="badge badge-info">Medical</span>
+            {% else %}
+              <span class="badge badge-neutral">{{ lo.get_leave_out_type_display }}</span>
+            {% endif %}
+          </td>
+          <td>
+            <span class="text-sm" style="color: var(--ink-700);">
+              {{ lo.get_suspension_reason_display|default:"—" }}
+            </span>
+          </td>
+          <td>
+            <span class="text-sm" style="color: var(--ink-800);">
+              {{ lo.start_date|date:"j M" }}{% if lo.end_date %} → {{ lo.end_date|date:"j M Y" }}{% endif %}
+            </span>
+            {% if lo.actual_return_date %}
+            <div class="text-xs" style="color: var(--success);">
+              Returned {{ lo.actual_return_date|date:"j M Y" }}
+            </div>
+            {% endif %}
+          </td>
+          <td>
+            {% if lo.status == 'approved' or lo.status == 'active' %}
+              <span class="badge badge-success">{{ lo.get_status_display }}</span>
+            {% elif lo.status == 'pending' %}
+              <span class="badge badge-warning">{{ lo.get_status_display }}</span>
+            {% elif lo.status == 'rejected' or lo.status == 'cancelled' %}
+              <span class="badge badge-danger">{{ lo.get_status_display }}</span>
+            {% elif lo.status == 'returned' or lo.status == 'completed' %}
+              <span class="badge badge-info">{{ lo.get_status_display }}</span>
+            {% else %}
+              <span class="badge badge-neutral">{{ lo.get_status_display }}</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if lo.guardian_notified %}
+              <span class="badge badge-success">Notified</span>
+            {% else %}
+              <span class="badge badge-neutral">Pending</span>
+            {% endif %}
+          </td>
+          <td>
+            <div class="table-actions" style="justify-content: flex-end;">
+              <a href="{% url 'dpa_leave_out_detail' lo.id %}" class="view" title="View details">
+                {% include 'partials/icons.html' with name="eye" size=14 %}
+              </a>
+              <a href="{% url 'dpa_leave_out_pdf' lo.id %}" target="_blank" class="print" title="Print / Download PDF">
+                {% include 'partials/icons.html' with name="printer" size=14 %}
+              </a>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% else %}
+<div class="card">
+  <div class="empty">
+    {% include 'partials/icons.html' with name="alert-triangle" size=56 %}
+    {% if type_filter or status_filter %}
+      <h3>No matching leave-outs</h3>
+      <p>No leave-out records match the current filters. Try a different type or status.</p>
+      <a href="{% url 'dpa_leave_out_list' %}" class="btn btn-primary">
+        {% include 'partials/icons.html' with name="x-circle" size=16 %}
+        Clear filters
+      </a>
+    {% else %}
+      <h3>No leave-outs recorded</h3>
+      <p>Leave-outs, suspensions, and expulsions are recorded from discipline cases. Once a case leads to a leave-out, it will appear here.</p>
+      <a href="{% url 'dpa_discipline_list' %}" class="btn btn-primary">
+        {% include 'partials/icons.html' with name="arrow-right" size=16 %}
+        Go to Discipline Cases
+      </a>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+
 {% endblock %}

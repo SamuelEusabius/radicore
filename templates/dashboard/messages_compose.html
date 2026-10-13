@@ -1,22 +1,26 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
+{% load static %}
+
 {% block title %}Compose Message{% endblock %}
 {% block header_title %}Compose Message{% endblock %}
-{% block header_sub %}Send internal message to teachers &amp; staff{% endblock %}
+{% block header_sub %}Send a message to staff members{% endblock %}
 
 {% block content %}
 
-<div class="max-w-3xl mx-auto">
+<div class="card" style="max-width: 900px;">
 
   {% if messages %}
-    {% for m in messages %}
-      <div style="padding: 12px 16px; margin-bottom: 16px; font-size: 13px; {% if m.tags == 'error' %}background: #fee2e2; color: #991b1b; border-left: 4px solid #dc2626;{% else %}background: #d1fae5; color: #065f46; border-left: 4px solid #059669;{% endif %}">
-        {{ m }}
-      </div>
+    {% for msg in messages %}
+    <div style="padding: var(--s-3); margin-bottom: var(--s-4); border-radius: var(--radius);
+      {% if msg.tags == 'error' %}background: var(--danger-light); color: var(--danger);
+      {% else %}background: var(--success-light); color: var(--success);{% endif %}
+      font-size: var(--text-sm);">
+      {{ msg }}
+    </div>
     {% endfor %}
   {% endif %}
 
-  <form method="post" class="bg-white shadow-sm border border-gray-200 p-8">
-
+  <form method="post" id="compose-form">
     {% csrf_token %}
 
     <!-- Recipients -->
@@ -43,7 +47,7 @@
           <div class="recipient-card">
             {% include 'partials/icons.html' with name="briefcase" size=20 %}
             <div>
-              <div style="font-weight: 600; font-size: 13px;">All Staff</div>
+              <div style="font-weight: 600; font-size: 13px;">Non-Teaching Staff</div>
               <div style="font-size: 11px; color: #6b7280;">{{ counts.staff }} recipient{{ counts.staff|pluralize }}</div>
             </div>
           </div>
@@ -61,11 +65,22 @@
         </label>
 
         <label class="recipient-option">
+          <input type="radio" name="recipient_group" value="leadership" class="hidden" onchange="toggleSpecific()">
+          <div class="recipient-card">
+            {% include 'partials/icons.html' with name="award" size=20 %}
+            <div>
+              <div style="font-weight: 600; font-size: 13px;">Leadership Team</div>
+              <div style="font-size: 11px; color: #6b7280;">{{ counts.leadership }} recipient{{ counts.leadership|pluralize }}</div>
+            </div>
+          </div>
+        </label>
+
+        <label class="recipient-option">
           <input type="radio" name="recipient_group" value="all" class="hidden" onchange="toggleSpecific()">
           <div class="recipient-card">
             {% include 'partials/icons.html' with name="users" size=20 %}
             <div>
-              <div style="font-weight: 600; font-size: 13px;">Everyone</div>
+              <div style="font-weight: 600; font-size: 13px;">All Staff</div>
               <div style="font-size: 11px; color: #6b7280;">{{ counts.all }} recipient{{ counts.all|pluralize }}</div>
             </div>
           </div>
@@ -88,7 +103,7 @@
         <label style="display: block; font-size: 13px; font-weight: 500; color: #374151; margin-bottom: 6px;">
           Choose Recipient
         </label>
-        <select name="specific_recipient" style="width: 100%; border: 1px solid #d1d5db; padding: 10px; font-size: 14px;">
+        <select name="specific_recipient" class="select" style="width: 100%;">
           <option value="">— Select —</option>
           {% for u in all_recipients %}
             <option value="{{ u.id }}">{{ u.get_full_name|default:u.email }} ({{ u.get_role_display }})</option>
@@ -98,57 +113,60 @@
     </div>
 
     <!-- Priority + Category -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4" style="margin-bottom: 20px;">
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
       <div>
-        <label style="display: block; font-size: 13px; font-weight: 500; color: #374151; margin-bottom: 6px;">
+        <label style="display: block; font-size: 13px; font-weight: 600; color: #1a1a1a; margin-bottom: 6px;">
           Priority
         </label>
-        <select name="priority" style="width: 100%; border: 1px solid #d1d5db; padding: 10px; font-size: 14px;">
+        <select name="priority" class="select" style="width: 100%;">
           <option value="normal">Normal</option>
           <option value="high">High</option>
           <option value="urgent">Urgent</option>
         </select>
       </div>
+
       <div>
-        <label style="display: block; font-size: 13px; font-weight: 500; color: #374151; margin-bottom: 6px;">
+        <label style="display: block; font-size: 13px; font-weight: 600; color: #1a1a1a; margin-bottom: 6px;">
           Category
         </label>
-        <select name="category" style="width: 100%; border: 1px solid #d1d5db; padding: 10px; font-size: 14px;">
+        <select name="category" class="select" style="width: 100%;">
           <option value="general">General</option>
-          <option value="announcement">Announcement</option>
-          <option value="meeting">Meeting Invitation</option>
-          <option value="task">Task Assignment</option>
-          <option value="urgent">Urgent</option>
+          <option value="academic">Academic</option>
+          <option value="administrative">Administrative</option>
+          <option value="finance">Finance</option>
+          <option value="discipline">Discipline</option>
+          <option value="event">Event</option>
+          <option value="emergency">Emergency</option>
         </select>
       </div>
     </div>
 
     <!-- Subject -->
     <div style="margin-bottom: 20px;">
-      <label style="display: block; font-size: 13px; font-weight: 500; color: #374151; margin-bottom: 6px;">
-        Subject <span style="color: #dc2626;">*</span>
+      <label style="display: block; font-size: 13px; font-weight: 600; color: #1a1a1a; margin-bottom: 6px;">
+        Subject <span style="color: #DC2626;">*</span>
       </label>
-      <input type="text" name="subject" required maxlength="200"
-             placeholder="e.g. Staff Meeting on Monday 10 AM"
-             style="width: 100%; border: 1px solid #d1d5db; padding: 10px; font-size: 14px;">
+      <input type="text" name="subject" required maxlength="200" class="input" style="width: 100%;"
+             placeholder="Short subject line">
     </div>
 
     <!-- Body -->
-    <div style="margin-bottom: 24px;">
-      <label style="display: block; font-size: 13px; font-weight: 500; color: #374151; margin-bottom: 6px;">
-        Message <span style="color: #dc2626;">*</span>
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; font-size: 13px; font-weight: 600; color: #1a1a1a; margin-bottom: 6px;">
+        Message <span style="color: #DC2626;">*</span>
       </label>
-      <textarea name="body" rows="8" required
-                placeholder="Type your message here..."
-                style="width: 100%; border: 1px solid #d1d5db; padding: 12px; font-size: 14px; line-height: 1.6; font-family: 'Inter', sans-serif; resize: vertical;"></textarea>
+      <textarea name="body" rows="8" required class="textarea" style="width: 100%;"
+                placeholder="Write your message…"></textarea>
     </div>
 
     <!-- Actions -->
-    <div style="display: flex; gap: 12px; justify-content: flex-end; padding-top: 16px; border-top: 1px solid #e5e7eb;">
-      <a href="{% url 'messages_inbox' %}" class="pro-btn pro-btn-secondary">Cancel</a>
-      <button type="submit" class="pro-btn pro-btn-primary">
-        {% include 'partials/icons.html' with name="send" size=15 %}
-        <span>Send Message</span>
+    <div style="display: flex; justify-content: flex-end; gap: 12px; padding-top: 16px; border-top: 1px solid var(--border);">
+      <a href="{% url 'messages_inbox' %}" class="btn btn-secondary">
+        Cancel
+      </a>
+      <button type="submit" class="btn btn-primary">
+        {% include 'partials/icons.html' with name="send" size=16 %}
+        Send Message
       </button>
     </div>
 
@@ -157,21 +175,35 @@
 </div>
 
 <style>
-  .recipient-option { display: block; cursor: pointer; }
-  .recipient-option input { position: absolute; opacity: 0; pointer-events: none; }
+  .recipient-option { cursor: pointer; display: block; }
   .recipient-card {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 12px;
-    border: 2px solid #e5e7eb;
-    background: #ffffff;
-    transition: all 0.15s;
+    gap: 12px;
+    padding: 14px;
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    transition: all var(--t-fast);
   }
-  .recipient-card:hover { border-color: #00695c; }
-  .recipient-option input:checked ~ .recipient-card {
-    border-color: #00695c;
-    background: #e0f2f1;
+  .recipient-option:hover .recipient-card {
+    border-color: var(--primary);
+    background: var(--surface-hover);
+  }
+  .recipient-option input:checked + .recipient-card {
+    border-color: var(--primary);
+    background: var(--primary-light);
+  }
+  .hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
   }
 </style>
 
@@ -179,12 +211,16 @@
 function toggleSpecific() {
   const selected = document.querySelector('input[name="recipient_group"]:checked');
   const wrapper = document.getElementById('specific-wrapper');
+  if (!wrapper) return;
   if (selected && selected.value === 'specific') {
     wrapper.style.display = 'block';
   } else {
     wrapper.style.display = 'none';
   }
 }
+document.addEventListener('DOMContentLoaded', function() {
+  toggleSpecific();
+});
 </script>
 
 {% endblock %}

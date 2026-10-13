@@ -1,164 +1,338 @@
 {% extends "base.html" %}
+{% load static %}
 
-{% block title %}Leave-Out — {{ leave.student.first_name }}{% endblock %}
+{% block title %}{{ leave.get_leave_out_type_display }} — {{ leave.student.first_name }}{% endblock %}
+{% block header_title %}{{ leave.get_leave_out_type_display }}{% endblock %}
+{% block header_sub %}
+  {{ leave.student.first_name }} {{ leave.student.last_name }} · {{ leave.student.class_level }}
+{% endblock %}
 
 {% block content %}
-<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
-    <nav class="text-xs text-gray-500 mb-4">
-        <a href="{% url 'dpa_admin_dashboard' %}" class="hover:text-indigo-600">DPA Dashboard</a>
-        <span class="mx-2">/</span>
-        <a href="{% url 'dpa_leave_out_list' %}" class="hover:text-indigo-600">Leave-Outs</a>
-        <span class="mx-2">/</span>
-        <span class="text-gray-700">#{{ leave.id }}</span>
-    </nav>
+<!-- ============================================================= -->
+<!-- TOP BAR                                                       -->
+<!-- ============================================================= -->
+<div class="flex flex-wrap items-center justify-between gap-3 mb-6">
+  <a href="{% url 'dpa_leave_out_list' %}" class="btn btn-secondary">
+    {% include 'partials/icons.html' with name="arrow-right" size=16 %}
+    Back to Leave-Outs
+  </a>
+  <div class="flex flex-wrap gap-2">
+    <a href="{% url 'dpa_leave_out_pdf' leave.id %}" target="_blank" class="btn btn-secondary">
+      {% include 'partials/icons.html' with name="printer" size=16 %}
+      Print / Download PDF
+    </a>
+    {% if leave.status == 'approved' or leave.status == 'active' %}
+      <span class="badge badge-success" style="font-size: var(--text-sm); padding: 6px 14px;">
+        {{ leave.get_status_display }}
+      </span>
+    {% elif leave.status == 'pending' %}
+      <span class="badge badge-warning" style="font-size: var(--text-sm); padding: 6px 14px;">
+        {{ leave.get_status_display }}
+      </span>
+    {% elif leave.status == 'rejected' or leave.status == 'cancelled' %}
+      <span class="badge badge-danger" style="font-size: var(--text-sm); padding: 6px 14px;">
+        {{ leave.get_status_display }}
+      </span>
+    {% else %}
+      <span class="badge badge-neutral" style="font-size: var(--text-sm); padding: 6px 14px;">
+        {{ leave.get_status_display }}
+      </span>
+    {% endif %}
+  </div>
+</div>
 
-    <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-        <div class="flex items-start justify-between gap-4 flex-wrap">
-            <div>
-                <h1 class="text-2xl font-bold text-gray-900">
-                    {{ leave.get_leave_out_type_display }}
-                </h1>
-                <p class="text-sm text-gray-500 mt-1">
-                    {{ leave.student.first_name }} {{ leave.student.last_name }}
-                    · Adm {{ leave.student.admission_number }}
-                </p>
-            </div>
-            <span class="px-3 py-1 text-xs font-medium rounded-full
-                {% if leave.status == 'approved' or leave.status == 'active' %}bg-green-100 text-green-800
-                {% elif leave.status == 'pending' %}bg-amber-100 text-amber-800
-                {% elif leave.status == 'rejected' or leave.status == 'cancelled' %}bg-red-100 text-red-800
-                {% else %}bg-gray-100 text-gray-700{% endif %}">
-                {{ leave.get_status_display }}
-            </span>
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+  <!-- MAIN COLUMN -->
+  <div class="lg:col-span-2">
+
+    <!-- Summary card -->
+    <div class="card mb-6">
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-5">
+        <div>
+          <div class="text-xs font-semibold uppercase tracking-wider mb-1" style="color: var(--ink-500);">
+            Type
+          </div>
+          <div style="color: var(--ink-800); font-weight: 600;">
+            {{ leave.get_leave_out_type_display }}
+          </div>
+          {% if leave.suspension_reason %}
+          <div class="text-xs mt-1" style="color: var(--ink-500);">
+            {{ leave.get_suspension_reason_display }}
+          </div>
+          {% endif %}
         </div>
 
-        {% if leave.suspension_reason %}
-        <p class="mt-4 text-sm text-gray-700">
-            <span class="text-gray-500">Reason:</span>
-            <span class="font-medium">{{ leave.get_suspension_reason_display }}</span>
-        </p>
+        <div>
+          <div class="text-xs font-semibold uppercase tracking-wider mb-1" style="color: var(--ink-500);">
+            Start Date
+          </div>
+          <div style="color: var(--ink-800); font-weight: 600;">
+            {{ leave.start_date|date:"j F Y" }}
+          </div>
+        </div>
+
+        <div>
+          <div class="text-xs font-semibold uppercase tracking-wider mb-1" style="color: var(--ink-500);">
+            Expected End
+          </div>
+          <div style="color: var(--ink-800); font-weight: 600;">
+            {% if leave.end_date %}{{ leave.end_date|date:"j F Y" }}{% else %}No return date{% endif %}
+          </div>
+          <div class="text-xs mt-1" style="color: var(--ink-500);">
+            {{ leave.days_out }} day{{ leave.days_out|pluralize }} out
+          </div>
+        </div>
+      </div>
+
+      {% if leave.actual_return_date %}
+      <div class="mb-5 pb-5" style="border-bottom: 1px solid var(--border);">
+        <span class="badge badge-success">Returned</span>
+        <span class="text-sm ml-2" style="color: var(--ink-700);">
+          on {{ leave.actual_return_date|date:"j F Y" }}
+          {% if leave.returned_by %}
+          · received by {{ leave.returned_by.get_full_name|default:leave.returned_by.email }}
+          {% endif %}
+        </span>
+        {% if leave.return_notes %}
+        <p class="text-sm mt-2" style="color: var(--ink-600); margin: 0;">{{ leave.return_notes }}</p>
         {% endif %}
-    </div>
+      </div>
+      {% endif %}
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-        <div class="bg-white rounded-xl border border-gray-200 p-6">
-            <h2 class="font-semibold text-gray-900 mb-4">Dates</h2>
-            <dl class="space-y-3 text-sm">
-                <div class="flex justify-between">
-                    <dt class="text-gray-500">Start</dt>
-                    <dd class="text-gray-900 font-medium">{{ leave.start_date|date:"j F Y" }}</dd>
-                </div>
-                {% if leave.end_date %}
-                <div class="flex justify-between">
-                    <dt class="text-gray-500">Expected End</dt>
-                    <dd class="text-gray-900">{{ leave.end_date|date:"j F Y" }}</dd>
-                </div>
-                {% endif %}
-                {% if leave.actual_return_date %}
-                <div class="flex justify-between">
-                    <dt class="text-gray-500">Actual Return</dt>
-                    <dd class="text-gray-900">{{ leave.actual_return_date|date:"j F Y" }}</dd>
-                </div>
-                {% endif %}
-                <div class="flex justify-between">
-                    <dt class="text-gray-500">Days Out</dt>
-                    <dd class="text-gray-900">{{ leave.days_out }}</dd>
-                </div>
-            </dl>
+      <div class="pt-5" style="border-top: 1px solid var(--border);">
+        <div class="text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-500);">
+          Reason
         </div>
-
-        <div class="bg-white rounded-xl border border-gray-200 p-6">
-            <h2 class="font-semibold text-gray-900 mb-4">Approval</h2>
-            <dl class="space-y-3 text-sm">
-                <div class="flex justify-between">
-                    <dt class="text-gray-500">Requested By</dt>
-                    <dd class="text-gray-900">
-                        {% if leave.requested_by %}{{ leave.requested_by.get_full_name|default:leave.requested_by.email }}{% else %}—{% endif %}
-                    </dd>
-                </div>
-                <div class="flex justify-between">
-                    <dt class="text-gray-500">DPA</dt>
-                    <dd>
-                        {% if leave.dpa_approved_at %}
-                        <span class="text-xs font-medium text-green-700">
-                            ✓ {{ leave.dpa_approved_by.get_full_name|default:leave.dpa_approved_by.email }}
-                        </span>
-                        {% else %}
-                        <span class="text-xs text-amber-700">Pending</span>
-                        {% endif %}
-                    </dd>
-                </div>
-                {% if is_expulsion %}
-                <div class="flex justify-between">
-                    <dt class="text-gray-500">Principal</dt>
-                    <dd>
-                        {% if leave.principal_approved_at %}
-                        <span class="text-xs font-medium text-green-700">
-                            ✓ {{ leave.principal_approved_by.get_full_name|default:leave.principal_approved_by.email }}
-                        </span>
-                        {% else %}
-                        <span class="text-xs text-amber-700">Pending</span>
-                        {% endif %}
-                    </dd>
-                </div>
-                {% endif %}
-            </dl>
-        </div>
-    </div>
-
-    <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-        <h2 class="font-semibold text-gray-900 mb-3">Reason</h2>
-        <p class="text-sm text-gray-700 whitespace-pre-line">{{ leave.reason_description }}</p>
-    </div>
-
-    {% if leave.guardian_notified %}
-    <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-        <h2 class="font-semibold text-gray-900 mb-3">Guardian Notification</h2>
-        <p class="text-sm text-gray-700">
-            Notified via <span class="font-medium">{{ leave.guardian_notification_method }}</span>
-            on {{ leave.guardian_notified_at|date:"j M Y H:i" }}
-            {% if leave.guardian_acknowledged %}· <span class="text-green-700">✓ Acknowledged</span>{% endif %}
+        <p class="text-sm" style="color: var(--ink-700); white-space: pre-line; margin: 0;">
+          {{ leave.reason_description }}
         </p>
-    </div>
-    {% endif %}
+      </div>
 
-    {% if can_approve %}
-    <div class="bg-white rounded-xl border border-gray-200 p-6">
-        <h2 class="font-semibold text-gray-900 mb-4">Actions</h2>
-        <div class="flex flex-wrap gap-3">
-            {% if not leave.dpa_approved_at %}
-            <form method="post" action="{% url 'dpa_leave_out_approve' leave.id %}">
-                {% csrf_token %}
-                <input type="hidden" name="comment" value="">
-                <button type="submit"
-                        class="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700">
-                    Approve Leave-Out
-                </button>
-            </form>
-            {% endif %}
-
-            {% if not leave.guardian_notified %}
-            <form method="post" action="{% url 'dpa_leave_out_toggle_notify' leave.id %}" class="flex items-center gap-2">
-                {% csrf_token %}
-                <select name="method" class="px-3 py-2 text-sm border border-gray-300 rounded-lg">
-                    <option value="call">Call</option>
-                    <option value="sms">SMS</option>
-                    <option value="email">Email</option>
-                    <option value="in_person">In Person</option>
-                </select>
-                <label class="flex items-center gap-1 text-sm">
-                    <input type="checkbox" name="acknowledged"> Guardian acknowledged
-                </label>
-                <button type="submit"
-                        class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700">
-                    Mark Notified
-                </button>
-            </form>
-            {% endif %}
+      {% if leave.discipline_record %}
+      <div class="mt-5 pt-5" style="border-top: 1px solid var(--border);">
+        <div class="text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-500);">
+          Linked Discipline Case
         </div>
+        <a href="{% url 'dpa_discipline_detail' leave.discipline_record.id %}"
+           class="text-sm" style="color: var(--primary); font-weight: 500; text-decoration: none;">
+          Case #{{ leave.discipline_record.id }} — {{ leave.discipline_record.get_category_display }}
+        </a>
+        <div class="text-xs mt-1" style="color: var(--ink-500);">
+          Incident: {{ leave.discipline_record.incident_date|date:"j M Y" }}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Approval chain -->
+    <div class="card mb-6">
+      <h3 class="card-title mb-5">
+        {% include 'partials/icons.html' with name="check-circle" size=18 %}
+        Approval Chain
+      </h3>
+
+      <div class="space-y-5">
+
+        <div class="flex gap-4">
+          <div style="flex-shrink: 0;">
+            {% if leave.dpa_approved_at %}
+              <div style="width: 40px; height: 40px; border-radius: 50%; background: var(--success-light); color: var(--success); display: flex; align-items: center; justify-content: center; font-weight: 700;">✓</div>
+            {% else %}
+              <div style="width: 40px; height: 40px; border-radius: 50%; background: var(--surface-muted); color: var(--ink-500); display: flex; align-items: center; justify-content: center; font-weight: 700;">1</div>
+            {% endif %}
+          </div>
+          <div class="flex-1">
+            <div style="font-weight: 600; color: var(--ink-900);">Deputy Principal — Administration</div>
+            {% if leave.dpa_approved_at %}
+              <div class="text-xs mt-1" style="color: var(--ink-500);">
+                {{ leave.dpa_approved_by.get_full_name|default:leave.dpa_approved_by.email }} · {{ leave.dpa_approved_at|date:"j M Y H:i" }}
+              </div>
+              {% if leave.dpa_comment %}
+              <div class="text-sm mt-2" style="color: var(--ink-700); padding: var(--s-3); background: var(--surface-muted); border-radius: var(--radius); font-style: italic;">
+                "{{ leave.dpa_comment }}"
+              </div>
+              {% endif %}
+            {% else %}
+              <div class="text-xs mt-1" style="color: var(--ink-500);">Awaiting your decision</div>
+            {% endif %}
+          </div>
+        </div>
+
+        {% if is_expulsion %}
+        <div class="flex gap-4">
+          <div style="flex-shrink: 0;">
+            {% if leave.principal_approved_at %}
+              <div style="width: 40px; height: 40px; border-radius: 50%; background: var(--success-light); color: var(--success); display: flex; align-items: center; justify-content: center; font-weight: 700;">✓</div>
+            {% else %}
+              <div style="width: 40px; height: 40px; border-radius: 50%; background: var(--surface-muted); color: var(--ink-500); display: flex; align-items: center; justify-content: center; font-weight: 700;">2</div>
+            {% endif %}
+          </div>
+          <div class="flex-1">
+            <div style="font-weight: 600; color: var(--ink-900);">Principal Final Approval</div>
+            {% if leave.principal_approved_at %}
+              <div class="text-xs mt-1" style="color: var(--ink-500);">
+                {{ leave.principal_approved_by.get_full_name|default:leave.principal_approved_by.email }} · {{ leave.principal_approved_at|date:"j M Y H:i" }}
+              </div>
+              {% if leave.principal_comment %}
+              <div class="text-sm mt-2" style="color: var(--ink-700); padding: var(--s-3); background: var(--surface-muted); border-radius: var(--radius); font-style: italic;">
+                "{{ leave.principal_comment }}"
+              </div>
+              {% endif %}
+            {% else %}
+              <div class="text-xs mt-1" style="color: var(--ink-500);">
+                {% if leave.dpa_approved_at %}Awaiting Principal approval{% else %}Pending DPA first{% endif %}
+              </div>
+            {% endif %}
+          </div>
+        </div>
+        {% endif %}
+
+      </div>
+    </div>
+
+    <!-- Actions -->
+    {% if can_approve %}
+    <div class="card">
+      <h3 class="card-title mb-5">
+        {% include 'partials/icons.html' with name="edit" size=18 %}
+        Actions
+      </h3>
+
+      <div class="flex flex-wrap gap-3">
+        {% if not leave.dpa_approved_at %}
+        <form method="post" action="{% url 'dpa_leave_out_approve' leave.id %}" style="display: inline;">
+          {% csrf_token %}
+          <input type="hidden" name="comment" value="">
+          <button type="submit" class="btn btn-success"
+                  onclick="return confirm('Approve this leave-out?');">
+            {% include 'partials/icons.html' with name="check-circle" size=16 %}
+            Approve Leave-Out
+          </button>
+        </form>
+        {% endif %}
+
+        {% if not leave.guardian_notified %}
+        <form method="post" action="{% url 'dpa_leave_out_toggle_notify' leave.id %}"
+              class="flex flex-wrap gap-2 items-center"
+              style="padding: var(--s-3); background: var(--surface-muted); border-radius: var(--radius);">
+          {% csrf_token %}
+          <select name="method" class="select" style="padding: 6px 12px;">
+            <option value="call">Call</option>
+            <option value="sms">SMS</option>
+            <option value="email">Email</option>
+            <option value="in_person">In Person</option>
+          </select>
+          <label style="display: flex; align-items: center; gap: var(--s-2); font-size: var(--text-sm); cursor: pointer;">
+            <input type="checkbox" name="acknowledged" style="accent-color: var(--primary);">
+            <span>Guardian acknowledged</span>
+          </label>
+          <button type="submit" class="btn btn-primary">
+            {% include 'partials/icons.html' with name="bell" size=16 %}
+            Mark Notified
+          </button>
+        </form>
+        {% endif %}
+      </div>
     </div>
     {% endif %}
+
+  </div>
+
+  <!-- SIDEBAR -->
+  <div class="lg:col-span-1">
+
+    <!-- Student card -->
+    <div class="card mb-6">
+      <h3 class="card-title mb-4">
+        {% include 'partials/icons.html' with name="user" size=18 %}
+        Student
+      </h3>
+
+      <div style="font-weight: 600; color: var(--ink-900); font-size: var(--text-base);">
+        {{ leave.student.first_name }} {{ leave.student.last_name }}
+      </div>
+      <div class="text-xs mt-1" style="color: var(--ink-500);">
+        {{ leave.student.class_level|default:"No class" }}
+      </div>
+      {% if leave.student.admission_number %}
+      <div class="text-xs mt-1" style="color: var(--ink-500); font-family: var(--font-mono);">
+        Adm: {{ leave.student.admission_number }}
+      </div>
+      {% endif %}
+
+      <div class="mt-4 pt-4" style="border-top: 1px solid var(--border);">
+        <a href="{% url 'student_detail' leave.student.id %}" class="btn btn-secondary btn-sm w-full">
+          {% include 'partials/icons.html' with name="eye" size=14 %}
+          View Full Profile
+        </a>
+      </div>
+    </div>
+
+    <!-- Guardian notification -->
+    <div class="card mb-6">
+      <h3 class="card-title mb-4">
+        {% include 'partials/icons.html' with name="bell" size=18 %}
+        Guardian Notification
+      </h3>
+
+      {% if leave.guardian_notified %}
+        <div class="flex items-center gap-2 mb-3">
+          <span class="badge badge-success">Notified</span>
+          {% if leave.guardian_acknowledged %}
+            <span class="badge badge-info">Acknowledged</span>
+          {% endif %}
+        </div>
+        {% if leave.guardian_notified_at %}
+        <div class="text-xs" style="color: var(--ink-500);">
+          {{ leave.guardian_notified_at|date:"j M Y H:i" }}
+          {% if leave.guardian_notification_method %}
+          · via {{ leave.guardian_notification_method }}
+          {% endif %}
+        </div>
+        {% endif %}
+      {% else %}
+        <div class="flex items-center gap-2 mb-3">
+          <span class="badge badge-warning">Pending</span>
+        </div>
+        <p class="text-xs" style="color: var(--ink-500); margin: 0;">
+          Guardian has not yet been notified of this leave-out.
+        </p>
+      {% endif %}
+    </div>
+
+    <!-- Metadata -->
+    <div class="card">
+      <h3 class="card-title mb-4">
+        {% include 'partials/icons.html' with name="info" size=18 %}
+        Details
+      </h3>
+
+      <div class="space-y-3">
+        <div class="flex justify-between text-sm">
+          <span style="color: var(--ink-500);">Requested by</span>
+          <span style="color: var(--ink-800); font-weight: 600; text-align: right;">
+            {{ leave.requested_by.get_full_name|default:leave.requested_by.email|default:"—" }}
+          </span>
+        </div>
+        <div class="flex justify-between text-sm">
+          <span style="color: var(--ink-500);">Requested at</span>
+          <span style="color: var(--ink-800); font-weight: 600;">
+            {{ leave.requested_at|date:"j M Y" }}
+          </span>
+        </div>
+        <div class="flex justify-between text-sm">
+          <span style="color: var(--ink-500);">Record #</span>
+          <span style="color: var(--ink-800); font-weight: 600; font-family: var(--font-mono);">
+            LO-{{ leave.id }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+  </div>
 
 </div>
+
 {% endblock %}

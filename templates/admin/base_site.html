@@ -6,7 +6,7 @@
 {% block extrastyle %}
   {{ block.super }}
   <link rel="stylesheet" href="{% static 'admin/css/custom_admin.css' %}">
-  <link rel="stylesheet" href="{% static 'css/loader.css' %}">
+  <link rel="stylesheet" href="{% static 'css/global-loader.css' %}">
   <script src="https://cdn.tailwindcss.com"></script>
 {% endblock %}
 
@@ -20,20 +20,8 @@
 
 {% block content %}
 
-<!-- ==================== PAGE LOADER ==================== -->
-<div id="page-loader">
-  <div class="loader-spinner"></div>
-  <div class="loader-brand">
-    <div class="loader-logo">SM</div>
-    <div>
-      <div class="loader-text">School MS</div>
-      <div class="loader-subtext">Loading admin...</div>
-    </div>
-  </div>
-  <div class="loader-progress">
-    <div class="loader-progress-bar"></div>
-  </div>
-</div>
+<!-- ==================== GLOBAL LOADER ==================== -->
+{% include 'includes/global_loader.html' %}
 
 <!-- ==================== MAIN LAYOUT ==================== -->
 <div class="admin-layout">
@@ -132,6 +120,6 @@
 
 </div>
 
-<script src="{% static 'js/loader.js' %}"></script>
+<script src="{% static 'js/global-loader.js' %}"></script>
 
 {% endblock %}

@@ -15,7 +15,7 @@
 <link rel="stylesheet" href="{% static 'css/components.css' %}?v={% now 'U' %}">
 <link rel="stylesheet" href="{% static 'css/utilities.css' %}?v={% now 'U' %}">
 <link rel="stylesheet" href="{% static 'css/design_system.css' %}?v={% now 'U' %}">
-<link rel="stylesheet" href="{% static 'css/loader.css' %}?v={% now 'U' %}">
+<link rel="stylesheet" href="{% static 'css/global-loader.css' %}?v={% now 'U' %}">
   <!-- Tailwind CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
 
@@ -65,22 +65,10 @@
 
 {% endif %}
 
-<!-- ============ PAGE LOADER ============ -->
-<div id="page-loader">
-  <div class="loader-spinner"></div>
-  <div class="loader-brand">
-    <div class="loader-logo">SM</div>
-    <div>
-      <div class="loader-text">School MS</div>
-      <div class="loader-subtext">Loading...</div>
-    </div>
-  </div>
-  <div class="loader-progress">
-    <div class="loader-progress-bar"></div>
-  </div>
-</div>
+<!-- ============ GLOBAL LOADER ============ -->
+{% include 'includes/global_loader.html' %}
 
-<script src="{% static 'js/loader.js' %}"></script>
+<script src="{% static 'js/global-loader.js' %}?v={% now 'U' %}"></script>
 
 <!-- ============================================
      SIDEBAR TOGGLE (mobile drawer + desktop collapse)

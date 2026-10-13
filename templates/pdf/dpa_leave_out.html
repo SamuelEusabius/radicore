@@ -1,0 +1,428 @@
+{% load static %}
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  @page {
+    size: A4 portrait;
+    margin: 10mm 12mm;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'DejaVu Sans', Arial, sans-serif;
+    font-size: 9pt;
+    color: #1a1a1a;
+    margin: 0;
+    padding: 0;
+    line-height: 1.3;
+  }
+
+  /* ---------- HEADER ---------- */
+  table.report-header {
+    width: 100%;
+    border-collapse: collapse;
+    border-bottom: 1.5pt solid #00695c;
+    padding-bottom: 6px;
+    margin-bottom: 10px;
+  }
+  table.report-header td {
+    vertical-align: middle;
+    padding: 0 0 6px 0;
+  }
+  .rh-logo { width: 72px; }
+  .rh-logo img { width: 58px; height: 58px; }
+  .rh-school { padding-left: 12px; }
+  .school-name {
+    font-size: 14pt;
+    font-weight: bold;
+    color: #00695c;
+    line-height: 1.05;
+    margin: 0;
+  }
+  .school-motto {
+    font-style: italic;
+    font-size: 8pt;
+    color: #555;
+    margin-top: 1px;
+  }
+  .school-meta {
+    font-size: 7.5pt;
+    color: #555;
+    margin-top: 1px;
+    line-height: 1.25;
+  }
+  .rh-meta {
+    width: 150px;
+    text-align: right;
+    font-size: 7.5pt;
+    color: #444;
+  }
+  .rh-meta .meta-label {
+    font-size: 6.5pt;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #888;
+    font-weight: bold;
+  }
+  .rh-meta .meta-value {
+    font-size: 8.5pt;
+    font-weight: bold;
+    color: #1a1a1a;
+    margin-top: 0;
+  }
+  .rh-meta .meta-value-sm {
+    font-size: 7.5pt;
+    color: #555;
+  }
+
+  /* ---------- TITLE ---------- */
+  .title-block {
+    text-align: center;
+    padding: 2px 0 8px 0;
+  }
+  .report-title {
+    font-size: 15pt;
+    font-weight: bold;
+    letter-spacing: 0.04em;
+    color: #00695c;
+    margin: 0;
+    padding: 0;
+  }
+  .report-subtitle {
+    font-size: 9pt;
+    color: #555;
+    margin: 2px 0 0 0;
+  }
+  .record-ref {
+    font-size: 8pt;
+    color: #888;
+    margin-top: 3px;
+    font-family: 'DejaVu Sans Mono', monospace;
+  }
+
+  /* ---------- STATUS BANNER ---------- */
+  .status-banner {
+    text-align: center;
+    padding: 5px 10px;
+    border-radius: 4px;
+    margin-bottom: 10px;
+    font-size: 9pt;
+    font-weight: bold;
+    letter-spacing: 0.03em;
+  }
+  .status-banner.expulsion { background: #fdecec; color: #B91C1C; border: 0.75pt solid #DC2626; }
+  .status-banner.suspension { background: #fef4e2; color: #B45309; border: 0.75pt solid #D97706; }
+  .status-banner.medical,
+  .status-banner.other { background: #eff6ff; color: #1E40AF; border: 0.75pt solid #2563EB; }
+
+  /* ---------- SECTION ---------- */
+  .section {
+    margin-bottom: 8px;
+    page-break-inside: avoid;
+  }
+  .section-title {
+    font-size: 8.5pt;
+    font-weight: bold;
+    color: #00695c;
+    border-bottom: 0.5pt solid #cfd8d4;
+    padding-bottom: 2px;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  table.info {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 0;
+  }
+  table.info td {
+    padding: 4px 8px;
+    border: 0.5pt solid #cfd8d4;
+    vertical-align: top;
+    font-size: 8.5pt;
+    line-height: 1.25;
+  }
+  table.info td.label {
+    width: 24%;
+    background: #f5f7f6;
+    color: #555;
+    font-weight: bold;
+    text-transform: uppercase;
+    font-size: 7pt;
+    letter-spacing: 0.03em;
+  }
+  table.info td.value {
+    color: #1a1a1a;
+  }
+  table.info td.value strong {
+    font-weight: bold;
+  }
+
+  /* ---------- NARRATIVE ---------- */
+  .narrative {
+    padding: 6px 10px;
+    background: #f9f9f9;
+    border-left: 2pt solid #00695c;
+    font-size: 8.5pt;
+    color: #333;
+    white-space: pre-line;
+    line-height: 1.3;
+  }
+
+  /* ---------- APPROVAL CHAIN ---------- */
+  table.approvals {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  table.approvals td {
+    padding: 4px 8px;
+    border: 0.5pt solid #cfd8d4;
+    vertical-align: top;
+    font-size: 8.5pt;
+    line-height: 1.25;
+  }
+  table.approvals td.step-no {
+    width: 30px;
+    text-align: center;
+    font-weight: bold;
+    background: #f5f7f6;
+    color: #555;
+    font-size: 9pt;
+  }
+  table.approvals td.step-no.approved {
+    background: #e7f6ec;
+    color: #16A34A;
+  }
+  table.approvals td.stage {
+    font-weight: bold;
+    color: #1a1a1a;
+    font-size: 8.5pt;
+  }
+  table.approvals td.stage-info {
+    color: #666;
+    font-size: 7.5pt;
+    margin-top: 1px;
+  }
+  .comment-box {
+    padding: 3px 6px;
+    background: #f9f9f9;
+    border-radius: 3px;
+    font-style: italic;
+    margin-top: 2px;
+    color: #333;
+    font-size: 8pt;
+  }
+
+  /* ---------- SIGNATURES ---------- */
+  table.signatures {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 18px;
+  }
+  table.signatures td {
+    padding: 22px 8px 2px 8px;
+    width: 33%;
+    vertical-align: bottom;
+    border-top: 0.5pt solid #555;
+    text-align: center;
+    font-size: 7.5pt;
+    color: #555;
+    line-height: 1.3;
+  }
+
+  /* ---------- FOOTER ---------- */
+  .footer {
+    margin-top: 10px;
+    padding-top: 5px;
+    border-top: 0.5pt solid #d9e2de;
+    text-align: center;
+    font-size: 7pt;
+    color: #777;
+    line-height: 1.3;
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<table class="report-header">
+  <tr>
+    <td class="rh-logo">
+      {% if school.logo %}
+        <img src="{{ school.logo.url }}" alt="{{ school.name }}">
+      {% else %}
+        <img src="{% static 'images/coat_of_arms.png' %}" alt="Coat of Arms">
+      {% endif %}
+    </td>
+    <td class="rh-school">
+      <div class="school-name">{{ school.name }}</div>
+      {% if school.motto %}<div class="school-motto">"{{ school.motto }}"</div>{% endif %}
+      <div class="school-meta">
+        {% if school.code %}School Code: {{ school.code }}{% endif %}{% if school.nemis_code %}{% if school.code %} · {% endif %}NEMIS: {{ school.nemis_code }}{% endif %}
+      </div>
+      <div class="school-meta">
+        {% if school.email %}{{ school.email }}{% endif %}{% if school.phone %}{% if school.email %} · {% endif %}{{ school.phone }}{% endif %}
+      </div>
+      {% if school.physical_address or school.postal_address %}
+      <div class="school-meta">
+        {% if school.physical_address %}{{ school.physical_address }}{% endif %}{% if school.postal_address %}{% if school.physical_address %} · {% endif %}{{ school.postal_address }}{% endif %}
+      </div>
+      {% endif %}
+    </td>
+    <td class="rh-meta">
+      <div class="meta-label">Generated</div>
+      <div class="meta-value">{{ generated_on|date:"j F Y" }}</div>
+      <div class="meta-value-sm">{{ generated_on|date:"H:i" }}</div>
+      {% if generated_by %}
+      <div class="meta-label" style="margin-top: 3px;">By</div>
+      <div class="meta-value-sm">{{ generated_by.get_full_name|default:generated_by.email }}</div>
+      {% endif %}
+    </td>
+  </tr>
+</table>
+
+<!-- TITLE -->
+<div class="title-block">
+  <div class="report-title">STUDENT LEAVE-OUT NOTICE</div>
+  <div class="report-subtitle">
+    {% if leave.leave_out_type == 'expulsion' %}Permanent Removal from Register
+    {% elif leave.leave_out_type == 'suspension' %}Suspension from School
+    {% elif leave.leave_out_type == 'medical' %}Medical Leave
+    {% else %}{{ leave.get_leave_out_type_display }}{% endif %}
+  </div>
+  <div class="record-ref">Ref: LO-{{ leave.id }}</div>
+</div>
+
+<!-- STATUS -->
+<div class="status-banner {% if leave.leave_out_type == 'expulsion' %}expulsion{% elif leave.leave_out_type == 'suspension' %}suspension{% else %}medical{% endif %}">
+  STATUS: {{ leave.get_status_display|upper }}{% if leave.dpa_approved_at %} · DPA APPROVED{% endif %}{% if leave.principal_approved_at %} · PRINCIPAL APPROVED{% endif %}
+</div>
+
+<!-- STUDENT -->
+<div class="section">
+  <div class="section-title">Student Information</div>
+  <table class="info">
+    <tr>
+      <td class="label">Full Name</td>
+      <td class="value"><strong>{{ leave.student.first_name }} {{ leave.student.last_name }}</strong></td>
+      <td class="label">Admission No.</td>
+      <td class="value">{{ leave.student.admission_number|default:"—" }}</td>
+    </tr>
+    <tr>
+      <td class="label">Class</td>
+      <td class="value">{{ leave.student.class_level|default:"—" }}</td>
+      <td class="label">Gender</td>
+      <td class="value">{{ leave.student.get_gender_display|default:leave.student.gender|default:"—" }}</td>
+    </tr>
+  </table>
+</div>
+
+<!-- DETAILS -->
+<div class="section">
+  <div class="section-title">Leave-Out Details</div>
+  <table class="info">
+    <tr>
+      <td class="label">Type</td>
+      <td class="value"><strong>{{ leave.get_leave_out_type_display }}</strong></td>
+      <td class="label">Duration</td>
+      <td class="value">
+        {% if leave.start_date == leave.end_date %}{{ leave.start_date|date:"j F Y" }}
+        {% elif leave.end_date %}{{ leave.start_date|date:"j F Y" }} to {{ leave.end_date|date:"j F Y" }}
+        {% else %}From {{ leave.start_date|date:"j F Y" }} — no fixed return{% endif %}
+      </td>
+    </tr>
+    {% if leave.suspension_reason %}
+    <tr>
+      <td class="label">Reason</td>
+      <td class="value" colspan="3"><strong>{{ leave.get_suspension_reason_display }}</strong></td>
+    </tr>
+    {% endif %}
+    <tr>
+      <td class="label">Days Out</td>
+      <td class="value">{{ leave.days_out }} day{{ leave.days_out|pluralize }}</td>
+      <td class="label">Actual Return</td>
+      <td class="value">{% if leave.actual_return_date %}{{ leave.actual_return_date|date:"j F Y" }}{% else %}Not yet returned{% endif %}</td>
+    </tr>
+  </table>
+</div>
+
+<!-- REASON -->
+<div class="section">
+  <div class="section-title">Reason for Leave-Out</div>
+  <div class="narrative">{{ leave.reason_description }}</div>
+  {% if leave.discipline_record %}
+  <table class="info" style="margin-top: 4px;">
+    <tr>
+      <td class="label">Linked Case</td>
+      <td class="value">Case #{{ leave.discipline_record.id }} — {{ leave.discipline_record.get_category_display }} ({{ leave.discipline_record.incident_date|date:"j M Y" }})</td>
+    </tr>
+  </table>
+  {% endif %}
+</div>
+
+<!-- APPROVALS -->
+<div class="section">
+  <div class="section-title">Approval Chain</div>
+  <table class="approvals">
+    <tr>
+      <td class="step-no {% if leave.dpa_approved_at %}approved{% endif %}">{% if leave.dpa_approved_at %}✓{% else %}1{% endif %}</td>
+      <td>
+        <div class="stage">Deputy Principal — Administration</div>
+        {% if leave.dpa_approved_at %}
+          <div class="stage-info">{{ leave.dpa_approved_by.get_full_name|default:leave.dpa_approved_by.email }} · {{ leave.dpa_approved_at|date:"j F Y, H:i" }}</div>
+          {% if leave.dpa_comment %}<div class="comment-box">"{{ leave.dpa_comment }}"</div>{% endif %}
+        {% else %}
+          <div class="stage-info">Pending DPA approval</div>
+        {% endif %}
+      </td>
+    </tr>
+
+    {% if is_expulsion %}
+    <tr>
+      <td class="step-no {% if leave.principal_approved_at %}approved{% endif %}">{% if leave.principal_approved_at %}✓{% else %}2{% endif %}</td>
+      <td>
+        <div class="stage">Principal — Final Approval</div>
+        {% if leave.principal_approved_at %}
+          <div class="stage-info">{{ leave.principal_approved_by.get_full_name|default:leave.principal_approved_by.email }} · {{ leave.principal_approved_at|date:"j F Y, H:i" }}</div>
+          {% if leave.principal_comment %}<div class="comment-box">"{{ leave.principal_comment }}"</div>{% endif %}
+        {% else %}
+          <div class="stage-info">Pending Principal approval (required for expulsions)</div>
+        {% endif %}
+      </td>
+    </tr>
+    {% endif %}
+
+    {% if leave.guardian_notified %}
+    <tr>
+      <td class="step-no approved">✓</td>
+      <td>
+        <div class="stage">Guardian Notification</div>
+        <div class="stage-info">
+          Notified{% if leave.guardian_notification_method %} via {{ leave.guardian_notification_method }}{% endif %}{% if leave.guardian_notified_at %} on {{ leave.guardian_notified_at|date:"j F Y, H:i" }}{% endif %}{% if leave.guardian_acknowledged %} · Acknowledged{% endif %}
+        </div>
+      </td>
+    </tr>
+    {% endif %}
+  </table>
+</div>
+
+<!-- SIGNATURES -->
+<table class="signatures">
+  <tr>
+    <td>Deputy Principal<br>Administration<br><br>Name &amp; Signature</td>
+    <td>Principal<br>&nbsp;<br><br>Name &amp; Signature</td>
+    <td>Guardian<br>&nbsp;<br><br>Name &amp; Signature</td>
+  </tr>
+</table>
+
+<!-- FOOTER -->
+<div class="footer">
+  {{ school.name }}{% if school.code %} · {{ school.code }}{% endif %}
+  &nbsp;·&nbsp; Leave-Out Notice — Ref LO-{{ leave.id }}
+  &nbsp;·&nbsp; Generated {{ generated_on|date:"Y-m-d H:i" }}{% if generated_by %} by {{ generated_by.get_full_name|default:generated_by.email }}{% endif %}
+</div>
+
+</body>
+</html>

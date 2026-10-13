@@ -1,261 +1,307 @@
 {% extends "base.html" %}
-{% load perms %}
+{% load static %}
 
-{% block title %}Deputy Principal — Administration{% endblock %}
+{% block title %}DPA Dashboard{% endblock %}
+{% block header_title %}Deputy Principal — Administration{% endblock %}
+{% block header_sub %}
+  {{ school.name }} · {{ today|date:"l, j F Y" }}
+{% endblock %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
-    <!-- Header -->
-    <div class="mb-8">
-        <h1 class="text-2xl font-bold text-gray-900">Deputy Principal — Administration</h1>
-        <p class="text-sm text-gray-500 mt-1">
-            {{ school.name }} · {{ today|date:"l, j F Y" }}
-        </p>
+{% if messages %}
+  {% for msg in messages %}
+  <div class="card mb-6" style="border-left: 4px solid {% if msg.tags == 'error' %}var(--danger){% else %}var(--primary){% endif %}; padding: var(--s-4);">
+    <p class="text-sm" style="margin: 0; color: {% if msg.tags == 'error' %}var(--danger){% else %}var(--ink-800){% endif %};">
+      {{ msg }}
+    </p>
+  </div>
+  {% endfor %}
+{% endif %}
+
+<!-- ============================================================= -->
+<!-- KPI ROW                                                       -->
+<!-- ============================================================= -->
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Open Cases</span>
+      <div class="stat-icon" style="background: var(--danger-light); color: var(--danger);">
+        {% include 'partials/icons.html' with name="alert-triangle" size=18 %}
+      </div>
     </div>
-
-    {% if messages %}
-        {% for msg in messages %}
-        <div class="mb-4 rounded-lg px-4 py-3 text-sm
-            {% if msg.tags == 'error' %}bg-red-50 text-red-800 border border-red-200
-            {% elif msg.tags == 'warning' %}bg-amber-50 text-amber-800 border border-amber-200
-            {% else %}bg-green-50 text-green-800 border border-green-200{% endif %}">
-            {{ msg }}
-        </div>
-        {% endfor %}
-    {% endif %}
-
-    <!-- KPI Row -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-
-        <!-- Open discipline cases -->
-        <div class="bg-white rounded-xl border border-gray-200 p-5">
-            <div class="flex items-center justify-between mb-2">
-                <span class="text-xs font-medium text-gray-500 uppercase tracking-wider">Open Cases</span>
-                <span class="w-9 h-9 rounded-lg bg-red-50 flex items-center justify-center">
-                    <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M5.07 19h13.86a2 2 0 001.74-2.99L13.74 4a2 2 0 00-3.48 0L3.33 16a2 2 0 001.74 3z"/>
-                    </svg>
-                </span>
-            </div>
-            <div class="text-3xl font-bold text-gray-900">{{ discipline_stats.total_open }}</div>
-            <div class="text-xs text-gray-500 mt-1">
-                {{ discipline_stats.critical }} critical · {{ discipline_stats.serious }} serious
-            </div>
-        </div>
-
-        <!-- Pending leave -->
-        <div class="bg-white rounded-xl border border-gray-200 p-5">
-            <div class="flex items-center justify-between mb-2">
-                <span class="text-xs font-medium text-gray-500 uppercase tracking-wider">Leave Queue</span>
-                <span class="w-9 h-9 rounded-lg bg-amber-50 flex items-center justify-center">
-                    <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                    </svg>
-                </span>
-            </div>
-            <div class="text-3xl font-bold text-gray-900">{{ leave_stats.pending_dpa }}</div>
-            <div class="text-xs text-gray-500 mt-1">
-                Awaiting your approval
-            </div>
-        </div>
-
-        <!-- Duty roster today -->
-        <div class="bg-white rounded-xl border border-gray-200 p-5">
-            <div class="flex items-center justify-between mb-2">
-                <span class="text-xs font-medium text-gray-500 uppercase tracking-wider">Duties Today</span>
-                <span class="w-9 h-9 rounded-lg bg-indigo-50 flex items-center justify-center">
-                    <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
-                    </svg>
-                </span>
-            </div>
-            <div class="text-3xl font-bold text-gray-900">{{ duty_stats.today_done }}/{{ duty_stats.today_total }}</div>
-            <div class="text-xs text-gray-500 mt-1">
-                {{ duty_stats.upcoming_week }} scheduled this week
-            </div>
-        </div>
-
-        <!-- Staff attendance -->
-        <div class="bg-white rounded-xl border border-gray-200 p-5">
-            <div class="flex items-center justify-between mb-2">
-                <span class="text-xs font-medium text-gray-500 uppercase tracking-wider">Staff Present</span>
-                <span class="w-9 h-9 rounded-lg bg-green-50 flex items-center justify-center">
-                    <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-5.13a4 4 0 11-8 0 4 4 0 018 0zm6 0a3 3 0 11-6 0 3 3 0 016 0z"/>
-                    </svg>
-                </span>
-            </div>
-            <div class="text-3xl font-bold text-gray-900">{{ attendance_stats.present }}</div>
-            <div class="text-xs text-gray-500 mt-1">
-                {{ attendance_stats.absent }} absent · {{ attendance_stats.late }} late
-            </div>
-        </div>
+    <div class="stat-value">{{ discipline_stats.total_open }}</div>
+    <div class="stat-meta">
+      {{ discipline_stats.critical }} critical · {{ discipline_stats.serious }} serious
     </div>
+  </div>
 
-    <!-- Action Queues -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-
-        <!-- Leave approval queue -->
-        <div class="bg-white rounded-xl border border-gray-200">
-            <div class="px-5 py-4 border-b border-gray-200 flex items-center justify-between">
-                <h2 class="font-semibold text-gray-900">Leave Requests</h2>
-                <span class="text-xs text-gray-500">{{ leave_stats.pending_dpa }} pending</span>
-            </div>
-            <div class="divide-y divide-gray-100">
-                {% for leave in leave_queue %}
-                <div class="px-5 py-3">
-                    <div class="flex items-start justify-between gap-4">
-                        <div class="flex-1 min-w-0">
-                            <p class="font-medium text-gray-900 truncate">
-                                {{ leave.staff.get_full_name|default:leave.staff.email }}
-                            </p>
-                            <p class="text-xs text-gray-500 mt-0.5">
-                                {{ leave.get_leave_type_display }} · {{ leave.start_date|date:"j M" }} → {{ leave.end_date|date:"j M" }}
-                                ({{ leave.days_requested }} day{{ leave.days_requested|pluralize }})
-                            </p>
-                            {% if leave.reason %}
-                            <p class="text-xs text-gray-500 mt-1 line-clamp-2">{{ leave.reason }}</p>
-                            {% endif %}
-                        </div>
-                        {% if can_approve %}
-                        <div class="flex gap-1 shrink-0">
-                            <form method="post" action="{% url 'dpa_approve_leave' leave.id %}">
-                                {% csrf_token %}
-                                <button type="submit"
-                                        class="px-3 py-1 text-xs font-medium text-white bg-green-600 rounded-lg hover:bg-green-700">
-                                    Approve
-                                </button>
-                            </form>
-                            <form method="post" action="{% url 'dpa_reject_leave' leave.id %}">
-                                {% csrf_token %}
-                                <button type="submit"
-                                        class="px-3 py-1 text-xs font-medium text-red-700 bg-red-50 rounded-lg hover:bg-red-100">
-                                    Reject
-                                </button>
-                            </form>
-                        </div>
-                        {% endif %}
-                    </div>
-                </div>
-                {% empty %}
-                <div class="px-5 py-8 text-center text-sm text-gray-500">
-                    No pending leave requests
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-
-        <!-- Discipline queue -->
-        <div class="bg-white rounded-xl border border-gray-200">
-            <div class="px-5 py-4 border-b border-gray-200 flex items-center justify-between">
-                <h2 class="font-semibold text-gray-900">Recent Discipline</h2>
-                <a href="{% url 'dpa_discipline_list' %}" class="text-xs text-indigo-600 hover:text-indigo-700">
-                    View all →
-                </a>
-            </div>
-            <div class="divide-y divide-gray-100">
-                {% for record in recent_discipline %}
-                <div class="px-5 py-3">
-                    <div class="flex items-start justify-between gap-3">
-                        <div class="flex-1 min-w-0">
-                            <p class="font-medium text-gray-900 truncate">
-                                {{ record.student.first_name }} {{ record.student.last_name }}
-                            </p>
-                            <p class="text-xs text-gray-500 mt-0.5">
-                                {{ record.get_category_display }} · {{ record.incident_date|date:"j M Y" }}
-                            </p>
-                        </div>
-                        <span class="px-2 py-0.5 text-xs font-medium rounded-full shrink-0
-                            {% if record.severity == 'critical' %}bg-red-100 text-red-800
-                            {% elif record.severity == 'serious' %}bg-orange-100 text-orange-800
-                            {% elif record.severity == 'moderate' %}bg-amber-100 text-amber-800
-                            {% else %}bg-gray-100 text-gray-700{% endif %}">
-                            {{ record.get_severity_display }}
-                        </span>
-                    </div>
-                </div>
-                {% empty %}
-                <div class="px-5 py-8 text-center text-sm text-gray-500">
-                    No open discipline cases
-                </div>
-                {% endfor %}
-            </div>
-        </div>
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Leave Queue</span>
+      <div class="stat-icon" style="background: var(--warning-light); color: var(--warning);">
+        {% include 'partials/icons.html' with name="calendar" size=18 %}
+      </div>
     </div>
+    <div class="stat-value" style="color: var(--warning);">{{ leave_stats.pending_dpa }}</div>
+    <div class="stat-meta">awaiting your approval</div>
+  </div>
 
-    <!-- Today's duty roster -->
-    <div class="bg-white rounded-xl border border-gray-200 mb-8">
-        <div class="px-5 py-4 border-b border-gray-200 flex items-center justify-between">
-            <h2 class="font-semibold text-gray-900">Today's Duty Roster</h2>
-            <span class="text-xs text-gray-500">{{ duty_stats.today_total }} assigned</span>
-        </div>
-        {% if todays_duties %}
-        <div class="overflow-x-auto">
-            <table class="w-full text-sm">
-                <thead class="bg-gray-50 text-left text-xs uppercase text-gray-500">
-                    <tr>
-                        <th class="px-5 py-2 font-medium">Staff</th>
-                        <th class="px-5 py-2 font-medium">Duty</th>
-                        <th class="px-5 py-2 font-medium">Time</th>
-                        <th class="px-5 py-2 font-medium">Location</th>
-                        <th class="px-5 py-2 font-medium">Status</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-100">
-                    {% for duty in todays_duties %}
-                    <tr>
-                        <td class="px-5 py-3 text-gray-900">
-                            {{ duty.staff.get_full_name|default:duty.staff.email }}
-                        </td>
-                        <td class="px-5 py-3 text-gray-700">{{ duty.get_duty_type_display }}</td>
-                        <td class="px-5 py-3 text-gray-500">
-                            {% if duty.start_time %}{{ duty.start_time|time:"H:i" }}{% endif %}
-                            {% if duty.end_time %} – {{ duty.end_time|time:"H:i" }}{% endif %}
-                        </td>
-                        <td class="px-5 py-3 text-gray-500">{{ duty.location|default:"—" }}</td>
-                        <td class="px-5 py-3">
-                            {% if duty.completed %}
-                            <span class="text-xs font-medium text-green-700">Done</span>
-                            {% else %}
-                            <span class="text-xs font-medium text-amber-700">Pending</span>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        {% else %}
-        <div class="px-5 py-8 text-center text-sm text-gray-500">
-            No duties assigned for today
-        </div>
-        {% endif %}
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Duties Today</span>
+      <div class="stat-icon" style="background: var(--info-light); color: var(--info);">
+        {% include 'partials/icons.html' with name="clipboard" size=18 %}
+      </div>
     </div>
+    <div class="stat-value">{{ duty_stats.today_done }}/{{ duty_stats.today_total }}</div>
+    <div class="stat-meta">{{ duty_stats.upcoming_week }} scheduled this week</div>
+  </div>
 
-    <!-- Quick actions -->
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <a href="{% url 'dpa_discipline_list' %}"
-           class="bg-white rounded-xl border border-gray-200 p-4 text-center hover:border-indigo-300 hover:shadow-sm transition">
-            <div class="text-sm font-medium text-gray-900">Log Discipline</div>
-            <div class="text-xs text-gray-500 mt-1">Record new case</div>
-        </a>
-        <a href="#"
-           class="bg-white rounded-xl border border-gray-200 p-4 text-center hover:border-indigo-300 hover:shadow-sm transition">
-            <div class="text-sm font-medium text-gray-900">Duty Roster</div>
-            <div class="text-xs text-gray-500 mt-1">Assign duties</div>
-        </a>
-        <a href="#"
-           class="bg-white rounded-xl border border-gray-200 p-4 text-center hover:border-indigo-300 hover:shadow-sm transition">
-            <div class="text-sm font-medium text-gray-900">Staff Attendance</div>
-            <div class="text-xs text-gray-500 mt-1">Record today</div>
-        </a>
-        <a href="#"
-           class="bg-white rounded-xl border border-gray-200 p-4 text-center hover:border-indigo-300 hover:shadow-sm transition">
-            <div class="text-sm font-medium text-gray-900">Reports</div>
-            <div class="text-xs text-gray-500 mt-1">Export data</div>
-        </a>
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Staff Present</span>
+      <div class="stat-icon" style="background: var(--success-light); color: var(--success);">
+        {% include 'partials/icons.html' with name="users" size=18 %}
+      </div>
     </div>
+    <div class="stat-value" style="color: var(--success);">{{ attendance_stats.present }}</div>
+    <div class="stat-meta">
+      {{ attendance_stats.absent }} absent · {{ attendance_stats.late }} late
+    </div>
+  </div>
 
 </div>
+
+<!-- ============================================================= -->
+<!-- ACTION QUEUES                                                 -->
+<!-- ============================================================= -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+
+  <!-- Leave approval queue -->
+  <div class="card" style="padding: 0; overflow: hidden;">
+    <div style="padding: var(--s-5); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+      <h3 class="card-title" style="margin: 0;">
+        {% include 'partials/icons.html' with name="calendar" size=18 %}
+        Leave Requests
+      </h3>
+      <span class="text-xs" style="color: var(--ink-500);">
+        {{ leave_stats.pending_dpa }} pending
+      </span>
+    </div>
+
+    {% if leave_queue %}
+      {% for leave in leave_queue %}
+      <div style="padding: var(--s-4) var(--s-5); border-bottom: 1px solid var(--border);">
+        <div class="flex items-start justify-between gap-4 flex-wrap">
+          <div class="flex-1 min-w-0">
+            <div style="font-weight: 600; color: var(--ink-900); font-size: var(--text-sm);">
+              {{ leave.staff.get_full_name|default:leave.staff.email }}
+            </div>
+            <div class="text-xs mt-1" style="color: var(--ink-500);">
+              {{ leave.get_leave_type_display }} ·
+              {{ leave.start_date|date:"j M" }} → {{ leave.end_date|date:"j M" }}
+              ({{ leave.days_requested }} day{{ leave.days_requested|pluralize }})
+            </div>
+            {% if leave.reason %}
+            <div class="text-xs mt-1" style="color: var(--ink-500);">
+              {{ leave.reason|truncatechars:80 }}
+            </div>
+            {% endif %}
+          </div>
+
+          {% if can_approve %}
+          <div class="flex gap-2 shrink-0">
+            <form method="post" action="{% url 'dpa_approve_leave' leave.id %}" style="display: inline;">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-success btn-sm">
+                Approve
+              </button>
+            </form>
+            <form method="post" action="{% url 'dpa_reject_leave' leave.id %}" style="display: inline;">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-secondary btn-sm"
+                      onclick="return confirm('Reject this leave request?');">
+                Reject
+              </button>
+            </form>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+
+      <div style="padding: var(--s-4) var(--s-5); text-align: center;">
+        <a href="{% url 'dpa_leave_list' %}" class="text-sm" style="color: var(--primary); text-decoration: none; font-weight: 500;">
+          View all leave requests →
+        </a>
+      </div>
+    {% else %}
+      <div style="padding: var(--s-8); text-align: center;">
+        <p class="text-sm" style="color: var(--ink-500); margin: 0;">
+          No pending leave requests
+        </p>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Discipline queue -->
+  <div class="card" style="padding: 0; overflow: hidden;">
+    <div style="padding: var(--s-5); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+      <h3 class="card-title" style="margin: 0;">
+        {% include 'partials/icons.html' with name="alert-triangle" size=18 %}
+        Recent Discipline
+      </h3>
+      <a href="{% url 'dpa_discipline_list' %}" class="text-xs" style="color: var(--primary); text-decoration: none;">
+        View all →
+      </a>
+    </div>
+
+    {% if recent_discipline %}
+      {% for record in recent_discipline %}
+      <div style="padding: var(--s-4) var(--s-5); border-bottom: 1px solid var(--border);">
+        <div class="flex items-start justify-between gap-3 flex-wrap">
+          <div class="flex-1 min-w-0">
+            <a href="{% url 'dpa_discipline_detail' record.id %}"
+               style="font-weight: 600; color: var(--ink-900); font-size: var(--text-sm); text-decoration: none;">
+              {{ record.student.first_name }} {{ record.student.last_name }}
+            </a>
+            <div class="text-xs mt-1" style="color: var(--ink-500);">
+              {{ record.get_category_display }} · {{ record.incident_date|date:"j M Y" }}
+            </div>
+          </div>
+          <div>
+            {% if record.severity == 'critical' %}
+              <span class="badge badge-danger">Critical</span>
+            {% elif record.severity == 'serious' %}
+              <span class="badge" style="background: var(--warning-light); color: var(--warning);">Serious</span>
+            {% elif record.severity == 'moderate' %}
+              <span class="badge badge-warning">Moderate</span>
+            {% else %}
+              <span class="badge badge-neutral">Minor</span>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div style="padding: var(--s-8); text-align: center;">
+        <p class="text-sm" style="color: var(--ink-500); margin: 0;">
+          No open discipline cases
+        </p>
+      </div>
+    {% endif %}
+  </div>
+
+</div>
+
+<!-- ============================================================= -->
+<!-- TODAY'S DUTY ROSTER                                           -->
+<!-- ============================================================= -->
+<div class="card mb-6" style="padding: 0; overflow: hidden;">
+  <div style="padding: var(--s-5); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+    <h3 class="card-title" style="margin: 0;">
+      {% include 'partials/icons.html' with name="clipboard" size=18 %}
+      Today's Duty Roster
+    </h3>
+    <span class="text-xs" style="color: var(--ink-500);">
+      {{ duty_stats.today_total }} assigned
+    </span>
+  </div>
+
+  {% if todays_duties %}
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Staff</th>
+          <th style="width: 180px;">Duty</th>
+          <th style="width: 140px;">Time</th>
+          <th style="width: 180px;">Location</th>
+          <th style="width: 120px;">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for duty in todays_duties %}
+        <tr>
+          <td>
+            <a href="{% url 'dpa_staff_detail' duty.staff.id %}"
+               style="font-weight: 600; color: var(--ink-900); text-decoration: none;">
+              {{ duty.staff.get_full_name|default:duty.staff.email }}
+            </a>
+            <div class="text-xs" style="color: var(--ink-500);">
+              {{ duty.staff.get_role_display|default:duty.staff.role }}
+            </div>
+          </td>
+          <td>{{ duty.get_duty_type_display }}</td>
+          <td>
+            <span style="font-family: var(--font-mono); font-size: var(--text-sm); color: var(--ink-700);">
+              {% if duty.start_time %}{{ duty.start_time|time:"H:i" }}{% endif %}
+              {% if duty.end_time %} – {{ duty.end_time|time:"H:i" }}{% endif %}
+            </span>
+          </td>
+          <td style="color: var(--ink-600);">{{ duty.location|default:"—" }}</td>
+          <td>
+            {% if duty.completed %}
+              <span class="badge badge-success">Done</span>
+            {% else %}
+              <span class="badge badge-warning">Pending</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div style="padding: var(--s-8); text-align: center;">
+    <p class="text-sm" style="color: var(--ink-500); margin: 0;">
+      No duties assigned for today
+    </p>
+  </div>
+  {% endif %}
+</div>
+
+<!-- ============================================================= -->
+<!-- QUICK ACTIONS                                                 -->
+<!-- ============================================================= -->
+<div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+  <a href="{% url 'dpa_discipline_create' %}" class="card card-hover" style="text-decoration: none; text-align: center; padding: var(--s-5);">
+    <div style="font-weight: 600; color: var(--ink-900); font-size: var(--text-sm);">
+      Record Discipline
+    </div>
+    <div class="text-xs mt-1" style="color: var(--ink-500);">
+      Log a new case
+    </div>
+  </a>
+
+  <a href="{% url 'dpa_duty_create' %}" class="card card-hover" style="text-decoration: none; text-align: center; padding: var(--s-5);">
+    <div style="font-weight: 600; color: var(--ink-900); font-size: var(--text-sm);">
+      Assign Duty
+    </div>
+    <div class="text-xs mt-1" style="color: var(--ink-500);">
+      Schedule staff
+    </div>
+  </a>
+
+  <a href="{% url 'dpa_staff_attendance' %}" class="card card-hover" style="text-decoration: none; text-align: center; padding: var(--s-5);">
+    <div style="font-weight: 600; color: var(--ink-900); font-size: var(--text-sm);">
+      Staff Attendance
+    </div>
+    <div class="text-xs mt-1" style="color: var(--ink-500);">
+      Mark today
+    </div>
+  </a>
+
+  <a href="{% url 'dpa_discipline_report' %}" class="card card-hover" style="text-decoration: none; text-align: center; padding: var(--s-5);">
+    <div style="font-weight: 600; color: var(--ink-900); font-size: var(--text-sm);">
+      Reports
+    </div>
+    <div class="text-xs mt-1" style="color: var(--ink-500);">
+      Discipline reports
+    </div>
+  </a>
+</div>
+
 {% endblock %}

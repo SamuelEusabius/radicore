@@ -1,93 +1,174 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Record Leave-Out{% endblock %}
+{% block header_title %}Record Leave-Out{% endblock %}
+{% block header_sub %}
+  {{ record.student.first_name }} {{ record.student.last_name }} · Case #{{ record.id }}
+{% endblock %}
 
 {% block content %}
-<div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
-    <nav class="text-xs text-gray-500 mb-4">
-        <a href="{% url 'dpa_admin_dashboard' %}" class="hover:text-indigo-600">DPA Dashboard</a>
-        <span class="mx-2">/</span>
-        <a href="{% url 'dpa_discipline_detail' record.id %}" class="hover:text-indigo-600">Case #{{ record.id }}</a>
-        <span class="mx-2">/</span>
-        <span class="text-gray-700">New Leave-Out</span>
-    </nav>
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-    <div class="bg-white rounded-xl border border-gray-200 p-6 sm:p-8">
-        <h1 class="text-2xl font-bold text-gray-900 mb-1">Record Leave-Out / Suspension</h1>
-        <p class="text-sm text-gray-500 mb-6">
-            For <span class="font-medium text-gray-700">{{ record.student.first_name }} {{ record.student.last_name }}</span>
-            · Case #{{ record.id }} ({{ record.get_category_display }})
-        </p>
+  <!-- ============================================================= -->
+  <!-- FORM                                                          -->
+  <!-- ============================================================= -->
+  <div class="lg:col-span-2">
+    <div class="card">
+      <form method="post" class="space-y-5">
+        {% csrf_token %}
 
         {% if messages %}
-            {% for msg in messages %}
-            <div class="mb-4 rounded-lg px-4 py-3 text-sm
-                {% if msg.tags == 'error' %}bg-red-50 text-red-800 border border-red-200
-                {% else %}bg-green-50 text-green-800 border border-green-200{% endif %}">
-                {{ msg }}
-            </div>
-            {% endfor %}
+          {% for msg in messages %}
+          <div style="padding: var(--s-3); border-radius: var(--radius); background: var(--danger-light); color: var(--danger); font-size: var(--text-sm);">
+            {{ msg }}
+          </div>
+          {% endfor %}
         {% endif %}
 
-        <form method="post" class="space-y-5">
-            {% csrf_token %}
+        <!-- Linked case reference -->
+        <div style="padding: var(--s-4); background: var(--surface-muted); border-radius: var(--radius);">
+          <div class="text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-500);">
+            Linked Discipline Case
+          </div>
+          <div style="font-weight: 600; color: var(--ink-900);">
+            Case #{{ record.id }} — {{ record.get_category_display }}
+          </div>
+          <div class="text-xs mt-1" style="color: var(--ink-600);">
+            Incident: {{ record.incident_date|date:"j M Y" }}
+            {% if record.severity %}· Severity: {{ record.get_severity_display }}{% endif %}
+          </div>
+        </div>
 
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Leave-Out Type <span class="text-red-500">*</span></label>
-                <select name="leave_out_type" required
-                        class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
-                    {% for value, label in leave_out_types %}
-                    <option value="{{ value }}" {% if value == 'suspension' %}selected{% endif %}>{{ label }}</option>
-                    {% endfor %}
-                </select>
-            </div>
+        <!-- Type -->
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider mb-2"
+                 style="color: var(--ink-600);">
+            Leave-Out Type <span style="color: var(--danger);">*</span>
+          </label>
+          <select name="leave_out_type" required class="select w-full">
+            {% for value, label in leave_out_types %}
+            <option value="{{ value }}" {% if value == 'suspension' %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+          <p class="text-xs mt-2" style="color: var(--ink-500);">
+            Expulsions require Principal approval before taking effect.
+          </p>
+        </div>
 
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Suspension Reason</label>
-                <select name="suspension_reason"
-                        class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
-                    <option value="">— Select if suspension/expulsion —</option>
-                    {% for value, label in suspension_reasons %}
-                    <option value="{{ value }}">{{ label }}</option>
-                    {% endfor %}
-                </select>
-            </div>
+        <!-- Suspension reason -->
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider mb-2"
+                 style="color: var(--ink-600);">
+            Suspension Reason
+          </label>
+          <select name="suspension_reason" class="select w-full">
+            <option value="">— Select if suspension or expulsion —</option>
+            {% for value, label in suspension_reasons %}
+            <option value="{{ value }}">{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Start Date <span class="text-red-500">*</span></label>
-                    <input type="date" name="start_date" required value="{{ today|date:'Y-m-d' }}"
-                           class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
-                </div>
+        <!-- Dates -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-wider mb-2"
+                   style="color: var(--ink-600);">
+              Start Date <span style="color: var(--danger);">*</span>
+            </label>
+            <input type="date" name="start_date" required value="{{ today|date:'Y-m-d' }}"
+                   class="input w-full">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-wider mb-2"
+                   style="color: var(--ink-600);">
+              End Date
+            </label>
+            <input type="date" name="end_date" class="input w-full">
+            <p class="text-xs mt-2" style="color: var(--ink-500);">
+              Leave blank for expulsions (no return date).
+            </p>
+          </div>
+        </div>
 
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">End Date (optional)</label>
-                    <input type="date" name="end_date"
-                           class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
-                    <p class="text-xs text-gray-500 mt-1">Leave blank for expulsions (no return date)</p>
-                </div>
-            </div>
+        <!-- Reason -->
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider mb-2"
+                 style="color: var(--ink-600);">
+            Reason Description <span style="color: var(--danger);">*</span>
+          </label>
+          <textarea name="reason_description" rows="5" required class="textarea w-full"
+                    placeholder="Full description — what happened, why this outcome, any conditions for return"></textarea>
+        </div>
 
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Reason Description <span class="text-red-500">*</span></label>
-                <textarea name="reason_description" rows="4" required
-                          placeholder="Full description of why the student is being sent home"
-                          class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"></textarea>
-            </div>
+        <!-- Actions -->
+        <div class="flex justify-end gap-3 pt-4" style="border-top: 1px solid var(--border);">
+          <a href="{% url 'dpa_discipline_detail' record.id %}" class="btn btn-secondary">
+            Cancel
+          </a>
+          <button type="submit" class="btn btn-danger">
+            {% include 'partials/icons.html' with name="alert-triangle" size=16 %}
+            Record Leave-Out
+          </button>
+        </div>
 
-            <div class="flex items-center justify-end gap-3 pt-4 border-t border-gray-100">
-                <a href="{% url 'dpa_discipline_detail' record.id %}"
-                   class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
-                    Cancel
-                </a>
-                <button type="submit"
-                        class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700">
-                    Record Leave-Out
-                </button>
-            </div>
-        </form>
+      </form>
+    </div>
+  </div>
+
+  <!-- ============================================================= -->
+  <!-- SIDEBAR GUIDE                                                 -->
+  <!-- ============================================================= -->
+  <div class="lg:col-span-1">
+    <div class="card mb-6">
+      <h3 class="card-title mb-4">
+        {% include 'partials/icons.html' with name="info" size=18 %}
+        Types Explained
+      </h3>
+      <div class="space-y-4">
+        <div>
+          <div class="text-xs font-semibold uppercase tracking-wider mb-1" style="color: var(--ink-500);">
+            Suspension
+          </div>
+          <p class="text-sm" style="color: var(--ink-700); margin: 0;">
+            Temporary removal. Student is expected to return. Set an end date.
+          </p>
+        </div>
+        <div>
+          <div class="text-xs font-semibold uppercase tracking-wider mb-1" style="color: var(--ink-500);">
+            Expulsion
+          </div>
+          <p class="text-sm" style="color: var(--ink-700); margin: 0;">
+            Permanent removal. Requires Principal final approval. Leave end date blank.
+          </p>
+        </div>
+        <div>
+          <div class="text-xs font-semibold uppercase tracking-wider mb-1" style="color: var(--ink-500);">
+            Medical / Family
+          </div>
+          <p class="text-sm" style="color: var(--ink-700); margin: 0;">
+            Non-disciplinary leave. Guardian is expected to pick up the student.
+          </p>
+        </div>
+      </div>
     </div>
 
+    <div class="card">
+      <h3 class="card-title mb-4">
+        {% include 'partials/icons.html' with name="alert-triangle" size=18 %}
+        Before You Save
+      </h3>
+      <ul class="space-y-2" style="margin: 0; padding-left: var(--s-5); font-size: var(--text-sm); color: var(--ink-700);">
+        <li>Guardian must be notified before the student leaves campus.</li>
+        <li>Document the specific reason — this becomes a formal record.</li>
+        <li>For expulsions, Principal approval is required before it takes effect.</li>
+        <li>Return date can be updated when the student comes back.</li>
+      </ul>
+    </div>
+  </div>
+
 </div>
+
 {% endblock %}
