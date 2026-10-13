@@ -1,0 +1,225 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Syllabus Coverage{% endblock %}
+{% block header_title %}Syllabus Coverage{% endblock %}
+{% block header_sub %}
+  {{ total }} topic{{ total|pluralize }} tracked · {{ overall_percent }}% complete
+{% endblock %}
+
+{% block content %}
+
+<!-- Stats row -->
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Completed</span>
+      <div class="stat-icon" style="background: var(--success-light); color: var(--success);">
+        {% include 'partials/icons.html' with name="check-circle" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--success);">{{ status_counts.completed }}</div>
+    <div class="stat-meta">topics done</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">In Progress</span>
+      <div class="stat-icon" style="background: var(--info-light); color: var(--info);">
+        {% include 'partials/icons.html' with name="activity" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--info);">{{ status_counts.in_progress }}</div>
+    <div class="stat-meta">ongoing</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Behind Schedule</span>
+      <div class="stat-icon" style="background: var(--danger-light); color: var(--danger);">
+        {% include 'partials/icons.html' with name="alert-triangle" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--danger);">{{ status_counts.behind }}</div>
+    <div class="stat-meta">need attention</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Not Started</span>
+      <div class="stat-icon" style="background: var(--surface-muted); color: var(--ink-600);">
+        {% include 'partials/icons.html' with name="pause" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value">{{ status_counts.not_started }}</div>
+    <div class="stat-meta">upcoming</div>
+  </div>
+</div>
+
+<!-- Overall progress bar -->
+<div class="card mb-6">
+  <div class="flex items-center justify-between mb-3">
+    <h3 class="card-title" style="margin: 0;">
+      {% include 'partials/icons.html' with name="trending-up" size=18 %}
+      Overall Progress ({{ year_filter }})
+    </h3>
+    <span class="text-sm" style="color: var(--ink-500);">
+      {{ overall_percent }}%
+    </span>
+  </div>
+  <div style="height: 12px; background: var(--surface-muted); border-radius: 6px; overflow: hidden;">
+    <div style="width: {{ overall_percent }}%; height: 100%; background: var(--primary);"></div>
+  </div>
+</div>
+
+<!-- Filters -->
+<div class="card mb-6">
+  <form method="get" class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
+    <div class="md:col-span-3">
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Class</label>
+      <select name="class" class="select w-full">
+        <option value="">All Classes</option>
+        {% for c in classes %}
+        <option value="{{ c.id }}" {% if class_filter == c.id|stringformat:"s" %}selected{% endif %}>{{ c.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="md:col-span-3">
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Subject</label>
+      <select name="subject" class="select w-full">
+        <option value="">All Subjects</option>
+        {% for s in subjects %}
+        <option value="{{ s.id }}" {% if subject_filter == s.id|stringformat:"s" %}selected{% endif %}>{{ s.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="md:col-span-2">
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Status</label>
+      <select name="status" class="select w-full">
+        <option value="">All</option>
+        {% for value, label in status_choices %}
+        <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="md:col-span-2">
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Year</label>
+      <input type="number" name="year" value="{{ year_filter }}" class="input w-full" min="2020" max="2100">
+    </div>
+
+    <div class="md:col-span-2 flex gap-2">
+      <button type="submit" class="btn btn-primary">
+        {% include 'partials/icons.html' with name="search" size=16 %}
+        Filter
+      </button>
+      {% if class_filter or subject_filter or status_filter %}
+      <a href="{% url 'dpa_acad_syllabus' %}" class="btn btn-secondary">
+        {% include 'partials/icons.html' with name="x-circle" size=16 %}
+      </a>
+      {% endif %}
+    </div>
+  </form>
+</div>
+
+<!-- Grouped syllabus -->
+{% if grouped %}
+  {% for key, group in grouped.items %}
+  <div class="card mb-6" style="padding: 0; overflow: hidden;">
+    <div style="padding: var(--s-4) var(--s-5); border-bottom: 1px solid var(--border); background: var(--surface-muted);">
+      <div class="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h3 class="card-title" style="margin: 0; font-size: var(--text-md);">
+            {{ group.class_name }} — {{ group.subject_name }}
+          </h3>
+          {% if group.teacher %}
+          <div class="text-xs mt-1" style="color: var(--ink-500);">
+            Teacher: {{ group.teacher.first_name }} {{ group.teacher.last_name }}
+          </div>
+          {% else %}
+          <div class="text-xs mt-1" style="color: var(--danger);">
+            No teacher assigned
+          </div>
+          {% endif %}
+        </div>
+        <div class="flex items-center gap-3">
+          <div style="width: 100px; height: 6px; background: var(--surface); border-radius: 3px; overflow: hidden;">
+            <div style="width: {{ group.percent }}%; height: 100%; background: var(--primary);"></div>
+          </div>
+          <span class="text-sm" style="color: var(--ink-800); font-weight: 600;">
+            {{ group.percent }}% ({{ group.completed }}/{{ group.total }})
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th style="width: 60px;">Week</th>
+            <th>Topic</th>
+            <th style="width: 130px;">Status</th>
+            <th style="width: 130px;">Progress</th>
+            <th style="width: 130px;">Completed</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in group.items %}
+          <tr>
+            <td style="color: var(--ink-500); font-size: var(--text-sm);">
+              {% if item.planned_week %}W{{ item.planned_week }}{% else %}—{% endif %}
+            </td>
+            <td style="font-weight: 500; color: var(--ink-900);">
+              {{ item.topic }}
+              {% if item.notes %}
+              <div class="text-xs mt-1" style="color: var(--ink-500); font-weight: normal;">
+                {{ item.notes|truncatechars:80 }}
+              </div>
+              {% endif %}
+            </td>
+            <td>
+              {% if item.status == 'completed' %}
+                <span class="badge badge-success">Completed</span>
+              {% elif item.status == 'in_progress' %}
+                <span class="badge badge-info">In Progress</span>
+              {% elif item.status == 'behind' %}
+                <span class="badge badge-danger">Behind</span>
+              {% else %}
+                <span class="badge badge-neutral">Not Started</span>
+              {% endif %}
+            </td>
+            <td>
+              <div class="flex items-center gap-2">
+                <div style="flex: 1; height: 5px; background: var(--surface-muted); border-radius: 3px; overflow: hidden; min-width: 40px;">
+                  <div style="width: {{ item.percent_complete }}%; height: 100%; background: var(--primary);"></div>
+                </div>
+                <span class="text-xs" style="color: var(--ink-500); min-width: 30px; text-align: right;">
+                  {{ item.percent_complete }}%
+                </span>
+              </div>
+            </td>
+            <td class="text-xs" style="color: var(--ink-500);">
+              {% if item.completed_date %}{{ item.completed_date|date:"j M Y" }}{% else %}—{% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endfor %}
+
+{% else %}
+<div class="card">
+  <div class="empty">
+    {% include 'partials/icons.html' with name="book-open" size=56 %}
+    <h3>No syllabus data yet</h3>
+    <p>Once teachers start tracking syllabus coverage for their classes, topics will appear here for review.</p>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

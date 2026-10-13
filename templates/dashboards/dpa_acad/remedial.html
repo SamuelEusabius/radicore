@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Remedial Classes{% endblock %}
+{% block header_title %}Remedial Classes{% endblock %}
+{% block header_sub %}
+  Extra tuition and intervention sessions · {{ school.name }}
+{% endblock %}
+
+{% block content %}
+
+<!-- Stats -->
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Scheduled</span>
+      <div class="stat-icon" style="background: var(--info-light); color: var(--info);">
+        {% include 'partials/icons.html' with name="calendar" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--info);">{{ scheduled_count }}</div>
+    <div class="stat-meta">upcoming</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Ongoing</span>
+      <div class="stat-icon" style="background: var(--warning-light); color: var(--warning);">
+        {% include 'partials/icons.html' with name="activity" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--warning);">{{ ongoing_count }}</div>
+    <div class="stat-meta">in progress</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Completed</span>
+      <div class="stat-icon" style="background: var(--success-light); color: var(--success);">
+        {% include 'partials/icons.html' with name="check-circle" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--success);">{{ completed_count }}</div>
+    <div class="stat-meta">finished</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Cancelled</span>
+      <div class="stat-icon" style="background: var(--surface-muted); color: var(--ink-600);">
+        {% include 'partials/icons.html' with name="x-circle" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value">{{ cancelled_count }}</div>
+    <div class="stat-meta">dropped</div>
+  </div>
+</div>
+
+<!-- Actions + tabs -->
+<div class="card mb-6">
+  <div class="flex flex-wrap gap-2 items-center justify-between">
+    <div class="flex flex-wrap gap-2">
+      <a href="?tab=upcoming" class="btn {% if tab == 'upcoming' %}btn-primary{% else %}btn-secondary{% endif %}">Upcoming</a>
+      <a href="?tab=past" class="btn {% if tab == 'past' %}btn-primary{% else %}btn-secondary{% endif %}">Past</a>
+      <a href="?tab=all" class="btn {% if tab == 'all' %}btn-primary{% else %}btn-secondary{% endif %}">All</a>
+    </div>
+    <a href="{% url 'dpa_acad_remedial_create' %}" class="btn btn-primary">
+      {% include 'partials/icons.html' with name="plus" size=16 %}
+      New Remedial Class
+    </a>
+  </div>
+</div>
+
+<!-- List -->
+{% if classes %}
+<div class="card" style="padding: 0; overflow: hidden;">
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Title</th>
+          <th style="width: 180px;">Class · Subject</th>
+          <th style="width: 180px;">Teacher</th>
+          <th style="width: 160px;">Date & Time</th>
+          <th style="width: 120px;">Students</th>
+          <th style="width: 120px;">Status</th>
+          <th style="text-align: right;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for rc in classes %}
+        <tr>
+          <td>
+            <div style="font-weight: 600; color: var(--ink-900);">{{ rc.title }}</div>
+            {% if rc.focus_area %}
+            <div class="text-xs mt-1" style="color: var(--ink-500);">{{ rc.focus_area|truncatechars:80 }}</div>
+            {% endif %}
+          </td>
+          <td style="font-size: var(--text-sm); color: var(--ink-700);">
+            {{ rc.class_level.name }}
+            <div class="text-xs" style="color: var(--ink-500);">{{ rc.subject.name }}</div>
+          </td>
+          <td style="font-size: var(--text-sm); color: var(--ink-700);">
+            {% if rc.teacher %}{{ rc.teacher.first_name }} {{ rc.teacher.last_name }}{% else %}—{% endif %}
+          </td>
+          <td style="font-size: var(--text-sm); color: var(--ink-700);">
+            {{ rc.scheduled_date|date:"j M Y" }}
+            {% if rc.start_time %}
+            <div class="text-xs" style="color: var(--ink-500);">
+              {{ rc.start_time|time:"H:i" }}{% if rc.end_time %} – {{ rc.end_time|time:"H:i" }}{% endif %}
+            </div>
+            {% endif %}
+          </td>
+          <td style="text-align: center;">
+            <span style="font-weight: 600; color: var(--ink-900);">{{ rc.students.count }}</span>
+          </td>
+          <td>
+            {% if rc.status == 'scheduled' %}
+              <span class="badge badge-info">Scheduled</span>
+            {% elif rc.status == 'ongoing' %}
+              <span class="badge badge-warning">Ongoing</span>
+            {% elif rc.status == 'completed' %}
+              <span class="badge badge-success">Completed</span>
+            {% elif rc.status == 'cancelled' %}
+              <span class="badge badge-neutral">Cancelled</span>
+            {% endif %}
+          </td>
+          <td>
+            <div class="table-actions" style="justify-content: flex-end;">
+              <form method="post" action="{% url 'dpa_acad_remedial_update' rc.id %}" style="display: inline;">
+                {% csrf_token %}
+                <select name="status" class="select" style="padding: 4px 8px; font-size: var(--text-xs); width: 130px;"
+                        onchange="this.form.submit()">
+                  {% for value, label in status_choices %}
+                  <option value="{{ value }}" {% if rc.status == value %}selected{% endif %}>{{ label }}</option>
+                  {% endfor %}
+                </select>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% else %}
+<div class="card">
+  <div class="empty">
+    {% include 'partials/icons.html' with name="activity" size=56 %}
+    <h3>No remedial classes</h3>
+    <p>{% if tab == 'upcoming' %}No upcoming remedial sessions scheduled.{% elif tab == 'past' %}No past sessions recorded.{% else %}No remedial classes yet.{% endif %}</p>
+    <a href="{% url 'dpa_acad_remedial_create' %}" class="btn btn-primary">
+      {% include 'partials/icons.html' with name="plus" size=16 %}
+      Schedule first remedial class
+    </a>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

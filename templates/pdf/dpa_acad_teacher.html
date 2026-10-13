@@ -1,0 +1,198 @@
+{% load static %}
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  @page { size: A4 portrait; margin: 12mm 12mm; }
+  * { box-sizing: border-box; }
+  body { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 9.5pt; color: #1a1a1a; margin: 0; line-height: 1.35; }
+
+  table.report-header { width: 100%; border-collapse: collapse; border-bottom: 2pt solid #00695c; padding-bottom: 8px; margin-bottom: 12px; }
+  table.report-header td { vertical-align: middle; padding: 0 0 8px 0; }
+  .rh-logo { width: 80px; }
+  .rh-logo img { width: 62px; height: 62px; }
+  .rh-school { padding-left: 12px; }
+  .school-name { font-size: 15pt; font-weight: bold; color: #00695c; line-height: 1.05; margin: 0; }
+  .school-meta { font-size: 8pt; color: #555; margin-top: 2px; }
+  .rh-meta { width: 150px; text-align: right; font-size: 8pt; color: #444; }
+  .rh-meta .meta-label { font-size: 6.5pt; text-transform: uppercase; letter-spacing: 0.05em; color: #888; font-weight: bold; }
+  .rh-meta .meta-value { font-size: 9pt; font-weight: bold; color: #1a1a1a; }
+  .rh-meta .meta-value-sm { font-size: 8pt; color: #555; }
+
+  .title-block { text-align: center; padding: 4px 0 10px 0; }
+  .report-title { font-size: 16pt; font-weight: bold; color: #00695c; margin: 0; letter-spacing: 0.05em; }
+  .report-subtitle { font-size: 10pt; color: #555; margin: 3px 0 0 0; }
+
+  .section { margin-bottom: 10px; page-break-inside: avoid; }
+  .section-title { font-size: 9pt; font-weight: bold; color: #00695c; border-bottom: 0.5pt solid #cfd8d4; padding-bottom: 3px; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  table.info { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
+  table.info td { padding: 4px 8px; border: 0.5pt solid #cfd8d4; vertical-align: top; font-size: 9pt; }
+  table.info td.label { width: 30%; background: #f5f7f6; color: #555; font-weight: bold; text-transform: uppercase; font-size: 7.5pt; letter-spacing: 0.04em; }
+
+  table.stats { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+  table.stats td { border: 0.75pt solid #cfd8d4; padding: 8px; text-align: center; width: 25%; }
+  .stat-num { font-size: 16pt; font-weight: bold; color: #00695c; }
+  .stat-label { font-size: 7.5pt; color: #666; text-transform: uppercase; margin-top: 2px; }
+
+  table.coverage { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
+  table.coverage th { background: #f5f7f6; text-align: left; padding: 5px 8px; font-size: 8pt; border: 0.5pt solid #cfd8d4; }
+  table.coverage td { padding: 5px 8px; border: 0.5pt solid #cfd8d4; font-size: 9pt; }
+
+  table.obs { width: 100%; border-collapse: collapse; }
+  table.obs th { background: #f5f7f6; text-align: left; padding: 5px 8px; font-size: 8pt; border: 0.5pt solid #cfd8d4; }
+  table.obs td { padding: 5px 8px; border: 0.5pt solid #cfd8d4; font-size: 9pt; vertical-align: top; }
+
+  .footer { margin-top: 14px; padding-top: 6px; border-top: 0.5pt solid #d9e2de; text-align: center; font-size: 7.5pt; color: #777; }
+</style>
+</head>
+<body>
+
+<table class="report-header">
+  <tr>
+    <td class="rh-logo">
+      {% if school.logo %}<img src="{{ school.logo.url }}" alt="{{ school.name }}">
+      {% else %}<img src="{% static 'images/coat_of_arms.png' %}" alt="Coat of Arms">{% endif %}
+    </td>
+    <td class="rh-school">
+      <div class="school-name">{{ school.name }}</div>
+      <div class="school-meta">
+        {% if school.code %}School Code: {{ school.code }}{% endif %}{% if school.nemis_code %}{% if school.code %} · {% endif %}NEMIS: {{ school.nemis_code }}{% endif %}
+      </div>
+      <div class="school-meta">
+        {% if school.email %}{{ school.email }}{% endif %}{% if school.phone %}{% if school.email %} · {% endif %}{{ school.phone }}{% endif %}
+      </div>
+    </td>
+    <td class="rh-meta">
+      <div class="meta-label">Generated</div>
+      <div class="meta-value">{{ generated_on|date:"j F Y" }}</div>
+      <div class="meta-value-sm">{{ generated_on|date:"H:i" }}</div>
+      {% if generated_by %}
+      <div class="meta-label" style="margin-top: 4px;">By</div>
+      <div class="meta-value-sm">{{ generated_by.get_full_name|default:generated_by.email }}</div>
+      {% endif %}
+    </td>
+  </tr>
+</table>
+
+<div class="title-block">
+  <div class="report-title">TEACHER PERFORMANCE REPORT</div>
+  <div class="report-subtitle">
+    {{ teacher.first_name }} {{ teacher.last_name }}
+    {% if teacher.subject_specialty %} · {{ teacher.subject_specialty }}{% endif %}
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">Profile</div>
+  <table class="info">
+    <tr>
+      <td class="label">Full Name</td>
+      <td>{{ teacher.first_name }} {{ teacher.last_name }}</td>
+      <td class="label">Employment Type</td>
+      <td>{{ teacher.employment_type|default:"—" }}</td>
+    </tr>
+    <tr>
+      <td class="label">Employee No.</td>
+      <td>{{ teacher.employee_number|default:"—" }}</td>
+      <td class="label">TSC No.</td>
+      <td>{{ teacher.tsc_number|default:"—" }}</td>
+    </tr>
+    <tr>
+      <td class="label">Subject Specialty</td>
+      <td>{{ teacher.subject_specialty|default:"—" }}</td>
+      <td class="label">Class Teacher</td>
+      <td>{% if teacher.is_class_teacher and teacher.current_class %}{{ teacher.current_class.name }}{% else %}—{% endif %}</td>
+    </tr>
+  </table>
+</div>
+
+<div class="section">
+  <div class="section-title">Activity Summary</div>
+  <table class="stats">
+    <tr>
+      <td>
+        <div class="stat-num">{{ plan_stats.approved }}</div>
+        <div class="stat-label">Lesson Plans Approved</div>
+      </td>
+      <td>
+        <div class="stat-num">{{ sheet_stats.published }}</div>
+        <div class="stat-label">Mark Sheets Published</div>
+      </td>
+      <td>
+        <div class="stat-num">{{ observations|length }}</div>
+        <div class="stat-label">Observations</div>
+      </td>
+      <td>
+        <div class="stat-num">{{ coverage_by_subject|length }}</div>
+        <div class="stat-label">Subject-Class Loads</div>
+      </td>
+    </tr>
+  </table>
+</div>
+
+{% if coverage_by_subject %}
+<div class="section">
+  <div class="section-title">Syllabus Coverage</div>
+  <table class="coverage">
+    <thead>
+      <tr>
+        <th>Class · Subject</th>
+        <th style="width: 90px; text-align: center;">Topics</th>
+        <th style="width: 90px; text-align: center;">Completed</th>
+        <th style="width: 90px; text-align: center;">Behind</th>
+        <th style="width: 90px; text-align: center;">%</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for key, val in coverage_by_subject.items %}
+      <tr>
+        <td>{{ key }}</td>
+        <td style="text-align: center;">{{ val.total }}</td>
+        <td style="text-align: center; color: #16A34A; font-weight: bold;">{{ val.completed }}</td>
+        <td style="text-align: center; color: {% if val.behind %}#DC2626{% else %}#888{% endif %}; font-weight: bold;">{{ val.behind }}</td>
+        <td style="text-align: center; font-weight: bold;">{{ val.percent }}%</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+{% if observations %}
+<div class="section">
+  <div class="section-title">Recent Classroom Observations</div>
+  <table class="obs">
+    <thead>
+      <tr>
+        <th style="width: 90px;">Date</th>
+        <th style="width: 150px;">Class · Subject</th>
+        <th style="width: 80px; text-align: center;">Rating</th>
+        <th>Strengths</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for o in observations %}
+      <tr>
+        <td>{{ o.observed_on|date:"j M Y" }}</td>
+        <td>{% if o.subject %}{{ o.subject.name }}{% endif %}{% if o.class_level %} · {{ o.class_level.name }}{% endif %}{% if not o.subject and not o.class_level %}—{% endif %}</td>
+        <td style="text-align: center; font-weight: bold;">
+          {% if o.average_rating %}{{ o.average_rating }}/5{% else %}—{% endif %}
+        </td>
+        <td style="font-size: 8.5pt;">{{ o.strengths|truncatechars:200|default:"—" }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+<div class="footer">
+  {{ school.name }}{% if school.code %} · {{ school.code }}{% endif %}
+  &nbsp;·&nbsp; Teacher Performance Report · {{ teacher.first_name }} {{ teacher.last_name }}
+  &nbsp;·&nbsp; Generated {{ generated_on|date:"Y-m-d H:i" }}
+</div>
+
+</body>
+</html>

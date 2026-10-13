@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ exam.name }}{% endblock %}
+{% block header_title %}{{ exam.name }}{% endblock %}
+{% block header_sub %}
+  {{ exam.term }} · {{ exam.year }} · {{ exam.date|date:"j M Y" }}
+{% endblock %}
+
+{% block content %}
+
+<div class="flex flex-wrap items-center justify-between gap-3 mb-6">
+  <a href="{% url 'dpa_acad_exams' %}" class="btn btn-secondary">
+    {% include 'partials/icons.html' with name="arrow-right" size=16 %}
+    Back to Exams
+  </a>
+</div>
+
+<!-- Summary stats -->
+<div class="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Total Sheets</span>
+      <div class="stat-icon" style="background: var(--primary-light); color: var(--primary);">
+        {% include 'partials/icons.html' with name="clipboard" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value">{{ total_sheets }}</div>
+    <div class="stat-meta">subjects</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Draft</span>
+      <div class="stat-icon" style="background: var(--surface-muted); color: var(--ink-600);">
+        {% include 'partials/icons.html' with name="edit" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value">{{ status_counts.draft }}</div>
+    <div class="stat-meta">not submitted</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Submitted</span>
+      <div class="stat-icon" style="background: var(--warning-light); color: var(--warning);">
+        {% include 'partials/icons.html' with name="alert-circle" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--warning);">{{ status_counts.submitted }}</div>
+    <div class="stat-meta">awaiting review</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Approved</span>
+      <div class="stat-icon" style="background: var(--info-light); color: var(--info);">
+        {% include 'partials/icons.html' with name="check-circle" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--info);">{{ status_counts.approved }}</div>
+    <div class="stat-meta">ready to publish</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Published</span>
+      <div class="stat-icon" style="background: var(--success-light); color: var(--success);">
+        {% include 'partials/icons.html' with name="award" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--success);">{{ status_counts.published }}</div>
+    <div class="stat-meta">visible to students</div>
+  </div>
+</div>
+
+<!-- Sheets grouped by class -->
+{% if by_class %}
+  {% for class_name, sheets in by_class.items %}
+  <div class="card mb-6" style="padding: 0; overflow: hidden;">
+    <div style="padding: var(--s-4) var(--s-5); border-bottom: 1px solid var(--border); background: var(--surface-muted);">
+      <h3 class="card-title" style="margin: 0; font-size: var(--text-md);">
+        {{ class_name }}
+        <span class="text-xs font-normal" style="color: var(--ink-500); margin-left: var(--s-3);">
+          {{ sheets|length }} subject{{ sheets|length|pluralize }}
+        </span>
+      </h3>
+    </div>
+
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Subject</th>
+            <th style="width: 200px;">Teacher</th>
+            <th style="width: 140px;">Graded</th>
+            <th style="width: 130px;">Status</th>
+            <th style="text-align: right;">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for sheet in sheets %}
+          <tr>
+            <td style="font-weight: 600; color: var(--ink-900);">{{ sheet.subject.name }}</td>
+            <td>
+              <span class="text-sm" style="color: var(--ink-700);">
+                {% if sheet.teacher %}{{ sheet.teacher.first_name }} {{ sheet.teacher.last_name }}{% else %}—{% endif %}
+              </span>
+            </td>
+            <td>
+              <span style="font-family: var(--font-mono); font-size: var(--text-sm); color: var(--ink-700);">
+                {{ sheet.total_graded }}/{{ sheet.total_students }}
+              </span>
+            </td>
+            <td>
+              {% if sheet.status == 'draft' %}
+                <span class="badge badge-neutral">Draft</span>
+              {% elif sheet.status == 'submitted' %}
+                <span class="badge badge-warning">Submitted</span>
+              {% elif sheet.status == 'approved' %}
+                <span class="badge badge-info">Approved</span>
+              {% elif sheet.status == 'published' %}
+                <span class="badge badge-success">Published</span>
+              {% elif sheet.status == 'rejected' %}
+                <span class="badge badge-danger">Rejected</span>
+              {% endif %}
+            </td>
+            <td>
+              <div class="table-actions" style="justify-content: flex-end;">
+                <a href="{% url 'dpa_acad_mark_sheet_detail' sheet.id %}" class="view" title="View sheet">
+                  {% include 'partials/icons.html' with name="eye" size=14 %}
+                </a>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endfor %}
+{% else %}
+<div class="card">
+  <div class="empty">
+    {% include 'partials/icons.html' with name="clipboard" size=56 %}
+    <h3>No mark sheets yet</h3>
+    <p>Teachers haven't submitted any mark sheets for this exam yet. They appear here once submitted.</p>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

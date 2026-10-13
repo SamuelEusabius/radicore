@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Exams{% endblock %}
+{% block header_title %}Exams{% endblock %}
+{% block header_sub %}
+  {{ total }} exam{{ total|pluralize }} · {{ school.name }}
+{% endblock %}
+
+{% block content %}
+
+<!-- Tabs -->
+<div class="card mb-6">
+  <div class="flex flex-wrap gap-2 mb-4">
+    <a href="?tab=upcoming" class="btn {% if tab == 'upcoming' %}btn-primary{% else %}btn-secondary{% endif %}">
+      Upcoming
+    </a>
+    <a href="?tab=past" class="btn {% if tab == 'past' %}btn-primary{% else %}btn-secondary{% endif %}">
+      Past
+    </a>
+    <a href="?tab=all" class="btn {% if tab == 'all' %}btn-primary{% else %}btn-secondary{% endif %}">
+      All
+    </a>
+  </div>
+
+  <form method="get" class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
+    <input type="hidden" name="tab" value="{{ tab }}">
+
+    <div class="md:col-span-4">
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Term</label>
+      <select name="term" class="select w-full">
+        <option value="">All Terms</option>
+        {% for t in terms %}
+        <option value="{{ t }}" {% if term_filter == t %}selected{% endif %}>{{ t }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="md:col-span-4">
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Year</label>
+      <select name="year" class="select w-full">
+        <option value="">All Years</option>
+        {% for y in years %}
+        <option value="{{ y }}" {% if year_filter == y|stringformat:"s" %}selected{% endif %}>{{ y }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="md:col-span-4 flex gap-2">
+      <button type="submit" class="btn btn-primary">
+        {% include 'partials/icons.html' with name="search" size=16 %}
+        Filter
+      </button>
+      {% if term_filter or year_filter %}
+      <a href="?tab={{ tab }}" class="btn btn-secondary">
+        {% include 'partials/icons.html' with name="x-circle" size=16 %}
+        Clear
+      </a>
+      {% endif %}
+    </div>
+  </form>
+</div>
+
+<!-- Table -->
+{% if exams %}
+<div class="card" style="padding: 0; overflow: hidden;">
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Exam</th>
+          <th style="width: 120px;">Term / Year</th>
+          <th style="width: 130px;">Date</th>
+          <th style="width: 200px;">Progress</th>
+          <th style="width: 200px;">Status Breakdown</th>
+          <th style="text-align: right;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in exams %}
+        <tr>
+          <td>
+            <a href="{% url 'dpa_acad_exam_detail' row.exam.id %}"
+               style="font-weight: 600; color: var(--ink-900); text-decoration: none;">
+              {{ row.exam.name }}
+            </a>
+          </td>
+          <td>
+            <span class="text-sm" style="color: var(--ink-700);">{{ row.exam.term|default:"—" }}</span>
+            {% if row.exam.year %}
+            <div class="text-xs" style="color: var(--ink-500);">{{ row.exam.year }}</div>
+            {% endif %}
+          </td>
+          <td>
+            <span class="text-sm" style="color: var(--ink-700);">{{ row.exam.date|date:"j M Y" }}</span>
+          </td>
+          <td>
+            <div class="flex items-center gap-3">
+              <div style="flex: 1; height: 6px; background: var(--surface-muted); border-radius: 3px; overflow: hidden; min-width: 80px;">
+                <div style="width: {{ row.progress }}%; height: 100%; background: var(--primary);"></div>
+              </div>
+              <span class="text-xs" style="color: var(--ink-500); font-weight: 600; min-width: 35px; text-align: right;">
+                {{ row.progress }}%
+              </span>
+            </div>
+          </td>
+          <td>
+            <div class="flex flex-wrap gap-1">
+              {% if row.published %}
+              <span class="badge badge-success">{{ row.published }} pub</span>
+              {% endif %}
+              {% if row.approved %}
+              <span class="badge badge-info">{{ row.approved }} appr</span>
+              {% endif %}
+              {% if row.submitted %}
+              <span class="badge badge-warning">{{ row.submitted }} sub</span>
+              {% endif %}
+              {% if not row.published and not row.approved and not row.submitted %}
+              <span class="text-xs" style="color: var(--ink-400);">No sheets yet</span>
+              {% endif %}
+            </div>
+          </td>
+          <td>
+            <div class="table-actions" style="justify-content: flex-end;">
+              <a href="{% url 'dpa_acad_exam_detail' row.exam.id %}" class="view" title="View exam">
+                {% include 'partials/icons.html' with name="eye" size=14 %}
+              </a>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% else %}
+<div class="card">
+  <div class="empty">
+    {% include 'partials/icons.html' with name="calendar" size=56 %}
+    <h3>No exams found</h3>
+    <p>{% if tab == 'upcoming' %}There are no upcoming exams scheduled.{% elif tab == 'past' %}No past exams have been recorded yet.{% else %}No exams match the current filters.{% endif %}</p>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

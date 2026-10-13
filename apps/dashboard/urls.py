@@ -384,6 +384,49 @@ urlpatterns = [
     path('store-keeper/', views.store_keeper_dashboard_placeholder, name='store_keeper_dashboard'),
     path('boarding/', views.boarding_dashboard_placeholder, name='boarding_dashboard'),
     
+           # Deputy Principal — Academics
+    path('dpa-acad/', views.dpa_acad_dashboard, name='dpa_acad_dashboard'),
+    path('dpa-acad/exams/', views.dpa_acad_exams, name='dpa_acad_exams'),
+    path('dpa-acad/exams/<int:exam_id>/', views.dpa_acad_exam_detail, name='dpa_acad_exam_detail'),
+    path('dpa-acad/mark-sheets/', views.dpa_acad_mark_sheets, name='dpa_acad_mark_sheets'),
+    path('dpa-acad/mark-sheets/<int:sheet_id>/', views.dpa_acad_mark_sheet_detail, name='dpa_acad_mark_sheet_detail'),
+    path('dpa-acad/mark-sheets/<int:sheet_id>/approve/', views.dpa_acad_mark_sheet_approve, name='dpa_acad_mark_sheet_approve'),
+    path('dpa-acad/mark-sheets/<int:sheet_id>/reject/', views.dpa_acad_mark_sheet_reject, name='dpa_acad_mark_sheet_reject'),
+    path('dpa-acad/mark-sheets/<int:sheet_id>/publish/', views.dpa_acad_mark_sheet_publish, name='dpa_acad_mark_sheet_publish'),
         # Deputy Principal — Academics
     path('dpa-acad/', views.dpa_acad_dashboard, name='dpa_acad_dashboard'),
+
+    # Exams + mark sheets
+    path('dpa-acad/exams/', views.dpa_acad_exams, name='dpa_acad_exams'),
+    path('dpa-acad/exams/<int:exam_id>/', views.dpa_acad_exam_detail, name='dpa_acad_exam_detail'),
+    path('dpa-acad/mark-sheets/', views.dpa_acad_mark_sheets, name='dpa_acad_mark_sheets'),
+    path('dpa-acad/mark-sheets/<int:sheet_id>/', views.dpa_acad_mark_sheet_detail, name='dpa_acad_mark_sheet_detail'),
+    path('dpa-acad/mark-sheets/<int:sheet_id>/approve/', views.dpa_acad_mark_sheet_approve, name='dpa_acad_mark_sheet_approve'),
+    path('dpa-acad/mark-sheets/<int:sheet_id>/reject/', views.dpa_acad_mark_sheet_reject, name='dpa_acad_mark_sheet_reject'),
+    path('dpa-acad/mark-sheets/<int:sheet_id>/publish/', views.dpa_acad_mark_sheet_publish, name='dpa_acad_mark_sheet_publish'),
+
+    # Syllabus
+    path('dpa-acad/syllabus/', views.dpa_acad_syllabus, name='dpa_acad_syllabus'),
+
+    # Lesson plans
+    path('dpa-acad/lesson-plans/', views.dpa_acad_lesson_plans, name='dpa_acad_lesson_plans'),
+    path('dpa-acad/lesson-plans/<int:plan_id>/', views.dpa_acad_lesson_plan_detail, name='dpa_acad_lesson_plan_detail'),
+    path('dpa-acad/lesson-plans/<int:plan_id>/approve/', views.dpa_acad_lesson_plan_approve, name='dpa_acad_lesson_plan_approve'),
+    path('dpa-acad/lesson-plans/<int:plan_id>/revision/', views.dpa_acad_lesson_plan_revision, name='dpa_acad_lesson_plan_revision'),
+
+    # Subject allocation
+    path('dpa-acad/subject-allocation/', views.dpa_acad_subject_allocation, name='dpa_acad_subject_allocation'),
+    path('dpa-acad/subject-allocation/<int:subject_id>/assign/', views.dpa_acad_subject_assign, name='dpa_acad_subject_assign'),
+        # Teachers
+    path('dpa-acad/teachers/', views.dpa_acad_teachers, name='dpa_acad_teachers'),
+    path('dpa-acad/teachers/<int:teacher_id>/', views.dpa_acad_teacher_detail, name='dpa_acad_teacher_detail'),
+
+    # Timetable conflicts
+    path('dpa-acad/timetable-conflicts/', views.dpa_acad_timetable_conflicts, name='dpa_acad_timetable_conflicts'),
+
+    # Remedial classes
+    path('dpa-acad/remedial/', views.dpa_acad_remedial, name='dpa_acad_remedial'),
+    path('dpa-acad/remedial/new/', views.dpa_acad_remedial_create, name='dpa_acad_remedial_create'),
+    path('dpa-acad/remedial/<int:class_id>/update/', views.dpa_acad_remedial_update, name='dpa_acad_remedial_update'),
+    path('dpa-acad/teachers/<int:teacher_id>/pdf/', views.dpa_acad_teacher_pdf, name='dpa_acad_teacher_pdf'),
 ]

@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Teacher Performance{% endblock %}
+{% block header_title %}Teacher Performance{% endblock %}
+{% block header_sub %}
+  {{ total_teachers }} active teacher{{ total_teachers|pluralize }} · {{ school.name }}
+{% endblock %}
+
+{% block content %}
+
+<!-- Stats row -->
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Active Teachers</span>
+      <div class="stat-icon" style="background: var(--primary-light); color: var(--primary);">
+        {% include 'partials/icons.html' with name="teacher" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value">{{ total_teachers }}</div>
+    <div class="stat-meta">on register</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Observations</span>
+      <div class="stat-icon" style="background: var(--info-light); color: var(--info);">
+        {% include 'partials/icons.html' with name="eye" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--info);">{{ total_observations }}</div>
+    <div class="stat-meta">recorded</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Pending Reviews</span>
+      <div class="stat-icon" style="background: var(--warning-light); color: var(--warning);">
+        {% include 'partials/icons.html' with name="alert-circle" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--warning);">{{ overdue_reviews }}</div>
+    <div class="stat-meta">plans + sheets</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Behind Syllabus</span>
+      <div class="stat-icon" style="background: var(--danger-light); color: var(--danger);">
+        {% include 'partials/icons.html' with name="alert-triangle" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--danger);">
+      {% for r in teacher_rows %}{% if r.behind_topics > 0 %}{{ forloop.counter0|add:1 }}{% endif %}{% endfor %}
+    </div>
+    <div class="stat-meta">teachers</div>
+  </div>
+</div>
+
+<!-- Teachers table -->
+{% if teacher_rows %}
+<div class="card" style="padding: 0; overflow: hidden;">
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Teacher</th>
+          <th style="width: 180px;">Role</th>
+          <th style="width: 160px;">Syllabus</th>
+          <th style="width: 130px;">Lesson Plans</th>
+          <th style="width: 130px;">Mark Sheets</th>
+          <th style="width: 130px;">Observations</th>
+          <th style="text-align: right;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in teacher_rows %}
+        <tr>
+          <td>
+            <a href="{% url 'dpa_acad_teacher_detail' row.teacher.id %}"
+               style="font-weight: 600; color: var(--ink-900); text-decoration: none;">
+              {{ row.teacher.first_name }} {{ row.teacher.last_name }}
+            </a>
+            {% if row.teacher.subject_specialty %}
+            <div class="text-xs mt-1" style="color: var(--ink-500);">
+              {{ row.teacher.subject_specialty }}
+            </div>
+            {% endif %}
+          </td>
+          <td>
+            <span class="text-sm" style="color: var(--ink-700);">
+              {% if row.teacher.is_class_teacher %}Class Teacher{% else %}Teacher{% endif %}
+            </span>
+          </td>
+          <td>
+            {% if row.total_topics %}
+            <div class="flex items-center gap-2">
+              <div style="flex: 1; height: 6px; background: var(--surface-muted); border-radius: 3px; overflow: hidden; min-width: 60px;">
+                <div style="width: {{ row.coverage_percent }}%; height: 100%; background: {% if row.behind_topics > 0 %}var(--danger){% else %}var(--primary){% endif %};"></div>
+              </div>
+              <span class="text-xs" style="color: var(--ink-600); font-weight: 600; min-width: 35px;">
+                {{ row.coverage_percent }}%
+              </span>
+            </div>
+            {% if row.behind_topics %}
+            <div class="text-xs mt-1" style="color: var(--danger);">
+              {{ row.behind_topics }} topic{{ row.behind_topics|pluralize }} behind
+            </div>
+            {% endif %}
+            {% else %}
+            <span class="text-xs" style="color: var(--ink-400);">No data</span>
+            {% endif %}
+          </td>
+          <td>
+            <span class="badge badge-success">{{ row.approved_plans }}✓</span>
+            {% if row.submitted_plans %}
+            <span class="badge badge-warning">{{ row.submitted_plans }}</span>
+            {% endif %}
+          </td>
+          <td>
+            <span class="badge badge-success">{{ row.published_sheets }}✓</span>
+            {% if row.pending_sheets %}
+            <span class="badge badge-warning">{{ row.pending_sheets }}</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if row.avg_observation %}
+            <span style="font-weight: 600; color: var(--ink-900);">{{ row.avg_observation }}</span>
+            <span class="text-xs" style="color: var(--ink-500);">/ 5</span>
+            <div class="text-xs" style="color: var(--ink-500);">{{ row.obs_count }} observation{{ row.obs_count|pluralize }}</div>
+            {% else %}
+            <span class="text-xs" style="color: var(--ink-400);">Not observed</span>
+            {% endif %}
+          </td>
+          <td>
+            <div class="table-actions" style="justify-content: flex-end;">
+              <a href="{% url 'dpa_acad_teacher_detail' row.teacher.id %}" class="view" title="View">
+                {% include 'partials/icons.html' with name="eye" size=14 %}
+              </a>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% else %}
+<div class="card">
+  <div class="empty">
+    {% include 'partials/icons.html' with name="teacher" size=56 %}
+    <h3>No teachers yet</h3>
+    <p>Once teachers are added to {{ school.name }}, their performance overview appears here.</p>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

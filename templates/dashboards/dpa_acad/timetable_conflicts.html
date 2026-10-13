@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Timetable Conflicts{% endblock %}
+{% block header_title %}Timetable Conflicts{% endblock %}
+{% block header_sub %}
+  Detect scheduling overlaps · {{ school.name }}
+{% endblock %}
+
+{% block content %}
+
+<!-- Stats -->
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Total Entries</span>
+      <div class="stat-icon" style="background: var(--primary-light); color: var(--primary);">
+        {% include 'partials/icons.html' with name="calendar" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value">{{ total_entries }}</div>
+    <div class="stat-meta">timetable slots</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Total Conflicts</span>
+      <div class="stat-icon" style="background: {% if conflicts %}var(--danger-light){% else %}var(--success-light){% endif %}; color: {% if conflicts %}var(--danger){% else %}var(--success){% endif %};">
+        {% include 'partials/icons.html' with name="alert-triangle" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: {% if conflicts %}var(--danger){% else %}var(--success){% endif %};">
+      {{ conflicts|length }}
+    </div>
+    <div class="stat-meta">
+      {% if conflicts %}need attention{% else %}all clear{% endif %}
+    </div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Teacher Conflicts</span>
+      <div class="stat-icon" style="background: var(--warning-light); color: var(--warning);">
+        {% include 'partials/icons.html' with name="users" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--warning);">{{ teacher_conflicts|length }}</div>
+    <div class="stat-meta">double-booked</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Class Conflicts</span>
+      <div class="stat-icon" style="background: var(--warning-light); color: var(--warning);">
+        {% include 'partials/icons.html' with name="grid" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--warning);">{{ class_conflicts|length }}</div>
+    <div class="stat-meta">overlapping periods</div>
+  </div>
+</div>
+
+{% if conflicts %}
+<!-- Conflicts list -->
+<div class="card">
+  <h3 class="card-title mb-5">
+    {% include 'partials/icons.html' with name="alert-triangle" size=18 %}
+    Detected Conflicts
+  </h3>
+
+  <div class="space-y-4">
+    {% for c in conflicts %}
+    <div style="padding: var(--s-4); border: 1px solid {% if c.type == 'teacher' %}var(--warning){% else %}var(--danger){% endif %}; border-radius: var(--radius); background: {% if c.type == 'teacher' %}#fef4e2{% else %}#fdecec{% endif %};">
+      <div class="flex items-start gap-3">
+        <div style="flex-shrink: 0;">
+          <span class="badge {% if c.type == 'teacher' %}badge-warning{% else %}badge-danger{% endif %}">
+            {{ c.type|title }}
+          </span>
+        </div>
+        <div class="flex-1">
+          <p class="text-sm" style="margin: 0 0 8px 0; color: var(--ink-800); font-weight: 600;">
+            {{ c.reason }}
+          </p>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div style="padding: var(--s-3); background: white; border-radius: var(--radius);">
+              <div class="text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-500);">Entry A</div>
+              <div class="text-sm" style="color: var(--ink-900); font-weight: 500;">
+                {{ c.entry_a.class_level.name }} — {{ c.entry_a.subject.name }}
+              </div>
+              <div class="text-xs mt-1" style="color: var(--ink-600);">
+                {{ c.entry_a.get_day_of_week_display }} · {{ c.entry_a.start_time|time:"H:i" }} – {{ c.entry_a.end_time|time:"H:i" }}
+              </div>
+              {% if c.entry_a.teacher %}
+              <div class="text-xs mt-1" style="color: var(--ink-600);">
+                {{ c.entry_a.teacher.first_name }} {{ c.entry_a.teacher.last_name }}
+              </div>
+              {% endif %}
+            </div>
+
+            <div style="padding: var(--s-3); background: white; border-radius: var(--radius);">
+              <div class="text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-500);">Entry B</div>
+              <div class="text-sm" style="color: var(--ink-900); font-weight: 500;">
+                {{ c.entry_b.class_level.name }} — {{ c.entry_b.subject.name }}
+              </div>
+              <div class="text-xs mt-1" style="color: var(--ink-600);">
+                {{ c.entry_b.get_day_of_week_display }} · {{ c.entry_b.start_time|time:"H:i" }} – {{ c.entry_b.end_time|time:"H:i" }}
+              </div>
+              {% if c.entry_b.teacher %}
+              <div class="text-xs mt-1" style="color: var(--ink-600);">
+                {{ c.entry_b.teacher.first_name }} {{ c.entry_b.teacher.last_name }}
+              </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+{% else %}
+<div class="card">
+  <div class="empty">
+    {% include 'partials/icons.html' with name="check-circle" size=56 %}
+    <h3>No conflicts detected</h3>
+    <p>The timetable is clean — no teacher or class double-booking. All good.</p>
+    <a href="/dashboard/timetable/" class="btn btn-primary">
+      {% include 'partials/icons.html' with name="calendar" size=16 %}
+      View Timetable
+    </a>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

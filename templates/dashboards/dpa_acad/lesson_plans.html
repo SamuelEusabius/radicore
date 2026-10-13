@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Lesson Plans{% endblock %}
+{% block header_title %}Lesson Plans{% endblock %}
+{% block header_sub %}
+  {{ total }} plan{{ total|pluralize }} · {{ school.name }}
+{% endblock %}
+
+{% block content %}
+
+<!-- Stats row -->
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Draft</span>
+      <div class="stat-icon" style="background: var(--surface-muted); color: var(--ink-600);">
+        {% include 'partials/icons.html' with name="edit" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value">{{ draft_count }}</div>
+    <div class="stat-meta">not submitted</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Submitted</span>
+      <div class="stat-icon" style="background: var(--warning-light); color: var(--warning);">
+        {% include 'partials/icons.html' with name="alert-circle" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--warning);">{{ submitted_count }}</div>
+    <div class="stat-meta">awaiting your review</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Approved</span>
+      <div class="stat-icon" style="background: var(--success-light); color: var(--success);">
+        {% include 'partials/icons.html' with name="check-circle" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--success);">{{ approved_count }}</div>
+    <div class="stat-meta">this term</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Needs Revision</span>
+      <div class="stat-icon" style="background: var(--danger-light); color: var(--danger);">
+        {% include 'partials/icons.html' with name="x-circle" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--danger);">{{ revision_count }}</div>
+    <div class="stat-meta">returned</div>
+  </div>
+</div>
+
+<!-- Filters -->
+<div class="card mb-6">
+  <form method="get" class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
+    <div class="md:col-span-4">
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Status</label>
+      <select name="status" class="select w-full">
+        <option value="">All Statuses</option>
+        {% for value, label in status_choices %}
+        <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="md:col-span-4">
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Teacher</label>
+      <select name="teacher" class="select w-full">
+        <option value="">All Teachers</option>
+        {% for t in teachers %}
+        <option value="{{ t.id }}" {% if teacher_filter == t.id|stringformat:"s" %}selected{% endif %}>
+          {{ t.first_name }} {{ t.last_name }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="md:col-span-4 flex gap-2">
+      <button type="submit" class="btn btn-primary">
+        {% include 'partials/icons.html' with name="search" size=16 %}
+        Filter
+      </button>
+      {% if status_filter or teacher_filter %}
+      <a href="{% url 'dpa_acad_lesson_plans' %}" class="btn btn-secondary">
+        {% include 'partials/icons.html' with name="x-circle" size=16 %}
+        Clear
+      </a>
+      {% endif %}
+    </div>
+  </form>
+</div>
+
+<!-- Table -->
+{% if plans %}
+<div class="card" style="padding: 0; overflow: hidden;">
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Title</th>
+          <th style="width: 180px;">Teacher</th>
+          <th style="width: 180px;">Class</th>
+          <th style="width: 180px;">Subject</th>
+          <th style="width: 130px;">Week Ending</th>
+          <th style="width: 130px;">Status</th>
+          <th style="text-align: right;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for plan in plans %}
+        <tr>
+          <td>
+            <a href="{% url 'dpa_acad_lesson_plan_detail' plan.id %}"
+               style="font-weight: 600; color: var(--ink-900); text-decoration: none;">
+              {{ plan.title }}
+            </a>
+            {% if plan.objectives %}
+            <div class="text-xs mt-1" style="color: var(--ink-500);">
+              {{ plan.objectives|truncatechars:80 }}
+            </div>
+            {% endif %}
+          </td>
+          <td style="color: var(--ink-700); font-size: var(--text-sm);">
+            {{ plan.teacher.first_name }} {{ plan.teacher.last_name }}
+          </td>
+          <td style="color: var(--ink-700); font-size: var(--text-sm);">
+            {{ plan.class_level.name }}
+          </td>
+          <td style="color: var(--ink-700); font-size: var(--text-sm);">
+            {{ plan.subject.name }}
+          </td>
+          <td style="color: var(--ink-600); font-size: var(--text-sm);">
+            {{ plan.week_ending|date:"j M Y" }}
+          </td>
+          <td>
+            {% if plan.status == 'draft' %}
+              <span class="badge badge-neutral">Draft</span>
+            {% elif plan.status == 'submitted' %}
+              <span class="badge badge-warning">Submitted</span>
+            {% elif plan.status == 'approved' %}
+              <span class="badge badge-success">Approved</span>
+            {% elif plan.status == 'revision' %}
+              <span class="badge badge-danger">Needs Revision</span>
+            {% elif plan.status == 'rejected' %}
+              <span class="badge badge-danger">Rejected</span>
+            {% endif %}
+          </td>
+          <td>
+            <div class="table-actions" style="justify-content: flex-end;">
+              <a href="{% url 'dpa_acad_lesson_plan_detail' plan.id %}" class="view" title="Review">
+                {% include 'partials/icons.html' with name="eye" size=14 %}
+              </a>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% else %}
+<div class="card">
+  <div class="empty">
+    {% include 'partials/icons.html' with name="file-text" size=56 %}
+    <h3>No lesson plans</h3>
+    <p>No lesson plans match the current filters. Teachers submit lesson plans weekly for review.</p>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

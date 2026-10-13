@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ sheet.exam.name }} — {{ sheet.subject.name }}{% endblock %}
+{% block header_title %}{{ sheet.subject.name }}{% endblock %}
+{% block header_sub %}
+  {{ sheet.exam.name }} · {{ sheet.class_level.name }} · {{ sheet.total_graded }}/{{ sheet.total_students }} graded
+{% endblock %}
+
+{% block content %}
+
+<div class="flex flex-wrap items-center justify-between gap-3 mb-6">
+  <a href="{% url 'dpa_acad_mark_sheets' %}" class="btn btn-secondary">
+    {% include 'partials/icons.html' with name="arrow-right" size=16 %}
+    Back to Mark Sheets
+  </a>
+  <div>
+    {% if sheet.status == 'draft' %}
+      <span class="badge badge-neutral" style="font-size: var(--text-sm); padding: 6px 14px;">Draft</span>
+    {% elif sheet.status == 'submitted' %}
+      <span class="badge badge-warning" style="font-size: var(--text-sm); padding: 6px 14px;">Awaiting Review</span>
+    {% elif sheet.status == 'approved' %}
+      <span class="badge badge-info" style="font-size: var(--text-sm); padding: 6px 14px;">Approved</span>
+    {% elif sheet.status == 'published' %}
+      <span class="badge badge-success" style="font-size: var(--text-sm); padding: 6px 14px;">Published</span>
+    {% elif sheet.status == 'rejected' %}
+      <span class="badge badge-danger" style="font-size: var(--text-sm); padding: 6px 14px;">Rejected</span>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Stats -->
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Students Graded</span>
+      <div class="stat-icon" style="background: var(--primary-light); color: var(--primary);">
+        {% include 'partials/icons.html' with name="users" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value">{{ stats.total }}</div>
+    <div class="stat-meta">entries</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Average</span>
+      <div class="stat-icon" style="background: var(--info-light); color: var(--info);">
+        {% include 'partials/icons.html' with name="trending-up" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--info);">{{ stats.average }}</div>
+    <div class="stat-meta">mean score</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Highest</span>
+      <div class="stat-icon" style="background: var(--success-light); color: var(--success);">
+        {% include 'partials/icons.html' with name="award" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--success);">{{ stats.highest }}</div>
+    <div class="stat-meta">top score</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Pass Rate</span>
+      <div class="stat-icon" style="background: var(--warning-light); color: var(--warning);">
+        {% include 'partials/icons.html' with name="check-circle" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--warning);">{{ stats.pass_rate }}%</div>
+    <div class="stat-meta">{{ stats.pass_count }} passed</div>
+  </div>
+</div>
+
+<!-- Grades table -->
+<div class="card mb-6" style="padding: 0; overflow: hidden;">
+  <div style="padding: var(--s-5); border-bottom: 1px solid var(--border);">
+    <h3 class="card-title" style="margin: 0;">
+      {% include 'partials/icons.html' with name="file-text" size=18 %}
+      Student Marks
+    </h3>
+  </div>
+
+  {% if grades %}
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th style="width: 40px;">#</th>
+          <th>Student</th>
+          <th style="width: 140px;">Admission No.</th>
+          <th style="width: 120px; text-align: center;">Marks</th>
+          <th style="width: 120px; text-align: center;">Out Of</th>
+          <th style="width: 120px; text-align: center;">Percent</th>
+          <th>Remarks</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for g in grades %}
+        <tr>
+          <td style="color: var(--ink-500); font-size: var(--text-sm);">{{ forloop.counter }}</td>
+          <td style="font-weight: 600; color: var(--ink-900);">
+            {{ g.student.first_name }} {{ g.student.last_name }}
+          </td>
+          <td>
+            <span style="font-family: var(--font-mono); font-size: var(--text-sm); color: var(--ink-600);">
+              {{ g.student.admission_number }}
+            </span>
+          </td>
+          <td style="text-align: center; font-weight: 600; color: var(--ink-900);">{{ g.marks }}</td>
+          <td style="text-align: center; color: var(--ink-600);">{{ g.out_of }}</td>
+          <td style="text-align: center; color: var(--ink-600);">
+            {% if g.out_of %}{% widthratio g.marks g.out_of 100 %}%{% else %}—{% endif %}
+          </td>
+          <td style="color: var(--ink-600); font-size: var(--text-sm);">{{ g.remarks|default:"—" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div style="padding: var(--s-8); text-align: center;">
+    <p class="text-sm" style="color: var(--ink-500); margin: 0;">
+      No grades recorded for this mark sheet yet.
+    </p>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Approval actions -->
+{% if can_approve %}
+<div class="card">
+  <h3 class="card-title mb-5">
+    {% include 'partials/icons.html' with name="check-circle" size=18 %}
+    Approval Actions
+  </h3>
+
+  {% if sheet.status == 'submitted' %}
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+    <form method="post" action="{% url 'dpa_acad_mark_sheet_approve' sheet.id %}">
+      {% csrf_token %}
+      <div class="text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-500);">Approve</div>
+      <textarea name="comment" rows="3" class="textarea w-full mb-3" placeholder="Optional comment"></textarea>
+      <button type="submit" class="btn btn-success w-full">
+        {% include 'partials/icons.html' with name="check-circle" size=16 %}
+        Approve Mark Sheet
+      </button>
+    </form>
+
+    <form method="post" action="{% url 'dpa_acad_mark_sheet_reject' sheet.id %}">
+      {% csrf_token %}
+      <div class="text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-500);">Return for Revision</div>
+      <textarea name="comment" rows="3" class="textarea w-full mb-3" placeholder="Reason for return"></textarea>
+      <button type="submit" class="btn btn-danger w-full"
+              onclick="return confirm('Return this mark sheet for revision?');">
+        {% include 'partials/icons.html' with name="x-circle" size=16 %}
+        Return to Teacher
+      </button>
+    </form>
+  </div>
+  {% elif sheet.status == 'approved' %}
+  <form method="post" action="{% url 'dpa_acad_mark_sheet_publish' sheet.id %}">
+    {% csrf_token %}
+    <p class="text-sm mb-4" style="color: var(--ink-600);">
+      This mark sheet has been approved. Publishing makes results visible to students, parents, and teachers.
+    </p>
+    <button type="submit" class="btn btn-primary"
+            onclick="return confirm('Publish this mark sheet? Results will become visible.');">
+      {% include 'partials/icons.html' with name="award" size=16 %}
+      Publish Results
+    </button>
+  </form>
+  {% elif sheet.status == 'published' %}
+  <div style="padding: var(--s-4); background: var(--success-light); border-radius: var(--radius);">
+    <p class="text-sm" style="margin: 0; color: var(--success); font-weight: 500;">
+      ✓ Published on {{ sheet.published_at|date:"j M Y, H:i" }}
+      {% if sheet.published_by %} by {{ sheet.published_by.get_full_name|default:sheet.published_by.email }}{% endif %}
+    </p>
+  </div>
+  {% elif sheet.status == 'rejected' %}
+  <div style="padding: var(--s-4); background: var(--danger-light); border-radius: var(--radius);">
+    <p class="text-sm" style="margin: 0; color: var(--danger); font-weight: 500;">
+      Returned for revision on {{ sheet.reviewed_at|date:"j M Y" }}
+    </p>
+    {% if sheet.review_comment %}
+    <p class="text-sm mt-2" style="margin: 0; color: var(--ink-700); font-style: italic;">
+      "{{ sheet.review_comment }}"
+    </p>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+{% endif %}
+
+{% endblock %}

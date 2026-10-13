@@ -133,7 +133,7 @@
       {% endfor %}
 
       <div style="padding: var(--s-4) var(--s-5); text-align: center;">
-        <a href="#" class="text-sm" style="color: var(--primary); text-decoration: none; font-weight: 500;">
+        <a href="{% url 'dpa_acad_lesson_plans' %}" class="text-sm" style="color: var(--primary); text-decoration: none; font-weight: 500;">
           View all lesson plans →
         </a>
       </div>
@@ -180,7 +180,7 @@
       {% endfor %}
 
       <div style="padding: var(--s-4) var(--s-5); text-align: center;">
-        <a href="#" class="text-sm" style="color: var(--primary); text-decoration: none; font-weight: 500;">
+        <a href="{% url 'dpa_acad_mark_sheets' %}" class="text-sm" style="color: var(--primary); text-decoration: none; font-weight: 500;">
           View all mark sheets →
         </a>
       </div>
@@ -207,15 +207,16 @@
         {% include 'partials/icons.html' with name="calendar" size=18 %}
         Upcoming Exams
       </h3>
-      <span class="text-xs" style="color: var(--ink-500);">
-        {{ upcoming_exams|length }} scheduled
-      </span>
+      <a href="{% url 'dpa_acad_exams' %}" class="text-xs" style="color: var(--primary); text-decoration: none; font-weight: 500;">
+        View all →
+      </a>
     </div>
 
     {% if upcoming_exams %}
       <div class="space-y-3">
         {% for exam in upcoming_exams %}
-        <div style="padding: var(--s-3); background: var(--surface-muted); border-radius: var(--radius);">
+        <a href="{% url 'dpa_acad_exam_detail' exam.id %}"
+           style="display: block; padding: var(--s-3); background: var(--surface-muted); border-radius: var(--radius); text-decoration: none;">
           <div class="flex justify-between items-center gap-2 flex-wrap">
             <div>
               <div style="font-weight: 600; color: var(--ink-900); font-size: var(--text-sm);">
@@ -227,7 +228,7 @@
             </div>
             <span class="badge badge-primary">{{ exam.date|date:"j M Y" }}</span>
           </div>
-        </div>
+        </a>
         {% endfor %}
       </div>
     {% else %}
@@ -242,9 +243,9 @@
         {% include 'partials/icons.html' with name="activity" size=18 %}
         Remedial Classes
       </h3>
-      <span class="text-xs" style="color: var(--ink-500);">
-        {{ remedial_stats.this_week }} this week
-      </span>
+      <a href="{% url 'dpa_acad_remedial' %}" class="text-xs" style="color: var(--primary); text-decoration: none; font-weight: 500;">
+        View all →
+      </a>
     </div>
 
     {% if upcoming_remedial %}
@@ -277,7 +278,7 @@
 <!-- QUICK ACTIONS                                                 -->
 <!-- ============================================================= -->
 <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-  <a href="#" class="card card-hover" style="text-decoration: none; text-align: center; padding: var(--s-5);">
+  <a href="{% url 'dpa_acad_lesson_plans' %}" class="card card-hover" style="text-decoration: none; text-align: center; padding: var(--s-5);">
     <div style="font-weight: 600; color: var(--ink-900); font-size: var(--text-sm);">
       Review Lesson Plans
     </div>
@@ -286,7 +287,7 @@
     </div>
   </a>
 
-  <a href="#" class="card card-hover" style="text-decoration: none; text-align: center; padding: var(--s-5);">
+  <a href="{% url 'dpa_acad_mark_sheets' %}" class="card card-hover" style="text-decoration: none; text-align: center; padding: var(--s-5);">
     <div style="font-weight: 600; color: var(--ink-900); font-size: var(--text-sm);">
       Review Mark Sheets
     </div>
@@ -295,7 +296,7 @@
     </div>
   </a>
 
-  <a href="#" class="card card-hover" style="text-decoration: none; text-align: center; padding: var(--s-5);">
+  <a href="{% url 'dpa_acad_syllabus' %}" class="card card-hover" style="text-decoration: none; text-align: center; padding: var(--s-5);">
     <div style="font-weight: 600; color: var(--ink-900); font-size: var(--text-sm);">
       Syllabus Tracker
     </div>
@@ -304,7 +305,7 @@
     </div>
   </a>
 
-  <a href="#" class="card card-hover" style="text-decoration: none; text-align: center; padding: var(--s-5);">
+  <a href="{% url 'dpa_acad_teachers' %}" class="card card-hover" style="text-decoration: none; text-align: center; padding: var(--s-5);">
     <div style="font-weight: 600; color: var(--ink-900); font-size: var(--text-sm);">
       Teacher Performance
     </div>

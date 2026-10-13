@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Subject Allocation{% endblock %}
+{% block header_title %}Subject Allocation{% endblock %}
+{% block header_sub %}
+  Assign teachers to subjects across classes · {{ school.name }}
+{% endblock %}
+
+{% block content %}
+
+<!-- Stats row -->
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Classes</span>
+      <div class="stat-icon" style="background: var(--primary-light); color: var(--primary);">
+        {% include 'partials/icons.html' with name="grid" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value">{{ total_classes }}</div>
+    <div class="stat-meta">on register</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Subjects</span>
+      <div class="stat-icon" style="background: var(--info-light); color: var(--info);">
+        {% include 'partials/icons.html' with name="book" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--info);">{{ total_subjects }}</div>
+    <div class="stat-meta">offered</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Allocations</span>
+      <div class="stat-icon" style="background: var(--success-light); color: var(--success);">
+        {% include 'partials/icons.html' with name="users" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--success);">{{ total_allocations }}</div>
+    <div class="stat-meta">class-subject pairs</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Unassigned</span>
+      <div class="stat-icon" style="background: var(--danger-light); color: var(--danger);">
+        {% include 'partials/icons.html' with name="alert-circle" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--danger);">{{ unassigned }}</div>
+    <div class="stat-meta">need a teacher</div>
+  </div>
+</div>
+
+<!-- Filter -->
+<div class="card mb-6">
+  <form method="get" class="flex flex-wrap gap-3 items-end">
+    <div style="min-width: 240px;">
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Class</label>
+      <select name="class" class="select w-full">
+        <option value="">All Classes</option>
+        {% for c in classes %}
+        <option value="{{ c.id }}" {% if class_filter == c.id|stringformat:"s" %}selected{% endif %}>{{ c.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <button type="submit" class="btn btn-primary">
+      {% include 'partials/icons.html' with name="search" size=16 %}
+      Filter
+    </button>
+    {% if class_filter %}
+    <a href="{% url 'dpa_acad_subject_allocation' %}" class="btn btn-secondary">
+      {% include 'partials/icons.html' with name="x-circle" size=16 %}
+      Clear
+    </a>
+    {% endif %}
+  </form>
+</div>
+
+<!-- Allocations table -->
+{% if allocations %}
+<div class="card" style="padding: 0; overflow: hidden;">
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th style="width: 180px;">Class</th>
+          <th style="width: 180px;">Subject</th>
+          <th>Assigned Teacher</th>
+          <th style="width: 120px; text-align: center;">Periods</th>
+          <th style="text-align: right;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for a in allocations %}
+        <tr>
+          <td style="font-weight: 600; color: var(--ink-900);">{{ a.class_name }}</td>
+          <td style="color: var(--ink-700);">{{ a.subject_name }}</td>
+          <td>
+            {% if a.teacher %}
+              <span style="color: var(--ink-800); font-weight: 500;">
+                {{ a.teacher.first_name }} {{ a.teacher.last_name }}
+              </span>
+            {% else %}
+              <span class="badge badge-danger">Unassigned</span>
+            {% endif %}
+          </td>
+          <td style="text-align: center;">
+            <span class="text-sm" style="color: var(--ink-600); font-family: var(--font-mono);">
+              {{ a.periods|length }}
+            </span>
+          </td>
+          <td>
+            {% if a.subject %}
+            <form method="post" action="{% url 'dpa_acad_subject_assign' a.subject.id %}"
+                  class="flex items-center gap-2 justify-end">
+              {% csrf_token %}
+              <select name="teacher_id" class="select" style="padding: 4px 8px; font-size: var(--text-xs); width: 180px;">
+                <option value="">— Unassign —</option>
+                {% for t in teachers %}
+                <option value="{{ t.id }}" {% if a.teacher and a.teacher.id == t.id %}selected{% endif %}>
+                  {{ t.first_name }} {{ t.last_name }}
+                </option>
+                {% endfor %}
+              </select>
+              <button type="submit" class="btn btn-primary btn-sm">
+                {% include 'partials/icons.html' with name="save" size=14 %}
+              </button>
+            </form>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% else %}
+<div class="card">
+  <div class="empty">
+    {% include 'partials/icons.html' with name="users" size=56 %}
+    <h3>No allocations yet</h3>
+    <p>Subject allocations come from the timetable. Once subjects are scheduled in the timetable, they appear here for teacher assignment.</p>
+    <a href="/dashboard/timetable/" class="btn btn-primary">
+      {% include 'partials/icons.html' with name="calendar" size=16 %}
+      Go to Timetable
+    </a>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ plan.title }}{% endblock %}
+{% block header_title %}{{ plan.title }}{% endblock %}
+{% block header_sub %}
+  {{ plan.teacher.first_name }} {{ plan.teacher.last_name }} · {{ plan.subject.name }} · {{ plan.class_level.name }}
+{% endblock %}
+
+{% block content %}
+
+<div class="flex flex-wrap items-center justify-between gap-3 mb-6">
+  <a href="{% url 'dpa_acad_lesson_plans' %}" class="btn btn-secondary">
+    {% include 'partials/icons.html' with name="arrow-right" size=16 %}
+    Back to Lesson Plans
+  </a>
+  <div>
+    {% if plan.status == 'draft' %}
+      <span class="badge badge-neutral" style="font-size: var(--text-sm); padding: 6px 14px;">Draft</span>
+    {% elif plan.status == 'submitted' %}
+      <span class="badge badge-warning" style="font-size: var(--text-sm); padding: 6px 14px;">Awaiting Review</span>
+    {% elif plan.status == 'approved' %}
+      <span class="badge badge-success" style="font-size: var(--text-sm); padding: 6px 14px;">Approved</span>
+    {% elif plan.status == 'revision' %}
+      <span class="badge badge-danger" style="font-size: var(--text-sm); padding: 6px 14px;">Needs Revision</span>
+    {% endif %}
+  </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+  <div class="lg:col-span-2">
+
+    <!-- Plan details -->
+    <div class="card mb-6">
+      <h3 class="card-title mb-5">
+        {% include 'partials/icons.html' with name="file-text" size=18 %}
+        Lesson Plan
+      </h3>
+
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-5">
+        <div>
+          <div class="text-xs font-semibold uppercase tracking-wider mb-1" style="color: var(--ink-500);">Class</div>
+          <div style="color: var(--ink-800); font-weight: 600;">{{ plan.class_level.name }}</div>
+        </div>
+        <div>
+          <div class="text-xs font-semibold uppercase tracking-wider mb-1" style="color: var(--ink-500);">Subject</div>
+          <div style="color: var(--ink-800); font-weight: 600;">{{ plan.subject.name }}</div>
+        </div>
+        <div>
+          <div class="text-xs font-semibold uppercase tracking-wider mb-1" style="color: var(--ink-500);">Week Ending</div>
+          <div style="color: var(--ink-800); font-weight: 600;">{{ plan.week_ending|date:"j F Y" }}</div>
+        </div>
+      </div>
+
+      {% if plan.objectives %}
+      <div class="mb-5 pb-5" style="border-bottom: 1px solid var(--border);">
+        <div class="text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-500);">Objectives</div>
+        <p class="text-sm" style="color: var(--ink-700); white-space: pre-line; margin: 0;">{{ plan.objectives }}</p>
+      </div>
+      {% endif %}
+
+      {% if plan.activities %}
+      <div class="mb-5 pb-5" style="border-bottom: 1px solid var(--border);">
+        <div class="text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-500);">Activities</div>
+        <p class="text-sm" style="color: var(--ink-700); white-space: pre-line; margin: 0;">{{ plan.activities }}</p>
+      </div>
+      {% endif %}
+
+      {% if plan.resources %}
+      <div class="mb-5 pb-5" style="border-bottom: 1px solid var(--border);">
+        <div class="text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-500);">Resources</div>
+        <p class="text-sm" style="color: var(--ink-700); white-space: pre-line; margin: 0;">{{ plan.resources }}</p>
+      </div>
+      {% endif %}
+
+      {% if plan.assessment_method %}
+      <div>
+        <div class="text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-500);">Assessment Method</div>
+        <p class="text-sm" style="color: var(--ink-700); white-space: pre-line; margin: 0;">{{ plan.assessment_method }}</p>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Approval actions -->
+    {% if can_review and plan.status == 'submitted' %}
+    <div class="card">
+      <h3 class="card-title mb-5">
+        {% include 'partials/icons.html' with name="check-circle" size=18 %}
+        Review Decision
+      </h3>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <form method="post" action="{% url 'dpa_acad_lesson_plan_approve' plan.id %}">
+          {% csrf_token %}
+          <div class="text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-500);">Approve</div>
+          <textarea name="comment" rows="3" class="textarea w-full mb-3" placeholder="Optional comment"></textarea>
+          <button type="submit" class="btn btn-success w-full">
+            {% include 'partials/icons.html' with name="check-circle" size=16 %}
+            Approve Plan
+          </button>
+        </form>
+
+        <form method="post" action="{% url 'dpa_acad_lesson_plan_revision' plan.id %}">
+          {% csrf_token %}
+          <div class="text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-500);">Request Revision</div>
+          <textarea name="comment" rows="3" class="textarea w-full mb-3" placeholder="What needs to change?"></textarea>
+          <button type="submit" class="btn btn-danger w-full"
+                  onclick="return confirm('Return this plan for revision?');">
+            {% include 'partials/icons.html' with name="x-circle" size=16 %}
+            Return for Revision
+          </button>
+        </form>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if plan.review_comment %}
+    <div class="card">
+      <h3 class="card-title mb-4">
+        {% include 'partials/icons.html' with name="message-square" size=18 %}
+        Reviewer Comment
+      </h3>
+      <p class="text-sm" style="color: var(--ink-700); font-style: italic; margin: 0;">
+        "{{ plan.review_comment }}"
+      </p>
+      {% if plan.reviewed_by %}
+      <div class="text-xs mt-3" style="color: var(--ink-500);">
+        — {{ plan.reviewed_by.get_full_name|default:plan.reviewed_by.email }}
+        {% if plan.reviewed_at %}· {{ plan.reviewed_at|date:"j M Y" }}{% endif %}
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+
+  </div>
+
+  <div class="lg:col-span-1">
+    <div class="card">
+      <h3 class="card-title mb-4">
+        {% include 'partials/icons.html' with name="info" size=18 %}
+        Metadata
+      </h3>
+      <div class="space-y-3">
+        <div class="flex justify-between text-sm">
+          <span style="color: var(--ink-500);">Teacher</span>
+          <span style="color: var(--ink-800); font-weight: 600;">
+            {{ plan.teacher.first_name }} {{ plan.teacher.last_name }}
+          </span>
+        </div>
+        <div class="flex justify-between text-sm">
+          <span style="color: var(--ink-500);">Created</span>
+          <span style="color: var(--ink-800); font-weight: 600;">{{ plan.created_at|date:"j M Y" }}</span>
+        </div>
+        {% if plan.submitted_at %}
+        <div class="flex justify-between text-sm">
+          <span style="color: var(--ink-500);">Submitted</span>
+          <span style="color: var(--ink-800); font-weight: 600;">{{ plan.submitted_at|date:"j M Y" }}</span>
+        </div>
+        {% endif %}
+        {% if plan.reviewed_at %}
+        <div class="flex justify-between text-sm">
+          <span style="color: var(--ink-500);">Reviewed</span>
+          <span style="color: var(--ink-800); font-weight: 600;">{{ plan.reviewed_at|date:"j M Y" }}</span>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}

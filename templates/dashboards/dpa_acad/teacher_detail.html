@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ teacher.first_name }} {{ teacher.last_name }}{% endblock %}
+{% block header_title %}{{ teacher.first_name }} {{ teacher.last_name }}{% endblock %}
+{% block header_sub %}
+  {% if teacher.subject_specialty %}{{ teacher.subject_specialty }} · {% endif %}{{ school.name }}
+{% endblock %}
+
+{% block content %}
+
+<div class="flex flex-wrap items-center justify-between gap-3 mb-6">
+  <a href="{% url 'dpa_acad_teachers' %}" class="btn btn-secondary">
+    {% include 'partials/icons.html' with name="arrow-right" size=16 %}
+    Back to Teachers
+  </a>
+  <a href="{% url 'dpa_acad_teacher_pdf' teacher.id %}" target="_blank" class="btn btn-primary">
+    {% include 'partials/icons.html' with name="printer" size=16 %}
+    Download PDF Report
+  </a>
+</div>
+
+<!-- Profile card -->
+<div class="card mb-6">
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
+    <div>
+      <div class="text-xs font-semibold uppercase tracking-wider mb-1" style="color: var(--ink-500);">Full Name</div>
+      <div style="color: var(--ink-800); font-weight: 600;">{{ teacher.first_name }} {{ teacher.last_name }}</div>
+    </div>
+    <div>
+      <div class="text-xs font-semibold uppercase tracking-wider mb-1" style="color: var(--ink-500);">Employment</div>
+      <div style="color: var(--ink-800); font-weight: 600;">
+        {% if teacher.employment_type %}{{ teacher.employment_type }}{% else %}—{% endif %}
+      </div>
+      {% if teacher.employee_number %}
+      <div class="text-xs" style="color: var(--ink-500); font-family: var(--font-mono);">
+        {{ teacher.employee_number }}
+      </div>
+      {% endif %}
+    </div>
+    <div>
+      <div class="text-xs font-semibold uppercase tracking-wider mb-1" style="color: var(--ink-500);">Class Teacher</div>
+      <div style="color: var(--ink-800); font-weight: 600;">
+        {% if teacher.is_class_teacher and teacher.current_class %}
+          {{ teacher.current_class.name }}
+        {% else %}
+          —
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Coverage by subject -->
+{% if coverage_by_subject %}
+<div class="card mb-6">
+  <h3 class="card-title mb-5">
+    {% include 'partials/icons.html' with name="book-open" size=18 %}
+    Syllabus Coverage
+  </h3>
+  <div class="space-y-4">
+    {% for key, val in coverage_by_subject.items %}
+    <div>
+      <div class="flex justify-between mb-1">
+        <span class="text-sm" style="color: var(--ink-800); font-weight: 500;">{{ key }}</span>
+        <span class="text-sm" style="color: var(--ink-600);">
+          {{ val.completed }}/{{ val.total }} ({{ val.percent }}%)
+        </span>
+      </div>
+      <div style="height: 8px; background: var(--surface-muted); border-radius: 4px; overflow: hidden;">
+        <div style="width: {{ val.percent }}%; height: 100%; background: var(--primary);"></div>
+      </div>
+      {% if val.behind %}
+      <div class="text-xs mt-1" style="color: var(--danger);">
+        {{ val.behind }} topic{{ val.behind|pluralize }} behind schedule
+      </div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+  <!-- Recent observations -->
+  <div class="card">
+    <h3 class="card-title mb-4">
+      {% include 'partials/icons.html' with name="eye" size=18 %}
+      Recent Observations
+    </h3>
+    {% if observations %}
+    <div class="space-y-3">
+      {% for o in observations %}
+      <div style="padding: var(--s-3); background: var(--surface-muted); border-radius: var(--radius);">
+        <div class="flex justify-between items-center">
+          <div>
+            <div style="font-weight: 600; color: var(--ink-900); font-size: var(--text-sm);">
+              {{ o.observed_on|date:"j M Y" }}
+            </div>
+            {% if o.subject %}
+            <div class="text-xs" style="color: var(--ink-500);">{{ o.subject.name }}{% if o.class_level %} · {{ o.class_level.name }}{% endif %}</div>
+            {% endif %}
+          </div>
+          {% if o.average_rating %}
+          <span class="badge badge-primary">{{ o.average_rating }}/5</span>
+          {% endif %}
+        </div>
+        {% if o.strengths %}
+        <p class="text-xs mt-2" style="color: var(--ink-600); margin: 0;">
+          {{ o.strengths|truncatechars:100 }}
+        </p>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-sm" style="color: var(--ink-500); margin: 0;">No observations recorded.</p>
+    {% endif %}
+  </div>
+
+  <!-- Recent lesson plans -->
+  <div class="card">
+    <h3 class="card-title mb-4">
+      {% include 'partials/icons.html' with name="file-text" size=18 %}
+      Recent Lesson Plans
+    </h3>
+    {% if lesson_plans %}
+    <div class="space-y-3">
+      {% for p in lesson_plans %}
+      <div style="padding: var(--s-3); background: var(--surface-muted); border-radius: var(--radius);">
+        <div class="flex justify-between items-center gap-2 flex-wrap">
+          <div>
+            <div style="font-weight: 600; color: var(--ink-900); font-size: var(--text-sm);">
+              {{ p.title }}
+            </div>
+            <div class="text-xs" style="color: var(--ink-500);">{{ p.week_ending|date:"j M Y" }}</div>
+          </div>
+          {% if p.status == 'approved' %}
+            <span class="badge badge-success">Approved</span>
+          {% elif p.status == 'submitted' %}
+            <span class="badge badge-warning">Submitted</span>
+          {% elif p.status == 'revision' %}
+            <span class="badge badge-danger">Revision</span>
+          {% else %}
+            <span class="badge badge-neutral">{{ p.get_status_display }}</span>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-sm" style="color: var(--ink-500); margin: 0;">No lesson plans yet.</p>
+    {% endif %}
+  </div>
+
+  <!-- Recent mark sheets -->
+  <div class="card lg:col-span-2">
+    <h3 class="card-title mb-4">
+      {% include 'partials/icons.html' with name="clipboard" size=18 %}
+      Recent Mark Sheets
+    </h3>
+    {% if mark_sheets %}
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Exam</th>
+            <th>Class</th>
+            <th>Subject</th>
+            <th style="width: 130px;">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in mark_sheets %}
+          <tr>
+            <td style="font-weight: 500; color: var(--ink-900);">{{ s.exam.name }}</td>
+            <td style="color: var(--ink-700);">{{ s.class_level.name }}</td>
+            <td style="color: var(--ink-700);">{{ s.subject.name }}</td>
+            <td>
+              {% if s.status == 'published' %}
+                <span class="badge badge-success">Published</span>
+              {% elif s.status == 'approved' %}
+                <span class="badge badge-info">Approved</span>
+              {% elif s.status == 'submitted' %}
+                <span class="badge badge-warning">Submitted</span>
+              {% else %}
+                <span class="badge badge-neutral">{{ s.get_status_display }}</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="text-sm" style="color: var(--ink-500); margin: 0;">No mark sheets yet.</p>
+    {% endif %}
+  </div>
+
+</div>
+
+{% endblock %}
