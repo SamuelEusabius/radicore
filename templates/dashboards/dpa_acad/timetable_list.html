@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Timetables{% endblock %}
+{% block header_title %}Timetables{% endblock %}
+{% block header_sub %}
+  {{ streams_with_timetable }} of {{ total_streams }} stream{{ total_streams|pluralize }} have timetables
+{% endblock %}
+
+{% block content %}
+
+<!-- Stats row -->
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Total Streams</span>
+      <div class="stat-icon" style="background: var(--primary-light); color: var(--primary);">
+        {% include 'partials/icons.html' with name="grid" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value">{{ total_streams }}</div>
+    <div class="stat-meta">on register</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">With Timetable</span>
+      <div class="stat-icon" style="background: var(--success-light); color: var(--success);">
+        {% include 'partials/icons.html' with name="check-circle" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--success);">{{ streams_with_timetable }}</div>
+    <div class="stat-meta">ready</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Pending</span>
+      <div class="stat-icon" style="background: var(--warning-light); color: var(--warning);">
+        {% include 'partials/icons.html' with name="alert-circle" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--warning);">
+      {{ total_streams|add:"-"|add:streams_with_timetable }}
+    </div>
+    <div class="stat-meta">no entries yet</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Conflicts</span>
+      <div class="stat-icon" style="background: var(--danger-light); color: var(--danger);">
+        {% include 'partials/icons.html' with name="alert-triangle" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value">
+      <a href="{% url 'dpa_acad_timetable_conflicts' %}" style="color: var(--danger); text-decoration: none;">
+        Check →
+      </a>
+    </div>
+    <div class="stat-meta">review overlaps</div>
+  </div>
+</div>
+
+<!-- Stream list -->
+{% if rows %}
+<div class="card" style="padding: 0; overflow: hidden;">
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Stream</th>
+          <th style="width: 160px;">Entries</th>
+          <th style="width: 160px;">Status</th>
+          <th style="text-align: right;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+        <tr>
+          <td style="font-weight: 600; color: var(--ink-900);">
+            {{ row.class_level.name }}
+          </td>
+          <td>
+            <span style="font-family: var(--font-mono); color: var(--ink-700);">
+              {{ row.entries }}
+            </span>
+          </td>
+          <td>
+            {% if row.has_timetable %}
+              <span class="badge badge-success">Ready</span>
+            {% else %}
+              <span class="badge badge-warning">Empty</span>
+            {% endif %}
+          </td>
+          <td>
+            <div class="table-actions" style="justify-content: flex-end;">
+              <a href="{% url 'dpa_acad_timetable_stream' row.class_level.id %}"
+                 class="view" title="View timetable">
+                {% include 'partials/icons.html' with name="eye" size=14 %}
+              </a>
+              <a href="{% url 'dpa_acad_timetable_stream_pdf' row.class_level.id %}"
+                 target="_blank" class="print" title="Download PDF">
+                {% include 'partials/icons.html' with name="printer" size=14 %}
+              </a>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% else %}
+<div class="card">
+  <div class="empty">
+    {% include 'partials/icons.html' with name="grid" size=56 %}
+    <h3>No streams yet</h3>
+    <p>Add classes to your school first, then you can build timetables for each stream.</p>
+    <a href="{% url 'manage_classes' %}" class="btn btn-primary">
+      {% include 'partials/icons.html' with name="plus" size=16 %}
+      Manage Classes
+    </a>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

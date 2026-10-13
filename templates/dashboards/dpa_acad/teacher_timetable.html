@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}My Timetable{% endblock %}
+{% block header_title %}My Timetable{% endblock %}
+{% block header_sub %}
+  {{ teacher.first_name }} {{ teacher.last_name }} · {{ total }} period{{ total|pluralize }}
+{% endblock %}
+
+{% block content %}
+
+<div class="flex flex-wrap items-center justify-between gap-3 mb-6">
+  <div></div>
+  <a href="{% url 'teacher_my_timetable_pdf' %}" target="_blank" class="btn btn-primary">
+    {% include 'partials/icons.html' with name="printer" size=16 %}
+    Download PDF
+  </a>
+</div>
+
+<!-- Today's periods -->
+<div class="card mb-6">
+  <div class="flex items-center justify-between mb-4">
+    <h3 class="card-title" style="margin: 0;">
+      {% include 'partials/icons.html' with name="calendar" size=18 %}
+      Today — {{ today_label }}
+    </h3>
+    <span class="text-xs" style="color: var(--ink-500);">
+      {{ todays_periods|length }} period{{ todays_periods|length|pluralize }}
+    </span>
+  </div>
+
+  {% if todays_periods %}
+  <div class="space-y-3">
+    {% for p in todays_periods %}
+    <div style="padding: var(--s-3); background: var(--surface-muted); border-radius: var(--radius); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--s-3); border-left: 3px solid var(--primary);">
+      <div>
+        <div style="font-weight: 600; color: var(--ink-900);">{{ p.subject.name }}</div>
+        <div class="text-xs" style="color: var(--ink-500);">{{ p.class_level.name }}</div>
+      </div>
+      <div style="font-family: var(--font-mono); font-size: var(--text-sm); color: var(--ink-700); font-weight: 600;">
+        {{ p.start_time|time:"H:i" }} – {{ p.end_time|time:"H:i" }}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="text-sm" style="color: var(--ink-500); margin: 0;">No classes scheduled for today.</p>
+  {% endif %}
+</div>
+
+<!-- Weekly grid -->
+{% if matrix %}
+<div class="card" style="padding: 0; overflow: hidden;">
+  <div style="padding: var(--s-5); border-bottom: 1px solid var(--border);">
+    <h3 class="card-title" style="margin: 0;">
+      {% include 'partials/icons.html' with name="grid" size=18 %}
+      Weekly Timetable
+    </h3>
+  </div>
+  <div class="table-wrap" style="overflow-x: auto;">
+    <table class="table" style="min-width: 1100px; table-layout: fixed;">
+      <thead>
+        <tr>
+          <th rowspan="2" style="width: 90px; background: var(--primary); color: white; text-align: center; vertical-align: middle; font-size: var(--text-xs); letter-spacing: 0.05em; border-right: 1px solid rgba(255,255,255,0.2);">DAY</th>
+          {% for period in periods %}
+          <th style="background: var(--primary); color: white; text-align: center; font-size: 10px; padding: 6px 4px; line-height: 1.15;">
+            {{ period.start_display }}<br>{{ period.end_display }}
+          </th>
+          {% endfor %}
+        </tr>
+        <tr>
+          {% for period in periods %}
+          <th style="background: #00897b; color: white; text-align: center; font-size: 9px; padding: 4px 2px; font-weight: 500; letter-spacing: 0.02em;">
+            {% if period.kind == 'break' %}—{% else %}{{ period.label }}{% endif %}
+          </th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in matrix %}
+        <tr>
+          <td style="font-weight: 700; color: var(--primary); background: var(--primary-light); font-size: var(--text-sm); text-align: center; vertical-align: middle; border-right: 1px solid var(--border); text-transform: uppercase;">
+            {{ row.day.label|slice:":3" }}
+          </td>
+          {% for cell in row.cells %}
+            {% if cell.is_break %}
+            <td style="background: #f5f5f5; text-align: center; vertical-align: middle; padding: 4px 2px; border-left: 1px solid var(--border); border-right: 1px solid var(--border);">
+              <span style="font-size: 10px; font-weight: 700; color: var(--ink-500); text-transform: uppercase; letter-spacing: 0.08em; writing-mode: vertical-rl; text-orientation: mixed; transform: rotate(180deg); display: inline-block; padding: 6px 2px; white-space: nowrap;">
+                {{ cell.label }}
+              </span>
+            </td>
+            {% else %}
+            <td style="padding: 4px; vertical-align: top; height: 52px;">
+              {% if cell.entry %}
+              <div style="padding: 4px; text-align: center; line-height: 1.2;">
+                <div style="font-weight: 600; color: var(--primary); font-size: var(--text-xs);">
+                  {{ cell.entry.subject.name }}
+                </div>
+                <div style="font-size: 9px; color: var(--ink-500); margin-top: 1px;">
+                  {{ cell.entry.class_level.name }}
+                </div>
+              </div>
+              {% else %}
+              <div style="padding: 4px; text-align: center; color: var(--ink-400); font-size: var(--text-xs);">
+                —
+              </div>
+              {% endif %}
+            </td>
+            {% endif %}
+          {% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Legend -->
+<div class="card mt-4" style="padding: var(--s-4);">
+  <div class="flex flex-wrap gap-4 items-center">
+    <div class="flex items-center gap-2">
+      <span style="width: 12px; height: 12px; background: var(--primary-light); border: 1px solid var(--primary); border-radius: 2px;"></span>
+      <span class="text-xs" style="color: var(--ink-600);">Your scheduled class</span>
+    </div>
+    <div class="flex items-center gap-2">
+      <span style="width: 12px; height: 12px; background: #f5f5f5; border: 1px solid var(--border); border-radius: 2px;"></span>
+      <span class="text-xs" style="color: var(--ink-600);">Break / Lunch</span>
+    </div>
+    <div class="flex items-center gap-2">
+      <span style="width: 12px; height: 12px; background: white; border: 1px solid var(--border); border-radius: 2px;"></span>
+      <span class="text-xs" style="color: var(--ink-600);">Free period</span>
+    </div>
+  </div>
+</div>
+
+{% else %}
+<div class="card">
+  <div class="empty">
+    {% include 'partials/icons.html' with name="calendar" size=56 %}
+    <h3>No timetable yet</h3>
+    <p>You don't have any scheduled periods. Once your subjects and periods are assigned, they will appear here.</p>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

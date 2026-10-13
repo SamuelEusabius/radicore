@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Teacher Timetables{% endblock %}
+{% block header_title %}Teacher Timetables{% endblock %}
+{% block header_sub %}
+  Select a teacher to view their personal timetable
+{% endblock %}
+
+{% block content %}
+
+<div class="card">
+  <div class="flex items-center justify-between mb-5">
+    <h3 class="card-title" style="margin: 0;">
+      {% include 'partials/icons.html' with name="teacher" size=18 %}
+      Choose a Teacher
+    </h3>
+    <span class="text-xs" style="color: var(--ink-500);">
+      {{ teachers|length }} teacher{{ teachers|length|pluralize }}
+    </span>
+  </div>
+
+  {% if teachers %}
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+    {% for t in teachers %}
+    <a href="{% url 'dpa_acad_teacher_timetable_pdf' t.id %}" target="_blank"
+       class="card card-hover" style="text-decoration: none; padding: var(--s-4); display: block;">
+      <div style="font-weight: 600; color: var(--ink-900); font-size: var(--text-sm);">
+        {{ t.first_name }} {{ t.last_name }}
+      </div>
+      {% if t.subject_specialty %}
+      <div class="text-xs mt-1" style="color: var(--ink-500);">
+        {{ t.subject_specialty }}
+      </div>
+      {% endif %}
+      {% if t.employee_number %}
+      <div class="text-xs mt-1" style="color: var(--ink-500); font-family: var(--font-mono);">
+        {{ t.employee_number }}
+      </div>
+      {% endif %}
+      <div class="text-xs mt-3" style="color: var(--primary); font-weight: 600;">
+        Download timetable PDF →
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty">
+    {% include 'partials/icons.html' with name="users" size=56 %}
+    <h3>No teachers on register</h3>
+    <p>Add teachers to your school before you can view their timetables.</p>
+    <a href="{% url 'manage_users' %}" class="btn btn-primary">
+      {% include 'partials/icons.html' with name="plus" size=16 %}
+      Add Teachers
+    </a>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}

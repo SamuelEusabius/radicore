@@ -15,6 +15,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
 from django.db.models import Count, Q, Avg
 
+
 from apps.accounts.roles import Role
 from apps.academics.models import (
     ClassLevel, Subject, Timetable,
@@ -1225,3 +1226,337 @@ def dpa_acad_stream_subject_assign(request):
         'teacher_id': teacher.id if teacher else None,
         'assignment_id': obj.id,
     })
+    
+    
+
+# ==========================================================
+# TIMETABLE — stream view + teacher view
+# ==========================================================
+
+# Ordered day names for grid display
+DAY_ORDER = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
+DAY_LABELS = {
+    'monday': 'Monday',
+    'tuesday': 'Tuesday',
+    'wednesday': 'Wednesday',
+    'thursday': 'Thursday',
+    'friday': 'Friday',
+    'saturday': 'Saturday',
+}
+
+
+def _build_stream_grid(school, class_level):
+    """
+    Build a matrix of timetable entries for one stream.
+    Uses the canonical SCHOOL_DAY structure — breaks included.
+    """
+    entries = Timetable.objects.filter(
+        school=school, class_level=class_level,
+    ).select_related('subject', 'teacher')
+
+    slots = _build_period_slots()
+
+    # Lookup: (day, slot_key) -> entry
+    lookup = {}
+    for e in entries:
+        day = e.day_of_week
+        slot_key = f"{e.start_time.strftime('%H:%M')}-{e.end_time.strftime('%H:%M')}"
+        lookup[(day, slot_key)] = e
+
+    days = [{'key': d, 'label': DAY_LABELS[d]} for d in DAY_ORDER]
+
+    # Build matrix — rows = days, cells = slots (lessons + breaks)
+    matrix = []
+    for day in days:
+        row_cells = []
+        for slot in slots:
+            if slot['kind'] == 'break':
+                row_cells.append({
+                    'is_break': True,
+                    'label': slot['label'],
+                })
+            else:
+                entry = lookup.get((day['key'], slot['key']))
+                row_cells.append({
+                    'is_break': False,
+                    'slot': slot,
+                    'entry': entry,
+                })
+        matrix.append({'day': day, 'cells': row_cells})
+
+    return {
+        'days': days,
+        'periods': slots,           # full day slots, breaks included
+        'matrix': matrix,
+    }
+
+
+@dpa_acad_required
+def dpa_acad_timetable_stream(request, class_id):
+    """On-screen timetable grid for one stream."""
+    school = request.user.school
+    class_level = get_object_or_404(ClassLevel, pk=class_id, school=school)
+
+    grid_data = _build_stream_grid(school, class_level)
+
+    context = {
+        'school': school,
+        'class_level': class_level,
+        'days': grid_data['days'],
+        'periods': grid_data['periods'],
+        'matrix': grid_data['matrix'],
+        'total_entries': Timetable.objects.filter(
+            school=school, class_level=class_level,
+        ).count(),
+    }
+    return render(request, 'dashboards/dpa_acad/timetable_stream.html', context)
+
+
+@dpa_acad_required
+def dpa_acad_timetable_stream_pdf(request, class_id):
+    """PDF timetable for one stream."""
+    school = request.user.school
+    class_level = get_object_or_404(ClassLevel, pk=class_id, school=school)
+
+    grid_data = _build_stream_grid(school, class_level)
+
+
+    html_string = render_to_string('pdf/dpa_acad_timetable_stream.html', {
+        'school': school,
+        'class_level': class_level,
+        'days': grid_data['days'],
+        'periods': grid_data['periods'],
+        'matrix': grid_data['matrix'],   # was 'cells'
+        'generated_by': request.user,
+        'generated_on': timezone.now(),
+    })
+
+    filename = f"timetable_{class_level.name.replace(' ', '_')}.pdf"
+    return html_to_pdf_response(html_string, filename)
+
+
+@dpa_acad_required
+def dpa_acad_timetable_list(request):
+    """List all streams with their timetable status."""
+    school = request.user.school
+    classes = ClassLevel.objects.filter(school=school).order_by('order', 'name')
+
+    rows = []
+    for cls in classes:
+        count = Timetable.objects.filter(school=school, class_level=cls).count()
+        rows.append({
+            'class_level': cls,
+            'entries': count,
+            'has_timetable': count > 0,
+        })
+
+    context = {
+        'school': school,
+        'rows': rows,
+        'total_streams': len(rows),
+        'streams_with_timetable': sum(1 for r in rows if r['has_timetable']),
+    }
+    return render(request, 'dashboards/dpa_acad/timetable_list.html', context)
+
+
+# ==========================================================
+# TEACHER PERSONAL TIMETABLE
+# ==========================================================
+
+def _build_teacher_grid(school, teacher):
+    """Build a matrix of a teacher's timetable — all classes. Breaks included."""
+    entries = Timetable.objects.filter(
+        school=school, teacher=teacher.user,
+    ).select_related('class_level', 'subject')
+    slots = _build_period_slots()
+
+    lookup = {}
+    for e in entries:
+        day = e.day_of_week
+        slot_key = f"{e.start_time.strftime('%H:%M')}-{e.end_time.strftime('%H:%M')}"
+        lookup[(day, slot_key)] = e
+
+    days = [{'key': d, 'label': DAY_LABELS[d]} for d in DAY_ORDER]
+
+    matrix = []
+    for day in days:
+        row_cells = []
+        for slot in slots:
+            if slot['kind'] == 'break':
+                row_cells.append({
+                    'is_break': True,
+                    'label': slot['label'],
+                })
+            else:
+                entry = lookup.get((day['key'], slot['key']))
+                row_cells.append({
+                    'is_break': False,
+                    'slot': slot,
+                    'entry': entry,
+                })
+        matrix.append({'day': day, 'cells': row_cells})
+
+    return {
+        'days': days,
+        'periods': slots,
+        'matrix': matrix,
+        'total': entries.count(),
+    }
+    
+    # ==========================================================
+# STANDARD KENYAN SECONDARY SCHOOL DAY (CBC JSS)
+# Matches the reference timetable layout
+# ==========================================================
+
+SCHOOL_DAY = [
+    ('8:00', '8:40', 'lesson'),         # Period 1
+    ('8:40', '9:20', 'lesson'),         # Period 2
+    ('9:20', '9:30', 'break'),          # Short Break (10 min)
+    ('9:30', '10:10', 'lesson'),        # Period 3
+    ('10:10', '10:50', 'lesson'),       # Period 4
+    ('10:50', '11:20', 'break'),        # Long Break (30 min)
+    ('11:20', '12:00', 'lesson'),       # Period 5
+    ('12:00', '12:40', 'lesson'),       # Period 6
+    ('12:40', '14:00', 'break'),        # Lunch (1hr 20min)
+    ('14:00', '14:40', 'lesson'),       # Period 7
+    ('14:40', '15:20', 'lesson'),       # Period 8
+    ('15:20', '16:00', 'lesson'),       # Period 9
+]
+
+BREAK_LABELS = {
+    '9:20-9:30': 'SHORT BREAK',
+    '10:50-11:20': 'LONG BREAK',
+    '12:40-14:00': 'LUNCH BREAK',
+}
+
+
+def _build_period_slots():
+    """
+    Return list of period dicts from SCHOOL_DAY.
+    Each dict: {'label', 'start', 'end', 'key', 'kind', 'start_display', 'end_display', 'time_display'}
+    """
+    from datetime import datetime as _dt
+
+    slots = []
+    lesson_num = 0
+    for start_s, end_s, kind in SCHOOL_DAY:
+        start_t = _dt.strptime(start_s, '%H:%M').time()
+        end_t = _dt.strptime(end_s, '%H:%M').time()
+        key = f"{start_s}-{end_s}"
+
+        if kind == 'break':
+            label = BREAK_LABELS.get(key, 'BREAK')
+        else:
+            lesson_num += 1
+            label = f"Period {lesson_num}"
+
+        slots.append({
+            'label': label,
+            'start': start_t,
+            'end': end_t,
+            'key': key,
+            'kind': kind,
+            'start_display': start_s,
+            'end_display': end_s,
+            'time_display': f"{start_s} - {end_s}",
+        })
+    return slots
+@login_required
+def teacher_my_timetable(request):
+    """Teacher's personal timetable — reachable from their dashboard."""
+    # Allow teachers, class teachers, or admins previewing
+    user = request.user
+    if user.role not in (Role.TEACHER, Role.CLASS_TEACHER, Role.PRINCIPAL,
+                        Role.DEPUTY_ADMIN, Role.DEPUTY_ACADEMICS,
+                        Role.DIRECTOR_OF_STUDIES, Role.SUPER_ADMIN):
+        return HttpResponseForbidden("You do not have access to this page.")
+
+    school = user.school
+    if school is None:
+        return HttpResponseForbidden("Your account is not linked to a school.")
+
+    # Find the teacher profile
+    teacher = Teacher.objects.filter(school=school, user=user).first()
+    if teacher is None:
+        # Admin viewing without teacher profile — show picker
+        teachers = Teacher.objects.filter(school=school, is_active=True).order_by('first_name')
+        return render(request, 'dashboards/dpa_acad/teacher_timetable_picker.html', {
+            'school': school,
+            'teachers': teachers,
+        })
+
+    grid_data = _build_teacher_grid(school, teacher)
+    today_key = timezone.localdate().strftime('%A').lower()
+    todays_periods = _teacher_today_periods(school, teacher, today_key)
+
+    context = {
+        'school': school,
+        'teacher': teacher,
+        'days': grid_data['days'],
+        'periods': grid_data['periods'],
+        'matrix': grid_data['matrix'],   # was 'grid'
+        'total': grid_data['total'],
+        'today_label': timezone.localdate().strftime('%A'),
+        'todays_periods': todays_periods,
+    }
+    return render(request, 'dashboards/dpa_acad/teacher_timetable.html', context)
+
+
+@login_required
+def teacher_my_timetable_pdf(request):
+    """Teacher's personal timetable as PDF."""
+    user = request.user
+    school = user.school
+    if school is None:
+        return HttpResponseForbidden("Your account is not linked to a school.")
+
+    teacher = Teacher.objects.filter(school=school, user=user).first()
+    if teacher is None:
+        return HttpResponseForbidden("No teacher profile found.")
+
+    grid_data = _build_teacher_grid(school, teacher)
+
+    html_string = render_to_string('pdf/dpa_acad_teacher_timetable.html', {
+        'school': school,
+        'teacher': teacher,
+        'days': grid_data['days'],
+        'periods': grid_data['periods'],
+        'matrix': grid_data['matrix'],   # was 'cells'
+        'generated_by': user,
+        'generated_on': timezone.now(),
+    })
+    filename = f"timetable_{teacher.first_name}_{teacher.last_name}.pdf"
+    return html_to_pdf_response(html_string, filename)
+
+
+@dpa_acad_required
+def dpa_acad_teacher_timetable_pdf(request, teacher_id):
+    """Admin version — view any teacher's timetable as PDF."""
+    school = request.user.school
+    teacher = get_object_or_404(Teacher, pk=teacher_id, school=school)
+
+    grid_data = _build_teacher_grid(school, teacher)
+
+    html_string = render_to_string('pdf/dpa_acad_teacher_timetable.html', {
+        'school': school,
+        'teacher': teacher,
+        'days': grid_data['days'],
+        'periods': grid_data['periods'],
+        'matrix': grid_data['matrix'],   # was 'cells'
+        'generated_by': request.user,
+        'generated_on': timezone.now(),
+    })
+    filename = f"timetable_{teacher.first_name}_{teacher.last_name}.pdf"
+    return html_to_pdf_response(html_string, filename)
+def _teacher_today_periods(school, teacher, today_key=None):
+    """Return today's periods for a teacher, sorted by time."""
+    if today_key is None:
+        today_key = timezone.localdate().strftime('%A').lower()
+        if today_key not in DAY_ORDER:
+            today_key = 'monday'
+
+    return list(
+        Timetable.objects.filter(
+            school=school, teacher=teacher.user, day_of_week=today_key,
+        ).select_related('class_level', 'subject').order_by('start_time')
+    )
