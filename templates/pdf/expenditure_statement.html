@@ -3,28 +3,29 @@
 <head>
 <meta charset="utf-8">
 <style>
+
+    /* ==========================================================
+     STANDARD REPORT HEADER
+     ========================================================== */
+  table.report-header { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+  table.report-header td { vertical-align: top; padding: 0; }
+  .rh-logo-cell { width: 90px; padding-right: 16px; }
+  .rh-logo-img { width: 72px; height: 72px; object-fit: contain; }
+  .rh-info-cell { vertical-align: top; }
+  .rh-school-name { font-size: 16pt; font-weight: bold; color: #00695c; line-height: 1.1; margin: 0; }
+  .rh-motto { font-style: italic; font-size: 9.5pt; color: #555; margin-top: 3px; }
+  .rh-address { font-size: 9pt; color: #555; margin-top: 6px; }
+  .rh-contact { font-size: 9pt; color: #555; margin-top: 2px; }
+  .rh-meta-cell { width: 150px; text-align: right; vertical-align: top; padding-right: 4px; }
+  .rh-meta-label { font-size: 6.5pt; text-transform: uppercase; letter-spacing: 0.05em; color: #888; font-weight: bold; }
+  .rh-meta-date { font-size: 10pt; font-weight: bold; color: #1a1a1a; margin-top: 1px; }
+  .rh-meta-time { font-size: 8.5pt; color: #555; margin-top: 1px; }
+  .rh-meta-name { font-size: 8.5pt; color: #555; margin-top: 1px; }
+  .rh-divider { border-bottom: 2pt solid #00695c; margin-bottom: 14px; }
+
   @page { size: A4 portrait; margin: 12mm; }
   * { box-sizing: border-box; }
   body { font-family: 'DejaVu Sans', Arial, sans-serif; color: #1a1a1a; font-size: 9.5pt; margin: 0; line-height: 1.4; }
-
-  .header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    border-bottom: 2.5pt solid #00695c;
-    padding-bottom: 10px;
-    margin-bottom: 14px;
-  }
-  .header-left h1 { color: #00695c; font-size: 16pt; margin: 0 0 4px 0; }
-  .header-left p { margin: 2px 0; color: #6b7280; font-size: 8.5pt; }
-  .header-right { text-align: right; }
-  .header-right .badge {
-    background: #00695c; color: white; padding: 6px 12px;
-    font-size: 10pt; font-weight: 700; letter-spacing: 0.05em;
-    display: inline-block; margin-bottom: 4px;
-  }
-  .header-right p { margin: 2px 0; font-size: 8.5pt; color: #6b7280; }
-  .school-logo { width: 55px; height: 55px; object-fit: contain; }
 
   h2 {
     font-size: 12pt; color: #00695c; margin: 12px 0 8px 0;
@@ -64,29 +65,7 @@
 </head>
 <body>
 
-<div class="header">
-  <div class="header-left" style="display: flex; align-items: center; gap: 12px;">
-    {% if school.logo %}
-      <img src="{{ school.logo.path }}" class="school-logo">
-    {% else %}
-      <div style="width: 55px; height: 55px; background: #00695c; color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14pt;">
-        {{ school.name|slice:":2"|upper }}
-      </div>
-    {% endif %}
-    <div>
-      <h1>{{ school.name }}</h1>
-      {% if school.motto %}<p><em>{{ school.motto }}</em></p>{% endif %}
-      {% if school.postal_address %}<p>{{ school.postal_address }}</p>{% endif %}
-      {% if school.physical_address %}<p>{{ school.physical_address }}</p>{% endif %}
-      {% if school.phone %}<p>Tel: {{ school.phone }}</p>{% endif %}
-      {% if school.email %}<p>Email: {{ school.email }}</p>{% endif %}
-    </div>
-  </div>
-  <div class="header-right">
-    <div class="badge">EXPENDITURE STATEMENT</div>
-    <p><strong>Printed:</strong> {% now "d M Y H:i" %}</p>
-  </div>
-</div>
+{% include 'pdf/_report_header.html' %}
 
 {% if category_filter or date_from or date_to %}
 <div class="filters-info">

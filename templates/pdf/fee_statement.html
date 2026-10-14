@@ -3,9 +3,89 @@
 <head>
 <meta charset="utf-8">
 <style>
-  @page { size: A5 portrait; margin: 8mm; }
-  * { box-sizing: border-box; }
-  body { font-family: 'DejaVu Sans', Arial, sans-serif; color: #1a1a1a; font-size: 9pt; margin: 0; line-height: 1.4; }
+
+    /* ==========================================================
+     STANDARD REPORT HEADER
+     ========================================================== */
+    /* A5 overrides for compact header */
+  .rh-logo-cell { width: 60px; padding-right: 10px; }
+  .rh-logo-img { width: 48px; height: 48px; }
+  .rh-school-name { font-size: 12pt; }
+  .rh-motto { font-size: 7.5pt; margin-top: 2px; }
+  .rh-address { font-size: 7pt; margin-top: 3px; }
+  .rh-contact { font-size: 7pt; margin-top: 1px; }
+  .rh-meta-cell { width: 100px; padding-right: 2px; }
+  .rh-meta-label { font-size: 5.5pt; }
+  .rh-meta-date { font-size: 8pt; }
+  .rh-meta-time { font-size: 7pt; }
+  .rh-meta-name { font-size: 7pt; }
+  .rh-divider { margin-bottom: 8px; }
+ @page {
+  size: A5 portrait;
+  margin: 8mm 8mm 10mm 8mm;
+}
+ body {
+  font-family: 'DejaVu Sans', Arial, sans-serif;
+  font-size: 7.5pt;
+  line-height: 1.25;
+  color: #1a1a1a;
+  margin: 0;
+  padding: 0;
+}
+
+
+  /* ---------- COMPACT CONTENT FOR A5 ---------- */
+  h2 {
+    font-size: 9pt;
+    margin: 6px 0 4px 0;
+    padding-bottom: 2px;
+    border-bottom: 0.5pt solid #cfd8d4;
+  }
+
+  table.info-table,
+  table.summary-table,
+  table.data,
+  table.ledger-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 5px;
+    table-layout: fixed;
+  }
+
+  table.info-table td,
+  table.summary-table td,
+  table.data td,
+  table.data th,
+  table.ledger-table td,
+  table.ledger-table th {
+    padding: 2px 4px;
+    font-size: 6.5pt;
+    border: 0.5pt solid #e5e7eb;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    vertical-align: top;
+  }
+
+  table.info-table td.label {
+    width: 32%;
+    background: #f5f7f6;
+    font-weight: 600;
+    font-size: 6pt;
+  }
+
+  .signatures {
+    margin-top: 10px;
+  }
+  .signature-line {
+    padding-top: 3px;
+    font-size: 6pt;
+  }
+
+  .footer {
+    margin-top: 6px;
+    padding-top: 3px;
+    font-size: 5.5pt;
+  }
 
   /* ---------- HEADER ---------- */
   .header {
@@ -205,23 +285,25 @@
   .footer strong { color: #00695c; }
 
   .nowrap { white-space: nowrap; }
+
+    /* Density adjustments — tighter when there are many rows */
+  table.data.compact td,
+  table.data.compact th,
+  table.ledger-table.compact td,
+  table.ledger-table.compact th {
+    padding: 1px 3px;
+    font-size: 6pt;
+    line-height: 1.15;
+  }
 </style>
 </head>
 <body>
 
-<!-- ============ HEADER ============ -->
-<div class="header">
-  <div class="header-left">
-    <h1>{{ school.name }}</h1>
-    {% if school.motto %}<p><em>{{ school.motto }}</em></p>{% endif %}
-    {% if school.physical_address %}<p>{{ school.physical_address }}</p>{% endif %}
-    {% if school.phone %}<p>Tel: {{ school.phone }}</p>{% endif %}
-    {% if school.email %}<p>Email: {{ school.email }}</p>{% endif %}
-    {% if school.nemis_code %}<p>NEMIS: {{ school.nemis_code }}</p>{% endif %}
-  </div>
-  <div class="header-right">
-    <div class="badge">FEE STATEMENT</div>
-    <p><strong>Generated:</strong> {% now "d M Y H:i" %}</p>
+{% include 'pdf/_report_header.html' %}
+
+<div style="text-align: center; margin: 8px 0 14px 0;">
+  <div style="font-size: 14pt; font-weight: bold; color: #00695c; letter-spacing: 0.05em; text-transform: uppercase;">
+    Fee Statement
   </div>
 </div>
 
@@ -281,7 +363,7 @@
 <!-- ============ INVOICES ============ -->
 <h2>Invoices Breakdown</h2>
 {% if invoices %}
-<table class="data-table">
+<table class="data {% if invoices|length > 10 %}compact{% endif %}">
   <thead>
     <tr>
       <th>Fee Item</th>
@@ -325,7 +407,7 @@
 <!-- ============ PAYMENT HISTORY ============ -->
 <h2>Payment History</h2>
 {% if payments %}
-<table class="data-table">
+<table class="ledger-table {% if ledger|length > 15 %}compact{% endif %}">
   <thead>
     <tr>
       <th class="nowrap">Date</th>
