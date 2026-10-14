@@ -343,23 +343,25 @@ def leaving_certificate_pdf(request, student_id):
         <p style="text-align: justify;">We wish the student every success in their future endeavours.</p>
         """
 
-    # ---------- Resolve Coat of Arms absolute path ----------
-    # xhtml2pdf needs an absolute file path — {% static %} won't work.
-    coat_of_arms_path = os.path.join(
-        str(settings.BASE_DIR), 'static', 'images', 'coat_of_arms.png'
-    )
-    if not os.path.exists(coat_of_arms_path):
-        coat_of_arms_path = ''
+    # ---------- Base64 images for xhtml2pdf ----------
+    from apps.core.pdf_utils import get_school_logo_data_uri
 
-    # ---------- Resolve School logo absolute path ----------
-    school_logo_path = ''
-    if student.school.logo:
+    # School logo → base64
+    school_logo_b64 = get_school_logo_data_uri(student.school, max_width=120)
+
+    # Coat of arms → base64
+    import os as _os
+    from django.conf import settings as dj_settings
+    import base64 as b64
+
+    coat_of_arms_b64 = None
+    coat_path = _os.path.join(str(dj_settings.BASE_DIR), 'static', 'images', 'coat_of_arms.png')
+    if _os.path.exists(coat_path):
         try:
-            school_logo_path = student.school.logo.path
-            if not os.path.exists(school_logo_path):
-                school_logo_path = ''
-        except (ValueError, NotImplementedError):
-            school_logo_path = ''
+            with open(coat_path, 'rb') as f:
+                coat_of_arms_b64 = 'data:image/png;base64,' + b64.b64encode(f.read()).decode('ascii')
+        except Exception:
+            coat_of_arms_b64 = None
 
     html_string = render_to_string('pdf/leaving_certificate.html',
         build_pdf_context(
@@ -368,10 +370,11 @@ def leaving_certificate_pdf(request, student_id):
             student=student,
             content=content,
             printed_by=request.user,
-            coat_of_arms_path=coat_of_arms_path,
-            school_logo_path=school_logo_path,
+            school_logo_b64=school_logo_b64,
+            coat_of_arms_b64=coat_of_arms_b64,
         )
     )
+
 
     filename = f'leaving_certificate_{student.admission_number}.pdf'
     return html_to_pdf_response(html_string, filename)
@@ -379,15 +382,40 @@ def leaving_certificate_pdf(request, student_id):
 
 @login_required
 def student_biodata_pdf(request, student_id):
-    """Generate a downloadable PDF of the student's bio data."""
+    """Generate a professional Student Bio Data PDF."""
     if request.user.role not in ('principal', 'accountant'):
         return redirect('dashboard_home')
 
-    from apps.students.models import Student
-    from apps.core.pdf_utils import html_to_pdf_response
+    import os
+    import base64 as b64
+    from django.conf import settings as dj_settings
     from django.template.loader import render_to_string
 
+    from apps.students.models import Student
+    from apps.core.pdf_utils import (
+        html_to_pdf_response, build_pdf_context, image_to_base64,
+        get_school_logo_data_uri,
+    )
+
     student = get_object_or_404(Student, id=student_id, school=request.user.school)
+
+    # School logo
+    school_logo_b64 = get_school_logo_data_uri(student.school, max_width=120)
+
+    # Student photo
+    student_photo_b64 = None
+    if student.photo:
+        student_photo_b64 = image_to_base64(student.photo, max_width=240)
+
+    # Kenya coat of arms (from static images)
+    coat_of_arms_b64 = None
+    coat_path = os.path.join(str(dj_settings.BASE_DIR), 'static', 'images', 'coat_of_arms.png')
+    if os.path.exists(coat_path):
+        try:
+            with open(coat_path, 'rb') as f:
+                coat_of_arms_b64 = 'data:image/png;base64,' + b64.b64encode(f.read()).decode('ascii')
+        except Exception:
+            coat_of_arms_b64 = None
 
     html_string = render_to_string('pdf/student_biodata.html',
         build_pdf_context(
@@ -395,12 +423,14 @@ def student_biodata_pdf(request, student_id):
             generated_by=request.user,
             student=student,
             printed_by=request.user,
+            school_logo_b64=school_logo_b64,
+            student_photo_b64=student_photo_b64,
+            coat_of_arms_b64=coat_of_arms_b64,
         )
     )
 
-    filename = f'biodata_{student.admission_number}.pdf'
+    filename = f'biodata_{student.admission_number or student.id}.pdf'
     return html_to_pdf_response(html_string, filename)
-
 
 @login_required
 def student_detail(request, student_id):

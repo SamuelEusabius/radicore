@@ -3,6 +3,27 @@
 <head>
 <meta charset="utf-8">
 <style>
+
+    /* ==========================================================
+     STANDARD REPORT HEADER — A5 compact
+     ========================================================== */
+  table.report-header { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
+  table.report-header td { vertical-align: top; padding: 0; }
+  .rh-logo-cell { width: 60px; padding-right: 10px; }
+  .rh-logo-img { width: 48px; height: 48px; object-fit: contain; }
+  .rh-info-cell { vertical-align: top; }
+  .rh-school-name { font-size: 12pt; font-weight: bold; color: #00695c; line-height: 1.1; margin: 0; }
+  .rh-motto { font-style: italic; font-size: 7.5pt; color: #555; margin-top: 2px; }
+  .rh-address { font-size: 7pt; color: #555; margin-top: 3px; }
+  .rh-contact { font-size: 7pt; color: #555; margin-top: 1px; }
+  .rh-meta-cell { width: 100px; text-align: right; vertical-align: top; padding-right: 2px; }
+  .rh-meta-label { font-size: 5.5pt; text-transform: uppercase; letter-spacing: 0.05em; color: #888; font-weight: bold; }
+  .rh-meta-date { font-size: 8pt; font-weight: bold; color: #1a1a1a; margin-top: 1px; }
+  .rh-meta-time { font-size: 7pt; color: #555; margin-top: 1px; }
+  .rh-meta-name { font-size: 7pt; color: #555; margin-top: 1px; }
+  .rh-divider { border-bottom: 2pt solid #00695c; margin-bottom: 8px; }
+
+
   @page {
     size: A5 portrait;
     margin: 8mm 10mm 8mm 10mm;
@@ -16,18 +37,6 @@
     padding: 0;
     line-height: 1.3;
   }
-
-  .header {
-    border-bottom: 2px solid #0d9488;
-    padding-bottom: 5px;
-    margin-bottom: 8px;
-  }
-  .header-table { width: 100%; border-collapse: collapse; }
-  .header-table td { vertical-align: top; padding: 0; }
-
-  .school-name { font-size: 12pt; font-weight: bold; color: #0d9488; margin: 0; }
-  .school-motto { font-size: 7pt; font-style: italic; color: #6b7280; margin: 1px 0 0 0; }
-  .school-meta { font-size: 7pt; color: #4b5563; margin: 2px 0 0 0; line-height: 1.35; }
 
   .receipt-no-box {
     display: inline-block;
@@ -134,31 +143,20 @@
 </head>
 <body>
 
-<!-- HEADER -->
-<div class="header">
-  <table class="header-table">
-    <tr>
-      <td>
-        <p class="school-name">{{ school.name }}</p>
-        {% if school.motto %}<p class="school-motto">"{{ school.motto }}"</p>{% endif %}
-        <p class="school-meta">
-          {% if school.postal_address %}{{ school.postal_address }}{% endif %}
-          {% if school.physical_address %} · {{ school.physical_address }}{% endif %}
-          {% if school.phone %} · Tel: {{ school.phone }}{% endif %}
-          {% if school.email %} · {{ school.email }}{% endif %}
-          {% if school.nemis_code %} · NEMIS: {{ school.nemis_code }}{% endif %}
-        </p>
-      </td>
-      <td style="text-align: right;">
-        <div class="receipt-no-label">Receipt No.</div>
-        <div class="receipt-no-box">{{ payment.reference }}</div>
-        <p style="font-size: 7.5pt; color: #4b5563; margin: 4px 0 0 0;">
-          {{ payment.paid_at|date:"d M Y H:i" }}
-        </p>
-      </td>
-    </tr>
-  </table>
-</div>
+{% include 'pdf/_report_header.html' %}
+
+<!-- Receipt meta row -->
+<table style="width: 100%; margin-bottom: 8px;">
+  <tr>
+    <td style="text-align: right;">
+      <div class="receipt-no-label">Receipt No.</div>
+      <div class="receipt-no-box">{{ payment.reference }}</div>
+      <p style="font-size: 7.5pt; color: #4b5563; margin: 4px 0 0 0;">
+        {{ payment.paid_at|date:"d M Y H:i" }}
+      </p>
+    </td>
+  </tr>
+</table>
 
 <!-- TITLE -->
 <div class="title-block">

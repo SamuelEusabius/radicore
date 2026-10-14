@@ -3,6 +3,34 @@
 <head>
 <meta charset="utf-8">
 <style>
+    /* ==========================================================
+     STANDARD REPORT HEADER CSS
+     ========================================================== */
+  table.report-header { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+  table.report-header td { vertical-align: top; padding: 0; }
+  .rh-logo-cell { width: 90px; padding-right: 16px; }
+  .rh-logo-img { width: 72px; height: 72px; object-fit: contain; }
+  .rh-info-cell { vertical-align: top; }
+  .rh-school-name { font-size: 16pt; font-weight: bold; color: #00695c; line-height: 1.1; margin: 0; }
+  .rh-motto { font-style: italic; font-size: 9.5pt; color: #555; margin-top: 3px; }
+  .rh-address { font-size: 9pt; color: #555; margin-top: 6px; }
+  .rh-contact { font-size: 9pt; color: #555; margin-top: 2px; }
+  .rh-meta-cell { width: 150px; text-align: right; vertical-align: top; padding-right: 4px; }
+  .rh-meta-label { font-size: 6.5pt; text-transform: uppercase; letter-spacing: 0.05em; color: #888; font-weight: bold; }
+  .rh-meta-date { font-size: 10pt; font-weight: bold; color: #1a1a1a; margin-top: 1px; }
+  .rh-meta-time { font-size: 8.5pt; color: #555; margin-top: 1px; }
+  .rh-meta-name { font-size: 8.5pt; color: #555; margin-top: 1px; }
+  .rh-divider { border-bottom: 2pt solid #00695c; margin-bottom: 14px; }
+
+  /* Report card: student photo cell on the right */
+  .rh-photo-cell { width: 90px; text-align: right; vertical-align: top; padding-left: 10px; }
+  .rh-photo-cell img { width: 72px; height: 72px; object-fit: cover; border: 0.5pt solid #cfd8d4; }
+  .rh-photo-placeholder {
+    width: 72px; height: 72px;
+    border: 0.5pt dashed #cfd8d4;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 6pt; color: #999; text-align: center;
+  }
   @page {
     size: A4 portrait;
     margin: 8mm 10mm 8mm 10mm;
@@ -16,65 +44,6 @@
     color: #1a1a1a;
     line-height: 1.25;
   }
-
-  /* ============ HEADER ============ */
-  .header {
-    border-bottom: 2px solid #00695c;
-    padding-bottom: 5px;
-    margin-bottom: 6px;
-  }
-  .header-table { width: 100%; border-collapse: collapse; }
-  .header-table td { vertical-align: top; padding: 0; }
-  .logo-cell { width: 60px; }
-  .logo-cell img { width: 55px; height: 55px; object-fit: contain; }
-  .logo-placeholder {
-    width: 55px;
-    height: 55px;
-    background: #00695c;
-    color: white;
-    font-size: 18px;
-    font-weight: 800;
-    text-align: center;
-    line-height: 55px;
-  }
-  .school-cell { padding: 0 8px; }
-  .photo-cell { width: 65px; text-align: right; }
-  .photo-cell img {
-    width: 60px;
-    height: 70px;
-    object-fit: cover;
-    border: 1px solid #00695c;
-  }
-  .photo-placeholder {
-    width: 60px;
-    height: 70px;
-    border: 1px dashed #cbd5e1;
-    background: #f8fafc;
-    text-align: center;
-    font-size: 6pt;
-    color: #94a3b8;
-    padding-top: 28px;
-  }
-
-  .school-name {
-    font-size: 13pt;
-    font-weight: bold;
-    color: #00695c;
-    line-height: 1.1;
-  }
-  .school-motto {
-    font-size: 7pt;
-    font-style: italic;
-    color: #6b7280;
-    margin-top: 1px;
-  }
-  .school-meta {
-    font-size: 7pt;
-    color: #4b5563;
-    margin-top: 2px;
-    line-height: 1.3;
-  }
-
   /* ============ TITLE ============ */
   .title-block {
     text-align: center;
@@ -266,41 +235,43 @@
 <!-- ============================================================ -->
 <!-- HEADER                                                        -->
 <!-- ============================================================ -->
-<div class="header">
-  <table class="header-table">
-    <tr>
-      <td class="logo-cell">
-        {% if school_logo_b64 %}
-          <img src="{{ school_logo_b64 }}" alt="Logo">
-        {% else %}
-          <div class="logo-placeholder">{{ school.name|slice:":2"|upper }}</div>
-        {% endif %}
-      </td>
-      <td class="school-cell">
-        <p class="school-name">{{ school.name }}</p>
-        {% if school.motto %}
-          <p class="school-motto">"{{ school.motto }}"</p>
-        {% endif %}
-        <p class="school-meta">
-          {% if school.postal_address %}P.O. Box {{ school.postal_address }}{% endif %}
-          {% if school.physical_address %} · {{ school.physical_address }}{% endif %}
-          {% if school.county %} · {{ school.county }} County{% endif %}
-          <br>
-          {% if school.phone %}Tel: {{ school.phone }}{% endif %}
-          {% if school.email %} · {{ school.email }}{% endif %}
-          {% if school.code %} · Code: {{ school.code }}{% endif %}
-        </p>
-      </td>
-      <td class="photo-cell">
-        {% if student_photo_b64 %}
-          <img src="{{ student_photo_b64 }}" alt="{{ student.full_name }}">
-        {% else %}
-          <div class="photo-placeholder">NO PHOTO</div>
-        {% endif %}
-      </td>
-    </tr>
-  </table>
-</div>
+<table class="report-header">
+  <tr>
+    {% if logo_data_uri %}
+    <td class="rh-logo-cell">
+      <img src="{{ logo_data_uri }}" alt="{{ school.name }}" class="rh-logo-img">
+    </td>
+    {% endif %}
+    <td class="rh-info-cell">
+      <div class="rh-school-name">{{ school.name }}</div>
+      {% if school.motto %}
+      <div class="rh-motto">"{{ school.motto }}"</div>
+      {% endif %}
+      {% if school.physical_address or school.postal_address %}
+      <div class="rh-address">
+        {% if school.physical_address %}{{ school.physical_address }}{% endif %}
+        {% if school.physical_address and school.postal_address %} · {% endif %}
+        {% if school.postal_address %}{{ school.postal_address }}{% endif %}
+      </div>
+      {% endif %}
+      {% if school.email or school.phone %}
+      <div class="rh-contact">
+        {% if school.email %}{{ school.email }}{% endif %}
+        {% if school.email and school.phone %} · {% endif %}
+        {% if school.phone %}{{ school.phone }}{% endif %}.
+      </div>
+      {% endif %}
+    </td>
+    <td class="rh-photo-cell">
+      {% if student_photo_b64 %}
+        <img src="{{ student_photo_b64 }}" alt="{{ student.full_name }}">
+      {% else %}
+        <div class="rh-photo-placeholder">NO<br>PHOTO</div>
+      {% endif %}
+    </td>
+  </tr>
+</table>
+<div class="rh-divider"></div>
 
 <!-- TITLE -->
 <div class="title-block">
@@ -448,7 +419,7 @@
 
 <!-- FOOTER -->
 <div class="footer">
-  {{ school.name }} · Generated {{ user.get_full_name|default:user.email }} · {{ exam.term }} {{ exam.year }}
+  {{ school.name }} · Generated {{ generated_by.get_full_name|default:generated_by.email }} · {{ exam.term }} {{ exam.year }}
 </div>
 
 </body>

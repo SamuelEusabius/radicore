@@ -4,364 +4,396 @@
 <head>
 <meta charset="utf-8">
 <style>
-  /* A4 with minimal margin */
-  @page { size: A4 portrait; margin: 5px; }
+  /* ==========================================================
+     PAGE SETUP
+     ========================================================== */
+  @page {
+    size: A4 portrait;
+    margin: 12mm 14mm 14mm 14mm;
+  }
   * { box-sizing: border-box; }
 
   body {
     font-family: 'DejaVu Sans', Arial, sans-serif;
+    font-size: 9.5pt;
+    line-height: 1.4;
     color: #1a1a1a;
-    font-size: 9pt;
     margin: 0;
     padding: 0;
-    line-height: 1.4;
   }
 
-  /* Kenya flag border container */
-  .cert-outer {
+  /* ==========================================================
+     MINISTRY HEADER
+     ========================================================== */
+  table.ministry-header {
     width: 100%;
-    min-height: 100%;
-    border: 3pt solid #000000;
-    padding: 5mm 6mm;
-  }
-
-  table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-  td { vertical-align: middle; word-wrap: break-word; }
-
-  /* ============================================================
-     HEADER
-     ============================================================ */
-  .header-table { width: 100%; margin-bottom: 8px; }
-  .header-table td {
-    padding-bottom: 6px;
+    border-collapse: collapse;
+    margin-bottom: 14px;
     border-bottom: 1.5pt solid #00695c;
-    vertical-align: middle;
+    padding-bottom: 10px;
   }
-  .coat-cell { width: 65px; vertical-align: middle; }
-  .ministry-cell { padding-left: 10px; vertical-align: middle; }
+  table.ministry-header td {
+    vertical-align: middle;
+    padding: 0 0 10px 0;
+  }
+  .mh-left { width: 70px; }
+  .mh-center { text-align: center; }
+  .mh-right { width: 70px; text-align: right; }
+  .mh-logo-img { width: 58px; height: 58px; object-fit: contain; }
+
   .ministry-title {
-    font-weight: 700;
-    font-size: 11pt;
-    color: #1a1a1a;
-    line-height: 1.2;
+    font-size: 13pt;
+    font-weight: bold;
+    color: #00695c;
+    letter-spacing: 0.06em;
+    line-height: 1.15;
+    margin: 0;
   }
   .ministry-sub {
-    font-size: 8pt;
-    color: #6b7280;
-    margin-top: 2px;
+    font-size: 8.5pt;
+    color: #555;
+    margin-top: 3px;
+    font-style: italic;
   }
-  .logo-cell {
-    width: 65px;
-    text-align: right;
-    vertical-align: middle;
-  }
-  .school-logo { width: 55px; height: 55px; }
 
-  /* ============================================================
-     TITLE
-     ============================================================ */
-  .title-table { width: 100%; margin: 8px 0 12px 0; }
-  .title-table td { text-align: center; padding: 0; }
+  /* ==========================================================
+     TITLE BLOCK
+     ========================================================== */
+  .title-block {
+    text-align: center;
+    padding: 4px 0 16px 0;
+  }
   .title-main {
-    font-size: 14pt;
-    font-weight: 700;
-    color: #00695c;
-    letter-spacing: 0.1em;
+    font-size: 16pt;
+    font-weight: bold;
+    color: #004d40;
+    letter-spacing: 0.08em;
+    margin: 0;
     text-transform: uppercase;
   }
   .title-school {
-    font-size: 9pt;
-    color: #6b7280;
+    font-size: 9.5pt;
+    color: #666;
+    margin-top: 5px;
     font-style: italic;
-    margin-top: 3px;
+    letter-spacing: 0.03em;
   }
 
-  /* ============================================================
+  /* ==========================================================
      PHOTO + BASIC INFO
-     ============================================================ */
-  .top-table { width: 100%; margin-bottom: 8px; }
-  .top-table td { padding: 0; vertical-align: top; }
-  .photo-cell {
-    width: 85px;
-    padding-right: 10px;
-    vertical-align: top;
-  }
-
-  /* ============================================================
-     SECTION HEADING — LIGHT TEAL BAR
-     ============================================================ */
-  .section-heading {
-    background: #e0f2f1;
-    color: #00695c;
-    padding: 5px 10px;
-    font-size: 9pt;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    margin-top: 10px;
-    margin-bottom: 0;
-    border-left: 4px solid #00695c;
-  }
-
-  /* ============================================================
-     DATA TABLES — LIGHT CELLS
-     ============================================================ */
-  .data-table {
+     ========================================================== */
+  table.top-row {
     width: 100%;
-    margin-bottom: 6px;
-    border: 1px solid #e5e7eb;
+    border-collapse: collapse;
+    margin-bottom: 18px;
   }
-  .data-table td {
-    padding: 5px 10px;
-    border-bottom: 1px solid #f1f5f9;
-    border-right: 1px solid #f1f5f9;
-    font-size: 9pt;
+  table.top-row td { vertical-align: top; padding: 0; }
+  .photo-cell { width: 120px; padding-right: 16px; }
+
+  .photo-box {
+    width: 108px;
+    height: 132px;
+    border: 0.75pt solid #cfd8d4;
+    background: #ffffff;
+    text-align: center;
     vertical-align: middle;
   }
-  .data-table td:last-child {
-    border-right: none;
+  .photo-box img {
+    width: 108px;
+    height: 132px;
+    object-fit: cover;
   }
-  .data-table tr:last-child td {
-    border-bottom: none;
+  .photo-placeholder {
+    font-size: 8pt;
+    color: #9ca3af;
+    letter-spacing: 0.1em;
   }
 
-  /* Label column — light gray background */
-  .data-table .label {
-    background: #f8fafc;
-    color: #475569;
+  /* ==========================================================
+     SECTION LABELS (subtle, no bars)
+     ========================================================== */
+  .section-label {
+    font-size: 8pt;
+    font-weight: bold;
+    color: #00695c;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    margin: 16px 0 6px 0;
+    padding-bottom: 4px;
+    border-bottom: 0.5pt solid #cfd8d4;
+  }
+  .section-label.first { margin-top: 0; }
+
+  /* ==========================================================
+     DATA TABLES — no outer borders, only row separators
+     ========================================================== */
+  table.data {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 0;
+    table-layout: fixed;
+  }
+  table.data td {
+    padding: 6px 8px;
+    font-size: 9.5pt;
+    border-bottom: 0.4pt solid #e8ebe9;
+    vertical-align: top;
+    word-wrap: break-word;
+  }
+  table.data tr:last-child td { border-bottom: none; }
+
+  table.data td.label {
+    width: 34%;
+    color: #666;
+    font-weight: bold;
     font-size: 8pt;
     text-transform: uppercase;
-    letter-spacing: 0.04em;
-    width: 35%;
-    font-weight: 600;
-    vertical-align: middle;
+    letter-spacing: 0.05em;
+    background: transparent;
+    padding-left: 0;
   }
-
-  /* Value column — white background */
-  .data-table .value {
-    background: #ffffff;
+  table.data td.value {
     color: #1a1a1a;
     font-weight: 500;
-    width: 65%;
-    vertical-align: middle;
+  }
+  table.data td.value strong {
+    font-weight: bold;
+    color: #004d40;
   }
 
-  /* ============================================================
-     SIGNATURE + STAMP
-     ============================================================ */
-  .footer-table { width: 100%; margin-top: 20px; }
-  .footer-table td { padding-top: 12px; vertical-align: bottom; }
-  .footer-left { width: 60%; }
-  .footer-right { width: 40%; text-align: right; }
-  .signature-line {
-    border-top: 1.5pt dashed #6b7280;
-    padding-top: 4px;
+  /* Two-column layout */
+  table.two-col {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  table.two-col td {
+    padding: 6px 8px;
+    font-size: 9.5pt;
+    border-bottom: 0.4pt solid #e8ebe9;
+    vertical-align: top;
+  }
+  table.two-col tr:last-child td { border-bottom: none; }
+
+  table.two-col td.label {
+    width: 22%;
+    color: #666;
+    font-weight: bold;
     font-size: 8pt;
-    color: #6b7280;
-    width: 170px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding-left: 0;
   }
-  .stamp-circle {
-    width: 65px;
-    height: 65px;
-    border: 2pt dashed #dc2626;
-    border-radius: 34px;
-    font-size: 6.5pt;
-    color: #dc2626;
-    text-align: center;
-    padding-top: 16px;
-    line-height: 1.3;
+  table.two-col td.value {
+    width: 28%;
+    color: #1a1a1a;
+    font-weight: 500;
+    padding-right: 16px;
   }
 
-  /* ============================================================
-     FOOTER NOTE
-     ============================================================ */
-  .footer-note {
-    text-align: center;
-    margin-top: 10px;
-    padding-top: 6px;
-    border-top: 0.5pt solid #e5e7eb;
-    font-size: 7pt;
-    color: #6b7280;
-    font-style: italic;
+  /* ==========================================================
+     SIGNATURE ROW
+     ========================================================== */
+  table.signatures {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 32px;
+    margin-bottom: 12px;
   }
+  table.signatures td {
+    width: 50%;
+    padding: 30px 8px 4px 8px;
+    vertical-align: bottom;
+    border-top: 0.5pt solid #555;
+    text-align: center;
+    font-size: 8pt;
+    color: #555;
+    letter-spacing: 0.03em;
+  }
+
+  /* ==========================================================
+     FOOTER
+     ========================================================== */
+  .footer {
+    margin-top: 12px;
+    padding-top: 8px;
+    border-top: 0.5pt solid #cfd8d4;
+    text-align: center;
+    font-size: 7.5pt;
+    color: #777;
+    font-style: italic;
+    letter-spacing: 0.02em;
+  }
+
+  /* Utility */
+  .nowrap { white-space: nowrap; }
 </style>
 </head>
 <body>
 
-<div class="cert-outer">
+<!-- ============================================================ -->
+<!-- MINISTRY HEADER — official                              -->
+<!-- ============================================================ -->
+<table class="ministry-header">
+  <tr>
+    <td class="mh-left">
+      {% if coat_of_arms_b64 %}
+      <img src="{{ coat_of_arms_b64 }}" alt="Kenya Coat of Arms" class="mh-logo-img">
+      {% endif %}
+    </td>
+    <td class="mh-center">
+      <div class="ministry-title">MINISTRY OF EDUCATION</div>
+      <div class="ministry-sub">Republic of Kenya</div>
+    </td>
+    <td class="mh-right">
+      {% if school_logo_b64 %}
+      <img src="{{ school_logo_b64 }}" alt="{{ school.name }}" class="mh-logo-img">
+      {% endif %}
+    </td>
+  </tr>
+</table>
 
-  <!-- ============ HEADER ============ -->
-  <table class="header-table">
-    <tr>
-      <td class="coat-cell">
-        {% include 'partials/coat_of_arms.html' with size=55 %}
-      </td>
-      <td class="ministry-cell">
-        <div class="ministry-title">MINISTRY OF EDUCATION</div>
-        <div class="ministry-sub">Republic of Kenya</div>
-      </td>
-      <td class="logo-cell">
-        {% if school.logo %}
-          <img src="{{ school.logo.path }}" alt="{{ school.name }}" class="school-logo">
-        {% else %}
-          <table style="width: 55px; height: 55px; border-collapse: collapse; margin-left: auto; table-layout: fixed;">
-            <tr>
-              <td style="background: #00695c; color: white; font-weight: 700; font-size: 13pt; text-align: center; vertical-align: middle; padding: 0;">
-                {{ school.name|slice:":2"|upper }}
-              </td>
-            </tr>
-          </table>
-        {% endif %}
-      </td>
-    </tr>
-  </table>
-
-  <!-- ============ TITLE ============ -->
-  <table class="title-table">
-    <tr>
-      <td>
-        <div class="title-main">Student Bio Data</div>
-        <div class="title-school">{{ school.name }}</div>
-      </td>
-    </tr>
-  </table>
-
-  <!-- ============ PHOTO + BASIC INFO ============ -->
-  <table class="top-table">
-    <tr>
-      <td class="photo-cell">
-        <table style="width: 85px; height: 105px; border-collapse: collapse; border: 1px solid #e5e7eb; table-layout: fixed;">
-          <tr>
-            <td style="background: #f9fafb; text-align: center; vertical-align: middle; padding: 0;">
-              {% if student.photo %}
-                <img src="{{ student.photo.path }}" alt="{{ student.full_name }}" style="width: 85px; height: 105px;">
-              {% else %}
-                <span style="font-size: 7.5pt; color: #9ca3af;">PHOTO</span>
-              {% endif %}
-            </td>
-          </tr>
-        </table>
-      </td>
-      <td>
-        <table class="data-table">
-          <tr>
-            <td class="label">Full Name</td>
-            <td class="value"><strong>{{ student.full_name }}</strong></td>
-          </tr>
-          <tr>
-            <td class="label">Admission No</td>
-            <td class="value">{{ student.admission_number }}</td>
-          </tr>
-          <tr>
-            <td class="label">Class / Level</td>
-            <td class="value">
-              {{ student.get_cbc_level_display|default:"—" }}
-              {% if student.class_level %} · {{ student.class_level }}{% endif %}
-            </td>
-          </tr>
-          <tr>
-            <td class="label">Gender</td>
-            <td class="value">{{ student.get_gender_display }}</td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
-
-  <!-- ============ PERSONAL DETAILS ============ -->
-  <div class="section-heading">Personal Details</div>
-  <table class="data-table">
-    <tr>
-      <td class="label">Date of Birth</td>
-      <td class="value">{{ student.date_of_birth|date:"d M Y"|default:"—" }}</td>
-    </tr>
-    <tr>
-      <td class="label">UPI (NEMIS)</td>
-      <td class="value">{{ student.upi|default:"—" }}</td>
-    </tr>
-    <tr>
-      <td class="label">Birth Certificate No</td>
-      <td class="value">{{ student.birth_certificate_number|default:"—" }}</td>
-    </tr>
-    {% if student.has_special_needs %}
-    <tr>
-      <td class="label">Special Needs</td>
-      <td class="value">{{ student.special_needs_notes|default:"Yes" }}</td>
-    </tr>
-    {% endif %}
-  </table>
-
-  <!-- ============ GUARDIAN / PARENT ============ -->
-  <div class="section-heading">Guardian / Parent Details</div>
-  <table class="data-table">
-    <tr>
-      <td class="label">Guardian Name</td>
-      <td class="value">{{ student.guardian_name|default:"—" }}</td>
-    </tr>
-    <tr>
-      <td class="label">Guardian Phone</td>
-      <td class="value">{{ student.guardian_phone|default:"—" }}</td>
-    </tr>
-    <tr>
-      <td class="label">Relationship</td>
-      <td class="value">{{ student.guardian_relationship|default:"—" }}</td>
-    </tr>
-    {% if student.parents.all %}
-    <tr>
-      <td class="label">Linked Parent</td>
-      <td class="value">
-        {% for p in student.parents.all %}
-          {{ p.user.get_full_name|default:p.user.email }}{% if not forloop.last %}, {% endif %}
-        {% endfor %}
-      </td>
-    </tr>
-    {% endif %}
-  </table>
-
-  <!-- ============ ADMISSION INFO ============ -->
-  <div class="section-heading">Admission Information</div>
-  <table class="data-table">
-    <tr>
-      <td class="label">Admission Date</td>
-      <td class="value">{{ student.admission_date|date:"d M Y"|default:"—" }}</td>
-    </tr>
-    <tr>
-      <td class="label">School</td>
-      <td class="value">{{ school.name }}</td>
-    </tr>
-    {% if school.nemis_code %}
-    <tr>
-      <td class="label">NEMIS Code</td>
-      <td class="value">{{ school.nemis_code }}</td>
-    </tr>
-    {% endif %}
-    <tr>
-      <td class="label">Status</td>
-      <td class="value">
-        {% if student.is_cleared %}Cleared · {{ student.cleared_at|date:"d M Y" }}
-        {% elif student.is_active %}Active
-        {% else %}Inactive{% endif %}
-      </td>
-    </tr>
-  </table>
-
-  <!-- ============ SIGNATURE + STAMP ============ -->
-  <table class="footer-table">
-    <tr>
-      <td class="footer-left">
-        <div class="signature-line">Registrar's Signature &amp; Date</div>
-      </td>
-      <td class="footer-right">
-        <div class="stamp-circle">Official<br>School<br>Stamp</div>
-      </td>
-    </tr>
-  </table>
-
-  <!-- ============ FOOTER NOTE ============ -->
-  <div class="footer-note">
-    Generated by School MS · {{ school.name }} · {% now "d M Y H:i" %}
+<!-- ============================================================ -->
+<!-- TITLE                                                         -->
+<!-- ============================================================ -->
+<div class="title-block">
+  <div class="title-main">Student Bio Data</div>
+  <div class="title-school">
+    {{ school.name }}{% if school.code %} · {{ school.code }}{% endif %}
   </div>
+</div>
 
+<!-- ============================================================ -->
+<!-- PHOTO + BASIC INFO                                            -->
+<!-- ============================================================ -->
+<table class="top-row">
+  <tr>
+    <td class="photo-cell">
+      <table class="photo-box">
+        <tr>
+          <td style="text-align: center; vertical-align: middle; padding: 0;">
+            {% if student_photo_b64 %}
+            <img src="{{ student_photo_b64 }}" alt="{{ student.full_name }}">
+            {% else %}
+            <span class="photo-placeholder">PHOTO</span>
+            {% endif %}
+          </td>
+        </tr>
+      </table>
+    </td>
+    <td>
+      <div class="section-label first">Student Information</div>
+      <table class="data">
+        <tr>
+          <td class="label">Full Name</td>
+          <td class="value"><strong>{{ student.full_name }}</strong></td>
+        </tr>
+        <tr>
+          <td class="label">Admission No.</td>
+          <td class="value nowrap">{{ student.admission_number|default:"—" }}</td>
+        </tr>
+        <tr>
+          <td class="label">Class / Level</td>
+          <td class="value">
+            {{ student.get_cbc_level_display|default:"—" }}
+            {% if student.class_level %} · {{ student.class_level }}{% endif %}
+          </td>
+        </tr>
+        <tr>
+          <td class="label">Gender</td>
+          <td class="value">{{ student.get_gender_display|default:"—" }}</td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+
+<!-- ============================================================ -->
+<!-- PERSONAL DETAILS                                              -->
+<!-- ============================================================ -->
+<div class="section-label">Personal Details</div>
+<table class="two-col">
+  <tr>
+    <td class="label">Date of Birth</td>
+    <td class="value">{{ student.date_of_birth|date:"j M Y"|default:"—" }}</td>
+    <td class="label">UPI (NEMIS)</td>
+    <td class="value nowrap">{{ student.upi|default:"—" }}</td>
+  </tr>
+  <tr>
+    <td class="label">Birth Cert. No.</td>
+    <td class="value nowrap">{{ student.birth_certificate_number|default:"—" }}</td>
+    <td class="label">Special Needs</td>
+    <td class="value">
+      {% if student.has_special_needs %}
+        {{ student.special_needs_notes|default:"Yes" }}
+      {% else %}
+        None
+      {% endif %}
+    </td>
+  </tr>
+</table>
+
+<!-- ============================================================ -->
+<!-- GUARDIAN / PARENT DETAILS                                     -->
+<!-- ============================================================ -->
+<div class="section-label">Guardian / Parent Details</div>
+<table class="two-col">
+  <tr>
+    <td class="label">Guardian Name</td>
+    <td class="value">{{ student.guardian_name|default:"—" }}</td>
+    <td class="label">Relationship</td>
+    <td class="value">{{ student.relationship|default:"—" }}</td>
+  </tr>
+  <tr>
+    <td class="label">Guardian Phone</td>
+    <td class="value nowrap">{{ student.guardian_phone|default:"—" }}</td>
+    <td class="label">Guardian Email</td>
+    <td class="value">{{ student.guardian_email|default:"—" }}</td>
+  </tr>
+</table>
+
+<!-- ============================================================ -->
+<!-- ADMISSION INFORMATION                                         -->
+<!-- ============================================================ -->
+<div class="section-label">Admission Information</div>
+<table class="two-col">
+  <tr>
+    <td class="label">Admission Date</td>
+    <td class="value">{{ student.admission_date|date:"j M Y"|default:"—" }}</td>
+    <td class="label">Status</td>
+    <td class="value">
+      {% if student.is_active %}
+        Active
+      {% elif student.cleared_at %}
+        Cleared · {{ student.cleared_at|date:"j M Y" }}
+      {% else %}
+        Inactive
+      {% endif %}
+    </td>
+  </tr>
+  <tr>
+    <td class="label">School</td>
+    <td class="value">{{ school.name }}</td>
+    <td class="label">School Code</td>
+    <td class="value nowrap">{{ school.code|default:"—" }}</td>
+  </tr>
+</table>
+
+<!-- ============================================================ -->
+<!-- SIGNATURES                                                    -->
+<!-- ============================================================ -->
+<table class="signatures">
+  <tr>
+    <td>Registrar's Signature &amp; Date</td>
+    <td>Official School Stamp</td>
+  </tr>
+</table>
+
+<!-- ============================================================ -->
+<!-- FOOTER                                                        -->
+<!-- ============================================================ -->
+<div class="footer">
+  Generated by ElimuCore · {{ generated_on|date:"j M Y, H:i" }}
+  {% if generated_by %} · {{ generated_by.get_full_name|default:generated_by.email }}{% endif %}
 </div>
 
 </body>

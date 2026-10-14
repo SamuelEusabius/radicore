@@ -249,8 +249,8 @@
           <table class="header-table">
             <tr>
               <td class="header-left">
-                {% if coat_of_arms_path %}
-                  <img src="{{ coat_of_arms_path }}" alt="Kenya Coat of Arms">
+                {% if coat_of_arms_b64 %}
+                  <img src="{{ coat_of_arms_b64 }}" alt="Kenya Coat of Arms">
                 {% endif %}
               </td>
 
@@ -260,8 +260,8 @@
               </td>
 
               <td class="header-right">
-                {% if school_logo_path %}
-                  <img src="{{ school_logo_path }}" alt="{{ school.name }}">
+                {% if school_logo_b64 %}
+                  <img src="{{ school_logo_b64 }}" alt="{{ school.name }}">
                 {% else %}
                   <div class="logo-fallback">{{ school.name|slice:":2"|upper }}</div>
                 {% endif %}
