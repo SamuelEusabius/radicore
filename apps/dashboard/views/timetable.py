@@ -14,6 +14,7 @@ from django.db.models import Q, Count
 from apps.accounts.decorators import (
     role_required, school_staff_only, teacher_only,
 )
+from apps.core.pdf_utils import build_pdf_context
 
 
 # School timetable periods — includes breaks as visual rows
@@ -215,22 +216,24 @@ def timetable_pdf(request):
             start = entry.start_time.strftime('%H:%M')
             grid.setdefault(day, {})[start] = entry
 
-    html_string = render_to_string('pdf/timetable.html', {
-        'school': school,
-        'selected_class': selected_class,
-        'periods': TIMETABLE_PERIODS,
-        'days': [
-            ('MON', 'Monday'),
-            ('TUE', 'Tuesday'),
-            ('WED', 'Wednesday'),
-            ('THU', 'Thursday'),
-            ('FRI', 'Friday'),
-            ('SAT', 'Saturday'),
-        ],
-        'grid': grid,
-        'class_teacher': class_teacher,
-    })
-
+    html_string = render_to_string('pdf/timetable.html',
+        build_pdf_context(
+            school=school,
+            generated_by=request.user,
+            selected_class=selected_class,
+            periods=TIMETABLE_PERIODS,
+            days=[
+                ('MON', 'Monday'),
+                ('TUE', 'Tuesday'),
+                ('WED', 'Wednesday'),
+                ('THU', 'Thursday'),
+                ('FRI', 'Friday'),
+                ('SAT', 'Saturday'),
+            ],
+            grid=grid,
+            class_teacher=class_teacher,
+        )
+    )
     filename = f'timetable_{selected_class.name if selected_class else "class"}.pdf'
     return html_to_pdf_response(html_string, filename)
 

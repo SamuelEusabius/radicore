@@ -1,0 +1,44 @@
+{% comment %}
+Standard PDF Report Header
+Logo left · School info middle · Generated meta right
+Requires: school, logo_data_uri, generated_on, generated_by
+{% endcomment %}
+<table class="report-header">
+  <tr>
+    {% if logo_data_uri %}
+    <td class="rh-logo-cell">
+      <img src="{{ logo_data_uri }}" alt="{{ school.name }}" class="rh-logo-img">
+    </td>
+    {% endif %}
+    <td class="rh-info-cell">
+      <div class="rh-school-name">{{ school.name }}</div>
+      {% if school.motto %}
+      <div class="rh-motto">"{{ school.motto }}"</div>
+      {% endif %}
+      {% if school.physical_address or school.postal_address %}
+      <div class="rh-address">
+        {% if school.physical_address %}{{ school.physical_address }}{% endif %}
+        {% if school.physical_address and school.postal_address %} · {% endif %}
+        {% if school.postal_address %}{{ school.postal_address }}{% endif %}
+      </div>
+      {% endif %}
+      {% if school.email or school.phone %}
+      <div class="rh-contact">
+        {% if school.email %}{{ school.email }}{% endif %}
+        {% if school.email and school.phone %} · {% endif %}
+        {% if school.phone %}{{ school.phone }}{% endif %}.
+      </div>
+      {% endif %}
+    </td>
+    <td class="rh-meta-cell">
+      <div class="rh-meta-label">GENERATED</div>
+      <div class="rh-meta-date">{{ generated_on|date:"j F Y" }}</div>
+      <div class="rh-meta-time">{{ generated_on|date:"H:i" }}</div>
+      {% if generated_by %}
+      <div class="rh-meta-label" style="margin-top: 6px;">BY</div>
+      <div class="rh-meta-name">{{ generated_by.get_full_name|default:generated_by.email }}</div>
+      {% endif %}
+    </td>
+  </tr>
+</table>
+<div class="rh-divider"></div>

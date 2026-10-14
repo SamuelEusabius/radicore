@@ -320,9 +320,13 @@
         {% include 'partials/icons.html' with name="file-text" size=18 %}
         <span class="sidebar-link-text">Lesson Plans</span>
       </a>
-            <a href="{% url 'dpa_acad_timetable_conflicts' %}" class="sidebar-link">
+             <a href="{% url 'dpa_acad_timetable_list' %}" class="sidebar-link">
         {% include 'partials/icons.html' with name="calendar" size=18 %}
-        <span class="sidebar-link-text">Timetable</span>
+        <span class="sidebar-link-text">Timetables</span>
+      </a>
+      <a href="{% url 'dpa_acad_timetable_conflicts' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="alert-triangle" size=18 %}
+        <span class="sidebar-link-text">Conflicts</span>
       </a>
 
       <div class="sidebar-section-label">Assessment</div>
@@ -383,7 +387,7 @@
       </a>
 
       <div class="sidebar-section-label">Teaching</div>
-      <a href="{% url 'teacher_timetable' %}" class="sidebar-link">
+      <a href="{% url 'teacher_my_timetable' %}" class="sidebar-link">
         {% include 'partials/icons.html' with name="calendar" size=18 %}
         <span class="sidebar-link-text">My Timetable</span>
       </a>

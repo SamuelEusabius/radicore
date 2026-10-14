@@ -16,6 +16,8 @@ from apps.accounts.decorators import (
     class_teacher_only,
 )
 
+from apps.core.pdf_utils import build_pdf_context
+
 
 @login_required
 @role_required('teacher', 'principal')
@@ -440,21 +442,22 @@ def class_teacher_attendance_pdf(request):
     excused = sum(1 for s in status_map.values() if s == 'E')
     not_marked = len(student_ids) - len(status_map)
 
-    html_string = render_to_string('pdf/attendance_sheet.html', {
-        'school': user.school,
-        'cls': cls,
-        'teacher': teacher,
-        'selected_date': selected_date,
-        'rows': rows,
-        'present': present,
-        'absent': absent,
-        'late': late,
-        'excused': excused,
-        'not_marked': not_marked,
-        'total_students': len(student_ids),
-        'generated_at': datetime.now(),
-        'generated_by': user,
-    })
+    html_string = render_to_string('pdf/attendance_sheet.html',
+        build_pdf_context(
+            school=user.school,
+            generated_by=user,
+            cls=cls,
+            teacher=teacher,
+            selected_date=selected_date,
+            rows=rows,
+            present=present,
+            absent=absent,
+            late=late,
+            excused=excused,
+            not_marked=not_marked,
+            total_students=len(student_ids),
+        )
+    )
 
     filename = f"attendance_{cls.name.replace(' ', '_')}_{selected_date.isoformat()}.pdf"
     return html_to_pdf_response(html_string, filename)

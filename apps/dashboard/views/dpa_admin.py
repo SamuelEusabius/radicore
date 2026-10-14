@@ -28,6 +28,8 @@ from apps.students.models import (
     StudentMovementDirection, StudentMovementReason,
     AdminCaseType, AdminCaseStatus, AdminCasePriority,
 )
+
+from apps.core.pdf_utils import build_pdf_context
 from apps.attendance.models import Attendance
 
 def _require_dpa(request):
@@ -744,18 +746,19 @@ def dpa_discipline_report_pdf(request):
     elif date_to:
         period = f"Up to {date_to}"
 
-    html_string = render_to_string(template, {
-        'school': school,
-        'report': report,
-        'scope_desc': scope_desc,
-        'period': period,
-        'generated_by': request.user,
-        'generated_on': timezone.now(),
-        'date_from': date_from,
-        'date_to': date_to,
-        'grade': grade,
-        'class_level': class_level,
-    })
+    html_string = render_to_string(template,
+        build_pdf_context(
+            school=school,
+            generated_by=request.user,
+            report=report,
+            scope_desc=scope_desc,
+            period=period,
+            date_from=date_from,
+            date_to=date_to,
+            grade=grade,
+            class_level=class_level,
+        )
+    )
 
     filename = f"discipline_{filename_scope}_{timezone.now().strftime('%Y%m%d_%H%M')}.pdf"
     return html_to_pdf_response(html_string, filename)
@@ -1657,16 +1660,17 @@ def dpa_duty_roster_pdf(request):
     # Sort rows by staff name
     rows.sort(key=lambda r: ((r['staff'].first_name or '').lower(), (r['staff'].last_name or '').lower()))
 
-    html_string = render_to_string('pdf/dpa_duty_roster.html', {
-        'school': request.user.school,
-        'week_start': week_start,
-        'week_end': week_end,
-        'rows': rows,
-        'generated_by': request.user,
-        'generated_on': timezone.now(),
-        'total_duties': duties.count(),
-        'unique_staff': len(set(d.staff_id for d in duties)),
-    })
+    html_string = render_to_string('pdf/dpa_duty_roster.html',
+        build_pdf_context(
+            school=request.user.school,
+            generated_by=request.user,
+            week_start=week_start,
+            week_end=week_end,
+            rows=rows,
+            total_duties=duties.count(),
+            unique_staff=len(set(d.staff_id for d in duties)),
+        )
+    )
 
     filename = f"duty_roster_{week_start.strftime('%Y%m%d')}.pdf"
     return html_to_pdf_response(html_string, filename)
@@ -1721,12 +1725,14 @@ def dpa_leave_out_pdf(request, leave_out_id):
         pk=leave_out_id, school=request.user.school,
     )
 
-    html_string = render_to_string('pdf/dpa_leave_out.html', {
-        'school': request.user.school,
-        'leave': leave,
-        'generated_by': request.user,
-        'generated_on': timezone.now(),
-    })
+    html_string = render_to_string('pdf/dpa_leave_out.html',
+        build_pdf_context(
+            school=request.user.school,
+            generated_by=request.user,
+            leave=leave,
+        )
+    )
+
 
     filename = f"leave_out_{leave.id}_{leave.student.admission_number or 'student'}.pdf"
     return html_to_pdf_response(html_string, filename)

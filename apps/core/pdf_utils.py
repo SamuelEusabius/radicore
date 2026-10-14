@@ -98,3 +98,66 @@ def image_to_base64(image_field, max_width=180):
         return f'data:{mime};base64,{data}'
     except Exception:
         return None
+    
+    
+
+def get_school_logo_data_uri(school, max_width=180):
+    """
+    Base64 data URI for the school logo, with fallback chain:
+      1. school.logo (uploaded image)
+      2. static/images/coat_of_arms.png
+      3. static/images/graduation-cap-books.png
+      4. None
+
+    xhtml2pdf cannot fetch /media/ URLs, so data URIs are required.
+    """
+    if school is None:
+        return None
+
+    # 1. Try uploaded logo
+    logo = getattr(school, 'logo', None)
+    if logo and getattr(logo, 'name', ''):
+        uri = image_to_base64(logo, max_width=max_width)
+        if uri:
+            return uri
+
+    # 2/3. Static fallbacks
+    from django.conf import settings
+    for filename in ('coat_of_arms.png', 'graduation-cap-books.png'):
+        path = os.path.join(settings.BASE_DIR, 'static', 'images', filename)
+        if os.path.exists(path):
+            try:
+                with open(path, 'rb') as f:
+                    raw = f.read()
+                data = base64.b64encode(raw).decode('ascii')
+                return f'data:image/png;base64,{data}'
+            except Exception:
+                continue
+
+    return None
+
+
+def build_pdf_context(school, generated_by=None, **extra):
+    """
+    Build a standard PDF context dict with logo, school, and metadata.
+
+    Usage in a view:
+        context = build_pdf_context(request.user.school, request.user,
+                                    student=student, invoice=invoice)
+        html = render_to_string('pdf/foo.html', context)
+
+    Automatically adds:
+        school, logo_data_uri, generated_by, generated_on
+
+    Pass any additional keys via **extra.
+    """
+    from django.utils import timezone
+
+    ctx = {
+        'school': school,
+        'logo_data_uri': get_school_logo_data_uri(school),
+        'generated_by': generated_by,
+        'generated_on': timezone.now(),
+    }
+    ctx.update(extra)
+    return ctx

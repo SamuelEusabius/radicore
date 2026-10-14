@@ -272,4 +272,11 @@ from .dpa_academics import (
     dpa_acad_teacher_pdf,
     dpa_acad_stream_subjects,
     dpa_acad_stream_subject_assign,
+    dpa_acad_timetable_list,
+    dpa_acad_timetable_stream,
+    dpa_acad_timetable_stream_pdf,
+    teacher_my_timetable,
+    teacher_my_timetable_pdf,
+    dpa_acad_teacher_timetable_pdf,
+    _test_header_pdf,
 )

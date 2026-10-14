@@ -16,6 +16,7 @@ from django.db.models import Q, Count, Sum, Avg
 from apps.accounts.decorators import (
     role_required, school_staff_only, parent_only,
 )
+from apps.core.pdf_utils import build_pdf_context
 
 
 @login_required
@@ -525,17 +526,19 @@ def parent_child_statement_pdf(request, student_id):
     total_paid = sum(ev['payment'] for ev in events if ev['payment'])
     balance = total_invoiced - total_paid
 
-    html_string = render_to_string('pdf/parent_statement.html', {
-        'school': child.school,
-        'child': child,
-        'parent': request.user,
-        'period_label': period_label,
-        'ledger': ledger,
-        'total_invoiced': total_invoiced,
-        'total_paid': total_paid,
-        'balance': balance,
-        'generated_at': timezone.now(),
-    })
+    html_string = render_to_string('pdf/parent_statement.html',
+        build_pdf_context(
+            school=child.school,
+            generated_by=request.user,
+            child=child,
+            parent=request.user,
+            period_label=period_label,
+            ledger=ledger,
+            total_invoiced=total_invoiced,
+            total_paid=total_paid,
+            balance=balance,
+        )
+    )
 
     filename = f"statement_{child.admission_number}.pdf"
     return html_to_pdf_response(html_string, filename)

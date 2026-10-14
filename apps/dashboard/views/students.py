@@ -15,6 +15,7 @@ from apps.accounts.decorators import (
     role_required, school_staff_only, teacher_only,
     parent_only, student_only, accountant_only,
 )
+from apps.core.pdf_utils import build_pdf_context
 
 
 @login_required
@@ -360,14 +361,17 @@ def leaving_certificate_pdf(request, student_id):
         except (ValueError, NotImplementedError):
             school_logo_path = ''
 
-    html_string = render_to_string('pdf/leaving_certificate.html', {
-        'student': student,
-        'school': student.school,
-        'content': content,
-        'printed_by': request.user,
-        'coat_of_arms_path': coat_of_arms_path,
-        'school_logo_path': school_logo_path,
-    })
+    html_string = render_to_string('pdf/leaving_certificate.html',
+        build_pdf_context(
+            school=student.school,
+            generated_by=request.user,
+            student=student,
+            content=content,
+            printed_by=request.user,
+            coat_of_arms_path=coat_of_arms_path,
+            school_logo_path=school_logo_path,
+        )
+    )
 
     filename = f'leaving_certificate_{student.admission_number}.pdf'
     return html_to_pdf_response(html_string, filename)
@@ -385,11 +389,14 @@ def student_biodata_pdf(request, student_id):
 
     student = get_object_or_404(Student, id=student_id, school=request.user.school)
 
-    html_string = render_to_string('pdf/student_biodata.html', {
-        'student': student,
-        'school': student.school,
-        'printed_by': request.user,
-    })
+    html_string = render_to_string('pdf/student_biodata.html',
+        build_pdf_context(
+            school=student.school,
+            generated_by=request.user,
+            student=student,
+            printed_by=request.user,
+        )
+    )
 
     filename = f'biodata_{student.admission_number}.pdf'
     return html_to_pdf_response(html_string, filename)

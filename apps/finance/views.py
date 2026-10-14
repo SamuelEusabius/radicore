@@ -13,6 +13,7 @@ from .models import FeeStructure, Invoice, Payment
 from .serializers import FeeStructureSerializer, InvoiceSerializer, PaymentSerializer
 from .services.mpesa import stk_push
 from apps.accounts.permissions import IsAccountant
+from apps.core.pdf_utils import build_pdf_context
 
 
 class FeeStructureViewSet(viewsets.ModelViewSet):
@@ -126,17 +127,19 @@ def fee_statement_pdf(request, student_id):
     total_balance = total_invoiced - total_paid
     outstanding_invoices = [i for i in invoices if i.balance > 0]
 
-    html_string = render_to_string('pdf/fee_statement.html', {
-        'student': student,
-        'school': student.school,
-        'invoices': invoices,
-        'payments': payments,
-        'total_invoiced': total_invoiced,
-        'total_paid': total_paid,
-        'total_balance': total_balance,
-        'outstanding_invoices': outstanding_invoices,
-        'generated_by': request.user,
-    })
+    html_string = render_to_string('pdf/fee_statement.html',
+        build_pdf_context(
+            school=student.school,
+            generated_by=request.user,
+            student=student,
+            invoices=invoices,
+            payments=payments,
+            total_invoiced=total_invoiced,
+            total_paid=total_paid,
+            total_balance=total_balance,
+            outstanding_invoices=outstanding_invoices,
+        )
+    )
 
     filename = f'fee_statement_{student.admission_number}.pdf'
     return html_to_pdf_response(html_string, filename)
@@ -160,14 +163,16 @@ def receipt_pdf(request, payment_id):
     student = invoice.student
     school = student.school
 
-    html_string = render_to_string('pdf/receipt.html', {
-        'payment': payment,
-        'invoice': invoice,
-        'student': student,
-        'school': school,
-        'user': request.user,
-    })
-
+    html_string = render_to_string('pdf/receipt.html',
+        build_pdf_context(
+            school=school,
+            generated_by=request.user,
+            payment=payment,
+            invoice=invoice,
+            student=student,
+            user=request.user,
+        )
+    )
     filename = f'receipt_{payment.reference}.pdf'
     return html_to_pdf_response(html_string, filename)
 
@@ -210,17 +215,19 @@ def fee_statement_pdf(request, student_id):
     total_balance = total_invoiced - total_paid
     outstanding_invoices = [i for i in invoices if i.balance > 0]
 
-    html_string = render_to_string('pdf/fee_statement.html', {
-        'student': student,
-        'school': student.school,
-        'invoices': invoices,
-        'payments': payments,
-        'total_invoiced': total_invoiced,
-        'total_paid': total_paid,
-        'total_balance': total_balance,
-        'outstanding_invoices': outstanding_invoices,
-        'generated_by': request.user,
-    })
+    html_string = render_to_string('pdf/fee_statement.html',
+        build_pdf_context(
+            school=student.school,
+            generated_by=request.user,
+            student=student,
+            invoices=invoices,
+            payments=payments,
+            total_invoiced=total_invoiced,
+            total_paid=total_paid,
+            total_balance=total_balance,
+            outstanding_invoices=outstanding_invoices,
+        )
+    )
 
     filename = f'fee_statement_{student.admission_number}.pdf'
     return html_to_pdf_response(html_string, filename)

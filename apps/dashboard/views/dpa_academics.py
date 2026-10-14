@@ -26,6 +26,7 @@ from apps.academics.models import (
 )
 from apps.grades.models import Exam, Grade, MarkSheet, MarkSheetStatus
 from apps.teachers.models import Teacher, TeachingObservation
+from apps.core.pdf_utils import build_pdf_context
 
 
 def dpa_acad_required(view_func):
@@ -1061,16 +1062,17 @@ def dpa_acad_teacher_pdf(request, teacher_id):
         'submitted': sheets.filter(status=MarkSheetStatus.SUBMITTED).count(),
     }
 
-    html_string = render_to_string('pdf/dpa_acad_teacher.html', {
-        'school': school,
-        'teacher': teacher,
-        'observations': observations,
-        'coverage_by_subject': coverage_by_subject,
-        'plan_stats': plan_stats,
-        'sheet_stats': sheet_stats,
-        'generated_by': request.user,
-        'generated_on': timezone.now(),
-    })
+    html_string = render_to_string('pdf/dpa_acad_teacher.html',
+        build_pdf_context(
+            school=school,
+            generated_by=request.user,
+            teacher=teacher,
+            observations=observations,
+            coverage_by_subject=coverage_by_subject,
+            plan_stats=plan_stats,
+            sheet_stats=sheet_stats,
+        )
+    )
 
     filename = f"teacher_performance_{teacher.id}.pdf"
     return html_to_pdf_response(html_string, filename)
@@ -1321,15 +1323,16 @@ def dpa_acad_timetable_stream_pdf(request, class_id):
     grid_data = _build_stream_grid(school, class_level)
 
 
-    html_string = render_to_string('pdf/dpa_acad_timetable_stream.html', {
-        'school': school,
-        'class_level': class_level,
-        'days': grid_data['days'],
-        'periods': grid_data['periods'],
-        'matrix': grid_data['matrix'],   # was 'cells'
-        'generated_by': request.user,
-        'generated_on': timezone.now(),
-    })
+    html_string = render_to_string('pdf/dpa_acad_timetable_stream.html',
+        build_pdf_context(
+            school=school,
+            generated_by=request.user,
+            class_level=class_level,
+            days=grid_data['days'],
+            periods=grid_data['periods'],
+            matrix=grid_data['matrix'],
+        )
+    )
 
     filename = f"timetable_{class_level.name.replace(' ', '_')}.pdf"
     return html_to_pdf_response(html_string, filename)
@@ -1516,15 +1519,16 @@ def teacher_my_timetable_pdf(request):
 
     grid_data = _build_teacher_grid(school, teacher)
 
-    html_string = render_to_string('pdf/dpa_acad_teacher_timetable.html', {
-        'school': school,
-        'teacher': teacher,
-        'days': grid_data['days'],
-        'periods': grid_data['periods'],
-        'matrix': grid_data['matrix'],   # was 'cells'
-        'generated_by': user,
-        'generated_on': timezone.now(),
-    })
+    html_string = render_to_string('pdf/dpa_acad_teacher_timetable.html',
+        build_pdf_context(
+            school=school,
+            generated_by=user,
+            teacher=teacher,
+            days=grid_data['days'],
+            periods=grid_data['periods'],
+            matrix=grid_data['matrix'],
+        )
+    )
     filename = f"timetable_{teacher.first_name}_{teacher.last_name}.pdf"
     return html_to_pdf_response(html_string, filename)
 
@@ -1537,17 +1541,20 @@ def dpa_acad_teacher_timetable_pdf(request, teacher_id):
 
     grid_data = _build_teacher_grid(school, teacher)
 
-    html_string = render_to_string('pdf/dpa_acad_teacher_timetable.html', {
-        'school': school,
-        'teacher': teacher,
-        'days': grid_data['days'],
-        'periods': grid_data['periods'],
-        'matrix': grid_data['matrix'],   # was 'cells'
-        'generated_by': request.user,
-        'generated_on': timezone.now(),
-    })
+    html_string = render_to_string('pdf/dpa_acad_teacher_timetable.html',
+        build_pdf_context(
+            school=school,
+            generated_by=request.user,
+            teacher=teacher,
+            days=grid_data['days'],
+            periods=grid_data['periods'],
+            matrix=grid_data['matrix'],
+        )
+    )
     filename = f"timetable_{teacher.first_name}_{teacher.last_name}.pdf"
     return html_to_pdf_response(html_string, filename)
+
+
 def _teacher_today_periods(school, teacher, today_key=None):
     """Return today's periods for a teacher, sorted by time."""
     if today_key is None:
@@ -1560,3 +1567,17 @@ def _teacher_today_periods(school, teacher, today_key=None):
             school=school, teacher=teacher.user, day_of_week=today_key,
         ).select_related('class_level', 'subject').order_by('start_time')
     )
+    
+@dpa_acad_required
+def _test_header_pdf(request):
+    """TEMPORARY test view — remove after verifying header."""
+    from django.template.loader import render_to_string
+    from apps.core.pdf_utils import build_pdf_context, html_to_pdf_response
+
+    html_string = render_to_string('pdf/_test_header.html',
+        build_pdf_context(
+            school=request.user.school,
+            generated_by=request.user,
+        )
+    )
+    return html_to_pdf_response(html_string, 'test_header.pdf')

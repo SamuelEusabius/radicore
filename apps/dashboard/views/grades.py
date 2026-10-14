@@ -14,6 +14,7 @@ from django.contrib import messages
 from django.http import HttpResponse
 from django.db.models import Q, Count, Sum, Avg
 from .teachers import _ct_teacher_and_class
+from apps.core.pdf_utils import build_pdf_context
 
 from apps.accounts.decorators import (
     role_required, school_staff_only, teacher_only,
@@ -319,16 +320,17 @@ def class_results_pdf(request):
         school=school, current_class=selected_class, is_class_teacher=True,
     ).select_related('user').first()
 
-    html_string = render_to_string('pdf/class_results.html', {
-        'school': school,
-        'selected_class': selected_class,
-        'selected_exam': selected_exam,
-        'results': results,
-        'total_students': total,
-        'class_teacher': class_teacher,
-        'user': user,
-    })
-
+    html_string = render_to_string('pdf/class_results.html',
+        build_pdf_context(
+            school=school,
+            generated_by=user,
+            selected_class=selected_class,
+            selected_exam=selected_exam,
+            results=results,
+            total_students=total,
+            class_teacher=class_teacher,
+        )
+    )
     filename = f'class_results_{selected_class.name}_{selected_exam.name}.pdf'
     return html_to_pdf_response(html_string, filename)
 
@@ -796,16 +798,17 @@ def class_teacher_results_sheet_pdf(request):
 
     school_logo_b64 = image_to_base64(request.user.school.logo) if request.user.school.logo else None
 
-    html_string = render_to_string('pdf/class_results.html', {
-        'exam': exam,
-        'class_level': cls,
-        'subjects': subjects,
-        'rows': rows,
-        'school': request.user.school,
-        'user': request.user,
-        'school_logo_b64': school_logo_b64,
-    })
-
+    html_string = render_to_string('pdf/class_results.html',
+        build_pdf_context(
+            school=request.user.school,
+            generated_by=request.user,
+            exam=exam,
+            class_level=cls,
+            subjects=subjects,
+            rows=rows,
+            school_logo_b64=school_logo_b64,
+        )
+    )
     filename = f"results_{cls.name.replace(' ', '_')}_{exam.name.replace(' ', '_')}.pdf"
     return html_to_pdf_response(html_string, filename)
 
@@ -984,22 +987,24 @@ def _render_report_card_pdf(request, student, exam, rankings, positions, class_s
 
     overall_grade = cbc_grade(avg_pct)
 
-    html_string = render_to_string('pdf/report_card.html', {
-        'student': student,
-        'exam': exam,
-        'prev_exam': prev_exam,
-        'grade_rows': grade_rows,
-        'avg_pct': avg_pct,
-        'overall_grade': overall_grade,
-        'class_rank': class_rank_info['rank'],
-        'class_size': class_size,
-        'total_marks': total_marks,
-        'total_out_of': total_out_of,
-        'chart_path': chart_path,
-        'teacher_remarks': '',
-        'school': student.school,
-        'user': request.user,
-    })
+    html_string = render_to_string('pdf/report_card.html',
+        build_pdf_context(
+            school=student.school,
+            generated_by=request.user,
+            student=student,
+            exam=exam,
+            prev_exam=prev_exam,
+            grade_rows=grade_rows,
+            avg_pct=avg_pct,
+            overall_grade=overall_grade,
+            class_rank=class_rank_info['rank'],
+            class_size=class_size,
+            total_marks=total_marks,
+            total_out_of=total_out_of,
+            chart_path=chart_path,
+            teacher_remarks='',
+        )
+    )
 
     buffer = BytesIO()
     pisa_status = pisa.CreatePDF(src=html_string, dest=buffer, encoding='utf-8')
@@ -1100,16 +1105,17 @@ def class_teacher_results_sheet_pdf(request):
 
     school_logo_b64 = image_to_base64(request.user.school.logo) if request.user.school.logo else None
 
-    html_string = render_to_string('pdf/class_results.html', {
-        'exam': exam,
-        'class_level': cls,
-        'subjects': subjects,
-        'rows': rows,
-        'school': request.user.school,
-        'user': request.user,
-        'school_logo_b64': school_logo_b64,
-    })
-
+    html_string = render_to_string('pdf/class_results.html',
+        build_pdf_context(
+            school=request.user.school,
+            generated_by=request.user,
+            exam=exam,
+            class_level=cls,
+            subjects=subjects,
+            rows=rows,
+            school_logo_b64=school_logo_b64,
+        )
+    )
     filename = f"results_{cls.name.replace(' ', '_')}_{exam.name.replace(' ', '_')}.pdf"
     return html_to_pdf_response(html_string, filename)
 

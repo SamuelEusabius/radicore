@@ -20,6 +20,9 @@ from apps.accounts.decorators import (
     role_required, school_staff_only, accountant_only,
 )
 
+from apps.core.pdf_utils import build_pdf_context
+
+
 
 @login_required
 @accountant_only
@@ -1123,25 +1126,26 @@ def financial_report_pdf(request):
         ).aggregate(t=Sum('amount_kes'))['t'] or 0
     )
 
-    html_string = render_to_string('pdf/financial_report.html', {
-        'school': school,
-        'period_label': period_label,
-        'start_date': start_date,
-        'end_date': end_date,
-        'prev_start': prev_start,
-        'prev_end': prev_end,
-        'total_collected': total_collected,
-        'total_expenditure': total_expenditure,
-        'total_outstanding': total_outstanding,
-        'net_position': net_position,
-        'prev_collected': prev_collected,
-        'prev_expenditure': prev_expenditure,
-        'method_breakdown': method_breakdown,
-        'category_breakdown': category_breakdown,
-        'class_breakdown': class_breakdown,
-        'generated_at': timezone.now(),
-        'generated_by': user,
-    })
+    html_string = render_to_string('pdf/financial_report.html',
+        build_pdf_context(
+            school=school,
+            generated_by=user,
+            period_label=period_label,
+            start_date=start_date,
+            end_date=end_date,
+            prev_start=prev_start,
+            prev_end=prev_end,
+            total_collected=total_collected,
+            total_expenditure=total_expenditure,
+            total_outstanding=total_outstanding,
+            net_position=net_position,
+            prev_collected=prev_collected,
+            prev_expenditure=prev_expenditure,
+            method_breakdown=method_breakdown,
+            category_breakdown=category_breakdown,
+            class_breakdown=class_breakdown,
+        )
+    )
 
     filename = f'financial_report_{start_date.isoformat()}_{end_date.isoformat()}.pdf'
     return html_to_pdf_response(html_string, filename)
@@ -1302,16 +1306,19 @@ def class_fee_statement_pdf(request, class_id):
 
     class_balance = class_invoiced - class_paid
 
-    html_string = render_to_string('pdf/class_fee_statement.html', {
-        'school': school,
-        'selected_class': selected_class,
-        'students_data': students_data,
-        'total_students': len(students_data),
-        'class_invoiced': class_invoiced,
-        'class_paid': class_paid,
-        'class_balance': class_balance,
-        'printed_by': request.user,
-    })
+    html_string = render_to_string('pdf/class_fee_statement.html',
+        build_pdf_context(
+            school=school,
+            generated_by=request.user,
+            selected_class=selected_class,
+            students_data=students_data,
+            total_students=len(students_data),
+            class_invoiced=class_invoiced,
+            class_paid=class_paid,
+            class_balance=class_balance,
+            printed_by=request.user,
+        )
+    )
 
     filename = f'class_statement_{selected_class.name.replace(" ", "_")}.pdf'
     return html_to_pdf_response(html_string, filename)
@@ -1764,23 +1771,23 @@ def fee_structure_class_pdf(request, class_name):
         except (ValueError, NotImplementedError):
             school_logo_path = ''
 
-    html_string = render_to_string('pdf/fee_structure.html', {
-        'school': school,
-        'school_logo_path': school_logo_path,
-        'term_name': term_name,
-        'due_date': due_date,
-        'class_name': class_name,
-        # Single-class mode: one column, one item per row
-        'classes': [{'name': class_name}],
-        'rows': [
-            {'name': name, 'amounts': [amount], 'total': amount}
-            for name, amount in sorted(items)
-        ],
-        'column_totals': [total],
-        'grand_total': total,
-        'generated_at': timezone.now(),
-        'generated_by': request.user,
-    })
+    html_string = render_to_string('pdf/fee_structure.html',
+        build_pdf_context(
+            school=school,
+            generated_by=request.user,
+            school_logo_path=school_logo_path,
+            term_name=term_name,
+            due_date=due_date,
+            class_name=class_name,
+            classes=[{'name': class_name}],
+            rows=[
+                {'name': name, 'amounts': [amount], 'total': amount}
+                for name, amount in sorted(items)
+            ],
+            column_totals=[total],
+            grand_total=total,
+        )
+    )
 
     safe_class = class_name.replace(' ', '_').replace('/', '-')
     filename = f'fee_structure_{safe_class}_{term_name.replace(" ", "_")}.pdf'
@@ -2003,17 +2010,20 @@ def expenditure_pdf(request):
         cat = e.get_category_display()
         category_totals[cat] = category_totals.get(cat, 0) + float(e.amount_kes)
 
-    html_string = render_to_string('pdf/expenditure_statement.html', {
-        'school': school,
-        'expenditures': qs,
-        'total': total,
-        'count': qs.count(),
-        'category_totals': category_totals,
-        'category_filter': category,
-        'date_from': date_from,
-        'date_to': date_to,
-        'printed_by': request.user,
-    })
+    html_string = render_to_string('pdf/expenditure_statement.html',
+        build_pdf_context(
+            school=school,
+            generated_by=request.user,
+            expenditures=qs,
+            total=total,
+            count=qs.count(),
+            category_totals=category_totals,
+            category_filter=category,
+            date_from=date_from,
+            date_to=date_to,
+            printed_by=request.user,
+        )
+    )
 
     filename = 'expenditure_statement.pdf'
     return html_to_pdf_response(html_string, filename)

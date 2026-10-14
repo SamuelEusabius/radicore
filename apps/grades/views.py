@@ -8,7 +8,7 @@ from django.contrib import messages
 from django.http import HttpResponse
 from django.template.loader import render_to_string
 from io import BytesIO
-
+from apps.core.pdf_utils import build_pdf_context
 from apps.accounts.decorators import role_required
 from .models import Exam, Grade
 from .services.report_card import (
@@ -276,26 +276,28 @@ def _render_single_report_card(student, exam, school, rankings, positions, class
 
     student_photo_b64 = image_to_base64(student.photo) if student.photo else None
 
-    html_string = render_to_string('pdf/report_card.html', {
-        'student': student,
-        'exam': exam,
-        'prev_exam': prev_exam,
-        'grade_rows': grade_rows,
-        'avg_pct': avg_pct,
-        'avg_points': avg_points,
-        'overall_grade': overall_grade,
-        'class_rank': class_rank_info['rank'],
-        'class_size': class_size,
-        'total_marks': total_marks,
-        'total_out_of': total_out_of,
-        'chart_data_uri': chart_data_uri,
-        'teacher_remarks': teacher_remarks,
-        'principal_remarks': principal_remarks,
-        'student_photo_b64': student_photo_b64,
-        'school_logo_b64': school_logo_b64,
-        'school': school,
-        'user': user,
-    })
+    html_string = render_to_string('pdf/report_card.html',
+        build_pdf_context(
+            school=school,
+            generated_by=user,
+            student=student,
+            exam=exam,
+            prev_exam=prev_exam,
+            grade_rows=grade_rows,
+            avg_pct=avg_pct,
+            avg_points=avg_points,
+            overall_grade=overall_grade,
+            class_rank=class_rank_info['rank'],
+            class_size=class_size,
+            total_marks=total_marks,
+            total_out_of=total_out_of,
+            chart_data_uri=chart_data_uri,
+            teacher_remarks=teacher_remarks,
+            principal_remarks=principal_remarks,
+            student_photo_b64=student_photo_b64,
+            school_logo_b64=school_logo_b64,
+        )
+    )
 
     buffer = BytesIO()
     result = pisa.CreatePDF(src=html_string, dest=buffer, encoding='utf-8')
@@ -554,29 +556,31 @@ def report_card_pdf(request, student_id, exam_id):
     student_photo_b64 = image_to_base64(student.photo) if student.photo else None
     school_logo_b64 = image_to_base64(student.school.logo) if (student.school and student.school.logo) else None
 
-    html_string = render_to_string('pdf/report_card.html', {
-        'student': student,
-        'exam': exam,
-        'prev_exam': prev_exam,
-        'grade_rows': grade_rows,
-        'avg_pct': avg_pct,
-        'avg_points': avg_points,
-        'overall_grade': overall_grade,
-        'class_rank': class_rank_info['rank'],
-        'class_size': class_size,
-        'combined_rank': combined_rank,
-        'combined_size': combined_size,
-        'combined_classes': combined_classes,
-        'total_marks': total_marks,
-        'total_out_of': total_out_of,
-        'chart_data_uri': chart_data_uri,
-        'teacher_remarks': teacher_remarks,
-        'principal_remarks': principal_remarks,
-        'student_photo_b64': student_photo_b64,
-        'school_logo_b64': school_logo_b64,
-        'school': student.school,
-        'user': request.user,
-    })
+    html_string = render_to_string('pdf/report_card.html',
+        build_pdf_context(
+            school=student.school,
+            generated_by=request.user,
+            student=student,
+            exam=exam,
+            prev_exam=prev_exam,
+            grade_rows=grade_rows,
+            avg_pct=avg_pct,
+            avg_points=avg_points,
+            overall_grade=overall_grade,
+            class_rank=class_rank_info['rank'],
+            class_size=class_size,
+            combined_rank=combined_rank,
+            combined_size=combined_size,
+            combined_classes=combined_classes,
+            total_marks=total_marks,
+            total_out_of=total_out_of,
+            chart_data_uri=chart_data_uri,
+            teacher_remarks=teacher_remarks,
+            principal_remarks=principal_remarks,
+            student_photo_b64=student_photo_b64,
+            school_logo_b64=school_logo_b64,
+        )
+    )
 
     filename = f'report_{student.admission_number}_{exam.name.replace(" ", "_")}.pdf'
     return html_to_pdf_response(html_string, filename)
@@ -715,15 +719,17 @@ def class_results_pdf(request):
 
     school_logo_b64 = image_to_base64(school.logo) if school.logo else None
 
-    html_string = render_to_string('pdf/class_results.html', {
-        'exam': exam,
-        'class_level': class_level,
-        'subjects': subjects,
-        'rows': rows,
-        'school': school,
-        'user': request.user,
-        'school_logo_b64': school_logo_b64,
-    })
+    html_string = render_to_string('pdf/class_results.html',
+        build_pdf_context(
+            school=school,
+            generated_by=request.user,
+            exam=exam,
+            class_level=class_level,
+            subjects=subjects,
+            rows=rows,
+            school_logo_b64=school_logo_b64,
+        )
+    )
 
     filename = f'results_{class_level.name}_{exam.name.replace(" ", "_")}.pdf'.replace(' ', '_')
     return html_to_pdf_response(html_string, filename)

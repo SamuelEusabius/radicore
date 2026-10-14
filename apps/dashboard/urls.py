@@ -432,4 +432,13 @@ urlpatterns = [
         # Stream-subject assignment
     path('dpa-acad/stream-subjects/', views.dpa_acad_stream_subjects, name='dpa_acad_stream_subjects'),
     path('dpa-acad/stream-subjects/assign/', views.dpa_acad_stream_subject_assign, name='dpa_acad_stream_subject_assign'),
+        # Timetables — stream + teacher
+    path('dpa-acad/timetables/', views.dpa_acad_timetable_list, name='dpa_acad_timetable_list'),
+    path('dpa-acad/timetables/stream/<int:class_id>/', views.dpa_acad_timetable_stream, name='dpa_acad_timetable_stream'),
+    path('dpa-acad/timetables/stream/<int:class_id>/pdf/', views.dpa_acad_timetable_stream_pdf, name='dpa_acad_timetable_stream_pdf'),
+    path('dpa-acad/timetables/teacher/<int:teacher_id>/pdf/', views.dpa_acad_teacher_timetable_pdf, name='dpa_acad_teacher_timetable_pdf'),
+        # Teacher personal timetable (any teacher can access)
+    path('teacher/my-timetable/', views.teacher_my_timetable, name='teacher_my_timetable'),
+    path('teacher/my-timetable/pdf/', views.teacher_my_timetable_pdf, name='teacher_my_timetable_pdf'),
+    path('dpa-acad/_test-header/', views._test_header_pdf, name='_test_header_pdf'),
 ]
