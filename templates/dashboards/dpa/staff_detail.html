@@ -258,11 +258,18 @@
 </div>
 
 <!-- Back link -->
-<div class="mt-6">
+{% block content %}
+
+<div class="flex flex-wrap items-center justify-between gap-3 mb-6">
   <a href="{% url 'dpa_staff_directory' %}" class="btn btn-secondary">
     {% include 'partials/icons.html' with name="arrow-right" size=16 %}
     Back to Staff Directory
   </a>
+  {% if staff %}
+  <a href="{% url 'dpa_staff_attendance_pdf_personal' staff.id %}" target="_blank" class="btn btn-primary">
+    {% include 'partials/icons.html' with name="printer" size=16 %}
+    Download Attendance PDF
+  </a>
+  {% endif %}
 </div>
-
 {% endblock %}

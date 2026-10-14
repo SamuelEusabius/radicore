@@ -1736,3 +1736,135 @@ def dpa_leave_out_pdf(request, leave_out_id):
 
     filename = f"leave_out_{leave.id}_{leave.student.admission_number or 'student'}.pdf"
     return html_to_pdf_response(html_string, filename)
+
+
+
+# ==========================================================
+# STAFF ATTENDANCE PDF — Personal + Overall
+# ==========================================================
+
+@dpa_required
+def dpa_staff_attendance_pdf_personal(request, user_id):
+    """Personal attendance history PDF for one staff member."""
+    from apps.accounts.models import User
+    from django.template.loader import render_to_string
+    from apps.core.pdf_utils import html_to_pdf_response, build_pdf_context
+
+    school = request.user.school
+    staff = get_object_or_404(User, pk=user_id, school=school)
+
+    # Date range (default = last 30 days)
+    date_to_str = request.GET.get('to', '')
+    date_from_str = request.GET.get('from', '')
+    date_to = parse_date(date_to_str) if date_to_str else timezone.localdate()
+    date_from = parse_date(date_from_str) if date_from_str else date_to - timedelta(days=30)
+
+    records = StaffAttendance.objects.filter(
+        school=school, staff=staff,
+        date__gte=date_from, date__lte=date_to,
+    ).order_by('-date')
+
+    # Summary counts
+    total = records.count()
+    present = records.filter(status=StaffAttendanceStatus.PRESENT).count()
+    absent = records.filter(status=StaffAttendanceStatus.ABSENT).count()
+    late = records.filter(status=StaffAttendanceStatus.LATE).count()
+    on_leave = records.filter(status=StaffAttendanceStatus.ON_LEAVE).count()
+    attendance_rate = round(((present + late) / total) * 100) if total else 0
+
+    html_string = render_to_string('pdf/dpa_staff_attendance_personal.html',
+        build_pdf_context(
+            school=school,
+            generated_by=request.user,
+            staff=staff,
+            records=records,
+            date_from=date_from,
+            date_to=date_to,
+            total=total,
+            present=present,
+            absent=absent,
+            late=late,
+            on_leave=on_leave,
+            attendance_rate=attendance_rate,
+        )
+    )
+
+    filename = f"attendance_{staff.email}_{date_from}_{date_to}.pdf"
+    return html_to_pdf_response(html_string, filename)
+
+
+@dpa_required
+def dpa_staff_attendance_pdf_overall(request):
+    """Overall staff attendance summary PDF for the school."""
+    from apps.accounts.models import User
+    from django.template.loader import render_to_string
+    from apps.core.pdf_utils import html_to_pdf_response, build_pdf_context
+
+    school = request.user.school
+
+    # Date range (default = last 30 days)
+    date_to_str = request.GET.get('to', '')
+    date_from_str = request.GET.get('from', '')
+    date_to = parse_date(date_to_str) if date_to_str else timezone.localdate()
+    date_from = parse_date(date_from_str) if date_from_str else date_to - timedelta(days=30)
+
+    # All staff for this school
+    staff_qs = User.objects.filter(
+        school=school, is_active=True,
+    ).exclude(
+        role__in=[Role.STUDENT, Role.PARENT, Role.SUPER_ADMIN],
+    ).order_by('first_name', 'last_name')
+
+    # Build per-staff summary
+    rows = []
+    grand_present = grand_absent = grand_late = grand_leave = grand_total = 0
+
+    for s in staff_qs:
+        recs = StaffAttendance.objects.filter(
+            school=school, staff=s,
+            date__gte=date_from, date__lte=date_to,
+        )
+        total = recs.count()
+        present = recs.filter(status=StaffAttendanceStatus.PRESENT).count()
+        absent = recs.filter(status=StaffAttendanceStatus.ABSENT).count()
+        late = recs.filter(status=StaffAttendanceStatus.LATE).count()
+        on_leave = recs.filter(status=StaffAttendanceStatus.ON_LEAVE).count()
+        rate = round(((present + late) / total) * 100) if total else 0
+
+        grand_present += present
+        grand_absent += absent
+        grand_late += late
+        grand_leave += on_leave
+        grand_total += total
+
+        rows.append({
+            'staff': s,
+            'total': total,
+            'present': present,
+            'absent': absent,
+            'late': late,
+            'on_leave': on_leave,
+            'rate': rate,
+        })
+
+    grand_rate = round(((grand_present + grand_late) / grand_total) * 100) if grand_total else 0
+
+    html_string = render_to_string('pdf/dpa_staff_attendance_overall.html',
+        build_pdf_context(
+            school=school,
+            generated_by=request.user,
+            rows=rows,
+            date_from=date_from,
+            date_to=date_to,
+            staff_count=len(rows),
+            grand_present=grand_present,
+            grand_absent=grand_absent,
+            grand_late=grand_late,
+            grand_leave=grand_leave,
+            grand_total=grand_total,
+            grand_rate=grand_rate,
+        )
+    )
+
+    filename = f"staff_attendance_overall_{date_from}_{date_to}.pdf"
+    return html_to_pdf_response(html_string, filename)

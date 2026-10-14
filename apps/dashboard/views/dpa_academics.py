@@ -1581,3 +1581,630 @@ def _test_header_pdf(request):
         )
     )
     return html_to_pdf_response(html_string, 'test_header.pdf')
+
+
+
+# ==========================================================
+# EXAM CRUD
+# ==========================================================
+
+@dpa_acad_required
+def dpa_acad_exam_create(request):
+    """Create a new exam + auto-generate mark sheets."""
+    school = request.user.school
+
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        term = request.POST.get('term', '').strip()
+        year = request.POST.get('year', '')
+        exam_date = request.POST.get('date', '')
+
+        if not name or not exam_date:
+            messages.error(request, 'Exam name and date are required.')
+        else:
+            try:
+                exam = Exam.objects.create(
+                    school=school,
+                    name=name,
+                    term=term,
+                    year=int(year) if year else timezone.localdate().year,
+                    date=exam_date,
+                )
+
+                # Auto-create mark sheets for every class-subject combination
+                created_sheets = 0
+                classes = ClassLevel.objects.filter(school=school)
+                subjects = Subject.objects.filter(school=school)
+
+                for cls in classes:
+                    for subj in subjects:
+                        # Only create if subject is offered in this class
+                        # (check StreamSubjectTeacher or fall back to all)
+                        teacher = None
+                        try:
+                            sst = StreamSubjectTeacher.objects.filter(
+                                school=school, class_level=cls, subject=subj,
+                                academic_year=exam.year,
+                            ).first()
+                            if sst:
+                                teacher = sst.teacher
+                        except Exception:
+                            pass
+
+                        _, was_created = MarkSheet.objects.get_or_create(
+                            school=school,
+                            exam=exam,
+                            class_level=cls,
+                            subject=subj,
+                            defaults={'teacher': teacher},
+                        )
+                        if was_created:
+                            created_sheets += 1
+
+                messages.success(
+                    request,
+                    f'Exam "{exam.name}" created with {created_sheets} mark sheet(s).'
+                )
+                return redirect('dpa_acad_exam_detail', exam_id=exam.id)
+            except Exception as e:
+                messages.error(request, f'Error: {e}')
+
+    context = {
+        'school': school,
+        'today': timezone.localdate(),
+        'term_choices': [
+            'Term 1', 'Term 2', 'Term 3',
+            'Opener', 'Mid-Term', 'End of Term',
+        ],
+    }
+    return render(request, 'dashboards/dpa_acad/exam_form.html', context)
+
+
+@dpa_acad_required
+def dpa_acad_exam_edit(request, exam_id):
+    """Edit an existing exam."""
+    school = request.user.school
+    exam = get_object_or_404(Exam, pk=exam_id, school=school)
+
+    if request.method == 'POST':
+        exam.name = request.POST.get('name', exam.name).strip()
+        exam.term = request.POST.get('term', exam.term).strip()
+        year = request.POST.get('year', '').strip()
+        if year:
+            try:
+                exam.year = int(year)
+            except ValueError:
+                pass
+        exam.date = request.POST.get('date', exam.date)
+        exam.save()
+        messages.success(request, 'Exam updated.')
+        return redirect('dpa_acad_exam_detail', exam_id=exam.id)
+
+    context = {
+        'school': school,
+        'exam': exam,
+        'term_choices': [
+            'Term 1', 'Term 2', 'Term 3',
+            'Opener', 'Mid-Term', 'End of Term',
+        ],
+    }
+    return render(request, 'dashboards/dpa_acad/exam_form.html', context)
+
+
+@dpa_acad_required
+def dpa_acad_exam_delete(request, exam_id):
+    """Delete an exam and its mark sheets."""
+    if request.method != 'POST':
+        return redirect('dpa_acad_exams')
+
+    school = request.user.school
+    exam = get_object_or_404(Exam, pk=exam_id, school=school)
+    name = exam.name
+    exam.delete()
+    messages.success(request, f'Exam "{name}" deleted.')
+    return redirect('dpa_acad_exams')
+
+
+
+# ==========================================================
+# TEACHER MARK SHEET SUBMISSION
+# ==========================================================
+
+def _teacher_profile(user):
+    """Return Teacher profile for user, or None."""
+    return Teacher.objects.filter(school=user.school, user=user).first()
+
+
+def teacher_required(view_func):
+    """Allow teachers + class teachers + admins viewing teacher pages."""
+    @wraps(view_func)
+    def wrapper(request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return redirect('account_login')
+        if request.user.role not in (
+            Role.TEACHER, Role.CLASS_TEACHER,
+            Role.DEPUTY_ACADEMICS, Role.PRINCIPAL, Role.SUPER_ADMIN,
+        ):
+            return HttpResponseForbidden("Access denied.")
+        if request.user.school is None:
+            return HttpResponseForbidden("Your account is not linked to a school.")
+        return view_func(request, *args, **kwargs)
+    return wrapper
+
+
+@teacher_required
+def teacher_my_marksheets(request):
+    """List mark sheets assigned to this teacher."""
+    school = request.user.school
+    teacher = _teacher_profile(request.user)
+
+    if teacher is None:
+        return render(request, 'dashboards/teacher/marksheets.html', {
+            'school': school,
+            'teacher': None,
+            'sheets': [],
+            'message': 'Your account is not linked to a teacher profile. Contact the administrator.',
+        })
+
+    # Filter: sheets where teacher == this teacher OR teacher is null (unassigned)
+    qs = MarkSheet.objects.filter(school=school).select_related(
+        'exam', 'class_level', 'subject', 'teacher',
+    ).filter(
+        Q(teacher=teacher) | Q(teacher__isnull=True)
+    ).order_by('-exam__date', 'class_level__order', 'subject__name')
+
+    # Status filter
+    status_filter = request.GET.get('status', '').strip()
+    if status_filter:
+        qs = qs.filter(status=status_filter)
+
+    # Status counts
+    all_sheets = MarkSheet.objects.filter(school=school).filter(
+        Q(teacher=teacher) | Q(teacher__isnull=True)
+    )
+
+    context = {
+        'school': school,
+        'teacher': teacher,
+        'sheets': qs[:200],
+        'total': qs.count(),
+        'status_filter': status_filter,
+        'status_choices': MarkSheetStatus.choices,
+        'draft_count': all_sheets.filter(status=MarkSheetStatus.DRAFT).count(),
+        'submitted_count': all_sheets.filter(status=MarkSheetStatus.SUBMITTED).count(),
+        'approved_count': all_sheets.filter(status=MarkSheetStatus.APPROVED).count(),
+        'published_count': all_sheets.filter(status=MarkSheetStatus.PUBLISHED).count(),
+        'rejected_count': all_sheets.filter(status=MarkSheetStatus.REJECTED).count(),
+    }
+    return render(request, 'dashboards/teacher/marksheets.html', context)
+
+
+@teacher_required
+def teacher_marksheet_enter(request, sheet_id):
+    """Enter marks for a mark sheet."""
+    school = request.user.school
+    teacher = _teacher_profile(request.user)
+
+    sheet = get_object_or_404(
+        MarkSheet.objects.select_related('exam', 'class_level', 'subject', 'teacher'),
+        pk=sheet_id, school=school,
+    )
+
+    # Permission: teacher must be the assigned teacher OR sheet is unassigned
+    if sheet.teacher and teacher and sheet.teacher_id != teacher.id:
+        if request.user.role not in (Role.DEPUTY_ACADEMICS, Role.PRINCIPAL, Role.SUPER_ADMIN):
+            return HttpResponseForbidden("This mark sheet is not assigned to you.")
+
+    # Published sheets cannot be edited
+    if sheet.status == MarkSheetStatus.PUBLISHED:
+        messages.warning(request, 'This mark sheet has already been published and cannot be edited.')
+        return redirect('teacher_marksheet_enter', sheet_id=sheet.id) if False else redirect('teacher_my_marksheets')
+
+    # Students in this class
+    from apps.students.models import Student
+    students = Student.objects.filter(
+        school=school, class_level=sheet.class_level.name, is_active=True,
+    ).order_by('first_name', 'last_name')
+
+    # Existing grades keyed by student_id
+    existing = {
+        g.student_id: g
+        for g in Grade.objects.filter(
+            exam=sheet.exam, subject=sheet.subject,
+            student__in=students,
+        )
+    }
+
+    if request.method == 'POST':
+        action = request.POST.get('action', 'save')  # 'save' or 'submit'
+        total_marks = 0
+        total_out_of = 0
+        graded_count = 0
+
+        for student in students:
+            marks_key = f'marks_{student.id}'
+            out_of_key = f'out_of_{student.id}'
+            remarks_key = f'remarks_{student.id}'
+
+            if marks_key not in request.POST:
+                continue
+
+            marks_val = request.POST.get(marks_key, '').strip()
+            out_of_val = request.POST.get(out_of_key, '100').strip()
+            remarks_val = request.POST.get(remarks_key, '').strip()
+
+            if not marks_val:
+                # Skip empty entries
+                continue
+
+            try:
+                marks_dec = float(marks_val)
+                out_of_dec = float(out_of_val) if out_of_val else 100.0
+            except ValueError:
+                continue
+
+            Grade.objects.update_or_create(
+                exam=sheet.exam,
+                student=student,
+                subject=sheet.subject,
+                defaults={
+                    'marks': marks_dec,
+                    'out_of': out_of_dec,
+                    'remarks': remarks_val,
+                },
+            )
+            graded_count += 1
+            total_marks += marks_dec
+            total_out_of += out_of_dec
+
+        # Update sheet stats
+        sheet.total_students = students.count()
+        sheet.total_graded = graded_count
+
+        if action == 'submit':
+            sheet.status = MarkSheetStatus.SUBMITTED
+            sheet.submitted_at = timezone.now()
+            sheet.submitted_by = request.user
+            messages.success(request, 'Mark sheet submitted to DPA for approval.')
+        else:
+            messages.success(request, 'Draft saved.')
+
+        sheet.save()
+        return redirect('teacher_my_marksheets')
+
+    context = {
+        'school': school,
+        'teacher': teacher,
+        'sheet': sheet,
+        'students': students,
+        'existing': existing,
+        'can_submit': sheet.status in (MarkSheetStatus.DRAFT, MarkSheetStatus.REJECTED),
+        'read_only': sheet.status in (MarkSheetStatus.APPROVED, MarkSheetStatus.PUBLISHED, MarkSheetStatus.SUBMITTED),
+    }
+    return render(request, 'dashboards/teacher/marksheet_enter.html', context)
+
+
+
+
+# ==========================================================
+# TEACHER SYLLABUS COVERAGE SUBMISSION
+# ==========================================================
+
+@teacher_required
+def teacher_my_syllabus(request):
+    """List syllabus coverage grouped by class-subject for this teacher."""
+    school = request.user.school
+    teacher = _teacher_profile(request.user)
+
+    if teacher is None:
+        return render(request, 'dashboards/teacher/syllabus.html', {
+            'school': school, 'teacher': None, 'groups': [],
+            'message': 'Your account is not linked to a teacher profile.',
+        })
+
+    # Get assignments
+    from apps.academics.models import StreamSubjectTeacher
+    assignments = StreamSubjectTeacher.objects.filter(
+        school=school, teacher=teacher,
+    ).select_related('class_level', 'subject')
+
+    # Build groups: one per (class, subject)
+    groups = []
+    year = timezone.localdate().year
+    for a in assignments:
+        topics = SyllabusCoverage.objects.filter(
+            school=school, class_level=a.class_level, subject=a.subject,
+            teacher=teacher, year=year,
+        ).order_by('planned_week', 'topic')
+
+        total = topics.count()
+        completed = topics.filter(status=CoverageStatus.COMPLETED).count()
+        behind = topics.filter(status=CoverageStatus.BEHIND).count()
+        in_progress = topics.filter(status=CoverageStatus.IN_PROGRESS).count()
+        percent = round((completed / total) * 100) if total else 0
+
+        groups.append({
+            'class_level': a.class_level,
+            'subject': a.subject,
+            'total': total,
+            'completed': completed,
+            'in_progress': in_progress,
+            'behind': behind,
+            'percent': percent,
+        })
+
+    context = {
+        'school': school,
+        'teacher': teacher,
+        'groups': groups,
+        'year': year,
+    }
+    return render(request, 'dashboards/teacher/syllabus.html', context)
+
+
+@teacher_required
+def teacher_syllabus_detail(request, class_id, subject_id):
+    """View / update topics for one class-subject combination."""
+    school = request.user.school
+    teacher = _teacher_profile(request.user)
+
+    if teacher is None:
+        return HttpResponseForbidden("Access denied.")
+
+    class_level = get_object_or_404(ClassLevel, pk=class_id, school=school)
+    subject = get_object_or_404(Subject, pk=subject_id, school=school)
+
+    year = timezone.localdate().year
+
+    if request.method == 'POST':
+        # Bulk update: each topic has status + percent_complete
+        topics = SyllabusCoverage.objects.filter(
+            school=school, class_level=class_level, subject=subject,
+            teacher=teacher, year=year,
+        )
+        for topic in topics:
+            status_key = f'status_{topic.id}'
+            percent_key = f'percent_{topic.id}'
+            notes_key = f'notes_{topic.id}'
+
+            new_status = request.POST.get(status_key)
+            new_percent = request.POST.get(percent_key)
+            new_notes = request.POST.get(notes_key, '').strip()
+
+            if new_status and new_status in [s[0] for s in CoverageStatus.choices]:
+                topic.status = new_status
+            if new_percent:
+                try:
+                    pct = int(new_percent)
+                    topic.percent_complete = max(0, min(100, pct))
+                except ValueError:
+                    pass
+            if new_notes:
+                topic.notes = new_notes
+
+            if topic.status == CoverageStatus.COMPLETED and not topic.completed_date:
+                topic.completed_date = timezone.localdate()
+
+            topic.updated_by = request.user
+            topic.save()
+
+        messages.success(request, 'Syllabus progress updated.')
+
+        # Handle "add topic" if present
+        new_topic = request.POST.get('new_topic', '').strip()
+        if new_topic:
+            planned_week = request.POST.get('new_planned_week', '')
+            try:
+                week_val = int(planned_week) if planned_week else None
+            except ValueError:
+                week_val = None
+
+            SyllabusCoverage.objects.create(
+                school=school,
+                class_level=class_level,
+                subject=subject,
+                teacher=teacher,
+                year=year,
+                topic=new_topic,
+                planned_week=week_val,
+                status=CoverageStatus.NOT_STARTED,
+                updated_by=request.user,
+            )
+            messages.success(request, f'Topic "{new_topic}" added.')
+
+        return redirect('teacher_syllabus_detail', class_id=class_id, subject_id=subject_id)
+
+    topics = SyllabusCoverage.objects.filter(
+        school=school, class_level=class_level, subject=subject,
+        teacher=teacher, year=year,
+    ).order_by('planned_week', 'topic')
+
+    # Stats
+    total = topics.count()
+    completed = topics.filter(status=CoverageStatus.COMPLETED).count()
+    percent = round((completed / total) * 100) if total else 0
+
+    context = {
+        'school': school,
+        'teacher': teacher,
+        'class_level': class_level,
+        'subject': subject,
+        'topics': topics,
+        'total': total,
+        'completed': completed,
+        'percent': percent,
+        'year': year,
+        'status_choices': CoverageStatus.choices,
+    }
+    return render(request, 'dashboards/teacher/syllabus_detail.html', context)
+
+
+
+# ==========================================================
+# TEACHER LESSON PLAN SUBMISSION
+# ==========================================================
+
+@teacher_required
+def teacher_my_lesson_plans(request):
+    """List lesson plans for this teacher."""
+    school = request.user.school
+    teacher = _teacher_profile(request.user)
+
+    if teacher is None:
+        return render(request, 'dashboards/teacher/lesson_plans.html', {
+            'school': school, 'teacher': None, 'plans': [],
+            'message': 'Your account is not linked to a teacher profile.',
+        })
+
+    qs = LessonPlan.objects.filter(
+        school=school, teacher=teacher,
+    ).select_related('class_level', 'subject', 'reviewed_by').order_by('-week_ending')
+
+    status_filter = request.GET.get('status', '').strip()
+    if status_filter:
+        qs = qs.filter(status=status_filter)
+
+    all_plans = LessonPlan.objects.filter(school=school, teacher=teacher)
+
+    context = {
+        'school': school,
+        'teacher': teacher,
+        'plans': qs[:100],
+        'total': qs.count(),
+        'status_filter': status_filter,
+        'status_choices': LessonPlanStatus.choices,
+        'draft_count': all_plans.filter(status=LessonPlanStatus.DRAFT).count(),
+        'submitted_count': all_plans.filter(status=LessonPlanStatus.SUBMITTED).count(),
+        'approved_count': all_plans.filter(status=LessonPlanStatus.APPROVED).count(),
+        'revision_count': all_plans.filter(status=LessonPlanStatus.REVISION).count(),
+    }
+    return render(request, 'dashboards/teacher/lesson_plans.html', context)
+
+
+@teacher_required
+def teacher_lesson_plan_form(request, plan_id=None):
+    """Create or edit a lesson plan."""
+    school = request.user.school
+    teacher = _teacher_profile(request.user)
+
+    if teacher is None:
+        messages.error(request, 'Your account is not linked to a teacher profile.')
+        return redirect('teacher_my_lesson_plans')
+
+    plan = None
+    if plan_id:
+        plan = get_object_or_404(LessonPlan, pk=plan_id, school=school, teacher=teacher)
+        if plan.status in (LessonPlanStatus.APPROVED, LessonPlanStatus.SUBMITTED):
+            messages.warning(request, 'This plan has been submitted and cannot be edited.')
+            return redirect('teacher_my_lesson_plans')
+
+    # Class + subject scoped to teacher's assignments
+    from apps.academics.models import StreamSubjectTeacher
+    assignments = StreamSubjectTeacher.objects.filter(
+        school=school, teacher=teacher,
+    ).select_related('class_level', 'subject')
+
+    classes = ClassLevel.objects.filter(
+        pk__in=assignments.values_list('class_level_id', flat=True)
+    ).order_by('order', 'name')
+
+    # If class teacher, add their class
+    if teacher.is_class_teacher and teacher.current_class:
+        if teacher.current_class.id not in classes.values_list('id', flat=True):
+            classes = list(classes) + [teacher.current_class]
+
+    if request.method == 'POST':
+        title = request.POST.get('title', '').strip()
+        class_level_id = request.POST.get('class_level')
+        subject_id = request.POST.get('subject')
+        week_ending = request.POST.get('week_ending')
+        objectives = request.POST.get('objectives', '').strip()
+        activities = request.POST.get('activities', '').strip()
+        resources = request.POST.get('resources', '').strip()
+        assessment_method = request.POST.get('assessment_method', '').strip()
+        action = request.POST.get('action', 'save')
+
+        if not all([title, class_level_id, subject_id, week_ending]):
+            messages.error(request, 'Title, class, subject, and week ending are required.')
+        else:
+            try:
+                if plan is None:
+                    plan = LessonPlan(school=school, teacher=teacher)
+                plan.title = title
+                plan.class_level_id = class_level_id
+                plan.subject_id = subject_id
+                plan.week_ending = week_ending
+                plan.objectives = objectives
+                plan.activities = activities
+                plan.resources = resources
+                plan.assessment_method = assessment_method
+
+                if action == 'submit':
+                    plan.status = LessonPlanStatus.SUBMITTED
+                    plan.submitted_at = timezone.now()
+
+                plan.save()
+                messages.success(
+                    request,
+                    'Lesson plan submitted for DPA review.' if action == 'submit' else 'Draft saved.'
+                )
+                return redirect('teacher_my_lesson_plans')
+            except Exception as e:
+                messages.error(request, f'Error: {e}')
+
+    # Subjects for dropdown — all school subjects (or scoped to assignments)
+    if plan and plan.class_level:
+        subjects = Subject.objects.filter(
+            school=school,
+            stream_assignments__class_level=plan.class_level,
+        ).distinct().order_by('name')
+    else:
+        subjects = Subject.objects.filter(school=school).order_by('name')
+
+    context = {
+        'school': school,
+        'teacher': teacher,
+        'plan': plan,
+        'classes': classes,
+        'subjects': subjects,
+        'today': timezone.localdate(),
+    }
+    return render(request, 'dashboards/teacher/lesson_plan_form.html', context)
+
+
+
+
+# ==========================================================
+# REPORTS HUB
+# ==========================================================
+
+@dpa_acad_required
+def dpa_acad_reports(request):
+    """Landing page with links to all reports."""
+    school = request.user.school
+    today = timezone.localdate()
+    year = today.year
+
+    # Quick stats for the hub
+    coverage_qs = SyllabusCoverage.objects.filter(school=school, year=year)
+    total_topics = coverage_qs.count()
+    completed_topics = coverage_qs.filter(status=CoverageStatus.COMPLETED).count()
+    coverage_percent = round((completed_topics / total_topics) * 100) if total_topics else 0
+
+    context = {
+        'school': school,
+        'today': today,
+        'year': year,
+        'coverage_percent': coverage_percent,
+        'total_topics': total_topics,
+        'completed_topics': completed_topics,
+        'mark_sheet_pending': MarkSheet.objects.filter(
+            school=school, status=MarkSheetStatus.SUBMITTED,
+        ).count(),
+        'lesson_plan_pending': LessonPlan.objects.filter(
+            school=school, status=LessonPlanStatus.SUBMITTED,
+        ).count(),
+        'exam_count': Exam.objects.filter(school=school).count(),
+        'teacher_count': Teacher.objects.filter(school=school, is_active=True).count(),
+    }
+    return render(request, 'dashboards/dpa_acad/reports.html', context)

@@ -14,6 +14,20 @@
     {% include 'partials/icons.html' with name="arrow-right" size=16 %}
     Back to Exams
   </a>
+  <div class="flex gap-2">
+    <a href="{% url 'dpa_acad_exam_edit' exam.id %}" class="btn btn-secondary">
+      {% include 'partials/icons.html' with name="edit" size=16 %}
+      Edit
+    </a>
+    <form method="post" action="{% url 'dpa_acad_exam_delete' exam.id %}" style="display: inline;"
+          onsubmit="return confirm('Delete this exam and all its mark sheets? This cannot be undone.');">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-danger">
+        {% include 'partials/icons.html' with name="trash" size=16 %}
+        Delete
+      </button>
+    </form>
+  </div>
 </div>
 
 <!-- Summary stats -->

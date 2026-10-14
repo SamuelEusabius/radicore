@@ -1,0 +1,160 @@
+{% load static %}
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  @page { size: A4 portrait; margin: 12mm 12mm 14mm 12mm; }
+  * { box-sizing: border-box; }
+  body { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 9pt; color: #1a1a1a; margin: 0; line-height: 1.35; }
+
+  /* STANDARD HEADER */
+  table.report-header { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+  table.report-header td { vertical-align: top; padding: 0; }
+  .rh-logo-cell { width: 90px; padding-right: 16px; }
+  .rh-logo-img { width: 72px; height: 72px; object-fit: contain; }
+  .rh-info-cell { vertical-align: top; }
+  .rh-school-name { font-size: 16pt; font-weight: bold; color: #00695c; line-height: 1.1; margin: 0; }
+  .rh-motto { font-style: italic; font-size: 9.5pt; color: #555; margin-top: 3px; }
+  .rh-address { font-size: 9pt; color: #555; margin-top: 6px; }
+  .rh-contact { font-size: 9pt; color: #555; margin-top: 2px; }
+  .rh-meta-cell { width: 150px; text-align: right; vertical-align: top; padding-right: 4px; }
+  .rh-meta-label { font-size: 6.5pt; text-transform: uppercase; letter-spacing: 0.05em; color: #888; font-weight: bold; }
+  .rh-meta-date { font-size: 10pt; font-weight: bold; color: #1a1a1a; margin-top: 1px; }
+  .rh-meta-time { font-size: 8.5pt; color: #555; margin-top: 1px; }
+  .rh-meta-name { font-size: 8.5pt; color: #555; margin-top: 1px; }
+  .rh-divider { border-bottom: 2pt solid #00695c; margin-bottom: 14px; }
+
+  /* TITLE */
+  .title-block { text-align: center; margin: 8px 0 14px 0; }
+  .report-title { font-size: 14pt; font-weight: bold; color: #00695c; letter-spacing: 0.05em; margin: 0; text-transform: uppercase; }
+  .report-subtitle { font-size: 10pt; color: #333; margin-top: 4px; }
+  .report-period { font-size: 9pt; color: #666; margin-top: 3px; font-style: italic; }
+
+  /* SUMMARY CARDS */
+  table.summary { width: 100%; border-collapse: separate; border-spacing: 6px 0; margin-bottom: 14px; }
+  table.summary td { border: 0.5pt solid #cfd8d4; background: #f5f7f6; padding: 8px 10px; text-align: center; vertical-align: middle; }
+  .summary-num { font-size: 16pt; font-weight: bold; color: #00695c; line-height: 1; }
+  .summary-label { font-size: 7.5pt; color: #666; text-transform: uppercase; letter-spacing: 0.05em; font-weight: bold; margin-top: 4px; }
+
+  /* INFO TABLE */
+  table.info { width: 100%; border-collapse: collapse; margin-bottom: 14px; }
+  table.info td { padding: 5px 8px; border: 0.5pt solid #cfd8d4; font-size: 9pt; vertical-align: top; }
+  table.info td.label { background: #f5f7f6; color: #555; font-weight: bold; text-transform: uppercase; font-size: 8pt; letter-spacing: 0.04em; width: 25%; }
+
+  /* DATA TABLE */
+  table.data { width: 100%; border-collapse: collapse; margin-top: 6px; }
+  table.data thead th { background: #00695c; color: white; padding: 6px 8px; font-size: 8.5pt; text-align: left; border: 0.5pt solid #004d40; }
+  table.data tbody td { padding: 5px 8px; font-size: 9pt; border: 0.5pt solid #cfd8d4; vertical-align: middle; }
+  table.data tbody tr:nth-child(even) td { background: #fafbfb; }
+
+  .badge-present { color: #16A34A; font-weight: bold; }
+  .badge-absent { color: #DC2626; font-weight: bold; }
+  .badge-late { color: #D97706; font-weight: bold; }
+  .badge-leave { color: #2563EB; font-weight: bold; }
+
+  .footer { margin-top: 20px; padding-top: 8px; border-top: 0.5pt solid #d9e2de; text-align: center; font-size: 7.5pt; color: #777; }
+</style>
+</head>
+<body>
+
+{% include 'pdf/_report_header.html' %}
+
+<div class="title-block">
+  <div class="report-title">Staff Attendance Report</div>
+  <div class="report-subtitle">{{ staff.get_full_name|default:staff.email }}</div>
+  <div class="report-period">{{ date_from|date:"j F Y" }} to {{ date_to|date:"j F Y" }}</div>
+</div>
+
+<!-- Summary cards -->
+<table class="summary">
+  <tr>
+    <td>
+      <div class="summary-num">{{ total }}</div>
+      <div class="summary-label">Total Days</div>
+    </td>
+    <td>
+      <div class="summary-num" style="color: #16A34A;">{{ present }}</div>
+      <div class="summary-label">Present</div>
+    </td>
+    <td>
+      <div class="summary-num" style="color: #DC2626;">{{ absent }}</div>
+      <div class="summary-label">Absent</div>
+    </td>
+    <td>
+      <div class="summary-num" style="color: #D97706;">{{ late }}</div>
+      <div class="summary-label">Late</div>
+    </td>
+    <td>
+      <div class="summary-num" style="color: #2563EB;">{{ on_leave }}</div>
+      <div class="summary-label">On Leave</div>
+    </td>
+    <td>
+      <div class="summary-num">{{ attendance_rate }}%</div>
+      <div class="summary-label">Rate</div>
+    </td>
+  </tr>
+</table>
+
+<!-- Staff info -->
+<table class="info">
+  <tr>
+    <td class="label">Staff Name</td>
+    <td>{{ staff.get_full_name|default:staff.email }}</td>
+    <td class="label">Role</td>
+    <td>{{ staff.get_role_display|default:staff.role }}</td>
+  </tr>
+  <tr>
+    <td class="label">Employment No.</td>
+    <td>{{ staff.employment_number|default:"—" }}</td>
+    <td class="label">Employer</td>
+    <td>{{ staff.get_employer_type_display|default:"—" }}</td>
+  </tr>
+</table>
+
+<!-- Detailed records -->
+<table class="data">
+  <thead>
+    <tr>
+      <th style="width: 130px;">Date</th>
+      <th style="width: 130px;">Status</th>
+      <th style="width: 100px;">Check In</th>
+      <th style="width: 100px;">Check Out</th>
+      <th>Notes / Recorded By</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for r in records %}
+    <tr>
+      <td>{{ r.date|date:"j M Y" }}</td>
+      <td>
+        {% if r.status == 'present' %}<span class="badge-present">Present</span>
+        {% elif r.status == 'absent' %}<span class="badge-absent">Absent</span>
+        {% elif r.status == 'late' %}<span class="badge-late">Late</span>
+        {% elif r.status == 'on_leave' %}<span class="badge-leave">On Leave</span>
+        {% else %}{{ r.get_status_display }}{% endif %}
+      </td>
+      <td>{{ r.check_in_time|time:"H:i"|default:"—" }}</td>
+      <td>{{ r.check_out_time|time:"H:i"|default:"—" }}</td>
+      <td style="font-size: 8pt; color: #555;">
+        {% if r.recorded_by %}{{ r.recorded_by.get_full_name|default:r.recorded_by.email }}{% else %}—{% endif %}
+      </td>
+    </tr>
+    {% empty %}
+    <tr>
+      <td colspan="5" style="text-align: center; padding: 20px; color: #888;">
+        No attendance records in this period.
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<div class="footer">
+  {{ school.name }}{% if school.code %} · {{ school.code }}{% endif %}
+  &nbsp;·&nbsp; Staff Attendance Report
+  &nbsp;·&nbsp; Generated {{ generated_on|date:"Y-m-d H:i" }}
+</div>
+
+</body>
+</html>

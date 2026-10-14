@@ -441,4 +441,18 @@ urlpatterns = [
     path('teacher/my-timetable/', views.teacher_my_timetable, name='teacher_my_timetable'),
     path('teacher/my-timetable/pdf/', views.teacher_my_timetable_pdf, name='teacher_my_timetable_pdf'),
     path('dpa-acad/_test-header/', views._test_header_pdf, name='_test_header_pdf'),
+    path('dpa-acad/exams/new/', views.dpa_acad_exam_create, name='dpa_acad_exam_create'),
+    path('dpa-acad/exams/<int:exam_id>/edit/', views.dpa_acad_exam_edit, name='dpa_acad_exam_edit'),
+    path('dpa-acad/exams/<int:exam_id>/delete/', views.dpa_acad_exam_delete, name='dpa_acad_exam_delete'),
+        # Teacher mark sheet submission
+    path('teacher/marksheets/', views.teacher_my_marksheets, name='teacher_my_marksheets'),
+    path('teacher/marksheets/<int:sheet_id>/', views.teacher_marksheet_enter, name='teacher_marksheet_enter'),
+    path('teacher/lesson-plans/', views.teacher_my_lesson_plans, name='teacher_my_lesson_plans'),
+    path('teacher/lesson-plans/new/', views.teacher_lesson_plan_form, name='teacher_lesson_plan_create'),
+    path('teacher/lesson-plans/<int:plan_id>/edit/', views.teacher_lesson_plan_form, name='teacher_lesson_plan_edit'),
+    path('teacher/syllabus/', views.teacher_my_syllabus, name='teacher_my_syllabus'),
+    path('teacher/syllabus/<int:class_id>/<int:subject_id>/', views.teacher_syllabus_detail, name='teacher_syllabus_detail'),
+    path('dpa-acad/reports/', views.dpa_acad_reports, name='dpa_acad_reports'),
+    path('dpa-admin/staff/<int:user_id>/attendance/pdf/', views.dpa_staff_attendance_pdf_personal, name='dpa_staff_attendance_pdf_personal'),
+    path('dpa-admin/staff/attendance/pdf/', views.dpa_staff_attendance_pdf_overall, name='dpa_staff_attendance_pdf_overall'),
 ]

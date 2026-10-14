@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}My Syllabus{% endblock %}
+{% block header_title %}My Syllabus Coverage{% endblock %}
+{% block header_sub %}
+  Topic progress for {{ year }} · {{ school.name }}
+{% endblock %}
+
+{% block content %}
+
+{% if message %}
+<div class="card mb-6" style="border-left: 4px solid var(--warning); padding: var(--s-4);">
+  <p class="text-sm" style="margin: 0;">{{ message }}</p>
+</div>
+{% endif %}
+
+{% if groups %}
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+  {% for g in groups %}
+  <a href="{% url 'teacher_syllabus_detail' g.class_level.id g.subject.id %}"
+     class="card card-hover" style="text-decoration: none; padding: var(--s-5); display: block;">
+    <div class="flex items-start justify-between mb-4">
+      <div>
+        <div style="font-size: var(--text-md); font-weight: 700; color: var(--ink-900);">
+          {{ g.subject.name }}
+        </div>
+        <div class="text-sm" style="color: var(--ink-500); margin-top: 2px;">
+          {{ g.class_level.name }}
+        </div>
+      </div>
+      <div style="text-align: right;">
+        <div style="font-size: 22pt; font-weight: 700; color: var(--primary); line-height: 1;">
+          {{ g.percent }}%
+        </div>
+        <div class="text-xs" style="color: var(--ink-500); margin-top: 2px;">
+          {{ g.completed }}/{{ g.total }}
+        </div>
+      </div>
+    </div>
+
+    <!-- Progress bar -->
+    <div style="height: 8px; background: var(--surface-muted); border-radius: 4px; overflow: hidden; margin-bottom: 10px;">
+      <div style="width: {{ g.percent }}%; height: 100%; background: var(--primary);"></div>
+    </div>
+
+    <!-- Counts -->
+    <div class="flex flex-wrap gap-2 text-xs">
+      {% if g.completed %}
+      <span class="badge badge-success">{{ g.completed }} completed</span>
+      {% endif %}
+      {% if g.in_progress %}
+      <span class="badge badge-info">{{ g.in_progress }} in progress</span>
+      {% endif %}
+      {% if g.behind %}
+      <span class="badge badge-danger">{{ g.behind }} behind</span>
+      {% endif %}
+      {% if not g.total %}
+      <span class="text-xs" style="color: var(--ink-500);">No topics yet — click to add</span>
+      {% endif %}
+    </div>
+  </a>
+  {% endfor %}
+</div>
+
+{% else %}
+<div class="card">
+  <div class="empty">
+    {% include 'partials/icons.html' with name="book-open" size=56 %}
+    <h3>No subjects assigned</h3>
+    <p>Once DPA Academics assigns you to teach subjects in specific streams, they will appear here for syllabus tracking.</p>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

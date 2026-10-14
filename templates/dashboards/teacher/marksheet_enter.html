@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Enter Marks — {{ sheet.subject.name }}{% endblock %}
+{% block header_title %}{{ sheet.subject.name }}{% endblock %}
+{% block header_sub %}
+  {{ sheet.exam.name }} · {{ sheet.class_level.name }} · {{ students|length }} student{{ students|length|pluralize }}
+{% endblock %}
+
+{% block content %}
+
+<div class="flex flex-wrap items-center justify-between gap-3 mb-6">
+  <a href="{% url 'teacher_my_marksheets' %}" class="btn btn-secondary">
+    {% include 'partials/icons.html' with name="arrow-right" size=16 %}
+    Back to My Mark Sheets
+  </a>
+  <div>
+    {% if sheet.status == 'draft' %}
+      <span class="badge badge-neutral" style="font-size: var(--text-sm); padding: 6px 14px;">Draft</span>
+    {% elif sheet.status == 'submitted' %}
+      <span class="badge badge-warning" style="font-size: var(--text-sm); padding: 6px 14px;">Submitted</span>
+    {% elif sheet.status == 'approved' %}
+      <span class="badge badge-info" style="font-size: var(--text-sm); padding: 6px 14px;">Approved</span>
+    {% elif sheet.status == 'published' %}
+      <span class="badge badge-success" style="font-size: var(--text-sm); padding: 6px 14px;">Published</span>
+    {% elif sheet.status == 'rejected' %}
+      <span class="badge badge-danger" style="font-size: var(--text-sm); padding: 6px 14px;">Returned for Revision</span>
+    {% endif %}
+  </div>
+</div>
+
+{% if read_only %}
+<div class="card mb-6" style="border-left: 4px solid var(--info); padding: var(--s-4);">
+  <p class="text-sm" style="margin: 0; color: var(--ink-800);">
+    {% if sheet.status == 'submitted' %}
+      This mark sheet has been submitted and is awaiting review by DPA Academics. You cannot edit it now.
+    {% elif sheet.status == 'approved' %}
+      This mark sheet has been approved by DPA Academics.
+    {% elif sheet.status == 'published' %}
+      This mark sheet has been published. Results are visible to students and parents.
+    {% endif %}
+  </p>
+</div>
+{% endif %}
+
+{% if sheet.review_comment %}
+<div class="card mb-6" style="border-left: 4px solid var(--danger); padding: var(--s-4);">
+  <p class="text-xs font-semibold uppercase tracking-wider mb-1" style="color: var(--ink-500);">Reviewer comment</p>
+  <p class="text-sm" style="margin: 0; color: var(--ink-800); font-style: italic;">"{{ sheet.review_comment }}"</p>
+</div>
+{% endif %}
+
+<form method="post">
+  {% csrf_token %}
+
+  <div class="card" style="padding: 0; overflow: hidden;">
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th style="width: 40px;">#</th>
+            <th>Student</th>
+            <th style="width: 140px;">Admission No.</th>
+            <th style="width: 110px;">Marks</th>
+            <th style="width: 100px;">Out Of</th>
+            <th>Remarks</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for student in students %}
+          {% with existing_grade=existing|default_if_none:"" %}
+          <tr>
+            <td style="color: var(--ink-500); font-size: var(--text-sm);">{{ forloop.counter }}</td>
+            <td style="font-weight: 600; color: var(--ink-900);">{{ student.first_name }} {{ student.last_name }}</td>
+            <td style="font-family: var(--font-mono); font-size: var(--text-sm); color: var(--ink-600);">
+              {{ student.admission_number }}
+            </td>
+            <td>
+              {% for sid, grade in existing.items %}
+                {% if sid == student.id %}
+                  <input type="number" step="0.01" name="marks_{{ student.id }}"
+                         value="{{ grade.marks }}"
+                         class="input" style="padding: 6px 8px; font-size: var(--text-sm);"
+                         {% if read_only %}disabled{% endif %}>
+                {% endif %}
+              {% endfor %}
+              {% if student.id not in existing.keys %}
+                <input type="number" step="0.01" name="marks_{{ student.id }}"
+                       class="input" style="padding: 6px 8px; font-size: var(--text-sm);"
+                       {% if read_only %}disabled{% endif %}>
+              {% endif %}
+            </td>
+            <td>
+              {% for sid, grade in existing.items %}
+                {% if sid == student.id %}
+                  <input type="number" step="0.01" name="out_of_{{ student.id }}"
+                         value="{{ grade.out_of }}"
+                         class="input" style="padding: 6px 8px; font-size: var(--text-sm);"
+                         {% if read_only %}disabled{% endif %}>
+                {% endif %}
+              {% endfor %}
+              {% if student.id not in existing.keys %}
+                <input type="number" step="0.01" name="out_of_{{ student.id }}" value="100"
+                       class="input" style="padding: 6px 8px; font-size: var(--text-sm);"
+                       {% if read_only %}disabled{% endif %}>
+              {% endif %}
+            </td>
+            <td>
+              {% for sid, grade in existing.items %}
+                {% if sid == student.id %}
+                  <input type="text" name="remarks_{{ student.id }}"
+                         value="{{ grade.remarks|default:'' }}"
+                         class="input" style="padding: 6px 8px; font-size: var(--text-sm);"
+                         {% if read_only %}disabled{% endif %}>
+                {% endif %}
+              {% endfor %}
+              {% if student.id not in existing.keys %}
+                <input type="text" name="remarks_{{ student.id }}"
+                       class="input" style="padding: 6px 8px; font-size: var(--text-sm);"
+                       {% if read_only %}disabled{% endif %}>
+              {% endif %}
+            </td>
+          </tr>
+          {% endwith %}
+          {% empty %}
+          <tr>
+            <td colspan="6" style="padding: var(--s-8); text-align: center; color: var(--ink-500);">
+              No active students in this class.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  {% if can_submit %}
+  <div class="flex justify-end gap-3 mt-4">
+    <button type="submit" name="action" value="save" class="btn btn-secondary">
+      {% include 'partials/icons.html' with name="save" size=16 %}
+      Save Draft
+    </button>
+    <button type="submit" name="action" value="submit" class="btn btn-primary"
+            onclick="return confirm('Submit this mark sheet to DPA for approval? You cannot edit after submitting.');">
+      {% include 'partials/icons.html' with name="check-circle" size=16 %}
+      Submit to DPA
+    </button>
+  </div>
+  {% endif %}
+
+</form>
+
+{% endblock %}

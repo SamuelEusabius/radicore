@@ -84,6 +84,11 @@
         Next
         {% include 'partials/icons.html' with name="arrow-right" size=16 %}
       </a>
+
+          <a href="{% url 'dpa_staff_attendance_pdf_overall' %}" target="_blank" class="btn btn-primary">
+      {% include 'partials/icons.html' with name="printer" size=16 %}
+      Download Overall Report
+    </a>
     </div>
 
     <div class="flex gap-2">

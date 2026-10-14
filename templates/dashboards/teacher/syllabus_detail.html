@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ subject.name }} — Syllabus{% endblock %}
+{% block header_title %}{{ subject.name }}{% endblock %}
+{% block header_sub %}
+  {{ class_level.name }} · {{ year }} · {{ completed }}/{{ total }} topics completed
+{% endblock %}
+
+{% block content %}
+
+<div class="flex flex-wrap items-center justify-between gap-3 mb-6">
+  <a href="{% url 'teacher_my_syllabus' %}" class="btn btn-secondary">
+    {% include 'partials/icons.html' with name="arrow-right" size=16 %}
+    Back to My Syllabus
+  </a>
+  <div>
+    <span class="badge badge-primary" style="font-size: var(--text-sm); padding: 6px 14px;">
+      {{ percent }}% complete
+    </span>
+  </div>
+</div>
+
+<!-- Progress bar -->
+<div class="card mb-6">
+  <div style="height: 10px; background: var(--surface-muted); border-radius: 5px; overflow: hidden;">
+    <div style="width: {{ percent }}%; height: 100%; background: var(--primary);"></div>
+  </div>
+</div>
+
+{% if messages %}
+  {% for msg in messages %}
+  <div class="card mb-4" style="border-left: 4px solid var(--primary); padding: var(--s-3);">
+    <p class="text-sm" style="margin: 0;">{{ msg }}</p>
+  </div>
+  {% endfor %}
+{% endif %}
+
+<form method="post">
+  {% csrf_token %}
+
+  <div class="card" style="padding: 0; overflow: hidden; margin-bottom: 20px;">
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th style="width: 70px;">Week</th>
+            <th>Topic</th>
+            <th style="width: 160px;">Status</th>
+            <th style="width: 90px;">Progress</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for topic in topics %}
+          <tr>
+            <td style="color: var(--ink-500); font-size: var(--text-sm);">
+              {% if topic.planned_week %}W{{ topic.planned_week }}{% else %}—{% endif %}
+            </td>
+            <td>
+              <div style="font-weight: 500; color: var(--ink-900);">{{ topic.topic }}</div>
+            </td>
+            <td>
+              <select name="status_{{ topic.id }}" class="select" style="padding: 4px 8px; font-size: var(--text-xs);">
+                {% for value, label in status_choices %}
+                <option value="{{ value }}" {% if topic.status == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </td>
+            <td>
+              <input type="number" name="percent_{{ topic.id }}" min="0" max="100"
+                     value="{{ topic.percent_complete }}"
+                     class="input" style="padding: 4px 8px; font-size: var(--text-xs); width: 70px;">
+            </td>
+            <td>
+              <input type="text" name="notes_{{ topic.id }}" value="{{ topic.notes|default:'' }}"
+                     class="input" style="padding: 4px 8px; font-size: var(--text-xs);"
+                     placeholder="Optional note">
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="5" style="padding: var(--s-8); text-align: center; color: var(--ink-500);">
+              No topics yet. Add your first topic below.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Add new topic row -->
+  <div class="card mb-4">
+    <div class="text-xs font-semibold uppercase tracking-wider mb-3" style="color: var(--ink-600);">
+      Add New Topic
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
+      <div class="md:col-span-7">
+        <input type="text" name="new_topic" class="input w-full" placeholder="Topic name">
+      </div>
+      <div class="md:col-span-5">
+        <input type="number" name="new_planned_week" class="input w-full" placeholder="Planned week (optional)" min="1" max="52">
+      </div>
+    </div>
+  </div>
+
+  <div class="flex justify-end gap-3">
+    <a href="{% url 'teacher_my_syllabus' %}" class="btn btn-secondary">Cancel</a>
+    <button type="submit" class="btn btn-primary">
+      {% include 'partials/icons.html' with name="save" size=16 %}
+      Save Changes
+    </button>
+  </div>
+</form>
+
+{% endblock %}

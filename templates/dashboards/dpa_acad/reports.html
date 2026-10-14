@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Academics Reports{% endblock %}
+{% block header_title %}Academics Reports{% endblock %}
+{% block header_sub %}
+  Discipline, exams, syllabus, teaching · {{ school.name }}
+{% endblock %}
+
+{% block content %}
+
+<!-- KPI row -->
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Syllabus Coverage</span>
+      <div class="stat-icon" style="background: var(--primary-light); color: var(--primary);">
+        {% include 'partials/icons.html' with name="book-open" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value">{{ coverage_percent }}%</div>
+    <div class="stat-meta">{{ completed_topics }} of {{ total_topics }} topics</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Mark Sheets</span>
+      <div class="stat-icon" style="background: var(--warning-light); color: var(--warning);">
+        {% include 'partials/icons.html' with name="clipboard" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--warning);">{{ mark_sheet_pending }}</div>
+    <div class="stat-meta">awaiting review</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Lesson Plans</span>
+      <div class="stat-icon" style="background: var(--info-light); color: var(--info);">
+        {% include 'partials/icons.html' with name="file-text" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--info);">{{ lesson_plan_pending }}</div>
+    <div class="stat-meta">awaiting review</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Exams Recorded</span>
+      <div class="stat-icon" style="background: var(--success-light); color: var(--success);">
+        {% include 'partials/icons.html' with name="calendar" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--success);">{{ exam_count }}</div>
+    <div class="stat-meta">across {{ teacher_count }} teachers</div>
+  </div>
+</div>
+
+<!-- Report cards -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+
+  <a href="{% url 'dpa_acad_syllabus' %}" class="card card-hover" style="text-decoration: none; padding: var(--s-5);">
+    <div style="font-weight: 600; color: var(--ink-900); font-size: var(--text-md); margin-bottom: 4px;">
+      Syllabus Coverage Report
+    </div>
+    <p class="text-sm" style="color: var(--ink-500); margin: 0;">
+      Track topic progress by class, subject, and teacher.
+    </p>
+  </a>
+
+  <a href="{% url 'dpa_acad_mark_sheets' %}" class="card card-hover" style="text-decoration: none; padding: var(--s-5);">
+    <div style="font-weight: 600; color: var(--ink-900); font-size: var(--text-md); margin-bottom: 4px;">
+      Mark Sheets
+    </div>
+    <p class="text-sm" style="color: var(--ink-500); margin: 0;">
+      Review, approve, and publish exam results.
+    </p>
+  </a>
+
+  <a href="{% url 'dpa_acad_lesson_plans' %}" class="card card-hover" style="text-decoration: none; padding: var(--s-5);">
+    <div style="font-weight: 600; color: var(--ink-900); font-size: var(--text-md); margin-bottom: 4px;">
+      Lesson Plans
+    </div>
+    <p class="text-sm" style="color: var(--ink-500); margin: 0;">
+      Review weekly lesson plans submitted by teachers.
+    </p>
+  </a>
+
+  <a href="{% url 'dpa_acad_exams' %}" class="card card-hover" style="text-decoration: none; padding: var(--s-5);">
+    <div style="font-weight: 600; color: var(--ink-900); font-size: var(--text-md); margin-bottom: 4px;">
+      Exam Reports
+    </div>
+    <p class="text-sm" style="color: var(--ink-500); margin: 0;">
+      Browse all exams and their mark sheets.
+    </p>
+  </a>
+
+  <a href="{% url 'dpa_acad_teachers' %}" class="card card-hover" style="text-decoration: none; padding: var(--s-5);">
+    <div style="font-weight: 600; color: var(--ink-900); font-size: var(--text-md); margin-bottom: 4px;">
+      Teacher Performance
+    </div>
+    <p class="text-sm" style="color: var(--ink-500); margin: 0;">
+      Observations, coverage, and activity summary.
+    </p>
+  </a>
+
+  <a href="{% url 'dpa_acad_timetable_list' %}" class="card card-hover" style="text-decoration: none; padding: var(--s-5);">
+    <div style="font-weight: 600; color: var(--ink-900); font-size: var(--text-md); margin-bottom: 4px;">
+      Timetables
+    </div>
+    <p class="text-sm" style="color: var(--ink-500); margin: 0;">
+      View and download class timetables.
+    </p>
+  </a>
+
+  <a href="{% url 'dpa_acad_subject_allocation' %}" class="card card-hover" style="text-decoration: none; padding: var(--s-5);">
+    <div style="font-weight: 600; color: var(--ink-900); font-size: var(--text-md); margin-bottom: 4px;">
+      Subject Allocation
+    </div>
+    <p class="text-sm" style="color: var(--ink-500); margin: 0;">
+      See which teacher is assigned to which class-subject.
+    </p>
+  </a>
+
+  <a href="{% url 'dpa_acad_timetable_conflicts' %}" class="card card-hover" style="text-decoration: none; padding: var(--s-5);">
+    <div style="font-weight: 600; color: var(--ink-900); font-size: var(--text-md); margin-bottom: 4px;">
+      Timetable Conflicts
+    </div>
+    <p class="text-sm" style="color: var(--ink-500); margin: 0;">
+      Detect teacher or class double-booking.
+    </p>
+  </a>
+
+  <a href="{% url 'dpa_acad_remedial' %}" class="card card-hover" style="text-decoration: none; padding: var(--s-5);">
+    <div style="font-weight: 600; color: var(--ink-900); font-size: var(--text-md); margin-bottom: 4px;">
+      Remedial Classes
+    </div>
+    <p class="text-sm" style="color: var(--ink-500); margin: 0;">
+      Schedule and track remedial sessions.
+    </p>
+  </a>
+
+</div>
+
+{% endblock %}

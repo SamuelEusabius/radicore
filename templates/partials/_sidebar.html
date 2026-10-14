@@ -338,7 +338,7 @@
         {% include 'partials/icons.html' with name="check-circle" size=18 %}
         <span class="sidebar-link-text">Mark Sheets</span>
       </a>
-      <a href="#" class="sidebar-link">
+      <a href="{% url 'dpa_acad_reports' %}" class="sidebar-link">
         {% include 'partials/icons.html' with name="bar-chart" size=18 %}
         <span class="sidebar-link-text">Reports</span>
       </a>
@@ -390,6 +390,21 @@
       <a href="{% url 'teacher_my_timetable' %}" class="sidebar-link">
         {% include 'partials/icons.html' with name="calendar" size=18 %}
         <span class="sidebar-link-text">My Timetable</span>
+      </a>
+
+            <a href="{% url 'teacher_my_marksheets' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="clipboard" size=18 %}
+        <span class="sidebar-link-text">My Mark Sheets</span>
+      </a>
+
+            <a href="{% url 'teacher_my_lesson_plans' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="file-text" size=18 %}
+        <span class="sidebar-link-text">My Lesson Plans</span>
+      </a>
+
+            <a href="{% url 'teacher_my_syllabus' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="book-open" size=18 %}
+        <span class="sidebar-link-text">My Syllabus</span>
       </a>
 
       {% if user.teacher_profile.is_class_teacher %}

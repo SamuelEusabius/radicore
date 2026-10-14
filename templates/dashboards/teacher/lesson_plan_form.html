@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{% if plan %}Edit Lesson Plan{% else %}New Lesson Plan{% endif %}{% endblock %}
+{% block header_title %}{% if plan %}Edit Lesson Plan{% else %}New Lesson Plan{% endif %}{% endblock %}
+{% block header_sub %}
+  Weekly plan for DPA review
+{% endblock %}
+
+{% block content %}
+
+<div class="card" style="max-width: 800px;">
+
+  {% if messages %}
+    {% for msg in messages %}
+    <div style="padding: var(--s-3); margin-bottom: var(--s-4); border-radius: var(--radius);
+      {% if msg.tags == 'error' %}background: var(--danger-light); color: var(--danger);
+      {% else %}background: var(--success-light); color: var(--success);{% endif %}
+      font-size: var(--text-sm);">
+      {{ msg }}
+    </div>
+    {% endfor %}
+  {% endif %}
+
+  {% if plan and plan.review_comment %}
+  <div style="padding: var(--s-3); margin-bottom: var(--s-4); border-radius: var(--radius); background: var(--danger-light); color: var(--danger); font-size: var(--text-sm);">
+    <strong>Reviewer comment:</strong> "{{ plan.review_comment }}"
+  </div>
+  {% endif %}
+
+  <form method="post" class="space-y-5">
+    {% csrf_token %}
+
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
+        Title <span style="color: var(--danger);">*</span>
+      </label>
+      <input type="text" name="title" required value="{{ plan.title|default:'' }}"
+             placeholder="e.g. Week 5 — Algebra Review"
+             class="input w-full">
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+      <div>
+        <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
+          Class <span style="color: var(--danger);">*</span>
+        </label>
+        <select name="class_level" required class="select w-full">
+          <option value="">— Select class —</option>
+          {% for c in classes %}
+          <option value="{{ c.id }}" {% if plan and plan.class_level_id == c.id %}selected{% endif %}>{{ c.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
+          Subject <span style="color: var(--danger);">*</span>
+        </label>
+        <select name="subject" required class="select w-full">
+          <option value="">— Select subject —</option>
+          {% for s in subjects %}
+          <option value="{{ s.id }}" {% if plan and plan.subject_id == s.id %}selected{% endif %}>{{ s.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
+        Week Ending <span style="color: var(--danger);">*</span>
+      </label>
+      <input type="date" name="week_ending" required
+             value="{{ plan.week_ending|date:'Y-m-d'|default:today|date:'Y-m-d' }}"
+             class="input w-full">
+    </div>
+
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
+        Objectives
+      </label>
+      <textarea name="objectives" rows="3" class="textarea w-full"
+                placeholder="Learning objectives for the week">{{ plan.objectives|default:'' }}</textarea>
+    </div>
+
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
+        Activities
+      </label>
+      <textarea name="activities" rows="3" class="textarea w-full"
+                placeholder="Teaching activities and lesson sequence">{{ plan.activities|default:'' }}</textarea>
+    </div>
+
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
+        Resources
+      </label>
+      <textarea name="resources" rows="2" class="textarea w-full"
+                placeholder="Textbooks, materials, references">{{ plan.resources|default:'' }}</textarea>
+    </div>
+
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
+        Assessment Method
+      </label>
+      <textarea name="assessment_method" rows="2" class="textarea w-full"
+                placeholder="How you will assess learning">{{ plan.assessment_method|default:'' }}</textarea>
+    </div>
+
+    <div class="flex justify-end gap-3 pt-4" style="border-top: 1px solid var(--border);">
+      <a href="{% url 'teacher_my_lesson_plans' %}" class="btn btn-secondary">Cancel</a>
+      <button type="submit" name="action" value="save" class="btn btn-secondary">
+        {% include 'partials/icons.html' with name="save" size=16 %}
+        Save Draft
+      </button>
+      <button type="submit" name="action" value="submit" class="btn btn-primary"
+              onclick="return confirm('Submit this plan to DPA for review?');">
+        {% include 'partials/icons.html' with name="check-circle" size=16 %}
+        Submit for Review
+      </button>
+    </div>
+
+  </form>
+
+</div>
+
+{% endblock %}
