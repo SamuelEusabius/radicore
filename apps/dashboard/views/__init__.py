@@ -245,6 +245,8 @@ from .dpa_admin import (
     dpa_admin_case_create,
     dpa_admin_case_detail,
     dpa_admin_case_update,
+    dpa_staff_attendance_pdf_personal,
+    dpa_staff_attendance_pdf_overall,
 )
 
 from .dpa_academics import (
@@ -289,6 +291,4 @@ from .dpa_academics import (
     teacher_my_syllabus,
     teacher_syllabus_detail,
     dpa_acad_reports,
-    dpa_staff_attendance_pdf_personal,
-    dpa_staff_attendance_pdf_overall,
 )
