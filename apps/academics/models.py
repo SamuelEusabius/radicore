@@ -198,10 +198,22 @@ class RemedialStatus(models.TextChoices):
     CANCELLED = 'cancelled', 'Cancelled'
 
 
+class RemedialPeriod(models.TextChoices):
+    MORNING = 'morning', 'Morning'
+    EVENING = 'evening', 'Evening'
+
+
 class RemedialClass(models.Model):
     """
-    Remedial / extra-tuition session for a group of students.
+    A recurring (or one-off) remedial / extra-tuition session.
+
+    Either `day_of_week` (recurring weekly) or `scheduled_date` (one-off)
+    should be set. Both can be set if the session repeats on that date too.
     """
+
+    class SessionPeriod(models.TextChoices):
+        MORNING = 'morning', 'Morning (before school)'
+        EVENING = 'evening', 'Evening (after school)'
 
     school = models.ForeignKey(
         'schools.School', on_delete=models.CASCADE, related_name='remedial_classes',
@@ -219,17 +231,40 @@ class RemedialClass(models.Model):
 
     title = models.CharField(max_length=200)
     focus_area = models.TextField(blank=True, default='', help_text="Topics or skills targeted")
-    scheduled_date = models.DateField()
+
+    # Schedule — recurring or one-off
+    day_of_week = models.CharField(
+        max_length=10,
+        choices=[
+            ('monday', 'Monday'), ('tuesday', 'Tuesday'), ('wednesday', 'Wednesday'),
+            ('thursday', 'Thursday'), ('friday', 'Friday'), ('saturday', 'Saturday'),
+        ],
+        blank=True, default='',
+        help_text="For recurring weekly sessions",
+    )
+    scheduled_date = models.DateField(
+        null=True, blank=True,
+        help_text="For one-off sessions",
+    )
+    session_period = models.CharField(
+        max_length=10,
+        choices=SessionPeriod.choices,
+        default=SessionPeriod.EVENING,
+    )
     start_time = models.TimeField(null=True, blank=True)
     end_time = models.TimeField(null=True, blank=True)
     location = models.CharField(max_length=120, blank=True, default='')
 
+    # Students enrolled
     students = models.ManyToManyField(
         'students.Student', blank=True, related_name='remedial_classes',
     )
 
+    # Status
     status = models.CharField(
-        max_length=15, choices=RemedialStatus.choices, default=RemedialStatus.SCHEDULED,
+        max_length=15,
+        choices=RemedialStatus.choices,
+        default=RemedialStatus.SCHEDULED,
     )
     notes = models.TextField(blank=True, default='')
 
@@ -241,16 +276,28 @@ class RemedialClass(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ['-scheduled_date', 'start_time']
+        ordering = ['day_of_week', 'start_time']
         verbose_name = 'Remedial Class'
         verbose_name_plural = 'Remedial Classes'
         indexes = [
             models.Index(fields=['school', 'status']),
-            models.Index(fields=['school', 'scheduled_date']),
+            models.Index(fields=['school', 'day_of_week']),
+            models.Index(fields=['class_level', 'day_of_week']),
         ]
 
     def __str__(self):
-        return f"{self.title} — {self.scheduled_date}"
+        day = self.get_day_of_week_display() if self.day_of_week else (
+            self.scheduled_date.strftime('%d %b') if self.scheduled_date else '?'
+        )
+        return f"{self.title} — {self.class_level.name} — {day}"
+
+    @property
+    def time_range(self):
+        if self.start_time and self.end_time:
+            return f"{self.start_time.strftime('%H:%M')} – {self.end_time.strftime('%H:%M')}"
+        if self.start_time:
+            return self.start_time.strftime('%H:%M')
+        return '—'
     
     
 

@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}My Remedial Schedule{% endblock %}
+{% block header_title %}My Remedial Schedule{% endblock %}
+{% block header_sub %}
+  {{ total }} session{{ total|pluralize }} · {{ school.name }}
+{% endblock %}
+
+{% block content %}
+
+{% if message %}
+<div class="card mb-6" style="border-left: 4px solid var(--warning); padding: var(--s-4);">
+  <p class="text-sm" style="margin: 0;">{{ message }}</p>
+</div>
+{% endif %}
+
+<!-- Today's sessions -->
+<div class="card mb-6">
+  <div class="flex items-center justify-between mb-4">
+    <h3 class="card-title" style="margin: 0;">
+      {% include 'partials/icons.html' with name="calendar" size=18 %}
+      Today — {{ today_label }}
+    </h3>
+    <span class="text-xs" style="color: var(--ink-500);">
+      {{ todays_sessions|length }} session{{ todays_sessions|length|pluralize }}
+    </span>
+  </div>
+
+  {% if todays_sessions %}
+  <div class="space-y-3">
+    {% for s in todays_sessions %}
+    <div style="padding: var(--s-3); background: var(--surface-muted); border-radius: var(--radius); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--s-3); border-left: 3px solid {% if s.session_period == 'morning' %}var(--info){% else %}var(--warning){% endif %};">
+      <div>
+        <div style="font-weight: 600; color: var(--ink-900);">{{ s.title }}</div>
+        <div class="text-xs" style="color: var(--ink-500);">
+          {{ s.class_level.name }} · {{ s.subject.name }}
+          {% if s.location %} · {{ s.location }}{% endif %}
+        </div>
+      </div>
+      <div style="font-family: var(--font-mono); font-size: var(--text-sm); color: var(--ink-700); font-weight: 600;">
+        {{ s.time_range }}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="text-sm" style="color: var(--ink-500); margin: 0;">No remedial sessions today.</p>
+  {% endif %}
+</div>
+
+{% if total %}
+
+<!-- MORNING GRID -->
+<div class="card mb-6" style="padding: 0; overflow: hidden;">
+  <div style="padding: var(--s-4) var(--s-5); border-bottom: 1px solid var(--border); background: var(--surface-muted);">
+    <div style="font-weight: 700; color: var(--ink-900);">Morning Sessions</div>
+    <div class="text-xs" style="color: var(--ink-500);">Before school starts</div>
+  </div>
+
+  <div class="table-wrap" style="overflow-x: auto;">
+    <table class="table" style="min-width: 900px;">
+      <thead>
+        <tr>
+          {% for day in days %}
+          <th>{{ day.label }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          {% for day in days %}
+          <td style="vertical-align: top; padding: var(--s-3); min-width: 140px;">
+            {% for k, sessions in morning.items %}
+              {% if k == day.key %}
+                {% for s in sessions %}
+                <div style="padding: var(--s-2); margin-bottom: var(--s-2); background: var(--primary-light); border-radius: var(--radius-sm); border-left: 3px solid var(--primary);">
+                  <div style="font-weight: 600; color: var(--primary); font-size: var(--text-xs);">{{ s.title }}</div>
+                  <div style="font-size: 10px; color: var(--ink-600); margin-top: 2px;">{{ s.class_level.name }} · {{ s.subject.name }}</div>
+                  <div style="font-size: 10px; color: var(--ink-500); margin-top: 2px; font-family: var(--font-mono);">{{ s.time_range }}</div>
+                </div>
+                {% empty %}
+                <div class="text-xs" style="color: var(--ink-400); text-align: center; padding: var(--s-3);">—</div>
+                {% endfor %}
+              {% endif %}
+            {% endfor %}
+          </td>
+          {% endfor %}
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- EVENING GRID -->
+<div class="card mb-6" style="padding: 0; overflow: hidden;">
+  <div style="padding: var(--s-4) var(--s-5); border-bottom: 1px solid var(--border); background: var(--surface-muted);">
+    <div style="font-weight: 700; color: var(--ink-900);">Evening Sessions</div>
+    <div class="text-xs" style="color: var(--ink-500);">After school hours</div>
+  </div>
+
+  <div class="table-wrap" style="overflow-x: auto;">
+    <table class="table" style="min-width: 900px;">
+      <thead>
+        <tr>
+          {% for day in days %}
+          <th>{{ day.label }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          {% for day in days %}
+          <td style="vertical-align: top; padding: var(--s-3); min-width: 140px;">
+            {% for k, sessions in evening.items %}
+              {% if k == day.key %}
+                {% for s in sessions %}
+                <div style="padding: var(--s-2); margin-bottom: var(--s-2); background: var(--warning-light); border-radius: var(--radius-sm); border-left: 3px solid var(--warning);">
+                  <div style="font-weight: 600; color: var(--warning); font-size: var(--text-xs);">{{ s.title }}</div>
+                  <div style="font-size: 10px; color: var(--ink-600); margin-top: 2px;">{{ s.class_level.name }} · {{ s.subject.name }}</div>
+                  <div style="font-size: 10px; color: var(--ink-500); margin-top: 2px; font-family: var(--font-mono);">{{ s.time_range }}</div>
+                </div>
+                {% empty %}
+                <div class="text-xs" style="color: var(--ink-400); text-align: center; padding: var(--s-3);">—</div>
+                {% endfor %}
+              {% endif %}
+            {% endfor %}
+          </td>
+          {% endfor %}
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% else %}
+<div class="card">
+  <div class="empty">
+    {% include 'partials/icons.html' with name="activity" size=56 %}
+    <h3>No remedial sessions</h3>
+    <p>You don't have any remedial sessions scheduled. Once DPA Academics assigns you one, it will appear here.</p>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

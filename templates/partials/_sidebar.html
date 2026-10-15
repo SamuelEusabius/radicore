@@ -376,10 +376,15 @@
         <span class="sidebar-link-text">Stream-Subject Grid</span>
       </a>
 
-      <div class="sidebar-section-label">Students</div>
-      <a href="#" class="sidebar-link">
+    <div class="sidebar-section-label">Students</div>
+      <a href="{% url 'dpa_acad_remedial' %}" class="sidebar-link">
         {% include 'partials/icons.html' with name="activity" size=18 %}
         <span class="sidebar-link-text">Remedial Classes</span>
+      </a>
+
+      <a href="{% url 'dpa_acad_remedial_schedule' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="calendar" size=18 %}
+        <span class="sidebar-link-text">Remedial Timetable</span>
       </a>
 
       <div class="sidebar-section-label">Communication</div>
@@ -408,6 +413,10 @@
       <a href="{% url 'teacher_my_timetable' %}" class="sidebar-link">
         {% include 'partials/icons.html' with name="calendar" size=18 %}
         <span class="sidebar-link-text">My Timetable</span>
+      </a>
+      <a href="{% url 'teacher_remedial_schedule' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="activity" size=18 %}
+        <span class="sidebar-link-text">My Remedial</span>
       </a>
 
             <a href="{% url 'teacher_my_marksheets' %}" class="sidebar-link">

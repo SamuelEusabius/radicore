@@ -949,7 +949,7 @@ def dpa_acad_remedial(request):
 
 @dpa_acad_required
 def dpa_acad_remedial_create(request):
-    """Create a new remedial class."""
+    """Create a new remedial session (recurring or one-off)."""
     school = request.user.school
 
     if request.method == 'POST':
@@ -957,14 +957,18 @@ def dpa_acad_remedial_create(request):
         class_level_id = request.POST.get('class_level')
         subject_id = request.POST.get('subject')
         teacher_id = request.POST.get('teacher') or None
-        scheduled_date = request.POST.get('scheduled_date')
+        day_of_week = request.POST.get('day_of_week', '').strip()
+        scheduled_date = request.POST.get('scheduled_date') or None
+        session_period = request.POST.get('session_period', 'evening')
         start_time = request.POST.get('start_time') or None
         end_time = request.POST.get('end_time') or None
         location = request.POST.get('location', '').strip()
         focus_area = request.POST.get('focus_area', '').strip()
 
-        if not all([title, class_level_id, subject_id, scheduled_date]):
-            messages.error(request, 'Title, class, subject, and date are required.')
+        if not all([title, class_level_id, subject_id]):
+            messages.error(request, 'Title, class, and subject are required.')
+        elif not day_of_week and not scheduled_date:
+            messages.error(request, 'Please set either a day of the week (recurring) or a specific date (one-off).')
         else:
             try:
                 rc = RemedialClass.objects.create(
@@ -973,7 +977,9 @@ def dpa_acad_remedial_create(request):
                     subject_id=subject_id,
                     teacher_id=teacher_id,
                     title=title,
+                    day_of_week=day_of_week,
                     scheduled_date=scheduled_date,
+                    session_period=session_period,
                     start_time=start_time,
                     end_time=end_time,
                     location=location,
@@ -981,7 +987,7 @@ def dpa_acad_remedial_create(request):
                     created_by=request.user,
                     status=RemedialStatus.SCHEDULED,
                 )
-                messages.success(request, 'Remedial class scheduled.')
+                messages.success(request, 'Remedial session scheduled.')
                 return redirect('dpa_acad_remedial')
             except Exception as e:
                 messages.error(request, f'Error: {e}')
@@ -992,10 +998,13 @@ def dpa_acad_remedial_create(request):
         'subjects': Subject.objects.filter(school=school).order_by('name'),
         'teachers': Teacher.objects.filter(school=school, is_active=True).order_by('first_name', 'last_name'),
         'today': timezone.localdate(),
+        'day_choices': [
+            ('monday', 'Monday'), ('tuesday', 'Tuesday'), ('wednesday', 'Wednesday'),
+            ('thursday', 'Thursday'), ('friday', 'Friday'), ('saturday', 'Saturday'),
+        ],
+        'period_choices': RemedialClass.SessionPeriod.choices,
     }
     return render(request, 'dashboards/dpa_acad/remedial_form.html', context)
-
-
 @dpa_acad_required
 def dpa_acad_remedial_update(request, class_id):
     """Update remedial class status."""
@@ -2208,3 +2217,140 @@ def dpa_acad_reports(request):
         'teacher_count': Teacher.objects.filter(school=school, is_active=True).count(),
     }
     return render(request, 'dashboards/dpa_acad/reports.html', context)
+
+
+
+# ==========================================================
+# REMEDIAL TIMETABLE — WEEKLY GRID
+# ==========================================================
+
+REMEDIAL_DAYS = [
+    ('monday', 'Monday'),
+    ('tuesday', 'Tuesday'),
+    ('wednesday', 'Wednesday'),
+    ('thursday', 'Thursday'),
+    ('friday', 'Friday'),
+    ('saturday', 'Saturday'),
+]
+
+
+def _build_remedial_matrix(school):
+    """
+    Build a weekly matrix of remedial sessions.
+
+    Returns:
+      days:    [{'key', 'label'}]
+      morning: {day_key: [sessions for morning]}
+      evening: {day_key: [sessions for evening]}
+    """
+    sessions = RemedialClass.objects.filter(
+        school=school,
+    ).select_related('class_level', 'subject', 'teacher').exclude(
+        day_of_week='',
+    ).order_by('start_time', 'class_level__order', 'subject__name')
+
+    days = [{'key': k, 'label': v} for k, v in REMEDIAL_DAYS]
+
+    morning = {k: [] for k, _ in REMEDIAL_DAYS}
+    evening = {k: [] for k, _ in REMEDIAL_DAYS}
+
+    for s in sessions:
+        target = morning if s.session_period == 'morning' else evening
+        if s.day_of_week in target:
+            target[s.day_of_week].append(s)
+
+    return {
+        'days': days,
+        'morning': morning,
+        'evening': evening,
+        'total': sessions.count(),
+    }
+
+
+@dpa_acad_required
+def dpa_acad_remedial_schedule(request):
+    """Weekly grid of all remedial sessions."""
+    school = request.user.school
+    data = _build_remedial_matrix(school)
+
+    context = {
+        'school': school,
+        'days': data['days'],
+        'morning': data['morning'],
+        'evening': data['evening'],
+        'total': data['total'],
+    }
+    return render(request, 'dashboards/dpa_acad/remedial_schedule.html', context)
+
+
+@dpa_acad_required
+def dpa_acad_remedial_timetable_pdf(request):
+    """Printable PDF of the weekly remedial timetable."""
+    from django.template.loader import render_to_string
+    from apps.core.pdf_utils import html_to_pdf_response, build_pdf_context
+
+    school = request.user.school
+    data = _build_remedial_matrix(school)
+
+    html_string = render_to_string('pdf/remedial_timetable.html',
+        build_pdf_context(
+            school=school,
+            generated_by=request.user,
+            days=data['days'],
+            morning=data['morning'],
+            evening=data['evening'],
+            total=data['total'],
+        )
+    )
+
+    filename = f"remedial_timetable_{timezone.localdate().strftime('%Y%m%d')}.pdf"
+    return html_to_pdf_response(html_string, filename)
+
+
+# ==========================================================
+# TEACHER REMEDIAL SCHEDULE
+# ==========================================================
+
+@teacher_required
+def teacher_remedial_schedule(request):
+    """Teacher's own remedial sessions."""
+    school = request.user.school
+    teacher = _teacher_profile(request.user)
+
+    if teacher is None:
+        return render(request, 'dashboards/teacher/remedial.html', {
+            'school': school, 'teacher': None,
+            'morning': {}, 'evening': {}, 'days': [], 'total': 0,
+            'message': 'Your account is not linked to a teacher profile.',
+        })
+
+    sessions = RemedialClass.objects.filter(
+        school=school, teacher=teacher,
+    ).select_related('class_level', 'subject').exclude(
+        day_of_week='',
+    ).order_by('start_time')
+
+    days = [{'key': k, 'label': v} for k, v in REMEDIAL_DAYS]
+    morning = {k: [] for k, _ in REMEDIAL_DAYS}
+    evening = {k: [] for k, _ in REMEDIAL_DAYS}
+
+    for s in sessions:
+        target = morning if s.session_period == 'morning' else evening
+        if s.day_of_week in target:
+            target[s.day_of_week].append(s)
+
+    # Today's sessions
+    today_key = timezone.localdate().strftime('%A').lower()
+    todays = [s for s in sessions if s.day_of_week == today_key]
+
+    context = {
+        'school': school,
+        'teacher': teacher,
+        'days': days,
+        'morning': morning,
+        'evening': evening,
+        'total': sessions.count(),
+        'today_label': timezone.localdate().strftime('%A'),
+        'todays_sessions': todays,
+    }
+    return render(request, 'dashboards/teacher/remedial.html', context)

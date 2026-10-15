@@ -1,10 +1,10 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Schedule Remedial Class{% endblock %}
-{% block header_title %}Schedule Remedial Class{% endblock %}
+{% block title %}Schedule Remedial Session{% endblock %}
+{% block header_title %}Schedule Remedial Session{% endblock %}
 {% block header_sub %}
-  Extra tuition for students who need support
+  Morning or evening extra tuition for students
 {% endblock %}
 
 {% block content %}
@@ -67,19 +67,58 @@
       </select>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+    <!-- Session type -->
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
+        Session Period
+      </label>
+      <div class="grid grid-cols-2 gap-3">
+        {% for value, label in period_choices %}
+        <label class="cursor-pointer">
+          <input type="radio" name="session_period" value="{{ value }}"
+                 {% if value == 'evening' %}checked{% endif %}
+                 class="sr-only direction-radio">
+          <div class="direction-pill {% if value == 'evening' %}active{% endif %}">
+            <div style="font-weight: 600; font-size: var(--text-base);">{{ label }}</div>
+          </div>
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Recurring vs one-off -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
       <div>
         <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
-          Date <span style="color: var(--danger);">*</span>
+          Recurring Day (weekly)
         </label>
-        <input type="date" name="scheduled_date" required value="{{ today|date:'Y-m-d' }}" class="input w-full">
+        <select name="day_of_week" class="select w-full">
+          <option value="">— None (use specific date) —</option>
+          {% for value, label in day_choices %}
+          <option value="{{ value }}">{{ label }}</option>
+          {% endfor %}
+        </select>
       </div>
+
       <div>
-        <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Start</label>
+        <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
+          Specific Date (one-off)
+        </label>
+        <input type="date" name="scheduled_date" class="input w-full">
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+      <div>
+        <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
+          Start Time
+        </label>
         <input type="time" name="start_time" class="input w-full">
       </div>
       <div>
-        <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">End</label>
+        <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
+          End Time
+        </label>
         <input type="time" name="end_time" class="input w-full">
       </div>
     </div>
@@ -103,11 +142,44 @@
       <a href="{% url 'dpa_acad_remedial' %}" class="btn btn-secondary">Cancel</a>
       <button type="submit" class="btn btn-primary">
         {% include 'partials/icons.html' with name="save" size=16 %}
-        Schedule Class
+        Schedule Session
       </button>
     </div>
 
   </form>
 </div>
+
+<style>
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
+  .direction-pill {
+    padding: var(--s-4);
+    border-radius: var(--radius);
+    border: 2px solid var(--border);
+    background: var(--surface);
+    text-align: center;
+    color: var(--ink-700);
+    transition: all var(--t-fast);
+  }
+  .direction-pill:hover {
+    border-color: var(--primary);
+    background: var(--surface-hover);
+  }
+  .direction-radio:checked + .direction-pill,
+  .direction-pill.active {
+    border-color: var(--primary);
+    background: var(--primary-light);
+    color: var(--primary);
+  }
+</style>
 
 {% endblock %}

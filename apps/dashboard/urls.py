@@ -456,6 +456,7 @@ urlpatterns = [
     path('dpa-acad/exams/new/', views.dpa_acad_exam_create, name='dpa_acad_exam_create'),
     path('dpa-acad/exams/<int:exam_id>/edit/', views.dpa_acad_exam_edit, name='dpa_acad_exam_edit'),
     path('dpa-acad/exams/<int:exam_id>/delete/', views.dpa_acad_exam_delete, name='dpa_acad_exam_delete'),
+    path('teacher/remedial/', views.teacher_remedial_schedule, name='teacher_remedial_schedule'),
         # Teacher mark sheet submission
     path('teacher/marksheets/', views.teacher_my_marksheets, name='teacher_my_marksheets'),
     path('teacher/marksheets/<int:sheet_id>/', views.teacher_marksheet_enter, name='teacher_marksheet_enter'),
@@ -481,4 +482,6 @@ urlpatterns = [
     path('principal/leave/<int:leave_id>/reject/', views.principal_leave_reject, name='principal_leave_reject'),
     path('principal/', views.principal_dashboard, name='principal_dashboard'),
     path('dpa-admin/staff/leave/<int:leave_id>/pdf/', views.dpa_leave_pdf, name='dpa_leave_pdf'),
+    path('dpa-acad/remedial/schedule/', views.dpa_acad_remedial_schedule, name='dpa_acad_remedial_schedule'),
+    path('dpa-acad/remedial/schedule/pdf/', views.dpa_acad_remedial_timetable_pdf, name='dpa_acad_remedial_timetable_pdf'),
 ]

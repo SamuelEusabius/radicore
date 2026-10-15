@@ -1,0 +1,167 @@
+{% load static %}
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  @page { size: A4 landscape; margin: 10mm; }
+  * { box-sizing: border-box; }
+  body { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 9pt; color: #1a1a1a; margin: 0; line-height: 1.3; }
+
+  /* HEADER */
+  table.report-header { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+  table.report-header td { vertical-align: top; padding: 0; }
+  .rh-logo-cell { width: 90px; padding-right: 16px; }
+  .rh-logo-img { width: 72px; height: 72px; object-fit: contain; }
+  .rh-school-name { font-size: 16pt; font-weight: bold; color: #00695c; line-height: 1.1; margin: 0; }
+  .rh-motto { font-style: italic; font-size: 9.5pt; color: #555; margin-top: 3px; }
+  .rh-address { font-size: 9pt; color: #555; margin-top: 6px; }
+  .rh-contact { font-size: 9pt; color: #555; margin-top: 2px; }
+  .rh-meta-cell { width: 150px; text-align: right; }
+  .rh-meta-label { font-size: 6.5pt; text-transform: uppercase; letter-spacing: 0.05em; color: #888; font-weight: bold; }
+  .rh-meta-date { font-size: 10pt; font-weight: bold; color: #1a1a1a; margin-top: 1px; }
+  .rh-meta-time { font-size: 8.5pt; color: #555; }
+  .rh-meta-name { font-size: 8.5pt; color: #555; }
+  .rh-divider { border-bottom: 2pt solid #00695c; margin-bottom: 12px; }
+
+  .title-block { text-align: center; padding: 4px 0 12px 0; }
+  .report-title { font-size: 16pt; font-weight: bold; color: #00695c; margin: 0; letter-spacing: 0.05em; text-transform: uppercase; }
+  .report-subtitle { font-size: 10pt; color: #555; margin-top: 3px; }
+
+  /* SECTION */
+  .section-title {
+    font-size: 10pt; font-weight: bold; color: #ffffff;
+    background: #00695c;
+    padding: 5px 10px;
+    margin: 12px 0 0 0;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .section-title.evening { background: #B45309; }
+
+  table.grid { width: 100%; border-collapse: collapse; margin-top: 0; table-layout: fixed; }
+  table.grid th {
+    background: #f0f0f0;
+    padding: 5px 6px;
+    font-size: 8pt;
+    border: 0.5pt solid #999;
+    text-align: left;
+    font-weight: bold;
+  }
+  table.grid td {
+    border: 0.5pt solid #cfd8d4;
+    padding: 5px 6px;
+    vertical-align: top;
+    min-height: 60px;
+    height: 60px;
+    font-size: 8pt;
+  }
+  .session-block {
+    padding: 3px 5px;
+    background: #e7f6ec;
+    border-left: 2pt solid #16A34A;
+    margin-bottom: 4px;
+    border-radius: 2px;
+  }
+  .session-block.evening {
+    background: #fef4e2;
+    border-left-color: #D97706;
+  }
+  .session-title { font-weight: bold; color: #00695c; font-size: 8pt; line-height: 1.15; }
+  .session-block.evening .session-title { color: #B45309; }
+  .session-meta { font-size: 6.5pt; color: #555; margin-top: 1px; line-height: 1.15; }
+  .session-time { font-size: 6.5pt; color: #777; margin-top: 1px; font-family: 'DejaVu Sans Mono', monospace; }
+  .empty-cell { color: #ccc; text-align: center; padding-top: 20px; }
+
+  .footer { margin-top: 14px; padding-top: 6px; border-top: 0.5pt solid #d9e2de; text-align: center; font-size: 7.5pt; color: #777; }
+</style>
+</head>
+<body>
+
+{% include 'pdf/_report_header.html' %}
+
+<div class="title-block">
+  <div class="report-title">Remedial Timetable</div>
+  <div class="report-subtitle">{{ total }} recurring session{{ total|pluralize }}</div>
+</div>
+
+<!-- MORNING -->
+<div class="section-title">Morning Sessions</div>
+<table class="grid">
+  <thead>
+    <tr>
+      {% for day in days %}
+      <th style="width: 16.6%;">{{ day.label }}</th>
+      {% endfor %}
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      {% for day in days %}
+      <td>
+        {% for k, sessions in morning.items %}
+          {% if k == day.key %}
+            {% for s in sessions %}
+            <div class="session-block">
+              <div class="session-title">{{ s.title }}</div>
+              <div class="session-meta">{{ s.class_level.name }} · {{ s.subject.name }}</div>
+              <div class="session-time">{{ s.time_range }}</div>
+              {% if s.teacher %}
+              <div class="session-meta">{{ s.teacher.first_name }} {{ s.teacher.last_name }}</div>
+              {% endif %}
+            </div>
+            {% empty %}
+            <div class="empty-cell">—</div>
+            {% endfor %}
+          {% endif %}
+        {% endfor %}
+      </td>
+      {% endfor %}
+    </tr>
+  </tbody>
+</table>
+
+<!-- EVENING -->
+<div class="section-title evening">Evening Sessions</div>
+<table class="grid">
+  <thead>
+    <tr>
+      {% for day in days %}
+      <th style="width: 16.6%;">{{ day.label }}</th>
+      {% endfor %}
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      {% for day in days %}
+      <td>
+        {% for k, sessions in evening.items %}
+          {% if k == day.key %}
+            {% for s in sessions %}
+            <div class="session-block evening">
+              <div class="session-title">{{ s.title }}</div>
+              <div class="session-meta">{{ s.class_level.name }} · {{ s.subject.name }}</div>
+              <div class="session-time">{{ s.time_range }}</div>
+              {% if s.teacher %}
+              <div class="session-meta">{{ s.teacher.first_name }} {{ s.teacher.last_name }}</div>
+              {% endif %}
+            </div>
+            {% empty %}
+            <div class="empty-cell">—</div>
+            {% endfor %}
+          {% endif %}
+        {% endfor %}
+      </td>
+      {% endfor %}
+    </tr>
+  </tbody>
+</table>
+
+<div class="footer">
+  {{ school.name }}{% if school.code %} · {{ school.code }}{% endif %}
+  &nbsp;·&nbsp; Remedial Timetable
+  &nbsp;·&nbsp; Generated {{ generated_on|date:"Y-m-d H:i" }}
+</div>
+
+</body>
+</html>

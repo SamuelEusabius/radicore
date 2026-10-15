@@ -298,6 +298,9 @@ from .dpa_academics import (
     teacher_my_syllabus,
     teacher_syllabus_detail,
     dpa_acad_reports,
+    dpa_acad_remedial_schedule,
+    dpa_acad_remedial_timetable_pdf,
+    teacher_remedial_schedule,
 )
 
 from .dpa_admin import (
