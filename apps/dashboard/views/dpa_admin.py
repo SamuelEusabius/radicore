@@ -1868,3 +1868,619 @@ def dpa_staff_attendance_pdf_overall(request):
 
     filename = f"staff_attendance_overall_{date_from}_{date_to}.pdf"
     return html_to_pdf_response(html_string, filename)
+
+
+
+# ==========================================================
+# PROFESSIONALISM FEEDBACK
+# ==========================================================
+
+from apps.staff.models import NoteType, ProfessionalismNote
+
+
+def _school_staff_for_notes(request):
+    """All staff at this school (excludes students/parents)."""
+    from apps.accounts.models import User
+    return User.objects.filter(
+        school=request.user.school,
+        is_active=True,
+    ).exclude(
+        role__in=[Role.STUDENT, Role.PARENT, Role.SUPER_ADMIN],
+    ).order_by('first_name', 'last_name', 'email')
+
+
+@dpa_required
+def dpa_professionalism_list(request):
+    """List all professionalism notes for this school."""
+    qs = ProfessionalismNote.objects.filter(
+        school=request.user.school,
+    ).select_related('staff', 'issued_by').order_by('-issued_at')
+
+    note_filter = request.GET.get('type', '').strip()
+    if note_filter:
+        qs = qs.filter(note_type=note_filter)
+
+    all_notes = ProfessionalismNote.objects.filter(school=request.user.school)
+
+    context = {
+        'school': request.user.school,
+        'notes': qs[:200],
+        'total': qs.count(),
+        'note_filter': note_filter,
+        'note_type_choices': NoteType.choices,
+        'positive_count': all_notes.filter(
+            note_type__in=[NoteType.COMMENDATION, NoteType.PRAISE, NoteType.RECOGNITION]
+        ).count(),
+        'concern_count': all_notes.filter(
+            note_type__in=[NoteType.CONCERN, NoteType.WARNING]
+        ).count(),
+        'pending_ack_count': all_notes.filter(acknowledged=False).count(),
+    }
+    return render(request, 'dashboards/dpa/professionalism_list.html', context)
+
+
+@dpa_required
+def dpa_professionalism_create(request, user_id=None):
+    """Issue a new professionalism note."""
+    from apps.accounts.models import User
+
+    if request.method == 'POST':
+        staff_id = request.POST.get('staff_id')
+        note_type = request.POST.get('note_type', 'praise')
+        severity = request.POST.get('severity', 'info')
+        title = request.POST.get('title', '').strip()
+        body = request.POST.get('body', '').strip()
+        context_ref = request.POST.get('context', '').strip()
+
+        if not all([staff_id, note_type, title, body]):
+            messages.error(request, 'Staff, note type, title, and body are required.')
+        else:
+            try:
+                staff = User.objects.get(pk=staff_id, school=request.user.school)
+                note = ProfessionalismNote.objects.create(
+                    school=request.user.school,
+                    staff=staff,
+                    note_type=note_type,
+                    severity=severity,
+                    title=title,
+                    body=body,
+                    context=context_ref,
+                    issued_by=request.user,
+                )
+                staff_name = staff.get_full_name or staff.email
+                messages.success(
+                    request,
+                    f'Note issued to {staff_name}.'
+                )
+                return redirect('dpa_professionalism_detail', note_id=note.id)
+            except User.DoesNotExist:
+                messages.error(request, 'Staff not found.')
+
+    # Prefill if user_id provided
+    preselected = None
+    if user_id:
+        preselected = User.objects.filter(
+            pk=user_id, school=request.user.school,
+        ).first()
+
+    context = {
+        'school': request.user.school,
+        'staff_list': _school_staff_for_notes(request),
+        'preselected': preselected,
+        'note_type_choices': NoteType.choices,
+        'severity_choices': ProfessionalismNote.Severity.choices,
+    }
+    return render(request, 'dashboards/dpa/professionalism_form.html', context)
+
+
+@dpa_required
+def dpa_professionalism_detail(request, note_id):
+    """View a single note."""
+    note = get_object_or_404(
+        ProfessionalismNote.objects.select_related('staff', 'issued_by', 'reviewed_by'),
+        pk=note_id, school=request.user.school,
+    )
+    context = {
+        'school': request.user.school,
+        'note': note,
+        'can_review': request.user.role in (Role.PRINCIPAL,),
+    }
+    return render(request, 'dashboards/dpa/professionalism_detail.html', context)
+
+
+@dpa_required
+def dpa_professionalism_delete(request, note_id):
+    """Delete a note (only if not acknowledged)."""
+    if request.method != 'POST':
+        return redirect('dpa_professionalism_list')
+
+    note = get_object_or_404(
+        ProfessionalismNote, pk=note_id, school=request.user.school,
+    )
+    if note.acknowledged:
+        messages.error(request, 'Cannot delete an acknowledged note.')
+    else:
+        note.delete()
+        messages.success(request, 'Note deleted.')
+    return redirect('dpa_professionalism_list')
+
+
+@dpa_required
+def dpa_professionalism_pdf(request, note_id):
+    """PDF copy of a professionalism note for the personnel file."""
+    from django.template.loader import render_to_string
+    from apps.core.pdf_utils import html_to_pdf_response, build_pdf_context
+
+    note = get_object_or_404(
+        ProfessionalismNote.objects.select_related('staff', 'issued_by', 'reviewed_by'),
+        pk=note_id, school=request.user.school,
+    )
+
+    html_string = render_to_string('pdf/professionalism_note.html',
+        build_pdf_context(
+            school=request.user.school,
+            generated_by=request.user,
+            note=note,
+        )
+    )
+
+    filename = f"professionalism_{note.id}_{note.staff.email}.pdf"
+    return html_to_pdf_response(html_string, filename)
+
+
+# ==========================================================
+# TEACHER — VIEW THEIR OWN PROFESSIONALISM RECORD
+# ==========================================================
+
+@login_required
+def my_professionalism(request):
+    """Teacher sees their own professionalism notes."""
+    user = request.user
+    if user.school is None:
+        return HttpResponseForbidden("No school linked.")
+
+    notes = ProfessionalismNote.objects.filter(
+        school=user.school, staff=user,
+    ).select_related('issued_by').order_by('-issued_at')
+
+    context = {
+        'school': user.school,
+        'notes': notes,
+        'total': notes.count(),
+        'positive': notes.filter(
+            note_type__in=[NoteType.COMMENDATION, NoteType.PRAISE, NoteType.RECOGNITION]
+        ).count(),
+        'concern': notes.filter(
+            note_type__in=[NoteType.CONCERN, NoteType.WARNING]
+        ).count(),
+        'pending_ack': notes.filter(acknowledged=False).count(),
+    }
+    return render(request, 'dashboards/teacher/professionalism.html', context)
+
+
+@login_required
+def my_professionalism_acknowledge(request, note_id):
+    """Teacher acknowledges a note."""
+    if request.method != 'POST':
+        return redirect('my_professionalism')
+
+    note = get_object_or_404(
+        ProfessionalismNote, pk=note_id, staff=request.user,
+    )
+
+    if not note.acknowledged:
+        note.acknowledged = True
+        note.acknowledged_at = timezone.now()
+        note.acknowledgement_comment = request.POST.get('comment', '').strip()
+        note.save(update_fields=['acknowledged', 'acknowledged_at', 'acknowledgement_comment'])
+        messages.success(request, 'Note acknowledged.')
+
+    return redirect('my_professionalism')
+
+
+@login_required
+def my_professionalism_detail(request, note_id):
+    """Teacher views a single note."""
+    note = get_object_or_404(
+        ProfessionalismNote.objects.select_related('issued_by', 'reviewed_by'),
+        pk=note_id, staff=request.user,
+    )
+    return render(request, 'dashboards/teacher/professionalism_detail.html', {
+        'school': request.user.school,
+        'note': note,
+    })
+    
+    
+
+# ==========================================================
+# STAFF SELF-SERVICE LEAVE REQUESTS
+# ==========================================================
+
+@login_required
+def my_leave_requests(request):
+    """Any authenticated staff can view their own leave requests."""
+    user = request.user
+    if user.school is None:
+        return HttpResponseForbidden("Your account is not linked to a school.")
+
+    requests_qs = LeaveRequest.objects.filter(
+        school=user.school, staff=user,
+    ).order_by('-requested_at')
+
+    # Counts
+    pending = requests_qs.filter(status=LeaveStatus.PENDING).count()
+    approved = requests_qs.filter(status=LeaveStatus.APPROVED).count()
+    rejected = requests_qs.filter(status=LeaveStatus.REJECTED).count()
+
+    context = {
+        'school': user.school,
+        'requests': requests_qs,
+        'total': requests_qs.count(),
+        'pending': pending,
+        'approved': approved,
+        'rejected': rejected,
+    }
+    return render(request, 'dashboards/staff/my_leave_list.html', context)
+
+
+@login_required
+def my_leave_request_create(request):
+    """Any staff can submit a leave request."""
+    user = request.user
+    if user.school is None:
+        return HttpResponseForbidden("Your account is not linked to a school.")
+
+    if request.method == 'POST':
+        leave_type = request.POST.get('leave_type', '').strip()
+        start_date = request.POST.get('start_date', '').strip()
+        end_date = request.POST.get('end_date', '').strip()
+        reason = request.POST.get('reason', '').strip()
+
+        errors = []
+        if not leave_type:
+            errors.append('Leave type is required.')
+        if not start_date or not end_date:
+            errors.append('Start and end dates are required.')
+        if not reason:
+            errors.append('Reason is required.')
+
+        if not errors:
+            try:
+                sd = parse_date(start_date)
+                ed = parse_date(end_date)
+                if ed < sd:
+                    errors.append('End date must be on or after start date.')
+                else:
+                    days = (ed - sd).days + 1
+                    leave = LeaveRequest.objects.create(
+                        school=user.school,
+                        staff=user,
+                        leave_type=leave_type,
+                        start_date=sd,
+                        end_date=ed,
+                        days_requested=days,
+                        reason=reason,
+                        status=LeaveStatus.PENDING,
+                    )
+                    messages.success(
+                        request,
+                        f'Leave request submitted. Awaiting DPA approval.'
+                    )
+                    return redirect('my_leave_requests')
+            except Exception as e:
+                errors.append(str(e))
+
+        for e in errors:
+            messages.error(request, e)
+
+    context = {
+        'school': user.school,
+        'leave_types': LeaveType.choices,
+        'today': timezone.localdate(),
+    }
+    return render(request, 'dashboards/staff/my_leave_form.html', context)
+
+
+@login_required
+def my_leave_request_detail(request, leave_id):
+    """Staff views their own leave request."""
+    leave = get_object_or_404(
+        LeaveRequest,
+        pk=leave_id,
+        staff=request.user,
+    )
+    return render(request, 'dashboards/staff/my_leave_detail.html', {
+        'school': request.user.school,
+        'leave': leave,
+    })
+
+
+@login_required
+def my_leave_request_cancel(request, leave_id):
+    """Staff cancels their own pending leave request."""
+    if request.method != 'POST':
+        return redirect('my_leave_requests')
+
+    leave = get_object_or_404(LeaveRequest, pk=leave_id, staff=request.user)
+
+    if leave.status != LeaveStatus.PENDING:
+        messages.error(request, 'Only pending requests can be cancelled.')
+    else:
+        leave.status = LeaveStatus.CANCELLED
+        leave.save(update_fields=['status', 'updated_at'])
+        messages.success(request, 'Leave request cancelled.')
+
+    return redirect('my_leave_requests')
+
+
+# ==========================================================
+# PRINCIPAL LEAVE REVIEW
+# ==========================================================
+
+@login_required
+def principal_leave_review(request):
+    """Principal sees leave requests forwarded by DPA."""
+    user = request.user
+    if user.role not in (Role.PRINCIPAL, Role.SUPER_ADMIN):
+        return HttpResponseForbidden("Access denied.")
+    if user.school is None:
+        return HttpResponseForbidden("No school linked.")
+
+    school = user.school
+
+    # Queue: approved by DPA, awaiting principal
+    queue = LeaveRequest.objects.filter(
+        school=school,
+        status=LeaveStatus.PENDING,
+        dpa_approved_at__isnull=False,
+        principal_approved_at__isnull=True,
+    ).select_related('staff', 'dpa_approved_by').order_by('start_date')
+
+    # Other views
+    all_requests = LeaveRequest.objects.filter(school=school).select_related('staff')
+
+    recent_approved = all_requests.filter(
+        principal_approved_at__isnull=False,
+    ).order_by('-principal_approved_at')[:10]
+
+    context = {
+        'school': school,
+        'queue': queue,
+        'queue_count': queue.count(),
+        'pending_dpa': all_requests.filter(
+            status=LeaveStatus.PENDING,
+            dpa_approved_at__isnull=True,
+        ).count(),
+        'approved_count': all_requests.filter(status=LeaveStatus.APPROVED).count(),
+        'rejected_count': all_requests.filter(status=LeaveStatus.REJECTED).count(),
+        'recent_approved': recent_approved,
+    }
+    return render(request, 'dashboards/principal/leave_review.html', context)
+
+
+@login_required
+def principal_leave_detail(request, leave_id):
+    """Principal views a leave request."""
+    user = request.user
+    if user.role not in (Role.PRINCIPAL, Role.SUPER_ADMIN):
+        return HttpResponseForbidden("Access denied.")
+
+    leave = get_object_or_404(
+        LeaveRequest.objects.select_related(
+            'staff', 'dpa_approved_by', 'principal_approved_by',
+        ),
+        pk=leave_id, school=user.school,
+    )
+
+    context = {
+        'school': user.school,
+        'leave': leave,
+        'can_approve': (
+            leave.dpa_approved_at is not None
+            and leave.principal_approved_at is None
+            and leave.status == LeaveStatus.PENDING
+        ),
+    }
+    return render(request, 'dashboards/principal/leave_detail.html', context)
+
+
+@login_required
+def principal_leave_approve(request, leave_id):
+    """Principal approves a forwarded leave."""
+    if request.method != 'POST':
+        return redirect('principal_leave_review')
+
+    user = request.user
+    if user.role not in (Role.PRINCIPAL, Role.SUPER_ADMIN):
+        return HttpResponseForbidden("Access denied.")
+
+    leave = get_object_or_404(LeaveRequest, pk=leave_id, school=user.school)
+    leave.principal_approved_by = user
+    leave.principal_approved_at = timezone.now()
+    leave.principal_comment = request.POST.get('comment', '').strip()
+    leave.status = LeaveStatus.APPROVED
+    leave.save(update_fields=[
+        'principal_approved_by', 'principal_approved_at',
+        'principal_comment', 'status', 'updated_at',
+    ])
+    staff_name = leave.staff.get_full_name or leave.staff.email
+    messages.success(request, f'Leave for {staff_name} approved.')
+    return redirect('principal_leave_review')
+
+@login_required
+def principal_leave_reject(request, leave_id):
+    """Principal rejects a leave."""
+    if request.method != 'POST':
+        return redirect('principal_leave_review')
+
+    user = request.user
+    if user.role not in (Role.PRINCIPAL, Role.SUPER_ADMIN):
+        return HttpResponseForbidden("Access denied.")
+
+    leave = get_object_or_404(LeaveRequest, pk=leave_id, school=user.school)
+    leave.principal_approved_by = user
+    leave.principal_approved_at = timezone.now()
+    leave.principal_comment = request.POST.get('comment', '').strip()
+    leave.status = LeaveStatus.REJECTED
+    leave.save(update_fields=[
+        'principal_approved_by', 'principal_approved_at',
+        'principal_comment', 'status', 'updated_at',
+    ])
+    staff_name = leave.staff.get_full_name or leave.staff.email
+    messages.warning(request, f'Leave for {staff_name} rejected.')
+    return redirect('principal_leave_review')
+
+
+
+# ==========================================================
+# PRINCIPAL DASHBOARD
+# ==========================================================
+
+@login_required
+def principal_dashboard(request):
+    """Consolidated dashboard for the Principal."""
+    user = request.user
+    if user.role not in (Role.PRINCIPAL, Role.SUPER_ADMIN):
+        return HttpResponseForbidden("Access denied.")
+    if user.school is None:
+        return HttpResponseForbidden("No school linked.")
+
+    school = user.school
+    today = timezone.localdate()
+
+    # ---------- Escalated discipline cases ----------
+    escalated_discipline = DisciplineRecord.objects.filter(
+        school=school,
+        status=DisciplineStatus.ESCALATED,
+    ).select_related('student', 'reported_by').order_by('-incident_date')[:10]
+
+    escalated_count = DisciplineRecord.objects.filter(
+        school=school, status=DisciplineStatus.ESCALATED,
+    ).count()
+
+    # Open discipline stats
+    open_discipline = DisciplineRecord.objects.filter(
+        school=school,
+        status__in=[DisciplineStatus.OPEN, DisciplineStatus.INVESTIGATING],
+    ).count()
+
+    discipline_stats = {
+        'escalated': escalated_count,
+        'open': open_discipline,
+        'critical': DisciplineRecord.objects.filter(
+            school=school,
+            status__in=[DisciplineStatus.OPEN, DisciplineStatus.INVESTIGATING, DisciplineStatus.ESCALATED],
+            severity=DisciplineSeverity.CRITICAL,
+        ).count(),
+    }
+
+    # ---------- Leave requests awaiting Principal ----------
+    leave_queue = LeaveRequest.objects.filter(
+        school=school,
+        status=LeaveStatus.PENDING,
+        dpa_approved_at__isnull=False,
+        principal_approved_at__isnull=True,
+    ).select_related('staff', 'dpa_approved_by').order_by('start_date')[:10]
+
+    leave_stats = {
+        'awaiting': LeaveRequest.objects.filter(
+            school=school,
+            status=LeaveStatus.PENDING,
+            dpa_approved_at__isnull=False,
+            principal_approved_at__isnull=True,
+        ).count(),
+        'pending_dpa': LeaveRequest.objects.filter(
+            school=school,
+            status=LeaveStatus.PENDING,
+            dpa_approved_at__isnull=True,
+        ).count(),
+        'approved_this_month': LeaveRequest.objects.filter(
+            school=school,
+            status=LeaveStatus.APPROVED,
+            principal_approved_at__gte=today.replace(day=1),
+        ).count(),
+    }
+
+    # ---------- Professionalism notes ----------
+    recent_notes = ProfessionalismNote.objects.filter(
+        school=school,
+    ).select_related('staff', 'issued_by').order_by('-issued_at')[:5]
+
+    note_stats = {
+        'total_this_month': ProfessionalismNote.objects.filter(
+            school=school,
+            issued_at__gte=today.replace(day=1),
+        ).count(),
+        'pending_ack': ProfessionalismNote.objects.filter(
+            school=school, acknowledged=False,
+        ).count(),
+        'concerns': ProfessionalismNote.objects.filter(
+            school=school,
+            note_type__in=[NoteType.CONCERN, NoteType.WARNING],
+        ).count(),
+    }
+
+    # ---------- Staff attendance today ----------
+    attendance_today = StaffAttendance.objects.filter(school=school, date=today)
+    attendance_stats = {
+        'present': attendance_today.filter(status=StaffAttendanceStatus.PRESENT).count(),
+        'absent': attendance_today.filter(status=StaffAttendanceStatus.ABSENT).count(),
+        'late': attendance_today.filter(status=StaffAttendanceStatus.LATE).count(),
+        'on_leave': attendance_today.filter(status=StaffAttendanceStatus.ON_LEAVE).count(),
+        'recorded': attendance_today.count(),
+    }
+
+    # ---------- Student admin cases (from DPA) ----------
+    admin_cases = StudentAdminCase.objects.filter(
+        school=school,
+        status=AdminCaseStatus.REFERRED,
+    ).select_related('student').order_by('-created_at')[:5]
+
+    admin_case_count = StudentAdminCase.objects.filter(
+        school=school, status=AdminCaseStatus.REFERRED,
+    ).count()
+
+    context = {
+        'school': school,
+        'today': today,
+        'escalated_discipline': escalated_discipline,
+        'discipline_stats': discipline_stats,
+        'leave_queue': leave_queue,
+        'leave_stats': leave_stats,
+        'recent_notes': recent_notes,
+        'note_stats': note_stats,
+        'attendance_stats': attendance_stats,
+        'admin_cases': admin_cases,
+        'admin_case_count': admin_case_count,
+    }
+    return render(request, 'dashboards/principal/dashboard.html', context)
+
+
+
+# ==========================================================
+# LEAVE REQUEST PDF
+# ==========================================================
+
+@dpa_required
+def dpa_leave_pdf(request, leave_id):
+    """PDF for a single leave request — for personnel file."""
+    from django.template.loader import render_to_string
+    from apps.core.pdf_utils import html_to_pdf_response, build_pdf_context
+
+    leave = get_object_or_404(
+        LeaveRequest.objects.select_related(
+            'staff', 'dpa_approved_by', 'principal_approved_by',
+        ),
+        pk=leave_id, school=request.user.school,
+    )
+
+    html_string = render_to_string('pdf/leave_request.html',
+        build_pdf_context(
+            school=request.user.school,
+            generated_by=request.user,
+            leave=leave,
+        )
+    )
+
+    filename = f"leave_{leave.id}_{leave.staff.email}.pdf"
+    return html_to_pdf_response(html_string, filename)

@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Professionalism Notes{% endblock %}
+{% block header_title %}Staff Professionalism{% endblock %}
+{% block header_sub %}
+  Feedback, commendations, and concerns · {{ school.name }}
+{% endblock %}
+
+{% block content %}
+
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Total Notes</span>
+      <div class="stat-icon" style="background: var(--primary-light); color: var(--primary);">
+        {% include 'partials/icons.html' with name="award" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value">{{ total }}</div>
+    <div class="stat-meta">issued</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Positive</span>
+      <div class="stat-icon" style="background: var(--success-light); color: var(--success);">
+        {% include 'partials/icons.html' with name="check-circle" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--success);">{{ positive_count }}</div>
+    <div class="stat-meta">praise · commend · recognition</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Concerns</span>
+      <div class="stat-icon" style="background: var(--danger-light); color: var(--danger);">
+        {% include 'partials/icons.html' with name="alert-triangle" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--danger);">{{ concern_count }}</div>
+    <div class="stat-meta">concern · warning</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Pending Ack</span>
+      <div class="stat-icon" style="background: var(--warning-light); color: var(--warning);">
+        {% include 'partials/icons.html' with name="bell" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--warning);">{{ pending_ack_count }}</div>
+    <div class="stat-meta">awaiting staff</div>
+  </div>
+</div>
+
+<div class="card mb-6">
+  <div class="flex flex-wrap gap-3 items-end justify-between">
+    <form method="get" class="flex flex-wrap gap-3 items-end">
+      <div style="min-width: 220px;">
+        <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Type</label>
+        <select name="type" class="select w-full">
+          <option value="">All Types</option>
+          {% for value, label in note_type_choices %}
+          <option value="{{ value }}" {% if note_filter == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <button type="submit" class="btn btn-primary">
+        {% include 'partials/icons.html' with name="search" size=16 %}
+        Filter
+      </button>
+      {% if note_filter %}
+      <a href="{% url 'dpa_professionalism_list' %}" class="btn btn-secondary">
+        {% include 'partials/icons.html' with name="x-circle" size=16 %}
+        Clear
+      </a>
+      {% endif %}
+    </form>
+    <a href="{% url 'dpa_professionalism_create' %}" class="btn btn-primary">
+      {% include 'partials/icons.html' with name="plus" size=16 %}
+      Issue Note
+    </a>
+  </div>
+</div>
+
+{% if notes %}
+<div class="card" style="padding: 0; overflow: hidden;">
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Staff</th>
+          <th style="width: 160px;">Type</th>
+          <th>Title</th>
+          <th style="width: 130px;">Issued</th>
+          <th style="width: 110px;">Status</th>
+          <th style="text-align: right;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for note in notes %}
+        <tr>
+          <td>
+            <a href="{% url 'dpa_staff_detail' note.staff.id %}"
+               style="font-weight: 600; color: var(--ink-900); text-decoration: none;">
+              {{ note.staff.get_full_name|default:note.staff.email }}
+            </a>
+            <div class="text-xs" style="color: var(--ink-500);">
+              {{ note.staff.get_role_display|default:note.staff.role }}
+            </div>
+          </td>
+          <td>
+            {% if note.note_type == 'commendation' or note.note_type == 'praise' or note.note_type == 'recognition' %}
+              <span class="badge badge-success">{{ note.get_note_type_display }}</span>
+            {% elif note.note_type == 'warning' %}
+              <span class="badge badge-danger">{{ note.get_note_type_display }}</span>
+            {% elif note.note_type == 'concern' %}
+              <span class="badge badge-warning">{{ note.get_note_type_display }}</span>
+            {% else %}
+              <span class="badge badge-info">{{ note.get_note_type_display }}</span>
+            {% endif %}
+          </td>
+          <td style="font-weight: 500; color: var(--ink-800);">{{ note.title }}</td>
+          <td style="color: var(--ink-600); font-size: var(--text-sm);">{{ note.issued_at|date:"j M Y" }}</td>
+          <td>
+            {% if note.acknowledged %}
+              <span class="badge badge-success">Acknowledged</span>
+            {% else %}
+              <span class="badge badge-warning">Pending</span>
+            {% endif %}
+          </td>
+          <td>
+            <div class="table-actions" style="justify-content: flex-end;">
+              <a href="{% url 'dpa_professionalism_detail' note.id %}" class="view" title="View">
+                {% include 'partials/icons.html' with name="eye" size=14 %}
+              </a>
+              <a href="{% url 'dpa_professionalism_pdf' note.id %}" target="_blank" class="print" title="Download PDF">
+                {% include 'partials/icons.html' with name="printer" size=14 %}
+              </a>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% else %}
+<div class="card">
+  <div class="empty">
+    {% include 'partials/icons.html' with name="award" size=56 %}
+    <h3>No professionalism notes yet</h3>
+    <p>Issue commendations, praise, or concerns for staff members. Notes are kept in the personnel file.</p>
+    <a href="{% url 'dpa_professionalism_create' %}" class="btn btn-primary">
+      {% include 'partials/icons.html' with name="plus" size=16 %}
+      Issue First Note
+    </a>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

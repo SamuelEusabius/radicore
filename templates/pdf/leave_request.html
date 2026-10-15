@@ -1,0 +1,194 @@
+{% load static %}
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  @page { size: A4 portrait; margin: 12mm 14mm 14mm 14mm; }
+  * { box-sizing: border-box; }
+  body { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 9.5pt; color: #1a1a1a; margin: 0; line-height: 1.4; }
+
+  /* HEADER — same standard block */
+  table.report-header { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+  table.report-header td { vertical-align: top; padding: 0; }
+  .rh-logo-cell { width: 90px; padding-right: 16px; }
+  .rh-logo-img { width: 72px; height: 72px; object-fit: contain; }
+  .rh-school-name { font-size: 16pt; font-weight: bold; color: #00695c; line-height: 1.1; margin: 0; }
+  .rh-motto { font-style: italic; font-size: 9.5pt; color: #555; margin-top: 3px; }
+  .rh-address { font-size: 9pt; color: #555; margin-top: 6px; }
+  .rh-contact { font-size: 9pt; color: #555; margin-top: 2px; }
+  .rh-meta-cell { width: 150px; text-align: right; }
+  .rh-meta-label { font-size: 6.5pt; text-transform: uppercase; letter-spacing: 0.05em; color: #888; font-weight: bold; }
+  .rh-meta-date { font-size: 10pt; font-weight: bold; color: #1a1a1a; margin-top: 1px; }
+  .rh-meta-time { font-size: 8.5pt; color: #555; }
+  .rh-meta-name { font-size: 8.5pt; color: #555; }
+  .rh-divider { border-bottom: 2pt solid #00695c; margin-bottom: 14px; }
+
+  .title-block { text-align: center; padding: 4px 0 14px 0; }
+  .report-title { font-size: 15pt; font-weight: bold; color: #00695c; letter-spacing: 0.05em; margin: 0; text-transform: uppercase; }
+  .report-subtitle { font-size: 10pt; color: #555; margin-top: 4px; }
+  .report-ref { font-size: 8.5pt; color: #888; margin-top: 3px; font-family: 'DejaVu Sans Mono', monospace; }
+
+  .badge-row { text-align: center; margin-bottom: 16px; }
+  .badge-pill {
+    display: inline-block;
+    padding: 3px 12px;
+    border-radius: 10px;
+    font-size: 9pt;
+    font-weight: bold;
+    margin: 0 3px;
+  }
+  .badge-success { background: #e7f6ec; color: #16A34A; border: 0.5pt solid #16A34A; }
+  .badge-warning { background: #fef4e2; color: #B45309; border: 0.5pt solid #D97706; }
+  .badge-danger { background: #fdecec; color: #B91C1C; border: 0.5pt solid #DC2626; }
+  .badge-neutral { background: #f0f0f0; color: #444; border: 0.5pt solid #999; }
+
+  table.info { width: 100%; border-collapse: collapse; margin-bottom: 14px; }
+  table.info td { padding: 6px 8px; border: 0.5pt solid #cfd8d4; font-size: 9.5pt; vertical-align: top; }
+  table.info td.label { background: #f5f7f6; color: #555; font-weight: bold; text-transform: uppercase; font-size: 8pt; letter-spacing: 0.04em; width: 25%; }
+
+  .section-title { font-size: 9pt; font-weight: bold; color: #00695c; text-transform: uppercase; letter-spacing: 0.06em; margin: 16px 0 6px 0; padding-bottom: 4px; border-bottom: 0.5pt solid #cfd8d4; }
+
+  .body-text { font-size: 10pt; line-height: 1.55; color: #1a1a1a; white-space: pre-line; }
+
+  /* Approval chain */
+  table.approvals { width: 100%; border-collapse: collapse; margin-top: 10px; }
+  table.approvals td { padding: 8px 10px; border: 0.5pt solid #cfd8d4; vertical-align: top; font-size: 9pt; }
+  table.approvals td.step-no {
+    width: 32px; text-align: center; font-weight: bold; background: #f5f7f6; color: #555; font-size: 10pt;
+  }
+  table.approvals td.step-no.approved { background: #e7f6ec; color: #16A34A; }
+  table.approvals td.stage { font-weight: bold; color: #1a1a1a; font-size: 9.5pt; }
+  table.approvals td.stage-info { color: #666; font-size: 8.5pt; margin-top: 2px; }
+  .comment-box {
+    padding: 4px 8px; background: #f9f9f9; border-radius: 3px;
+    font-style: italic; margin-top: 4px; color: #333; font-size: 9pt;
+  }
+
+  table.signatures { width: 100%; border-collapse: collapse; margin-top: 32px; }
+  table.signatures td {
+    padding: 28px 8px 4px 8px;
+    width: 50%;
+    vertical-align: bottom;
+    border-top: 0.5pt solid #555;
+    text-align: center;
+    font-size: 8.5pt;
+    color: #555;
+  }
+
+  .footer { margin-top: 20px; padding-top: 8px; border-top: 0.5pt solid #d9e2de; text-align: center; font-size: 7.5pt; color: #777; font-style: italic; }
+</style>
+</head>
+<body>
+
+{% include 'pdf/_report_header.html' %}
+
+<div class="title-block">
+  <div class="report-title">Staff Leave Request</div>
+  <div class="report-subtitle">{{ leave.get_leave_type_display }}</div>
+  <div class="report-ref">Ref: LV-{{ leave.id }}</div>
+</div>
+
+<div class="badge-row">
+  {% if leave.status == 'approved' %}
+    <span class="badge-pill badge-success">Approved</span>
+  {% elif leave.status == 'pending' %}
+    <span class="badge-pill badge-warning">Pending</span>
+  {% elif leave.status == 'rejected' %}
+    <span class="badge-pill badge-danger">Rejected</span>
+  {% elif leave.status == 'cancelled' %}
+    <span class="badge-pill badge-neutral">Cancelled</span>
+  {% else %}
+    <span class="badge-pill badge-neutral">{{ leave.get_status_display }}</span>
+  {% endif %}
+</div>
+
+<table class="info">
+  <tr>
+    <td class="label">Staff Name</td>
+    <td>{{ leave.staff.get_full_name|default:leave.staff.email }}</td>
+    <td class="label">Role</td>
+    <td>{{ leave.staff.get_role_display|default:leave.staff.role }}</td>
+  </tr>
+  <tr>
+    <td class="label">Leave Type</td>
+    <td>{{ leave.get_leave_type_display }}</td>
+    <td class="label">Days</td>
+    <td>{{ leave.days_requested }}</td>
+  </tr>
+  <tr>
+    <td class="label">Start Date</td>
+    <td>{{ leave.start_date|date:"j F Y" }}</td>
+    <td class="label">End Date</td>
+    <td>{{ leave.end_date|date:"j F Y" }}</td>
+  </tr>
+  <tr>
+    <td class="label">Requested On</td>
+    <td colspan="3">{{ leave.requested_at|date:"j F Y, H:i" }}</td>
+  </tr>
+</table>
+
+<div class="section-title">Reason</div>
+<div class="body-text">{{ leave.reason }}</div>
+
+<div class="section-title">Approval Chain</div>
+<table class="approvals">
+  <tr>
+    <td class="step-no {% if leave.dpa_approved_at %}approved{% endif %}">
+      {% if leave.dpa_approved_at %}✓{% else %}1{% endif %}
+    </td>
+    <td>
+      <div class="stage">Deputy Principal — Administration</div>
+      {% if leave.dpa_approved_at %}
+        <div class="stage-info">
+          {{ leave.dpa_approved_by.get_full_name|default:leave.dpa_approved_by.email }}
+          · {{ leave.dpa_approved_at|date:"j F Y, H:i" }}
+        </div>
+        {% if leave.dpa_comment %}
+        <div class="comment-box">"{{ leave.dpa_comment }}"</div>
+        {% endif %}
+      {% else %}
+        <div class="stage-info">Pending DPA review</div>
+      {% endif %}
+    </td>
+  </tr>
+
+  <tr>
+    <td class="step-no {% if leave.principal_approved_at %}approved{% endif %}">
+      {% if leave.principal_approved_at %}✓{% else %}2{% endif %}
+    </td>
+    <td>
+      <div class="stage">Principal — Final Approval</div>
+      {% if leave.principal_approved_at %}
+        <div class="stage-info">
+          {{ leave.principal_approved_by.get_full_name|default:leave.principal_approved_by.email }}
+          · {{ leave.principal_approved_at|date:"j F Y, H:i" }}
+        </div>
+        {% if leave.principal_comment %}
+        <div class="comment-box">"{{ leave.principal_comment }}"</div>
+        {% endif %}
+      {% else %}
+        <div class="stage-info">
+          {% if leave.dpa_approved_at %}Awaiting Principal approval{% else %}Pending DPA first{% endif %}
+        </div>
+      {% endif %}
+    </td>
+  </tr>
+</table>
+
+<table class="signatures">
+  <tr>
+    <td>Staff Signature &amp; Date</td>
+    <td>Principal Signature &amp; Date</td>
+  </tr>
+</table>
+
+<div class="footer">
+  {{ school.name }}{% if school.code %} · {{ school.code }}{% endif %}
+  &nbsp;·&nbsp; Leave Request — Ref LV-{{ leave.id }}
+  &nbsp;·&nbsp; Generated {{ generated_on|date:"Y-m-d H:i" }}
+  {% if generated_by %} by {{ generated_by.get_full_name|default:generated_by.email }}{% endif %}
+</div>
+
+</body>
+</html>

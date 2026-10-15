@@ -1,0 +1,131 @@
+{% load static %}
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  @page { size: A4 portrait; margin: 12mm 14mm 14mm 14mm; }
+  * { box-sizing: border-box; }
+  body { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 9.5pt; color: #1a1a1a; margin: 0; line-height: 1.4; }
+
+  table.report-header { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+  table.report-header td { vertical-align: top; padding: 0; }
+  .rh-logo-cell { width: 90px; padding-right: 16px; }
+  .rh-logo-img { width: 72px; height: 72px; object-fit: contain; }
+  .rh-school-name { font-size: 16pt; font-weight: bold; color: #00695c; line-height: 1.1; margin: 0; }
+  .rh-motto { font-style: italic; font-size: 9.5pt; color: #555; margin-top: 3px; }
+  .rh-address { font-size: 9pt; color: #555; margin-top: 6px; }
+  .rh-contact { font-size: 9pt; color: #555; margin-top: 2px; }
+  .rh-meta-cell { width: 150px; text-align: right; }
+  .rh-meta-label { font-size: 6.5pt; text-transform: uppercase; letter-spacing: 0.05em; color: #888; font-weight: bold; }
+  .rh-meta-date { font-size: 10pt; font-weight: bold; color: #1a1a1a; margin-top: 1px; }
+  .rh-meta-time { font-size: 8.5pt; color: #555; }
+  .rh-meta-name { font-size: 8.5pt; color: #555; }
+  .rh-divider { border-bottom: 2pt solid #00695c; margin-bottom: 14px; }
+
+  .title-block { text-align: center; padding: 6px 0 14px 0; }
+  .report-title { font-size: 15pt; font-weight: bold; color: #00695c; letter-spacing: 0.05em; margin: 0; text-transform: uppercase; }
+  .report-subtitle { font-size: 10pt; color: #555; margin-top: 4px; }
+
+  .badge-row { text-align: center; margin-bottom: 16px; }
+  .badge-pill {
+    display: inline-block;
+    padding: 3px 12px;
+    border-radius: 10px;
+    font-size: 9pt;
+    font-weight: bold;
+    margin: 0 3px;
+  }
+  .badge-positive { background: #e7f6ec; color: #16A34A; border: 0.5pt solid #16A34A; }
+  .badge-warning { background: #fef4e2; color: #B45309; border: 0.5pt solid #D97706; }
+  .badge-danger { background: #fdecec; color: #B91C1C; border: 0.5pt solid #DC2626; }
+  .badge-neutral { background: #f0f0f0; color: #444; border: 0.5pt solid #999; }
+
+  table.info { width: 100%; border-collapse: collapse; margin-bottom: 14px; }
+  table.info td { padding: 6px 8px; border: 0.5pt solid #cfd8d4; font-size: 9pt; vertical-align: top; }
+  table.info td.label { background: #f5f7f6; color: #555; font-weight: bold; text-transform: uppercase; font-size: 8pt; letter-spacing: 0.04em; width: 25%; }
+
+  .section-title { font-size: 9pt; font-weight: bold; color: #00695c; text-transform: uppercase; letter-spacing: 0.06em; margin: 16px 0 6px 0; padding-bottom: 4px; border-bottom: 0.5pt solid #cfd8d4; }
+
+  .body-text { font-size: 10pt; line-height: 1.55; color: #1a1a1a; white-space: pre-line; }
+
+  .signature-row { margin-top: 40px; }
+  .signature-cell { width: 45%; padding-top: 30px; border-top: 0.5pt solid #555; font-size: 8.5pt; color: #555; text-align: center; }
+
+  .footer { margin-top: 20px; padding-top: 8px; border-top: 0.5pt solid #d9e2de; text-align: center; font-size: 7.5pt; color: #777; font-style: italic; }
+</style>
+</head>
+<body>
+
+{% include 'pdf/_report_header.html' %}
+
+<div class="title-block">
+  <div class="report-title">Staff Professionalism Note</div>
+  <div class="report-subtitle">Confidential — For personnel file only</div>
+</div>
+
+<div class="badge-row">
+  {% if note.is_positive %}
+    <span class="badge-pill badge-positive">{{ note.get_note_type_display }}</span>
+  {% elif note.note_type == 'warning' %}
+    <span class="badge-pill badge-danger">{{ note.get_note_type_display }}</span>
+  {% elif note.note_type == 'concern' %}
+    <span class="badge-pill badge-warning">{{ note.get_note_type_display }}</span>
+  {% else %}
+    <span class="badge-pill badge-neutral">{{ note.get_note_type_display }}</span>
+  {% endif %}
+  <span class="badge-pill badge-neutral">{{ note.get_severity_display }}</span>
+</div>
+
+<table class="info">
+  <tr>
+    <td class="label">Staff Name</td>
+    <td>{{ note.staff.get_full_name|default:note.staff.email }}</td>
+    <td class="label">Role</td>
+    <td>{{ note.staff.get_role_display|default:note.staff.role }}</td>
+  </tr>
+  <tr>
+    <td class="label">Issued By</td>
+    <td>{{ note.issued_by.get_full_name|default:note.issued_by.email|default:"—" }}</td>
+    <td class="label">Issued On</td>
+    <td>{{ note.issued_at|date:"j F Y, H:i" }}</td>
+  </tr>
+  {% if note.context %}
+  <tr>
+    <td class="label">Context</td>
+    <td colspan="3">{{ note.context }}</td>
+  </tr>
+  {% endif %}
+</table>
+
+<div class="section-title">{{ note.title }}</div>
+<div class="body-text">{{ note.body }}</div>
+
+{% if note.acknowledged %}
+<div class="section-title">Staff Acknowledgement</div>
+<p style="font-size: 9.5pt; color: #333; margin: 0;">
+  Acknowledged by {{ note.staff.get_full_name|default:note.staff.email }} on {{ note.acknowledged_at|date:"j F Y, H:i" }}.
+</p>
+{% if note.acknowledgement_comment %}
+<p style="font-size: 9.5pt; color: #333; font-style: italic; margin-top: 4px;">
+  "{{ note.acknowledgement_comment }}"
+</p>
+{% endif %}
+{% endif %}
+
+<table class="signature-row" style="width: 100%; border-collapse: collapse;">
+  <tr>
+    <td class="signature-cell" style="text-align: left;">Issued By — Signature &amp; Date</td>
+    <td style="width: 10%;"></td>
+    <td class="signature-cell" style="text-align: right;">Staff Member — Signature &amp; Date</td>
+  </tr>
+</table>
+
+<div class="footer">
+  {{ school.name }}{% if school.code %} · {{ school.code }}{% endif %}
+  &nbsp;·&nbsp; Confidential — Professionalism Note #{{ note.id }}
+  &nbsp;·&nbsp; Generated {{ generated_on|date:"Y-m-d H:i" }}
+</div>
+
+</body>
+</html>

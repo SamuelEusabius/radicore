@@ -1,0 +1,287 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Principal Dashboard{% endblock %}
+{% block header_title %}Principal Dashboard{% endblock %}
+{% block header_sub %}
+  {{ school.name }} · {{ today|date:"l, j F Y" }}
+{% endblock %}
+
+{% block content %}
+
+<!-- KPI Row -->
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+
+  <a href="{% url 'dpa_discipline_list' %}?status=escalated" class="stat card-hover" style="text-decoration: none;">
+    <div class="stat-header">
+      <span class="stat-label">Escalated Cases</span>
+      <div class="stat-icon" style="background: var(--danger-light); color: var(--danger);">
+        {% include 'partials/icons.html' with name="alert-triangle" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--danger);">{{ discipline_stats.escalated }}</div>
+    <div class="stat-meta">
+      {{ discipline_stats.critical }} critical · {{ discipline_stats.open }} open
+    </div>
+  </a>
+
+  <a href="{% url 'principal_leave_review' %}" class="stat card-hover" style="text-decoration: none;">
+    <div class="stat-header">
+      <span class="stat-label">Leave Queue</span>
+      <div class="stat-icon" style="background: var(--warning-light); color: var(--warning);">
+        {% include 'partials/icons.html' with name="calendar" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--warning);">{{ leave_stats.awaiting }}</div>
+    <div class="stat-meta">
+      {{ leave_stats.approved_this_month }} approved this month
+    </div>
+  </a>
+
+  <a href="{% url 'dpa_professionalism_list' %}" class="stat card-hover" style="text-decoration: none;">
+    <div class="stat-header">
+      <span class="stat-label">Professionalism</span>
+      <div class="stat-icon" style="background: var(--info-light); color: var(--info);">
+        {% include 'partials/icons.html' with name="award" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--info);">{{ note_stats.total_this_month }}</div>
+    <div class="stat-meta">
+      {{ note_stats.concerns }} concerns · {{ note_stats.pending_ack }} pending ack
+    </div>
+  </a>
+
+  <a href="{% url 'dpa_staff_attendance' %}" class="stat card-hover" style="text-decoration: none;">
+    <div class="stat-header">
+      <span class="stat-label">Staff Present Today</span>
+      <div class="stat-icon" style="background: var(--success-light); color: var(--success);">
+        {% include 'partials/icons.html' with name="users" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--success);">{{ attendance_stats.present }}</div>
+    <div class="stat-meta">
+      {{ attendance_stats.absent }} absent · {{ attendance_stats.late }} late
+    </div>
+  </a>
+
+</div>
+
+<!-- Two action queues -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+
+  <!-- Escalated discipline -->
+  <div class="card" style="padding: 0; overflow: hidden;">
+    <div style="padding: var(--s-5); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+      <h3 class="card-title" style="margin: 0;">
+        {% include 'partials/icons.html' with name="alert-triangle" size=18 %}
+        Escalated Discipline Cases
+      </h3>
+      <a href="{% url 'dpa_discipline_list' %}?status=escalated" class="text-xs" style="color: var(--primary); text-decoration: none; font-weight: 500;">
+        View all →
+      </a>
+    </div>
+
+    {% if escalated_discipline %}
+      {% for record in escalated_discipline %}
+      <div style="padding: var(--s-4) var(--s-5); border-bottom: 1px solid var(--border);">
+        <div class="flex items-start justify-between gap-3 flex-wrap">
+          <div class="flex-1 min-w-0">
+            <a href="{% url 'dpa_discipline_detail' record.id %}"
+               style="font-weight: 600; color: var(--ink-900); font-size: var(--text-sm); text-decoration: none;">
+              {{ record.student.first_name }} {{ record.student.last_name }}
+            </a>
+            <div class="text-xs mt-1" style="color: var(--ink-500);">
+              {{ record.get_category_display }} · {{ record.incident_date|date:"j M Y" }}
+            </div>
+          </div>
+          {% if record.severity == 'critical' %}
+            <span class="badge badge-danger">Critical</span>
+          {% elif record.severity == 'serious' %}
+            <span class="badge" style="background: var(--warning-light); color: var(--warning);">Serious</span>
+          {% elif record.severity == 'moderate' %}
+            <span class="badge badge-warning">Moderate</span>
+          {% else %}
+            <span class="badge badge-neutral">Minor</span>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div style="padding: var(--s-8); text-align: center;">
+        <p class="text-sm" style="color: var(--ink-500); margin: 0;">
+          No escalated cases awaiting review.
+        </p>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Leave queue -->
+  <div class="card" style="padding: 0; overflow: hidden;">
+    <div style="padding: var(--s-5); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+      <h3 class="card-title" style="margin: 0;">
+        {% include 'partials/icons.html' with name="calendar" size=18 %}
+        Leave Requests Awaiting Decision
+      </h3>
+      <a href="{% url 'principal_leave_review' %}" class="text-xs" style="color: var(--primary); text-decoration: none; font-weight: 500;">
+        View all →
+      </a>
+    </div>
+
+    {% if leave_queue %}
+      {% for leave in leave_queue %}
+      <div style="padding: var(--s-4) var(--s-5); border-bottom: 1px solid var(--border);">
+        <div class="flex items-start justify-between gap-3 flex-wrap">
+          <div class="flex-1 min-w-0">
+            <a href="{% url 'principal_leave_detail' leave.id %}"
+               style="font-weight: 600; color: var(--ink-900); font-size: var(--text-sm); text-decoration: none;">
+              {{ leave.staff.get_full_name|default:leave.staff.email }}
+            </a>
+            <div class="text-xs mt-1" style="color: var(--ink-500);">
+              {{ leave.get_leave_type_display }} · {{ leave.start_date|date:"j M" }} → {{ leave.end_date|date:"j M" }}
+              ({{ leave.days_requested }} day{{ leave.days_requested|pluralize }})
+            </div>
+          </div>
+          <span class="badge badge-warning">Pending</span>
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div style="padding: var(--s-8); text-align: center;">
+        <p class="text-sm" style="color: var(--ink-500); margin: 0;">
+          No leave requests awaiting decision.
+        </p>
+      </div>
+    {% endif %}
+  </div>
+
+</div>
+
+<!-- Row 2: Staff attendance + Professionalism recent -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+
+  <!-- Staff attendance summary -->
+  <div class="card">
+    <h3 class="card-title mb-4">
+      {% include 'partials/icons.html' with name="users" size=18 %}
+      Staff Attendance Today
+    </h3>
+
+    {% if attendance_stats.recorded %}
+      <div class="grid grid-cols-2 gap-3">
+        <div style="padding: var(--s-3); background: var(--success-light); border-radius: var(--radius); text-align: center;">
+          <div style="font-size: 20pt; font-weight: 700; color: var(--success); line-height: 1;">
+            {{ attendance_stats.present }}
+          </div>
+          <div class="text-xs mt-2" style="color: var(--success); font-weight: 600;">Present</div>
+        </div>
+        <div style="padding: var(--s-3); background: var(--danger-light); border-radius: var(--radius); text-align: center;">
+          <div style="font-size: 20pt; font-weight: 700; color: var(--danger); line-height: 1;">
+            {{ attendance_stats.absent }}
+          </div>
+          <div class="text-xs mt-2" style="color: var(--danger); font-weight: 600;">Absent</div>
+        </div>
+        <div style="padding: var(--s-3); background: var(--warning-light); border-radius: var(--radius); text-align: center;">
+          <div style="font-size: 20pt; font-weight: 700; color: var(--warning); line-height: 1;">
+            {{ attendance_stats.late }}
+          </div>
+          <div class="text-xs mt-2" style="color: var(--warning); font-weight: 600;">Late</div>
+        </div>
+        <div style="padding: var(--s-3); background: var(--info-light); border-radius: var(--radius); text-align: center;">
+          <div style="font-size: 20pt; font-weight: 700; color: var(--info); line-height: 1;">
+            {{ attendance_stats.on_leave }}
+          </div>
+          <div class="text-xs mt-2" style="color: var(--info); font-weight: 600;">On Leave</div>
+        </div>
+      </div>
+      <div class="text-xs mt-3 text-center" style="color: var(--ink-500);">
+        {{ attendance_stats.recorded }} staff member{{ attendance_stats.recorded|pluralize }} recorded
+      </div>
+    {% else %}
+      <p class="text-sm" style="color: var(--ink-500); margin: 0;">
+        No attendance recorded today yet. <a href="{% url 'dpa_staff_attendance' %}" style="color: var(--primary);">Record now →</a>
+      </p>
+    {% endif %}
+  </div>
+
+  <!-- Recent professionalism notes -->
+  <div class="card">
+    <h3 class="card-title mb-4">
+      {% include 'partials/icons.html' with name="award" size=18 %}
+      Recent Professionalism Notes
+    </h3>
+
+    {% if recent_notes %}
+      <div class="space-y-3">
+        {% for note in recent_notes %}
+        <div style="padding: var(--s-3); background: var(--surface-muted); border-radius: var(--radius);">
+          <div class="flex items-start justify-between gap-2">
+            <div class="flex-1 min-w-0">
+              <div style="font-weight: 600; color: var(--ink-900); font-size: var(--text-sm);">
+                {{ note.staff.get_full_name|default:note.staff.email }}
+              </div>
+              <div class="text-xs mt-1" style="color: var(--ink-500);">
+                {{ note.title }}
+              </div>
+            </div>
+            {% if note.is_positive %}
+              <span class="badge badge-success">{{ note.get_note_type_display }}</span>
+            {% elif note.note_type == 'warning' %}
+              <span class="badge badge-danger">{{ note.get_note_type_display }}</span>
+            {% elif note.note_type == 'concern' %}
+              <span class="badge badge-warning">{{ note.get_note_type_display }}</span>
+            {% else %}
+              <span class="badge badge-info">{{ note.get_note_type_display }}</span>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="text-sm" style="color: var(--ink-500); margin: 0;">
+        No professionalism notes recorded yet.
+      </p>
+    {% endif %}
+  </div>
+
+</div>
+
+<!-- Quick actions -->
+<div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+  <a href="{% url 'principal_leave_review' %}" class="card card-hover" style="text-decoration: none; text-align: center; padding: var(--s-5);">
+    <div style="font-weight: 600; color: var(--ink-900); font-size: var(--text-sm);">
+      Leave Review
+    </div>
+    <div class="text-xs mt-1" style="color: var(--ink-500);">
+      {{ leave_stats.awaiting }} pending
+    </div>
+  </a>
+
+  <a href="{% url 'dpa_discipline_list' %}?status=escalated" class="card card-hover" style="text-decoration: none; text-align: center; padding: var(--s-5);">
+    <div style="font-weight: 600; color: var(--ink-900); font-size: var(--text-sm);">
+      Discipline Cases
+    </div>
+    <div class="text-xs mt-1" style="color: var(--ink-500);">
+      {{ discipline_stats.escalated }} escalated
+    </div>
+  </a>
+
+  <a href="{% url 'dpa_professionalism_create' %}" class="card card-hover" style="text-decoration: none; text-align: center; padding: var(--s-5);">
+    <div style="font-weight: 600; color: var(--ink-900); font-size: var(--text-sm);">
+      Issue Note
+    </div>
+    <div class="text-xs mt-1" style="color: var(--ink-500);">
+      Professionalism
+    </div>
+  </a>
+
+  <a href="{% url 'dpa_staff_attendance_pdf_overall' %}" target="_blank" class="card card-hover" style="text-decoration: none; text-align: center; padding: var(--s-5);">
+    <div style="font-weight: 600; color: var(--ink-900); font-size: var(--text-sm);">
+      Attendance Report
+    </div>
+    <div class="text-xs mt-1" style="color: var(--ink-500);">
+      Download PDF
+    </div>
+  </a>
+</div>
+
+{% endblock %}

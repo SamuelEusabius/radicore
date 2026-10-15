@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ note.title }}{% endblock %}
+{% block header_title %}{{ note.title }}{% endblock %}
+{% block header_sub %}
+  {{ note.get_note_type_display }} · {{ note.issued_at|date:"j M Y" }}
+{% endblock %}
+
+{% block content %}
+
+<div class="flex flex-wrap items-center justify-between gap-3 mb-6">
+  <a href="{% url 'my_professionalism' %}" class="btn btn-secondary">
+    {% include 'partials/icons.html' with name="arrow-right" size=16 %}
+    Back to My Record
+  </a>
+</div>
+
+<div class="card mb-6">
+  <div class="flex flex-wrap gap-3 mb-4">
+    {% if note.is_positive %}
+      <span class="badge badge-success" style="font-size: var(--text-sm); padding: 6px 14px;">{{ note.get_note_type_display }}</span>
+    {% elif note.note_type == 'warning' %}
+      <span class="badge badge-danger" style="font-size: var(--text-sm); padding: 6px 14px;">{{ note.get_note_type_display }}</span>
+    {% elif note.note_type == 'concern' %}
+      <span class="badge badge-warning" style="font-size: var(--text-sm); padding: 6px 14px;">{{ note.get_note_type_display }}</span>
+    {% else %}
+      <span class="badge badge-info" style="font-size: var(--text-sm); padding: 6px 14px;">{{ note.get_note_type_display }}</span>
+    {% endif %}
+    {% if note.acknowledged %}
+      <span class="badge badge-success" style="font-size: var(--text-sm); padding: 6px 14px;">✓ Acknowledged</span>
+    {% else %}
+      <span class="badge badge-warning" style="font-size: var(--text-sm); padding: 6px 14px;">Pending Your Acknowledgement</span>
+    {% endif %}
+  </div>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-5">
+    <div>
+      <div class="text-xs font-semibold uppercase tracking-wider mb-1" style="color: var(--ink-500);">Issued By</div>
+      <div style="color: var(--ink-800); font-weight: 600;">
+        {{ note.issued_by.get_full_name|default:note.issued_by.email|default:"—" }}
+      </div>
+    </div>
+    <div>
+      <div class="text-xs font-semibold uppercase tracking-wider mb-1" style="color: var(--ink-500);">Issued</div>
+      <div style="color: var(--ink-800); font-weight: 600;">{{ note.issued_at|date:"j F Y, H:i" }}</div>
+    </div>
+  </div>
+
+  {% if note.context %}
+  <div class="mb-5">
+    <div class="text-xs font-semibold uppercase tracking-wider mb-1" style="color: var(--ink-500);">Context</div>
+    <div style="color: var(--ink-700); font-size: var(--text-sm);">{{ note.context }}</div>
+  </div>
+  {% endif %}
+
+  <div class="pt-5" style="border-top: 1px solid var(--border);">
+    <div class="text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-500);">Details</div>
+    <p class="text-sm" style="color: var(--ink-700); white-space: pre-line; margin: 0;">{{ note.body }}</p>
+  </div>
+</div>
+
+{% if not note.acknowledged %}
+<div class="card">
+  <h3 class="card-title mb-4">
+    {% include 'partials/icons.html' with name="check-circle" size=18 %}
+    Acknowledge This Note
+  </h3>
+  <p class="text-sm mb-4" style="color: var(--ink-600);">
+    By acknowledging, you confirm that you have read this note. You may add a brief comment.
+  </p>
+  <form method="post" action="{% url 'my_professionalism_acknowledge' note.id %}">
+    {% csrf_token %}
+    <textarea name="comment" rows="3" class="textarea w-full mb-3"
+              placeholder="Optional comment (e.g. 'Noted, thank you' or 'I would like to discuss this')"></textarea>
+    <button type="submit" class="btn btn-primary">
+      {% include 'partials/icons.html' with name="check-circle" size=16 %}
+      Acknowledge
+    </button>
+  </form>
+</div>
+{% else %}
+<div class="card" style="background: var(--success-light); border-left: 4px solid var(--success);">
+  <p class="text-sm" style="margin: 0; color: var(--ink-800);">
+    ✓ Acknowledged on {{ note.acknowledged_at|date:"j F Y, H:i" }}
+    {% if note.acknowledgement_comment %} — "{{ note.acknowledgement_comment }}"{% endif %}
+  </p>
+</div>
+{% endif %}
+
+{% endblock %}

@@ -26,6 +26,14 @@ urlpatterns = [
          views.dpa_discipline_report, name='dpa_discipline_report'),
     path('dpa-admin/reports/discipline/pdf/',
          views.dpa_discipline_report_pdf, name='dpa_discipline_report_pdf'),
+    
+        # Professionalism
+    path('dpa-admin/professionalism/', views.dpa_professionalism_list, name='dpa_professionalism_list'),
+    path('dpa-admin/professionalism/new/', views.dpa_professionalism_create, name='dpa_professionalism_create'),
+    path('dpa-admin/professionalism/new/<int:user_id>/', views.dpa_professionalism_create, name='dpa_professionalism_create_for'),
+    path('dpa-admin/professionalism/<int:note_id>/', views.dpa_professionalism_detail, name='dpa_professionalism_detail'),
+    path('dpa-admin/professionalism/<int:note_id>/delete/', views.dpa_professionalism_delete, name='dpa_professionalism_delete'),
+    path('dpa-admin/professionalism/<int:note_id>/pdf/', views.dpa_professionalism_pdf, name='dpa_professionalism_pdf'),
         # Staff management
     path('dpa-admin/staff/attendance/', views.dpa_staff_attendance, name='dpa_staff_attendance'),
     path('dpa-admin/staff/attendance/history/', views.dpa_staff_attendance_history, name='dpa_staff_attendance_history'),
@@ -249,6 +257,10 @@ urlpatterns = [
     path('staff/add/', views.add_staff, name='add_staff'),
     path('staff/<int:staff_id>/delete/', views.delete_staff, name='delete_staff'),
     path('my-dashboard/', views.redirect_to_own_dashboard, name='redirect_to_own_dashboard'),
+    
+    path('teacher/professionalism/', views.my_professionalism, name='my_professionalism'),
+    path('teacher/professionalism/<int:note_id>/', views.my_professionalism_detail, name='my_professionalism_detail'),
+    path('teacher/professionalism/<int:note_id>/acknowledge/', views.my_professionalism_acknowledge, name='my_professionalism_acknowledge'),
 
     # Accountant
         # Fee Structures
@@ -455,4 +467,18 @@ urlpatterns = [
     path('dpa-acad/reports/', views.dpa_acad_reports, name='dpa_acad_reports'),
     path('dpa-admin/staff/<int:user_id>/attendance/pdf/', views.dpa_staff_attendance_pdf_personal, name='dpa_staff_attendance_pdf_personal'),
     path('dpa-admin/staff/attendance/pdf/', views.dpa_staff_attendance_pdf_overall, name='dpa_staff_attendance_pdf_overall'),
+    
+        # Staff self-service leave
+    path('my/leave/', views.my_leave_requests, name='my_leave_requests'),
+    path('my/leave/new/', views.my_leave_request_create, name='my_leave_request_create'),
+    path('my/leave/<int:leave_id>/', views.my_leave_request_detail, name='my_leave_request_detail'),
+    path('my/leave/<int:leave_id>/cancel/', views.my_leave_request_cancel, name='my_leave_request_cancel'),
+
+    # Principal leave review
+    path('principal/leave/', views.principal_leave_review, name='principal_leave_review'),
+    path('principal/leave/<int:leave_id>/', views.principal_leave_detail, name='principal_leave_detail'),
+    path('principal/leave/<int:leave_id>/approve/', views.principal_leave_approve, name='principal_leave_approve'),
+    path('principal/leave/<int:leave_id>/reject/', views.principal_leave_reject, name='principal_leave_reject'),
+    path('principal/', views.principal_dashboard, name='principal_dashboard'),
+    path('dpa-admin/staff/leave/<int:leave_id>/pdf/', views.dpa_leave_pdf, name='dpa_leave_pdf'),
 ]

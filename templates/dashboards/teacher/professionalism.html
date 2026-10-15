@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}My Professionalism Record{% endblock %}
+{% block header_title %}My Professionalism Record{% endblock %}
+{% block header_sub %}
+  Commendations, praise, and feedback · {{ school.name }}
+{% endblock %}
+
+{% block content %}
+
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Total</span>
+      <div class="stat-icon" style="background: var(--primary-light); color: var(--primary);">
+        {% include 'partials/icons.html' with name="award" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value">{{ total }}</div>
+    <div class="stat-meta">notes on record</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Positive</span>
+      <div class="stat-icon" style="background: var(--success-light); color: var(--success);">
+        {% include 'partials/icons.html' with name="check-circle" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--success);">{{ positive }}</div>
+    <div class="stat-meta">commendations</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Concerns</span>
+      <div class="stat-icon" style="background: var(--danger-light); color: var(--danger);">
+        {% include 'partials/icons.html' with name="alert-triangle" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--danger);">{{ concern }}</div>
+    <div class="stat-meta">on record</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Pending</span>
+      <div class="stat-icon" style="background: var(--warning-light); color: var(--warning);">
+        {% include 'partials/icons.html' with name="bell" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--warning);">{{ pending_ack }}</div>
+    <div class="stat-meta">need acknowledgement</div>
+  </div>
+</div>
+
+{% if notes %}
+<div class="card" style="padding: 0; overflow: hidden;">
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th style="width: 160px;">Type</th>
+          <th>Title</th>
+          <th style="width: 130px;">Issued</th>
+          <th style="width: 130px;">Status</th>
+          <th style="text-align: right;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for note in notes %}
+        <tr>
+          <td>
+            {% if note.is_positive %}
+              <span class="badge badge-success">{{ note.get_note_type_display }}</span>
+            {% elif note.note_type == 'warning' %}
+              <span class="badge badge-danger">{{ note.get_note_type_display }}</span>
+            {% elif note.note_type == 'concern' %}
+              <span class="badge badge-warning">{{ note.get_note_type_display }}</span>
+            {% else %}
+              <span class="badge badge-info">{{ note.get_note_type_display }}</span>
+            {% endif %}
+          </td>
+          <td style="font-weight: 500; color: var(--ink-800);">{{ note.title }}</td>
+          <td style="color: var(--ink-600); font-size: var(--text-sm);">{{ note.issued_at|date:"j M Y" }}</td>
+          <td>
+            {% if note.acknowledged %}
+              <span class="badge badge-success">Acknowledged</span>
+            {% else %}
+              <span class="badge badge-warning">Pending</span>
+            {% endif %}
+          </td>
+          <td>
+            <div class="table-actions" style="justify-content: flex-end;">
+              <a href="{% url 'my_professionalism_detail' note.id %}" class="view" title="View">
+                {% include 'partials/icons.html' with name="eye" size=14 %}
+              </a>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% else %}
+<div class="card">
+  <div class="empty">
+    {% include 'partials/icons.html' with name="award" size=56 %}
+    <h3>No notes on record</h3>
+    <p>When DPA Administration issues a commendation or concern, it will appear here for your review.</p>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

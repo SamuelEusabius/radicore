@@ -17,6 +17,10 @@
     {% include 'partials/icons.html' with name="arrow-right" size=16 %}
     Back to Leave List
   </a>
+  <a href="{% url 'dpa_leave_pdf' leave.id %}" target="_blank" class="btn btn-primary">
+    {% include 'partials/icons.html' with name="printer" size=16 %}
+    Download PDF
+  </a>
   <div>
     {% if leave.status == 'approved' %}
       <span class="badge badge-success" style="font-size: var(--text-sm); padding: 6px 14px;">Approved</span>

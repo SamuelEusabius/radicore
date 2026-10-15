@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Issue Professionalism Note{% endblock %}
+{% block header_title %}Issue Professionalism Note{% endblock %}
+{% block header_sub %}
+  Record feedback for a staff member
+{% endblock %}
+
+{% block content %}
+
+<div class="card" style="max-width: 720px;">
+
+  {% if messages %}
+    {% for msg in messages %}
+    <div style="padding: var(--s-3); margin-bottom: var(--s-4); border-radius: var(--radius);
+      {% if msg.tags == 'error' %}background: var(--danger-light); color: var(--danger);
+      {% else %}background: var(--success-light); color: var(--success);{% endif %}
+      font-size: var(--text-sm);">
+      {{ msg }}
+    </div>
+    {% endfor %}
+  {% endif %}
+
+  <form method="post" class="space-y-5">
+    {% csrf_token %}
+
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
+        Staff Member <span style="color: var(--danger);">*</span>
+      </label>
+      <select name="staff_id" required class="select w-full">
+        <option value="">— Select staff —</option>
+        {% for s in staff_list %}
+        <option value="{{ s.id }}" {% if preselected and preselected.id == s.id %}selected{% endif %}>
+          {{ s.get_full_name|default:s.email }} — {{ s.get_role_display|default:s.role }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+      <div>
+        <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
+          Note Type <span style="color: var(--danger);">*</span>
+        </label>
+        <select name="note_type" required class="select w-full">
+          {% for value, label in note_type_choices %}
+          <option value="{{ value }}" {% if value == 'praise' %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
+          Severity
+        </label>
+        <select name="severity" class="select w-full">
+          {% for value, label in severity_choices %}
+          <option value="{{ value }}" {% if value == 'info' %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
+        Title <span style="color: var(--danger);">*</span>
+      </label>
+      <input type="text" name="title" required maxlength="200"
+             placeholder="e.g. Excellent lesson delivery in Form 3 Science"
+             class="input w-full">
+    </div>
+
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
+        Context (optional)
+      </label>
+      <input type="text" name="context" maxlength="200"
+             placeholder="e.g. Classroom observation, 12 October"
+             class="input w-full">
+    </div>
+
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
+        Details <span style="color: var(--danger);">*</span>
+      </label>
+      <textarea name="body" rows="6" required class="textarea w-full"
+                placeholder="Describe the observation or feedback. Be specific."></textarea>
+    </div>
+
+    <div class="flex justify-end gap-3 pt-4" style="border-top: 1px solid var(--border);">
+      <a href="{% url 'dpa_professionalism_list' %}" class="btn btn-secondary">Cancel</a>
+      <button type="submit" class="btn btn-primary">
+        {% include 'partials/icons.html' with name="save" size=16 %}
+        Issue Note
+      </button>
+    </div>
+
+  </form>
+
+</div>
+
+{% endblock %}

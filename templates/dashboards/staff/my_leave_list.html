@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}My Leave Requests{% endblock %}
+{% block header_title %}My Leave Requests{% endblock %}
+{% block header_sub %}
+  Submit and track your leave · {{ school.name }}
+{% endblock %}
+
+{% block content %}
+
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Total</span>
+      <div class="stat-icon" style="background: var(--primary-light); color: var(--primary);">
+        {% include 'partials/icons.html' with name="calendar" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value">{{ total }}</div>
+    <div class="stat-meta">requests</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Pending</span>
+      <div class="stat-icon" style="background: var(--warning-light); color: var(--warning);">
+        {% include 'partials/icons.html' with name="alert-circle" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--warning);">{{ pending }}</div>
+    <div class="stat-meta">awaiting approval</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Approved</span>
+      <div class="stat-icon" style="background: var(--success-light); color: var(--success);">
+        {% include 'partials/icons.html' with name="check-circle" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--success);">{{ approved }}</div>
+    <div class="stat-meta">granted</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Rejected</span>
+      <div class="stat-icon" style="background: var(--danger-light); color: var(--danger);">
+        {% include 'partials/icons.html' with name="x-circle" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--danger);">{{ rejected }}</div>
+    <div class="stat-meta">declined</div>
+  </div>
+</div>
+
+<div class="card mb-6">
+  <div class="flex justify-end">
+    <a href="{% url 'my_leave_request_create' %}" class="btn btn-primary">
+      {% include 'partials/icons.html' with name="plus" size=16 %}
+      New Leave Request
+    </a>
+  </div>
+</div>
+
+{% if requests %}
+<div class="card" style="padding: 0; overflow: hidden;">
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Dates</th>
+          <th style="width: 90px;">Days</th>
+          <th style="width: 140px;">Status</th>
+          <th style="width: 180px;">Stage</th>
+          <th style="text-align: right;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in requests %}
+        <tr>
+          <td style="font-weight: 600; color: var(--ink-900);">{{ r.get_leave_type_display }}</td>
+          <td style="color: var(--ink-700);">
+            {{ r.start_date|date:"j M" }} → {{ r.end_date|date:"j M Y" }}
+          </td>
+          <td style="color: var(--ink-700);">{{ r.days_requested }}</td>
+          <td>
+            {% if r.status == 'approved' %}
+              <span class="badge badge-success">Approved</span>
+            {% elif r.status == 'pending' %}
+              <span class="badge badge-warning">Pending</span>
+            {% elif r.status == 'rejected' %}
+              <span class="badge badge-danger">Rejected</span>
+            {% elif r.status == 'cancelled' %}
+              <span class="badge badge-neutral">Cancelled</span>
+            {% else %}
+              <span class="badge badge-neutral">{{ r.get_status_display }}</span>
+            {% endif %}
+          </td>
+          <td style="font-size: var(--text-xs); color: var(--ink-600);">
+            {% if r.principal_approved_at %}Final approval done
+            {% elif r.dpa_approved_at %}Awaiting Principal
+            {% elif r.status == 'pending' %}Awaiting DPA
+            {% else %}—{% endif %}
+          </td>
+          <td>
+            <div class="table-actions" style="justify-content: flex-end;">
+              <a href="{% url 'my_leave_request_detail' r.id %}" class="view" title="View">
+                {% include 'partials/icons.html' with name="eye" size=14 %}
+              </a>
+              {% if r.status == 'pending' %}
+              <form method="post" action="{% url 'my_leave_request_cancel' r.id %}" style="display: inline;"
+                    onsubmit="return confirm('Cancel this leave request?');">
+                {% csrf_token %}
+                <button type="submit" class="delete" title="Cancel">
+                  {% include 'partials/icons.html' with name="x-circle" size=14 %}
+                </button>
+              </form>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% else %}
+<div class="card">
+  <div class="empty">
+    {% include 'partials/icons.html' with name="calendar" size=56 %}
+    <h3>No leave requests yet</h3>
+    <p>Submit your first leave request. It will be reviewed by DPA Administration, then approved by the Principal.</p>
+    <a href="{% url 'my_leave_request_create' %}" class="btn btn-primary">
+      {% include 'partials/icons.html' with name="plus" size=16 %}
+      Submit Leave Request
+    </a>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

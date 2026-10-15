@@ -166,6 +166,10 @@
         {% include 'partials/icons.html' with name="inbox" size=18 %}
         <span class="sidebar-link-text">Reports Inbox</span>
       </a>
+      <a href="{% url 'principal_leave_review' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="calendar" size=18 %}
+        <span class="sidebar-link-text">Leave Review</span>
+      </a>
       <a href="{% url 'staff_list' %}" class="sidebar-link">
         {% include 'partials/icons.html' with name="users" size=18 %}
         <span class="sidebar-link-text">Department Staff</span>
@@ -272,6 +276,10 @@
         {% include 'partials/icons.html' with name="calendar" size=18 %}
         <span class="sidebar-link-text">Leave Requests</span>
       </a>
+      <a href="{% url 'dpa_professionalism_list' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="award" size=18 %}
+        <span class="sidebar-link-text">Professionalism</span>
+      </a>
       <a href="{% url 'dpa_duty_roster' %}" class="sidebar-link">
         {% include 'partials/icons.html' with name="clipboard" size=18 %}
         <span class="sidebar-link-text">Duty Roster</span>
@@ -309,6 +317,16 @@
       <a href="{% url 'dpa_acad_dashboard' %}" class="sidebar-link">
         {% include 'partials/icons.html' with name="home" size=18 %}
         <span class="sidebar-link-text">Dashboard</span>
+      </a>
+
+            <div class="sidebar-section-label">My HR</div>
+      <a href="{% url 'my_leave_requests' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="calendar" size=18 %}
+        <span class="sidebar-link-text">My Leave</span>
+      </a>
+      <a href="{% url 'my_professionalism' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="award" size=18 %}
+        <span class="sidebar-link-text">My Professionalism</span>
       </a>
 
             <div class="sidebar-section-label">Curriculum</div>
@@ -406,6 +424,15 @@
         {% include 'partials/icons.html' with name="book-open" size=18 %}
         <span class="sidebar-link-text">My Syllabus</span>
       </a>
+    <div class="sidebar-section-label">My HR</div>
+      <a href="{% url 'my_leave_requests' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="calendar" size=18 %}
+        <span class="sidebar-link-text">My Leave</span>
+      </a>
+      <a href="{% url 'my_professionalism' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="award" size=18 %}
+        <span class="sidebar-link-text">My Professionalism</span>
+      </a>
 
       {% if user.teacher_profile.is_class_teacher %}
         <div class="sidebar-section-label">Class Teacher</div>
@@ -502,6 +529,16 @@
       <a href="{% url 'add_expenditure' %}" class="sidebar-link">
         {% include 'partials/icons.html' with name="trending-down" size=18 %}
         <span class="sidebar-link-text">Add Expenditure</span>
+              <div class="sidebar-section-label">My HR</div>
+      <a href="{% url 'my_leave_requests' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="calendar" size=18 %}
+        <span class="sidebar-link-text">My Leave</span>
+      </a>
+      <a href="{% url 'my_professionalism' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="award" size=18 %}
+        <span class="sidebar-link-text">My Professionalism</span>
+      </a>
+
       </a>
             <a href="{% url 'unallocated_queue' %}" class="sidebar-link">
         {% include 'partials/icons.html' with name="alert-triangle" size=18 %}
@@ -578,6 +615,16 @@
     <span class="sidebar-link-text">All Trips</span>
   </a>
 
+  <div class="sidebar-section-label">My HR</div>
+      <a href="{% url 'my_leave_requests' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="calendar" size=18 %}
+        <span class="sidebar-link-text">My Leave</span>
+      </a>
+      <a href="{% url 'my_professionalism' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="award" size=18 %}
+        <span class="sidebar-link-text">My Professionalism</span>
+      </a>
+
   <div class="sidebar-section-label">Fuel</div>
   <a href="{% url 'fuel_log_add' %}" class="sidebar-link">
     {% include 'partials/icons.html' with name="plus" size=18 %}
@@ -620,6 +667,15 @@
     {% include 'partials/icons.html' with name="alert-triangle" size=18 %}
     <span class="sidebar-link-text">Overdue</span>
   </a>
+  <div class="sidebar-section-label">My HR</div>
+      <a href="{% url 'my_leave_requests' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="calendar" size=18 %}
+        <span class="sidebar-link-text">My Leave</span>
+      </a>
+      <a href="{% url 'my_professionalism' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="award" size=18 %}
+        <span class="sidebar-link-text">My Professionalism</span>
+      </a>
   <div class="sidebar-section-label">Reports</div>
   <a href="{% url 'department_report_create' 'library' %}" class="sidebar-link">
     {% include 'partials/icons.html' with name="file-plus" size=18 %}
@@ -698,6 +754,15 @@
     {% include 'partials/icons.html' with name="teacher" size=18 %}
     <span class="sidebar-link-text">Teacher Monitoring</span>
   </a>
+  <div class="sidebar-section-label">My HR</div>
+      <a href="{% url 'my_leave_requests' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="calendar" size=18 %}
+        <span class="sidebar-link-text">My Leave</span>
+      </a>
+      <a href="{% url 'my_professionalism' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="award" size=18 %}
+        <span class="sidebar-link-text">My Professionalism</span>
+      </a>
   <div class="sidebar-section-label">Reports</div>
   <a href="{% url 'dos_report_pdf' %}" class="sidebar-link">
     {% include 'partials/icons.html' with name="download" size=18 %}
@@ -736,6 +801,16 @@
     {% include 'partials/icons.html' with name="file-text" size=18 %}
     <span class="sidebar-link-text">Stock Logs</span>
   </a>
+
+  <div class="sidebar-section-label">My HR</div>
+      <a href="{% url 'my_leave_requests' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="calendar" size=18 %}
+        <span class="sidebar-link-text">My Leave</span>
+      </a>
+      <a href="{% url 'my_professionalism' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="award" size=18 %}
+        <span class="sidebar-link-text">My Professionalism</span>
+      </a>
   <div class="sidebar-section-label">Reports</div>
   <a href="{% url 'health_report_pdf' %}" class="sidebar-link">
     {% include 'partials/icons.html' with name="download" size=18 %}
@@ -772,6 +847,15 @@
     {% include 'partials/icons.html' with name="file-text" size=18 %}
     <span class="sidebar-link-text">Stock Logs</span>
   </a>
+        <div class="sidebar-section-label">My HR</div>
+      <a href="{% url 'my_leave_requests' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="calendar" size=18 %}
+        <span class="sidebar-link-text">My Leave</span>
+      </a>
+      <a href="{% url 'my_professionalism' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="award" size=18 %}
+        <span class="sidebar-link-text">My Professionalism</span>
+      </a>
   <div class="sidebar-section-label">Reports</div>
   <a href="{% url 'kitchen_report_pdf' %}" class="sidebar-link">
     {% include 'partials/icons.html' with name="download" size=18 %}

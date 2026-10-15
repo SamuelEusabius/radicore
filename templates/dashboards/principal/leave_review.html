@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Leave Review{% endblock %}
+{% block header_title %}Leave Review{% endblock %}
+{% block header_sub %}
+  Requests forwarded by DPA Administration · {{ school.name }}
+{% endblock %}
+
+{% block content %}
+
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Awaiting Your Review</span>
+      <div class="stat-icon" style="background: var(--warning-light); color: var(--warning);">
+        {% include 'partials/icons.html' with name="alert-circle" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--warning);">{{ queue_count }}</div>
+    <div class="stat-meta">forwarded by DPA</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Still with DPA</span>
+      <div class="stat-icon" style="background: var(--info-light); color: var(--info);">
+        {% include 'partials/icons.html' with name="calendar" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--info);">{{ pending_dpa }}</div>
+    <div class="stat-meta">not yet reviewed</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Approved</span>
+      <div class="stat-icon" style="background: var(--success-light); color: var(--success);">
+        {% include 'partials/icons.html' with name="check-circle" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--success);">{{ approved_count }}</div>
+    <div class="stat-meta">all time</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Rejected</span>
+      <div class="stat-icon" style="background: var(--danger-light); color: var(--danger);">
+        {% include 'partials/icons.html' with name="x-circle" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--danger);">{{ rejected_count }}</div>
+    <div class="stat-meta">all time</div>
+  </div>
+</div>
+
+<!-- Queue -->
+{% if queue %}
+<div class="card" style="padding: 0; overflow: hidden; margin-bottom: 20px;">
+  <div style="padding: var(--s-5); border-bottom: 1px solid var(--border);">
+    <h3 class="card-title" style="margin: 0;">
+      {% include 'partials/icons.html' with name="alert-circle" size=18 %}
+      Awaiting Your Decision
+    </h3>
+  </div>
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Staff</th>
+          <th style="width: 160px;">Type</th>
+          <th>Dates</th>
+          <th style="width: 90px;">Days</th>
+          <th style="text-align: right;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in queue %}
+        <tr>
+          <td>
+            <div style="font-weight: 600; color: var(--ink-900);">
+              {{ r.staff.get_full_name|default:r.staff.email }}
+            </div>
+            <div class="text-xs" style="color: var(--ink-500);">
+              {{ r.staff.get_role_display|default:r.staff.role }}
+            </div>
+          </td>
+          <td style="color: var(--ink-700);">{{ r.get_leave_type_display }}</td>
+          <td style="color: var(--ink-700); font-size: var(--text-sm);">
+            {{ r.start_date|date:"j M" }} → {{ r.end_date|date:"j M Y" }}
+          </td>
+          <td style="color: var(--ink-700);">{{ r.days_requested }}</td>
+          <td>
+            <div class="table-actions" style="justify-content: flex-end;">
+              <a href="{% url 'principal_leave_detail' r.id %}" class="view" title="Review">
+                {% include 'partials/icons.html' with name="eye" size=14 %}
+              </a>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% else %}
+<div class="card mb-6">
+  <div class="empty">
+    {% include 'partials/icons.html' with name="check-circle" size=56 %}
+    <h3>All caught up</h3>
+    <p>No leave requests are currently awaiting your review. DPA-forwarded requests will appear here.</p>
+  </div>
+</div>
+{% endif %}
+
+<!-- Recent approvals -->
+{% if recent_approved %}
+<div class="card" style="padding: 0; overflow: hidden;">
+  <div style="padding: var(--s-5); border-bottom: 1px solid var(--border);">
+    <h3 class="card-title" style="margin: 0;">Recently Approved</h3>
+  </div>
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Staff</th>
+          <th style="width: 200px;">Type</th>
+          <th style="width: 180px;">Approved On</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in recent_approved %}
+        <tr>
+          <td style="color: var(--ink-900);">{{ r.staff.get_full_name|default:r.staff.email }}</td>
+          <td style="color: var(--ink-700);">{{ r.get_leave_type_display }}</td>
+          <td style="color: var(--ink-500); font-size: var(--text-sm);">{{ r.principal_approved_at|date:"j M Y H:i" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Leave Request{% endblock %}
+{% block header_title %}Leave Request — {{ leave.staff.get_full_name|default:leave.staff.email }}{% endblock %}
+{% block header_sub %}
+  {{ leave.get_leave_type_display }} · {{ leave.days_requested }} day{{ leave.days_requested|pluralize }}
+{% endblock %}
+
+{% block content %}
+
+<div class="flex flex-wrap items-center justify-between gap-3 mb-6">
+  <a href="{% url 'principal_leave_review' %}" class="btn btn-secondary">
+    {% include 'partials/icons.html' with name="arrow-right" size=16 %}
+    Back to Leave Review
+  </a>
+    <a href="{% url 'dpa_leave_pdf' leave.id %}" target="_blank" class="btn btn-primary">
+      {% include 'partials/icons.html' with name="printer" size=16 %}
+      Download PDF
+    </a>
+  <div>
+    {% if leave.status == 'approved' %}
+      <span class="badge badge-success" style="font-size: var(--text-sm); padding: 6px 14px;">Approved</span>
+    {% elif leave.status == 'pending' %}
+      <span class="badge badge-warning" style="font-size: var(--text-sm); padding: 6px 14px;">Pending</span>
+    {% elif leave.status == 'rejected' %}
+      <span class="badge badge-danger" style="font-size: var(--text-sm); padding: 6px 14px;">Rejected</span>
+    {% endif %}
+  </div>
+</div>
+
+<div class="card mb-6">
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-5">
+    <div>
+      <div class="text-xs font-semibold uppercase tracking-wider mb-1" style="color: var(--ink-500);">Staff</div>
+      <div style="color: var(--ink-800); font-weight: 600;">
+        {{ leave.staff.get_full_name|default:leave.staff.email }}
+      </div>
+      <div class="text-xs" style="color: var(--ink-500);">{{ leave.staff.get_role_display|default:leave.staff.role }}</div>
+    </div>
+    <div>
+      <div class="text-xs font-semibold uppercase tracking-wider mb-1" style="color: var(--ink-500);">Dates</div>
+      <div style="color: var(--ink-800); font-weight: 600;">
+        {{ leave.start_date|date:"j M Y" }} → {{ leave.end_date|date:"j M Y" }}
+      </div>
+      <div class="text-xs" style="color: var(--ink-500);">{{ leave.days_requested }} day{{ leave.days_requested|pluralize }}</div>
+    </div>
+    <div>
+      <div class="text-xs font-semibold uppercase tracking-wider mb-1" style="color: var(--ink-500);">Requested</div>
+      <div style="color: var(--ink-800); font-weight: 600;">{{ leave.requested_at|date:"j M Y" }}</div>
+    </div>
+  </div>
+
+  {% if leave.reason %}
+  <div class="pt-5" style="border-top: 1px solid var(--border);">
+    <div class="text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-500);">Reason</div>
+    <p class="text-sm" style="color: var(--ink-700); white-space: pre-line; margin: 0;">{{ leave.reason }}</p>
+  </div>
+  {% endif %}
+</div>
+
+{% if leave.dpa_approved_at %}
+<div class="card mb-6" style="background: var(--surface-muted);">
+  <h3 class="card-title mb-3">
+    {% include 'partials/icons.html' with name="check-circle" size=18 %}
+    DPA Approval
+  </h3>
+  <div class="text-sm" style="color: var(--ink-700);">
+    Approved by {{ leave.dpa_approved_by.get_full_name|default:leave.dpa_approved_by.email }} on {{ leave.dpa_approved_at|date:"j M Y H:i" }}
+  </div>
+  {% if leave.dpa_comment %}
+  <p class="text-sm mt-3" style="color: var(--ink-700); font-style: italic; margin: 0;">"{{ leave.dpa_comment }}"</p>
+  {% endif %}
+</div>
+{% endif %}
+
+{% if can_approve %}
+<div class="card">
+  <h3 class="card-title mb-4">
+    {% include 'partials/icons.html' with name="award" size=18 %}
+    Your Decision
+  </h3>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+    <form method="post" action="{% url 'principal_leave_approve' leave.id %}">
+      {% csrf_token %}
+      <div class="text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-500);">Approve</div>
+      <textarea name="comment" rows="3" class="textarea w-full mb-3" placeholder="Optional comment"></textarea>
+      <button type="submit" class="btn btn-success w-full">
+        {% include 'partials/icons.html' with name="check-circle" size=16 %}
+        Approve Leave
+      </button>
+    </form>
+
+    <form method="post" action="{% url 'principal_leave_reject' leave.id %}">
+      {% csrf_token %}
+      <div class="text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-500);">Reject</div>
+      <textarea name="comment" rows="3" class="textarea w-full mb-3" placeholder="Reason for rejection"></textarea>
+      <button type="submit" class="btn btn-danger w-full"
+              onclick="return confirm('Reject this leave request?');">
+        {% include 'partials/icons.html' with name="x-circle" size=16 %}
+        Reject Leave
+      </button>
+    </form>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

@@ -247,6 +247,13 @@ from .dpa_admin import (
     dpa_admin_case_update,
     dpa_staff_attendance_pdf_personal,
     dpa_staff_attendance_pdf_overall,
+    dpa_professionalism_list,
+    dpa_professionalism_create,
+    dpa_professionalism_detail,
+    dpa_professionalism_delete,
+    dpa_professionalism_pdf,
+    principal_dashboard,
+    dpa_leave_pdf,
 )
 
 from .dpa_academics import (
@@ -291,4 +298,21 @@ from .dpa_academics import (
     teacher_my_syllabus,
     teacher_syllabus_detail,
     dpa_acad_reports,
+)
+
+from .dpa_admin import (
+    my_professionalism,
+    my_professionalism_acknowledge,
+    my_professionalism_detail,
+)
+
+from .dpa_admin import (
+    my_leave_requests,
+    my_leave_request_create,
+    my_leave_request_detail,
+    my_leave_request_cancel,
+    principal_leave_review,
+    principal_leave_detail,
+    principal_leave_approve,
+    principal_leave_reject,
 )

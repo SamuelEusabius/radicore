@@ -282,3 +282,95 @@ class StaffMovement(models.Model):
 
     def __str__(self):
         return f"{self.staff} — {self.get_direction_display()} on {self.movement_date}"
+    
+    
+
+# ==========================================================
+# PROFESSIONALISM FEEDBACK
+# ==========================================================
+
+class NoteType(models.TextChoices):
+    COMMENDATION = 'commendation', 'Commendation'
+    PRAISE       = 'praise',       'Praise'
+    RECOGNITION  = 'recognition',  'Recognition'
+    CONCERN      = 'concern',      'Concern'
+    WARNING      = 'warning',      'Warning'
+    COUNSELLING  = 'counselling',  'Counselling Referral'
+
+
+class ProfessionalismNote(models.Model):
+    """
+    Feedback about a staff member's professionalism, issued by
+    DPA-Admin or Principal. Positive and negative.
+    """
+
+    class Severity(models.TextChoices):
+        INFO     = 'info',     'Informational'
+        MINOR    = 'minor',    'Minor'
+        MODERATE = 'moderate', 'Moderate'
+        SERIOUS  = 'serious',  'Serious'
+
+    school = models.ForeignKey(
+        'schools.School', on_delete=models.CASCADE,
+        related_name='professionalism_notes',
+    )
+    staff = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
+        related_name='professionalism_notes',
+    )
+
+    note_type = models.CharField(max_length=20, choices=NoteType.choices)
+    severity = models.CharField(
+        max_length=10, choices=Severity.choices, default=Severity.INFO,
+    )
+
+    title = models.CharField(max_length=200)
+    body = models.TextField()
+
+    # Optional link to what triggered this (e.g. an observation, a lesson plan)
+    context = models.CharField(
+        max_length=200, blank=True, default='',
+        help_text="Optional context reference (e.g. 'Classroom observation 12 Oct')",
+    )
+
+    issued_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='professionalism_notes_issued',
+    )
+    issued_at = models.DateTimeField(auto_now_add=True)
+
+    # Staff acknowledgement
+    acknowledged = models.BooleanField(default=False)
+    acknowledged_at = models.DateTimeField(null=True, blank=True)
+    acknowledgement_comment = models.TextField(blank=True, default='')
+
+    # Optional Principal review
+    reviewed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='professionalism_notes_reviewed',
+    )
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    reviewer_comment = models.TextField(blank=True, default='')
+
+    class Meta:
+        ordering = ['-issued_at']
+        verbose_name = 'Professionalism Note'
+        verbose_name_plural = 'Professionalism Notes'
+        indexes = [
+            models.Index(fields=['school', 'staff']),
+            models.Index(fields=['school', 'note_type']),
+            models.Index(fields=['staff', '-issued_at']),
+        ]
+
+    def __str__(self):
+        return f"{self.get_note_type_display()} — {self.staff.get_full_name|default:self.staff.email}"
+
+    @property
+    def is_positive(self):
+        return self.note_type in (
+            NoteType.COMMENDATION, NoteType.PRAISE, NoteType.RECOGNITION,
+        )
+
+    @property
+    def is_negative(self):
+        return self.note_type in (NoteType.CONCERN, NoteType.WARNING)

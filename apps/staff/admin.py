@@ -5,7 +5,9 @@ from .models import (
     DutyRoster,
     StaffAttendance,
     StaffMovement,
+    ProfessionalismNote,
 )
+
 
 
 @admin.register(NonTeachingStaff)
@@ -64,3 +66,15 @@ class StaffAttendanceAdmin(admin.ModelAdmin):
     list_filter = ('school', 'status', 'date')
     search_fields = ('staff__email',)
     date_hierarchy = 'date'
+    
+    
+    from .models import ProfessionalismNote
+
+
+@admin.register(ProfessionalismNote)
+class ProfessionalismNoteAdmin(admin.ModelAdmin):
+    list_display = ('get_note_type_display', 'staff', 'school', 'severity', 'issued_by', 'issued_at', 'acknowledged')
+    list_filter = ('school', 'note_type', 'severity', 'acknowledged')
+    search_fields = ('staff__first_name', 'staff__last_name', 'title', 'body')
+    date_hierarchy = 'issued_at'
+    readonly_fields = ('issued_at', 'acknowledged_at', 'reviewed_at')
