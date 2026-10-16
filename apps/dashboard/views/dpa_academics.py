@@ -2354,3 +2354,46 @@ def teacher_remedial_schedule(request):
         'todays_sessions': todays,
     }
     return render(request, 'dashboards/teacher/remedial.html', context)
+
+@teacher_required
+def teacher_remedial_timetable_pdf(request):
+    """PDF of the teacher's own remedial timetable."""
+    from django.template.loader import render_to_string
+    from apps.core.pdf_utils import html_to_pdf_response, build_pdf_context
+
+    school = request.user.school
+    teacher = _teacher_profile(request.user)
+
+    if teacher is None:
+        from django.http import HttpResponseForbidden
+        return HttpResponseForbidden("No teacher profile found.")
+
+    sessions = RemedialClass.objects.filter(
+        school=school, teacher=teacher,
+    ).select_related('class_level', 'subject').exclude(
+        day_of_week='',
+    ).order_by('start_time')
+
+    days = [{'key': k, 'label': v} for k, v in REMEDIAL_DAYS]
+    morning = {k: [] for k, _ in REMEDIAL_DAYS}
+    evening = {k: [] for k, _ in REMEDIAL_DAYS}
+
+    for s in sessions:
+        target = morning if s.session_period == 'morning' else evening
+        if s.day_of_week in target:
+            target[s.day_of_week].append(s)
+
+    html_string = render_to_string('pdf/teacher_remedial_timetable.html',
+        build_pdf_context(
+            school=school,
+            generated_by=request.user,
+            teacher=teacher,
+            days=days,
+            morning=morning,
+            evening=evening,
+            total=sessions.count(),
+        )
+    )
+
+    filename = f"remedial_{teacher.first_name}_{teacher.last_name}.pdf"
+    return html_to_pdf_response(html_string, filename)

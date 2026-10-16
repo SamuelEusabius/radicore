@@ -53,4 +53,5 @@ urlpatterns = router.urls + [
     path('mpesa/c2b/confirmation/',
          mpesa_views.mpesa_c2b_confirmation,
          name='mpesa_c2b_confirmation'),
+    
 ]

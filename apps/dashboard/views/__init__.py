@@ -301,6 +301,22 @@ from .dpa_academics import (
     dpa_acad_remedial_schedule,
     dpa_acad_remedial_timetable_pdf,
     teacher_remedial_schedule,
+    teacher_remedial_timetable_pdf,
+)
+
+from apps.finance.store_views import (
+    store_keeper_dashboard,
+    store_items_list,
+    store_item_form,
+    store_item_detail,
+    store_issue_list,
+    store_issue_create,
+    store_issue_detail,
+    store_receipt_list,
+    store_receipt_create,
+    store_low_stock,
+    store_categories,
+    store_suppliers,
 )
 
 from .dpa_admin import (

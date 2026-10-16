@@ -8,6 +8,14 @@
 {% endblock %}
 
 {% block content %}
+<div class="flex flex-wrap items-center justify-end gap-2 mb-6">
+  {% if total %}
+  <a href="{% url 'teacher_remedial_timetable_pdf' %}" target="_blank" class="btn btn-primary">
+    {% include 'partials/icons.html' with name="printer" size=16 %}
+    Download PDF
+  </a>
+  {% endif %}
+</div>
 
 {% if message %}
 <div class="card mb-6" style="border-left: 4px solid var(--warning); padding: var(--s-4);">
