@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Confirm Signature{% endblock %}
+{% block header_title %}Confirm Admin Signature{% endblock %}
+{% block header_sub %}{{ visitor.full_name }} &middot; official visitor{% endblock %}
+
+{% block content %}
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+  <div class="lg:col-span-2">
+    <form method="post" class="card" style="border-left: 4px solid var(--primary);">
+      {% csrf_token %}
+
+      <h3 class="card-title mb-4">Signature Details</h3>
+
+      <div class="mb-4">
+        <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
+          Signer Name (who physically signed)
+        </label>
+        <input type="text" name="signer_name" class="input w-full"
+               placeholder="e.g. Mr. John Kamau"
+               value="{{ visitor.host_name|default:visitor.host_user.get_full_name }}">
+      </div>
+
+      <div class="mb-4">
+        <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
+          Or Pick Admin User
+        </label>
+        <select name="signer_user" class="select w-full">
+          <option value="">— Select if the signer is a system user —</option>
+          {% for u in admin_users %}
+            <option value="{{ u.id }}"
+              {% if visitor.host_user_id == u.id %}selected{% endif %}>
+              {{ u.get_full_name|default:u.email }} — {{ u.get_role_display|default:u.role }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="mb-6">
+        <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
+          Signature Notes
+        </label>
+        <textarea name="signature_notes" rows="3" class="textarea w-full"
+                  placeholder="Optional — e.g. received visitor at 11:30am, meeting in boardroom"></textarea>
+      </div>
+
+      <div class="flex gap-3">
+        <button type="submit" class="btn btn-primary">
+          {% include 'partials/icons.html' with name="check-circle" size=16 %}
+          Confirm Signature
+        </button>
+        <a href="{% url 'secretary_visitor_detail' visitor.id %}" class="btn btn-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+
+  <div class="lg:col-span-1">
+    <div class="card">
+      <h3 class="card-title mb-4">Visitor</h3>
+      <div class="grid grid-cols-1 gap-4">
+        <div>
+          <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Name</div>
+          <div style="font-weight: 600; color: var(--ink-900); margin-top: 2px;">{{ visitor.full_name }}</div>
+        </div>
+        <div>
+          <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Host</div>
+          <div style="color: var(--ink-900); margin-top: 2px;">{{ visitor.host_display }}</div>
+        </div>
+        <div>
+          <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Pass Issued</div>
+          <div style="color: var(--ink-700); margin-top: 2px;">
+            {{ visitor.official_pass_issued_at|date:"d M Y, H:i" }}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}

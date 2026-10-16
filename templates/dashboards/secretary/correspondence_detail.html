@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ item.reference_number }}{% endblock %}
+{% block header_title %}{{ item.subject }}{% endblock %}
+{% block header_sub %}{{ item.reference_number }} &middot; {{ item.get_direction_display }}{% endblock %}
+
+{% block content %}
+
+<div class="card mb-6" style="padding: var(--s-5); border-left: 4px solid
+  {% if item.direction == 'incoming' %}var(--primary){% else %}var(--info){% endif %};">
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <div class="flex flex-wrap items-center gap-4">
+      <div>
+        <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Direction</div>
+        <div style="margin-top: 2px;">
+          {% if item.direction == 'incoming' %}
+            <span class="badge badge-primary">Incoming</span>
+          {% else %}
+            <span class="badge badge-info">Outgoing</span>
+          {% endif %}
+        </div>
+      </div>
+      <div>
+        <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Priority</div>
+        <div style="margin-top: 2px;">
+          {% if item.priority == 'urgent' %}
+            <span class="badge badge-danger">Urgent</span>
+          {% elif item.priority == 'high' %}
+            <span class="badge badge-warning">High</span>
+          {% else %}
+            <span class="badge">Normal</span>
+          {% endif %}
+        </div>
+      </div>
+      <div>
+        <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Status</div>
+        <div style="margin-top: 2px;">
+          <span class="badge">{{ item.get_status_display }}</span>
+        </div>
+      </div>
+    </div>
+    <div class="flex gap-2">
+      <a href="{% url 'secretary_correspondence_edit' item.id %}" class="btn btn-primary">
+        {% include 'partials/icons.html' with name="edit" size=16 %}
+        Edit
+      </a>
+      <a href="{% url 'secretary_correspondence_list' %}" class="btn btn-secondary">
+        {% include 'partials/icons.html' with name="arrow-left" size=16 %}
+        Back
+      </a>
+    </div>
+  </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+  <div class="lg:col-span-2">
+
+    {% if item.summary %}
+    <div class="card mb-6">
+      <h3 class="card-title mb-4">Summary</h3>
+      <p style="color: var(--ink-700); margin: 0;">{{ item.summary|linebreaksbr }}</p>
+    </div>
+    {% endif %}
+
+    {% if item.action_taken %}
+    <div class="card mb-6">
+      <h3 class="card-title mb-4">Action Taken</h3>
+      <p style="color: var(--ink-700); margin: 0;">{{ item.action_taken|linebreaksbr }}</p>
+    </div>
+    {% endif %}
+
+    {% if item.notes %}
+    <div class="card mb-6">
+      <h3 class="card-title mb-4">Notes</h3>
+      <p style="color: var(--ink-700); margin: 0;">{{ item.notes|linebreaksbr }}</p>
+    </div>
+    {% endif %}
+
+    {% if item.document %}
+    <div class="card mb-6">
+      <h3 class="card-title mb-4">Attached Document</h3>
+      <a href="{{ item.document.url }}" target="_blank" class="btn btn-primary">
+        {% include 'partials/icons.html' with name="download" size=16 %}
+        Download
+      </a>
+    </div>
+    {% endif %}
+
+  </div>
+
+  <div class="lg:col-span-1">
+
+    <div class="card mb-6">
+      <h3 class="card-title mb-4">Correspondent</h3>
+      <div class="grid grid-cols-1 gap-3">
+        <div>
+          <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Name</div>
+          <div style="font-weight: 600; color: var(--ink-900); margin-top: 2px;">{{ item.correspondent_name }}</div>
+        </div>
+        {% if item.correspondent_org %}
+        <div>
+          <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Organisation</div>
+          <div style="color: var(--ink-900); margin-top: 2px;">{{ item.correspondent_org }}</div>
+        </div>
+        {% endif %}
+        {% if item.correspondent_phone %}
+        <div>
+          <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Phone</div>
+          <div style="color: var(--ink-900); margin-top: 2px;">{{ item.correspondent_phone }}</div>
+        </div>
+        {% endif %}
+        {% if item.correspondent_email %}
+        <div>
+          <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Email</div>
+          <div style="color: var(--ink-900); margin-top: 2px;">{{ item.correspondent_email }}</div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="card">
+      <h3 class="card-title mb-4">Audit</h3>
+      <div style="font-size: var(--text-sm); line-height: 1.9;">
+        <div class="flex justify-between mb-2">
+          <span style="color: var(--ink-500);">Logged:</span>
+          <span style="color: var(--ink-900);">{{ item.created_at|date:"d M Y, H:i" }}</span>
+        </div>
+        {% if item.date_received %}
+        <div class="flex justify-between mb-2">
+          <span style="color: var(--ink-500);">Received:</span>
+          <span style="color: var(--ink-900);">{{ item.date_received|date:"d M Y" }}</span>
+        </div>
+        {% endif %}
+        {% if item.date_dispatched %}
+        <div class="flex justify-between mb-2">
+          <span style="color: var(--ink-500);">Dispatched:</span>
+          <span style="color: var(--ink-900);">{{ item.date_dispatched|date:"d M Y" }}</span>
+        </div>
+        {% endif %}
+        {% if item.assigned_to %}
+        <div class="flex justify-between">
+          <span style="color: var(--ink-500);">Assigned:</span>
+          <span style="color: var(--ink-900);">
+            {{ item.assigned_to.get_full_name|default:item.assigned_to.email }}
+          </span>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+{% endblock %}

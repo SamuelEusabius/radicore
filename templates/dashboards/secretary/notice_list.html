@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Notice Board{% endblock %}
+{% block header_title %}Notice Board{% endblock %}
+{% block header_sub %}{{ total }} notice{{ total|pluralize }}{% endblock %}
+
+{% block content %}
+
+<!-- FILTER BAR -->
+<div class="card mb-6">
+  <form method="get" class="flex flex-wrap items-end gap-3">
+
+    <div style="flex: 0 0 220px;">
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Audience</label>
+      <select name="audience" class="select w-full">
+        <option value="">All</option>
+        <option value="everyone" {% if audience == 'everyone' %}selected{% endif %}>Everyone</option>
+        <option value="staff" {% if audience == 'staff' %}selected{% endif %}>Staff</option>
+        <option value="teachers" {% if audience == 'teachers' %}selected{% endif %}>Teachers</option>
+        <option value="students" {% if audience == 'students' %}selected{% endif %}>Students</option>
+        <option value="parents" {% if audience == 'parents' %}selected{% endif %}>Parents</option>
+      </select>
+    </div>
+
+    <div class="flex gap-2">
+      <button type="submit" class="btn btn-primary">
+        {% include 'partials/icons.html' with name="search" size=16 %}
+        Filter
+      </button>
+      <a href="{% url 'secretary_notice_list' %}" class="btn btn-secondary">Reset</a>
+    </div>
+
+  </form>
+</div>
+
+<!-- ACTION BAR -->
+<div class="flex flex-wrap items-center gap-3 mb-6">
+  <a href="{% url 'secretary_notice_create' %}" class="btn btn-primary">
+    {% include 'partials/icons.html' with name="plus" size=16 %}
+    Post Notice
+  </a>
+</div>
+
+<!-- TABLE -->
+{% if notices %}
+<div class="card" style="padding: 0; overflow: hidden;">
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Title</th>
+          <th>Audience</th>
+          <th>Priority</th>
+          <th>Published</th>
+          <th>Expires</th>
+          <th>Live?</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for n in notices %}
+        <tr>
+          <td>
+            <a href="{% url 'secretary_notice_edit' n.id %}"
+               style="font-weight: 600; color: var(--ink-900); text-decoration: none;">
+              {{ n.title }}
+            </a>
+            {% if n.body %}
+            <div class="text-xs" style="color: var(--ink-500);">{{ n.body|truncatechars:70 }}</div>
+            {% endif %}
+          </td>
+          <td style="font-size: var(--text-sm); color: var(--ink-700);">{{ n.get_audience_display }}</td>
+          <td>
+            {% if n.priority == 'urgent' %}
+              <span class="badge badge-danger">Urgent</span>
+            {% elif n.priority == 'high' %}
+              <span class="badge badge-warning">High</span>
+            {% else %}
+              <span class="badge">{{ n.get_priority_display }}</span>
+            {% endif %}
+          </td>
+          <td style="color: var(--ink-600); font-size: var(--text-sm); white-space: nowrap;">
+            {% if n.published_at %}{{ n.published_at|date:"d M Y" }}{% else %}—{% endif %}
+          </td>
+          <td style="color: var(--ink-600); font-size: var(--text-sm); white-space: nowrap;">
+            {% if n.expires_at %}{{ n.expires_at|date:"d M Y" }}{% else %}—{% endif %}
+          </td>
+          <td>
+            {% if n.is_live %}
+              <span class="badge badge-success">Live</span>
+            {% elif n.is_published %}
+              <span class="badge badge-warning">Expired</span>
+            {% else %}
+              <span class="badge">Draft</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% else %}
+<div class="card" style="padding: var(--s-8); text-align: center;">
+  <p class="text-sm" style="color: var(--ink-500); margin: 0;">
+    No notices yet.
+    <a href="{% url 'secretary_notice_create' %}" style="color: var(--primary);">Post the first notice</a>.
+  </p>
+</div>
+{% endif %}
+
+{% endblock %}

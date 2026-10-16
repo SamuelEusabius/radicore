@@ -1,0 +1,143 @@
+{% comment %}
+Shared PDF styles for letterhead + report header.
+Include inside <style> in any PDF template:
+    <style>
+      {% include 'pdf/_shared_styles.html' %}
+    </style>
+{% endcomment %}
+
+/* ============ REPORT HEADER ============ */
+.report-header {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 8px;
+}
+.rh-logo-cell {
+  width: 80px;
+  vertical-align: middle;
+  padding-right: 12px;
+}
+.rh-logo-img {
+  max-width: 72px;
+  max-height: 72px;
+}
+.rh-info-cell {
+  vertical-align: middle;
+  padding-right: 12px;
+}
+.rh-school-name {
+  font-size: 18px;
+  font-weight: 700;
+  color: #111;
+  letter-spacing: 0.3px;
+}
+.rh-motto {
+  font-size: 10px;
+  color: #6b7280;
+  font-style: italic;
+  margin-top: 1px;
+}
+.rh-address {
+  font-size: 10px;
+  color: #4b5563;
+  margin-top: 3px;
+}
+.rh-contact {
+  font-size: 10px;
+  color: #4b5563;
+  margin-top: 1px;
+}
+.rh-meta-cell {
+  vertical-align: top;
+  text-align: right;
+  width: 160px;
+}
+.rh-meta-label {
+  font-size: 8px;
+  font-weight: 700;
+  color: #6b7280;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.rh-meta-date {
+  font-size: 11px;
+  color: #111;
+  font-weight: 600;
+  margin-top: 1px;
+}
+.rh-meta-time {
+  font-size: 10px;
+  color: #4b5563;
+}
+.rh-meta-name {
+  font-size: 10px;
+  color: #111;
+  margin-top: 1px;
+}
+.rh-divider {
+  border-bottom: 3px double #333;
+  margin-bottom: 20px;
+}
+
+/* ============ DOCUMENT TITLE ============ */
+.doc-title {
+  text-align: center;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: #111;
+  padding: 8px 0;
+  border-bottom: 1px solid #d1d5db;
+  border-top: 1px solid #d1d5db;
+  margin: 16px 0 24px 0;
+}
+
+/* ============ BODY TEXT ============ */
+.doc-body {
+  font-size: 12.5px;
+  line-height: 1.75;
+  color: #1f2937;
+}
+.doc-body p {
+  margin: 0 0 14px 0;
+}
+
+/* ============ SIGNATURE ============ */
+.sig-area {
+  margin-top: 48px;
+  display: flex;
+  justify-content: flex-end;
+}
+.sig-block {
+  text-align: center;
+  min-width: 260px;
+}
+.sig-line {
+  border-top: 1px solid #333;
+  padding-top: 6px;
+  font-size: 11px;
+  color: #374151;
+}
+.sig-name {
+  font-weight: 600;
+  color: #111;
+  font-size: 12px;
+}
+.sig-role {
+  font-size: 10px;
+  color: #6b7280;
+  margin-top: 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ============ FOOTER ============ */
+.doc-footer {
+  margin-top: 40px;
+  padding-top: 10px;
+  border-top: 1px solid #e5e7eb;
+  font-size: 9px;
+  color: #6b7280;
+  text-align: center;
+}

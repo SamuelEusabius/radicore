@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Generate Letter{% endblock %}
+{% block header_title %}Generate Letter{% endblock %}
+{% block header_sub %}Pick a template, choose the student, generate{% endblock %}
+
+{% block content %}
+
+<form method="post" enctype="multipart/form-data" class="card" style="max-width: 1100px;">
+  {% csrf_token %}
+
+  <h3 class="card-title mb-4">Letter Details</h3>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
+        Letter Type <span style="color: var(--danger);">*</span>
+      </label>
+      <select name="letter_type" required class="select w-full">
+        <option value="">— Select —</option>
+        {% for value, label in letter_type_choices %}
+          <option value="{{ value }}">{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
+        Template (optional — uses default)
+      </label>
+      <select name="template_id" class="select w-full">
+        <option value="">— Auto-detect —</option>
+        {% for t in templates %}
+          <option value="{{ t.id }}">{{ t.name }} ({{ t.get_letter_type_display }})</option>
+        {% endfor %}
+      </select>
+    </div>
+  </div>
+
+  <div class="mb-4">
+    <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
+      Student (if applicable)
+    </label>
+    <select name="student_id" class="select w-full">
+      <option value="">— Not linked to a student —</option>
+      {% for s in students %}
+        <option value="{{ s.id }}">{{ s.first_name }} {{ s.last_name }} ({{ s.admission_number }})</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div class="mb-4">
+    <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
+      Recipient Name (if not a student)
+    </label>
+    <input type="text" name="recipient_name" class="input w-full"
+           placeholder="e.g. Former student name, staff name">
+  </div>
+
+  <div class="mb-4">
+    <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
+      Reason / Additional Notes
+    </label>
+    <textarea name="reason" rows="2" class="textarea w-full"
+              placeholder="e.g. Transferring to Mombasa due to family relocation"></textarea>
+  </div>
+
+  <div class="mb-4">
+    <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
+      Custom Extra Text (fills {% templatetag openvariable %}custom{% templatetag closevariable %} placeholder)
+    </label>
+    <textarea name="custom_extra" rows="2" class="textarea w-full"></textarea>
+  </div>
+
+  <hr style="border: none; border-top: 1px solid var(--border); margin: var(--s-5) 0;">
+
+  <!-- BODY OVERRIDE -->
+  <h3 class="card-title mb-4">Letter Body</h3>
+
+  <div class="mb-2">
+    <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
+      Body Content
+    </label>
+    <textarea name="body_override" rows="18" class="textarea w-full"
+              style="font-family: var(--font-mono); font-size: 13px; line-height: 1.7;"
+              placeholder="Leave blank to use the template body. Or write/paste your own here. Use {% templatetag openvariable %}student_name{% templatetag closevariable %}, {% templatetag openvariable %}today{% templatetag closevariable %}, etc. for placeholders.&#10;&#10;To force a page break, insert a line with just: ---PAGE---"></textarea>
+    <p class="text-xs mt-1" style="color: var(--ink-500);">
+      Supports up to <strong>10 printed pages</strong>. Insert <code>---PAGE---</code> on its own line to start a new page.
+    </p>
+  </div>
+
+  <hr style="border: none; border-top: 1px solid var(--border); margin: var(--s-5) 0;">
+
+  <!-- ATTACHMENTS -->
+  <h3 class="card-title mb-4">Attach Documents</h3>
+
+  <p class="text-xs mb-3" style="color: var(--ink-500);">
+    Attach supporting documents. They will be appended as annex pages after the letter body when printing.
+    Accepts PDF, JPG, PNG, DOCX — up to 10 MB each.
+  </p>
+
+  <div id="attachment-rows">
+    <div class="attachment-row grid grid-cols-1 md:grid-cols-12 gap-3 mb-3" style="align-items: end;">
+      <div class="md:col-span-3">
+        <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Type</label>
+        <select name="attach_type[]" class="select w-full">
+          <option value="other">Other</option>
+          <option value="report_card">Report Card</option>
+          <option value="birth_cert">Birth Certificate</option>
+          <option value="fee_statement">Fee Statement</option>
+          <option value="id_copy">ID Copy</option>
+          <option value="transfer_form">Transfer Form</option>
+          <option value="medical_record">Medical Record</option>
+          <option value="previous_letter">Previous Letter</option>
+        </select>
+      </div>
+      <div class="md:col-span-4">
+        <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Title</label>
+        <input type="text" name="attach_title[]" class="input w-full" placeholder="e.g. Term 2 Report Card">
+      </div>
+      <div class="md:col-span-4">
+        <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">File</label>
+        <input type="file" name="attach_file[]" class="input w-full"
+               accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
+      </div>
+      <div class="md:col-span-1">
+        <button type="button" class="btn btn-secondary w-full" onclick="removeAttachmentRow(this)"
+                style="padding: var(--s-2);">×</button>
+      </div>
+    </div>
+  </div>
+
+  <button type="button" class="btn btn-secondary mb-6" onclick="addAttachmentRow()">
+    {% include 'partials/icons.html' with name="plus" size=14 %}
+    Add Another Attachment
+  </button>
+
+  <div class="flex gap-3">
+    <button type="submit" class="btn btn-primary">
+      {% include 'partials/icons.html' with name="file-text" size=16 %}
+      Generate Letter
+    </button>
+    <a href="{% url 'secretary_letter_list' %}" class="btn btn-secondary">Cancel</a>
+  </div>
+
+</form>
+
+<script>
+function addAttachmentRow() {
+  const container = document.getElementById('attachment-rows');
+  const first = container.querySelector('.attachment-row');
+  const clone = first.cloneNode(true);
+  // Clear input values
+  clone.querySelectorAll('input').forEach(i => { if (i.type === 'text' || i.type === 'file') i.value = ''; });
+  clone.querySelectorAll('select').forEach(s => s.selectedIndex = 0);
+  container.appendChild(clone);
+}
+
+function removeAttachmentRow(btn) {
+  const container = document.getElementById('attachment-rows');
+  if (container.querySelectorAll('.attachment-row').length > 1) {
+    btn.closest('.attachment-row').remove();
+  } else {
+    // Clear the last row instead of removing
+    const row = btn.closest('.attachment-row');
+    row.querySelectorAll('input').forEach(i => { if (i.type === 'text' || i.type === 'file') i.value = ''; });
+    row.querySelectorAll('select').forEach(s => s.selectedIndex = 0);
+  }
+}
+</script>
+
+{% endblock %}

@@ -1,0 +1,224 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ letter.reference_number }}{% endblock %}
+{% block header_title %}{{ letter.title }}{% endblock %}
+{% block header_sub %}{{ letter.reference_number }} &middot; {{ letter.get_letter_type_display }}{% endblock %}
+
+{% block content %}
+
+<!-- STATUS STRIP -->
+<div class="card mb-6" style="padding: var(--s-5); border-left: 4px solid
+  {% if letter.status == 'collected' %}var(--success)
+  {% elif letter.status == 'cancelled' %}var(--danger)
+  {% else %}var(--primary){% endif %};">
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <div>
+      <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Status</div>
+      <div style="font-weight: 700; font-size: var(--text-lg); color: var(--ink-900); margin-top: 2px;">
+        {{ letter.get_status_display }}
+      </div>
+    </div>
+    <div class="flex flex-wrap gap-2">
+      <a href="{% url 'secretary_letter_print' letter.id %}" target="_blank" class="btn btn-primary">
+        {% include 'partials/icons.html' with name="download" size=16 %}
+        Print / PDF
+      </a>
+      {% if letter.status == 'issued' %}
+      <a href="{% url 'secretary_letter_mark_collected' letter.id %}" class="btn btn-secondary">
+        {% include 'partials/icons.html' with name="check-circle" size=16 %}
+        Mark Collected
+      </a>
+      {% endif %}
+      <a href="{% url 'secretary_letter_list' %}" class="btn btn-secondary">
+        {% include 'partials/icons.html' with name="arrow-left" size=16 %}
+        Back to List
+      </a>
+    </div>
+  </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+  <!-- LEFT: letter content + attachments -->
+  <div class="lg:col-span-2">
+
+    <!-- LETTER CONTENT -->
+    <div class="card mb-6">
+      <h3 class="card-title mb-4">Letter Content</h3>
+
+      <!-- Title -->
+      <div style="text-align: center; padding: var(--s-3) 0; border-top: 2px solid var(--border); border-bottom: 2px solid var(--border); font-weight: 700; letter-spacing: 2px; margin-bottom: var(--s-5); font-size: var(--text-base); text-transform: uppercase; color: var(--ink-900);">
+        {{ letter.title }}
+      </div>
+
+      <!-- Body — supports page breaks + safe HTML from service -->
+      <div style="font-size: 13px; line-height: 1.85; color: var(--ink-800);">
+        {% if letter.body|length > 200 and '<div class="page-break">' in letter.body or '<p>' in letter.body %}
+          {{ letter.body|safe }}
+        {% else %}
+          {{ letter.body|linebreaks }}
+        {% endif %}
+      </div>
+
+      <!-- Signature -->
+      <div style="margin-top: var(--s-6); text-align: right;">
+        <div style="font-size: 12px; color: var(--ink-700);">{{ letter.closing_line }}</div>
+        <div style="margin-top: var(--s-5); display: inline-block; min-width: 240px; text-align: center;">
+          <div style="border-top: 1px solid var(--ink-400); padding-top: var(--s-2);">
+            <div style="font-weight: 600; color: var(--ink-900);">{{ letter.signatory_name }}</div>
+            <div style="font-size: 11px; color: var(--ink-500); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px;">
+              {{ letter.signatory_title }}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ATTACHMENTS -->
+    {% if letter.attachments.all %}
+    <div class="card mb-6">
+      <h3 class="card-title mb-4">
+        {% include 'partials/icons.html' with name="paperclip" size=18 %}
+        Attachments ({{ letter.attachments.count }})
+      </h3>
+
+      <div class="grid grid-cols-1 gap-3">
+        {% for att in letter.attachments.all %}
+        <div class="card" style="padding: var(--s-3); background: var(--surface-1);">
+          <div class="flex items-center justify-between gap-3">
+            <div class="flex-1 min-w-0">
+              <div style="font-weight: 600; color: var(--ink-900); font-size: var(--text-sm);">
+                {{ att.title }}
+              </div>
+              <div class="text-xs mt-1" style="color: var(--ink-500);">
+                {{ att.get_doc_type_display }}
+                {% if att.include_in_print %} &middot; In print{% else %} &middot; Not printed{% endif %}
+                &middot; Uploaded {{ att.uploaded_at|date:"d M Y" }}
+              </div>
+            </div>
+            <a href="{{ att.file.url }}" target="_blank"
+               class="btn btn-secondary" style="padding: var(--s-2) var(--s-3); font-size: var(--text-xs);">
+              {% include 'partials/icons.html' with name="download" size=14 %}
+              Open
+            </a>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- NOTES -->
+    {% if letter.notes %}
+    <div class="card">
+      <h3 class="card-title mb-4">Internal Notes</h3>
+      <p style="color: var(--ink-700); margin: 0; font-size: var(--text-sm);">
+        {{ letter.notes|linebreaksbr }}
+      </p>
+    </div>
+    {% endif %}
+
+  </div>
+
+  <!-- RIGHT: metadata + student -->
+  <div class="lg:col-span-1">
+
+    <!-- LETTER METADATA -->
+    <div class="card mb-6">
+      <h3 class="card-title mb-4">Details</h3>
+      <div style="font-size: var(--text-sm); line-height: 1.9;">
+        <div class="flex justify-between mb-2 gap-3">
+          <span style="color: var(--ink-500);">Reference:</span>
+          <span style="font-family: var(--font-mono); font-weight: 600; color: var(--ink-900); text-align: right;">
+            {{ letter.reference_number }}
+          </span>
+        </div>
+        <div class="flex justify-between mb-2 gap-3">
+          <span style="color: var(--ink-500);">Type:</span>
+          <span style="color: var(--ink-900); text-align: right;">{{ letter.get_letter_type_display }}</span>
+        </div>
+        <div class="flex justify-between mb-2 gap-3">
+          <span style="color: var(--ink-500);">Recipient:</span>
+          <span style="color: var(--ink-900); text-align: right;">{{ letter.recipient_display }}</span>
+        </div>
+        <div class="flex justify-between mb-2 gap-3">
+          <span style="color: var(--ink-500);">Issued:</span>
+          <span style="color: var(--ink-900); text-align: right;">{{ letter.issued_at|date:"d M Y, H:i" }}</span>
+        </div>
+        {% if letter.generated_by %}
+        <div class="flex justify-between mb-2 gap-3">
+          <span style="color: var(--ink-500);">By:</span>
+          <span style="color: var(--ink-900); text-align: right;">
+            {{ letter.generated_by.get_full_name|default:letter.generated_by.email }}
+          </span>
+        </div>
+        {% endif %}
+        {% if letter.collected_at %}
+        <div class="flex justify-between mb-2 gap-3">
+          <span style="color: var(--ink-500);">Collected:</span>
+          <span style="color: var(--ink-900); text-align: right;">{{ letter.collected_at|date:"d M Y" }}</span>
+        </div>
+        {% endif %}
+        {% if letter.issued_to %}
+        <div class="flex justify-between gap-3">
+          <span style="color: var(--ink-500);">Collected by:</span>
+          <span style="color: var(--ink-900); text-align: right;">{{ letter.issued_to }}</span>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- STUDENT -->
+    {% if letter.student %}
+    <div class="card mb-6">
+      <h3 class="card-title mb-4">Student</h3>
+      <div class="flex items-start gap-3">
+        <div class="flex-1 min-w-0">
+          <div style="font-weight: 600; color: var(--ink-900);">
+            {{ letter.student.first_name }} {{ letter.student.middle_name }} {{ letter.student.last_name }}
+          </div>
+          <div class="text-xs mt-1" style="color: var(--ink-500);">
+            Adm: {{ letter.student.admission_number }}
+          </div>
+          {% if letter.student.class_level %}
+          <div class="text-xs" style="color: var(--ink-500);">
+            Class: {{ letter.student.class_level }}
+          </div>
+          {% endif %}
+          {% if letter.student.guardian_name %}
+          <div class="text-xs mt-2" style="color: var(--ink-500);">
+            Guardian: {{ letter.student.guardian_name }}
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- QUICK ACTIONS -->
+    <div class="card">
+      <h3 class="card-title mb-4">Actions</h3>
+      <div class="flex flex-col gap-2">
+        <a href="{% url 'secretary_letter_print' letter.id %}" target="_blank" class="btn btn-primary">
+          {% include 'partials/icons.html' with name="download" size=16 %}
+          Print Letter
+        </a>
+        <a href="{% url 'secretary_letter_print' letter.id %}?auto=0" target="_blank" class="btn btn-secondary">
+          {% include 'partials/icons.html' with name="eye" size=16 %}
+          Preview (No Auto-Print)
+        </a>
+        {% if letter.status == 'issued' %}
+        <a href="{% url 'secretary_letter_mark_collected' letter.id %}" class="btn btn-secondary">
+          {% include 'partials/icons.html' with name="check-circle" size=16 %}
+          Mark Collected
+        </a>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+{% endblock %}

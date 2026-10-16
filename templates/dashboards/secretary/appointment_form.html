@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{% if mode == 'edit' %}Edit{% else %}Book{% endif %} Appointment{% endblock %}
+{% block header_title %}{% if mode == 'edit' %}Edit Appointment{% else %}Book Appointment{% endif %}{% endblock %}
+{% block header_sub %}Schedule a meeting with staff{% endblock %}
+
+{% block content %}
+
+<form method="post" class="card" style="max-width: 900px;">
+  {% csrf_token %}
+
+  {% if form.non_field_errors %}
+  <div class="card mb-4" style="border-left: 4px solid var(--danger); padding: var(--s-3); background: var(--danger-light);">
+    {% for err in form.non_field_errors %}
+      <p class="text-sm" style="margin: 0; color: var(--danger);">{{ err }}</p>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <h3 class="card-title mb-4">Requester</h3>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
+        Name <span style="color: var(--danger);">*</span>
+      </label>
+      {{ form.requester_name }}
+    </div>
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Phone</label>
+      {{ form.requester_phone }}
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Email</label>
+      {{ form.requester_email }}
+    </div>
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Organisation</label>
+      {{ form.requester_org }}
+    </div>
+  </div>
+
+  <hr style="border: none; border-top: 1px solid var(--border); margin: var(--s-5) 0;">
+
+  <h3 class="card-title mb-4">Host &amp; Purpose</h3>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Staff Host</label>
+      {{ form.host_user }}
+      <p class="text-xs mt-1" style="color: var(--ink-500);">Pick a user or use free-text below</p>
+    </div>
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Or Free-Text Host</label>
+      {{ form.host_name }}
+    </div>
+  </div>
+
+  <div class="mb-4">
+    <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
+      Subject <span style="color: var(--danger);">*</span>
+    </label>
+    {{ form.subject }}
+  </div>
+
+  <div class="mb-4">
+    <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Purpose</label>
+    {{ form.purpose }}
+  </div>
+
+  <div class="mb-6">
+    <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Location</label>
+    {{ form.location }}
+  </div>
+
+  <hr style="border: none; border-top: 1px solid var(--border); margin: var(--s-5) 0;">
+
+  <h3 class="card-title mb-4">Scheduling</h3>
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
+        Date <span style="color: var(--danger);">*</span>
+      </label>
+      {{ form.scheduled_date }}
+    </div>
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
+        Time <span style="color: var(--danger);">*</span>
+      </label>
+      {{ form.scheduled_time }}
+    </div>
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Duration (min)</label>
+      {{ form.duration_minutes }}
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Status</label>
+      {{ form.status }}
+    </div>
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Notes</label>
+      {{ form.notes }}
+    </div>
+  </div>
+
+  <div class="flex gap-3">
+    <button type="submit" class="btn btn-primary">
+      {% include 'partials/icons.html' with name="check-circle" size=16 %}
+      {% if mode == 'edit' %}Save Changes{% else %}Book Appointment{% endif %}
+    </button>
+    <a href="{% if mode == 'edit' %}{% url 'secretary_appointment_detail' form.instance.id %}{% else %}{% url 'secretary_appointment_list' %}{% endif %}" class="btn btn-secondary">Cancel</a>
+  </div>
+
+</form>
+
+{% endblock %}

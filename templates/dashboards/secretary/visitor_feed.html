@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Visitor Feed{% endblock %}
+{% block header_title %}Visitor Coordination{% endblock %}
+{% block header_sub %}{{ total }} visitor record{{ total|pluralize }} from the gate{% endblock %}
+
+{% block content %}
+
+<!-- QUICK FILTERS -->
+<div class="flex flex-wrap items-center gap-2 mb-6">
+  <a href="{% url 'secretary_visitor_feed' %}"
+     class="btn {% if not filter_type %}btn-primary{% else %}btn-secondary{% endif %}">
+    All Visitors
+  </a>
+  <a href="{% url 'secretary_visitor_feed' %}?filter=official"
+     class="btn {% if filter_type == 'official' %}btn-primary{% else %}btn-secondary{% endif %}">
+    Official Only
+  </a>
+  <a href="{% url 'secretary_visitor_feed' %}?filter=pending_sign"
+     class="btn {% if filter_type == 'pending_sign' %}btn-primary{% else %}btn-secondary{% endif %}">
+    Awaiting Signature
+  </a>
+  <a href="{% url 'secretary_visitor_feed' %}?filter=on_premises"
+     class="btn {% if filter_type == 'on_premises' %}btn-primary{% else %}btn-secondary{% endif %}">
+    On Premises
+  </a>
+</div>
+
+<!-- TABLE -->
+{% if visitors %}
+<div class="card" style="padding: 0; overflow: hidden;">
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Visitor</th>
+          <th>Host</th>
+          <th>Purpose</th>
+          <th>Type</th>
+          <th>Time In</th>
+          <th>Signature</th>
+          <th style="text-align: right;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for v in visitors %}
+        <tr>
+          <td>
+            <a href="{% url 'secretary_visitor_detail' v.id %}"
+               style="font-weight: 600; color: var(--ink-900); text-decoration: none;">
+              {{ v.full_name }}
+            </a>
+            {% if v.organisation %}
+            <div class="text-xs" style="color: var(--ink-500);">{{ v.organisation }}</div>
+            {% endif %}
+          </td>
+          <td style="color: var(--ink-700); font-size: var(--text-sm);">{{ v.host_display }}</td>
+          <td style="color: var(--ink-700); font-size: var(--text-sm);">{{ v.get_purpose_display }}</td>
+          <td>
+            {% if v.is_official %}
+              <span class="badge badge-primary">Official</span>
+            {% else %}
+              <span class="badge">Standard</span>
+            {% endif %}
+          </td>
+          <td style="color: var(--ink-600); font-size: var(--text-sm); white-space: nowrap;">
+            {{ v.time_in|date:"d M, H:i" }}
+          </td>
+          <td>
+            {% if not v.is_official %}
+              <span class="text-xs" style="color: var(--ink-400);">—</span>
+            {% elif v.admin_signed_at %}
+              <span class="badge badge-success">Signed</span>
+            {% elif v.official_pass_issued_at %}
+              <span class="badge badge-warning">Awaiting</span>
+            {% else %}
+              <span class="badge">Not issued</span>
+            {% endif %}
+          </td>
+          <td style="text-align: right; white-space: nowrap;">
+            {% if v.is_official and not v.official_pass_issued_at %}
+              <a href="{% url 'secretary_official_pass_issue' v.id %}"
+                 class="btn btn-primary" style="padding: var(--s-2) var(--s-3); font-size: var(--text-xs);">
+                Issue Pass
+              </a>
+            {% elif v.is_official and not v.admin_signed_at %}
+              <a href="{% url 'secretary_confirm_signature' v.id %}"
+                 class="btn btn-primary" style="padding: var(--s-2) var(--s-3); font-size: var(--text-xs);">
+                Confirm Sign
+              </a>
+            {% elif v.is_official and v.admin_signed_at and not v.time_out %}
+              <a href="{% url 'secretary_checkout_visitor' v.id %}"
+                 class="btn btn-secondary" style="padding: var(--s-2) var(--s-3); font-size: var(--text-xs);">
+                Check Out
+              </a>
+            {% else %}
+              <a href="{% url 'secretary_visitor_detail' v.id %}"
+                 class="btn btn-secondary" style="padding: var(--s-2) var(--s-3); font-size: var(--text-xs);">
+                View
+              </a>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if page_obj.paginator.num_pages > 1 %}
+  <div style="padding: var(--s-4) var(--s-5); border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+    <div class="text-xs" style="color: var(--ink-500);">
+      Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }} &middot; {{ total }} record{{ total|pluralize }}
+    </div>
+    <div class="flex gap-2">
+      {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}{% if filter_type %}&filter={{ filter_type }}{% endif %}" class="btn btn-secondary">&larr; Prev</a>
+      {% endif %}
+      {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}{% if filter_type %}&filter={{ filter_type }}{% endif %}" class="btn btn-secondary">Next &rarr;</a>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% else %}
+<div class="card" style="padding: var(--s-8); text-align: center;">
+  <p class="text-sm" style="color: var(--ink-500); margin: 0;">
+    No visitors match your filters yet.
+  </p>
+</div>
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Confirm Appointment{% endblock %}
+{% block header_title %}Confirm Appointment{% endblock %}
+{% block header_sub %}{{ appointment.requester_name }} &middot; {{ appointment.scheduled_date|date:"d M Y" }}{% endblock %}
+
+{% block content %}
+
+<div class="card" style="max-width: 640px; border-left: 4px solid var(--success);">
+  <h3 class="card-title mb-4">Confirm Booking</h3>
+
+  <p style="color: var(--ink-700); font-size: var(--text-sm); margin-bottom: var(--s-5);">
+    Confirming will lock in the appointment and send an SMS to the requester (if a phone number is on file).
+  </p>
+
+  <div class="card mb-6" style="background: var(--surface-1); padding: var(--s-4);">
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Requester</div>
+        <div style="font-weight: 600; color: var(--ink-900); margin-top: 2px;">{{ appointment.requester_name }}</div>
+      </div>
+      <div>
+        <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Host</div>
+        <div style="font-weight: 600; color: var(--ink-900); margin-top: 2px;">{{ appointment.host_display }}</div>
+      </div>
+      <div>
+        <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Date</div>
+        <div style="color: var(--ink-700); margin-top: 2px;">{{ appointment.scheduled_date|date:"d M Y" }}</div>
+      </div>
+      <div>
+        <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Time</div>
+        <div style="color: var(--ink-700); margin-top: 2px;">{{ appointment.scheduled_time|time:"H:i" }}</div>
+      </div>
+    </div>
+  </div>
+
+  <form method="post">
+    {% csrf_token %}
+    <div class="flex gap-3">
+      <button type="submit" class="btn btn-primary">
+        {% include 'partials/icons.html' with name="check-circle" size=16 %}
+        Confirm Appointment
+      </button>
+      <a href="{% url 'secretary_appointment_detail' appointment.id %}" class="btn btn-secondary">Cancel</a>
+    </div>
+  </form>
+</div>
+
+{% endblock %}

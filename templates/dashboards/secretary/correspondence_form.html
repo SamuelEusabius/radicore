@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{% if mode == 'edit' %}Edit{% else %}Log{% endif %} Correspondence{% endblock %}
+{% block header_title %}{% if mode == 'edit' %}Edit Correspondence{% else %}Log Correspondence{% endif %}{% endblock %}
+{% block header_sub %}Record mail sent or received{% endblock %}
+
+{% block content %}
+
+<form method="post" enctype="multipart/form-data" class="card" style="max-width: 900px;">
+  {% csrf_token %}
+
+  {% if form.non_field_errors %}
+  <div class="card mb-4" style="border-left: 4px solid var(--danger); padding: var(--s-3); background: var(--danger-light);">
+    {% for err in form.non_field_errors %}
+      <p class="text-sm" style="margin: 0; color: var(--danger);">{{ err }}</p>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <h3 class="card-title mb-4">Direction &amp; Subject</h3>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Direction</label>
+      {{ form.direction }}
+    </div>
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Priority</label>
+      {{ form.priority }}
+    </div>
+  </div>
+
+  <div class="mb-4">
+    <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
+      Subject <span style="color: var(--danger);">*</span>
+    </label>
+    {{ form.subject }}
+  </div>
+
+  <div class="mb-6">
+    <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Summary</label>
+    {{ form.summary }}
+  </div>
+
+  <hr style="border: none; border-top: 1px solid var(--border); margin: var(--s-5) 0;">
+
+  <h3 class="card-title mb-4">Correspondent</h3>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
+        Name <span style="color: var(--danger);">*</span>
+      </label>
+      {{ form.correspondent_name }}
+    </div>
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Organisation</label>
+      {{ form.correspondent_org }}
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Phone</label>
+      {{ form.correspondent_phone }}
+    </div>
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Email</label>
+      {{ form.correspondent_email }}
+    </div>
+  </div>
+
+  <hr style="border: none; border-top: 1px solid var(--border); margin: var(--s-5) 0;">
+
+  <h3 class="card-title mb-4">Handling</h3>
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Status</label>
+      {{ form.status }}
+    </div>
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Date Received</label>
+      {{ form.date_received }}
+    </div>
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Date Dispatched</label>
+      {{ form.date_dispatched }}
+    </div>
+  </div>
+
+  <div class="mb-4">
+    <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Assigned To</label>
+    {{ form.assigned_to }}
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Action Taken</label>
+      {{ form.action_taken }}
+    </div>
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Notes</label>
+      {{ form.notes }}
+    </div>
+  </div>
+
+  <div class="mb-6">
+    <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Attach Document</label>
+    {{ form.document }}
+    <p class="text-xs mt-1" style="color: var(--ink-500);">Scan of the letter/memo</p>
+  </div>
+
+  <div class="flex gap-3">
+    <button type="submit" class="btn btn-primary">
+      {% include 'partials/icons.html' with name="check-circle" size=16 %}
+      {% if mode == 'edit' %}Save Changes{% else %}Log Entry{% endif %}
+    </button>
+    <a href="{% if mode == 'edit' %}{% url 'secretary_correspondence_detail' item.id %}{% else %}{% url 'secretary_correspondence_list' %}{% endif %}" class="btn btn-secondary">Cancel</a>
+  </div>
+
+</form>
+
+{% endblock %}

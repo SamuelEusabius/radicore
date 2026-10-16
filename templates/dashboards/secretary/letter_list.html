@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Letters{% endblock %}
+{% block header_title %}Generated Letters{% endblock %}
+{% block header_sub %}{{ total }} letter{{ total|pluralize }} issued{% endblock %}
+
+{% block content %}
+
+<div class="card mb-6">
+  <form method="get" class="flex flex-wrap items-end gap-3">
+    <div style="flex: 1 1 220px;">
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Search</label>
+      <input type="text" name="q" value="{{ search }}" class="input w-full" placeholder="Ref, name, title">
+    </div>
+    <div style="flex: 0 0 200px;">
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Type</label>
+      <select name="type" class="select w-full">
+        <option value="">All</option>
+        {% for value, label in letter_type_choices %}
+          <option value="{{ value }}" {% if letter_type == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div style="flex: 0 0 160px;">
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Status</label>
+      <select name="status" class="select w-full">
+        <option value="">All</option>
+        <option value="issued" {% if status == 'issued' %}selected{% endif %}>Issued</option>
+        <option value="collected" {% if status == 'collected' %}selected{% endif %}>Collected</option>
+        <option value="cancelled" {% if status == 'cancelled' %}selected{% endif %}>Cancelled</option>
+      </select>
+    </div>
+    <div class="flex gap-2">
+      <button type="submit" class="btn btn-primary">
+        {% include 'partials/icons.html' with name="search" size=16 %}
+        Filter
+      </button>
+      <a href="{% url 'secretary_letter_list' %}" class="btn btn-secondary">Reset</a>
+    </div>
+  </form>
+</div>
+
+<div class="flex flex-wrap items-center gap-3 mb-6">
+  <a href="{% url 'secretary_letter_create' %}" class="btn btn-primary">
+    {% include 'partials/icons.html' with name="plus" size=16 %}
+    Generate Letter
+  </a>
+  <a href="{% url 'secretary_letter_template_list' %}" class="btn btn-secondary">
+    {% include 'partials/icons.html' with name="edit" size=16 %}
+    Manage Templates
+  </a>
+</div>
+
+{% if letters %}
+<div class="card" style="padding: 0; overflow: hidden;">
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Ref #</th>
+          <th>Title</th>
+          <th>Recipient</th>
+          <th>Type</th>
+          <th>Issued</th>
+          <th>Status</th>
+          <th style="text-align: right;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for l in letters %}
+        <tr>
+          <td style="font-family: var(--font-mono); font-size: var(--text-sm); font-weight: 600;">
+            <a href="{% url 'secretary_letter_detail' l.id %}" style="color: var(--ink-900); text-decoration: none;">
+              {{ l.reference_number }}
+            </a>
+          </td>
+          <td>
+            <a href="{% url 'secretary_letter_detail' l.id %}" style="font-weight: 500; color: var(--ink-900); text-decoration: none;">
+              {{ l.title }}
+            </a>
+          </td>
+          <td style="color: var(--ink-700); font-size: var(--text-sm);">{{ l.recipient_display }}</td>
+          <td><span class="badge">{{ l.get_letter_type_display }}</span></td>
+          <td style="color: var(--ink-600); font-size: var(--text-sm);">{{ l.issued_at|date:"d M Y" }}</td>
+          <td>
+            {% if l.status == 'collected' %}
+              <span class="badge badge-success">Collected</span>
+            {% elif l.status == 'cancelled' %}
+              <span class="badge badge-danger">Cancelled</span>
+            {% else %}
+              <span class="badge badge-primary">Issued</span>
+            {% endif %}
+          </td>
+          <td style="text-align: right; white-space: nowrap;">
+            <a href="{% url 'secretary_letter_print' l.id %}" target="_blank"
+               class="btn btn-secondary" style="padding: var(--s-2) var(--s-3); font-size: var(--text-xs);">
+              Print
+            </a>
+            <a href="{% url 'secretary_letter_detail' l.id %}"
+               class="btn btn-secondary" style="padding: var(--s-2) var(--s-3); font-size: var(--text-xs);">
+              View
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if page_obj.paginator.num_pages > 1 %}
+  <div style="padding: var(--s-4) var(--s-5); border-top: 1px solid var(--border); display: flex; justify-content: space-between;">
+    <div class="text-xs" style="color: var(--ink-500);">
+      Page {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}
+    </div>
+    <div class="flex gap-2">
+      {% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}" class="btn btn-secondary">&larr;</a>{% endif %}
+      {% if page_obj.has_next %}<a href="?page={{ page_obj.next_page_number }}" class="btn btn-secondary">&rarr;</a>{% endif %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% else %}
+<div class="card" style="padding: var(--s-8); text-align: center;">
+  <p class="text-sm" style="color: var(--ink-500); margin: 0;">
+    No letters generated yet.
+    <a href="{% url 'secretary_letter_create' %}" style="color: var(--primary);">Generate the first one</a>.
+  </p>
+</div>
+{% endif %}
+
+{% endblock %}

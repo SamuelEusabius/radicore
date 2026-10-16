@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Correspondence{% endblock %}
+{% block header_title %}Mail Register{% endblock %}
+{% block header_sub %}{{ total }} record{{ total|pluralize }} in the register{% endblock %}
+
+{% block content %}
+
+<!-- FILTER BAR -->
+<div class="card mb-6">
+  <form method="get" class="flex flex-wrap items-end gap-3">
+
+    <div style="flex: 1 1 200px;">
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Search</label>
+      <input type="text" name="q" value="{{ search }}" class="input w-full" placeholder="Subject, correspondent, ref #">
+    </div>
+
+    <div style="flex: 0 0 140px;">
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Direction</label>
+      <select name="direction" class="select w-full">
+        <option value="">All</option>
+        <option value="incoming" {% if direction == 'incoming' %}selected{% endif %}>Incoming</option>
+        <option value="outgoing" {% if direction == 'outgoing' %}selected{% endif %}>Outgoing</option>
+      </select>
+    </div>
+
+    <div style="flex: 0 0 160px;">
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Status</label>
+      <select name="status" class="select w-full">
+        <option value="">All</option>
+        <option value="received" {% if status == 'received' %}selected{% endif %}>Received</option>
+        <option value="pending" {% if status == 'pending' %}selected{% endif %}>Pending</option>
+        <option value="actioned" {% if status == 'actioned' %}selected{% endif %}>Actioned</option>
+        <option value="filed" {% if status == 'filed' %}selected{% endif %}>Filed</option>
+        <option value="dispatched" {% if status == 'dispatched' %}selected{% endif %}>Dispatched</option>
+      </select>
+    </div>
+
+    <div style="flex: 0 0 140px;">
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Priority</label>
+      <select name="priority" class="select w-full">
+        <option value="">All</option>
+        <option value="urgent" {% if priority == 'urgent' %}selected{% endif %}>Urgent</option>
+        <option value="high" {% if priority == 'high' %}selected{% endif %}>High</option>
+        <option value="normal" {% if priority == 'normal' %}selected{% endif %}>Normal</option>
+      </select>
+    </div>
+
+    <div class="flex gap-2">
+      <button type="submit" class="btn btn-primary">
+        {% include 'partials/icons.html' with name="search" size=16 %}
+        Filter
+      </button>
+      <a href="{% url 'secretary_correspondence_list' %}" class="btn btn-secondary">Reset</a>
+    </div>
+
+  </form>
+</div>
+
+<!-- ACTION BAR -->
+<div class="flex flex-wrap items-center gap-3 mb-6">
+  <a href="{% url 'secretary_correspondence_create' %}" class="btn btn-primary">
+    {% include 'partials/icons.html' with name="plus" size=16 %}
+    Log Correspondence
+  </a>
+</div>
+
+<!-- TABLE -->
+{% if items %}
+<div class="card" style="padding: 0; overflow: hidden;">
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Ref #</th>
+          <th>Direction</th>
+          <th>Subject</th>
+          <th>Correspondent</th>
+          <th>Priority</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in items %}
+        <tr>
+          <td style="font-family: var(--font-mono); font-size: var(--text-sm); font-weight: 600; color: var(--ink-900);">
+            <a href="{% url 'secretary_correspondence_detail' item.id %}" style="color: var(--ink-900); text-decoration: none;">
+              {{ item.reference_number }}
+            </a>
+          </td>
+          <td>
+            {% if item.direction == 'incoming' %}
+              <span class="badge badge-primary">In</span>
+            {% else %}
+              <span class="badge badge-info">Out</span>
+            {% endif %}
+          </td>
+          <td>
+            <a href="{% url 'secretary_correspondence_detail' item.id %}" style="color: var(--ink-900); text-decoration: none; font-weight: 500;">
+              {{ item.subject }}
+            </a>
+          </td>
+          <td style="color: var(--ink-700); font-size: var(--text-sm);">{{ item.correspondent_name }}</td>
+          <td>
+            {% if item.priority == 'urgent' %}
+              <span class="badge badge-danger">Urgent</span>
+            {% elif item.priority == 'high' %}
+              <span class="badge badge-warning">High</span>
+            {% else %}
+              <span class="badge">Normal</span>
+            {% endif %}
+          </td>
+          <td><span class="badge">{{ item.get_status_display }}</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if page_obj.paginator.num_pages > 1 %}
+  <div style="padding: var(--s-4) var(--s-5); border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+    <div class="text-xs" style="color: var(--ink-500);">
+      Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+    </div>
+    <div class="flex gap-2">
+      {% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}" class="btn btn-secondary">&larr;</a>{% endif %}
+      {% if page_obj.has_next %}<a href="?page={{ page_obj.next_page_number }}" class="btn btn-secondary">&rarr;</a>{% endif %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% else %}
+<div class="card" style="padding: var(--s-8); text-align: center;">
+  <p class="text-sm" style="color: var(--ink-500); margin: 0;">
+    No correspondence recorded.
+    <a href="{% url 'secretary_correspondence_create' %}" style="color: var(--primary);">Log the first entry</a>.
+  </p>
+</div>
+{% endif %}
+
+{% endblock %}

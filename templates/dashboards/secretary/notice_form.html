@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{% if notice %}Edit Notice{% else %}Post Notice{% endif %}{% endblock %}
+{% block header_title %}{% if notice %}Edit Notice{% else %}Post Notice{% endif %}{% endblock %}
+{% block header_sub %}Publish an announcement to the school{% endblock %}
+
+{% block content %}
+
+<form method="post" enctype="multipart/form-data" class="card" style="max-width: 900px;">
+  {% csrf_token %}
+
+  {% if form.non_field_errors %}
+  <div class="card mb-4" style="border-left: 4px solid var(--danger); padding: var(--s-3); background: var(--danger-light);">
+    {% for err in form.non_field_errors %}
+      <p class="text-sm" style="margin: 0; color: var(--danger);">{{ err }}</p>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="mb-4">
+    <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
+      Title <span style="color: var(--danger);">*</span>
+    </label>
+    {{ form.title }}
+  </div>
+
+  <div class="mb-4">
+    <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
+      Body <span style="color: var(--danger);">*</span>
+    </label>
+    {{ form.body }}
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Audience</label>
+      {{ form.audience }}
+    </div>
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Priority</label>
+      {{ form.priority }}
+    </div>
+  </div>
+
+  <div class="mb-4">
+    <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Attachment</label>
+    {{ form.attachment }}
+    <p class="text-xs mt-1" style="color: var(--ink-500);">Optional PDF or image</p>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Expires At</label>
+      {{ form.expires_at }}
+      <p class="text-xs mt-1" style="color: var(--ink-500);">Leave blank for permanent</p>
+    </div>
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Publish Now</label>
+      <div style="padding: var(--s-2) 0;">
+        {{ form.is_published }}
+        <span style="color: var(--ink-600); font-size: var(--text-sm);">Make live immediately</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="flex gap-3">
+    <button type="submit" class="btn btn-primary">
+      {% include 'partials/icons.html' with name="check-circle" size=16 %}
+      {% if notice %}Save Changes{% else %}Post Notice{% endif %}
+    </button>
+    <a href="{% url 'secretary_notice_list' %}" class="btn btn-secondary">Cancel</a>
+  </div>
+
+</form>
+
+{% endblock %}

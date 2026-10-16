@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Admissions{% endblock %}
+{% block header_title %}Admission Applications{% endblock %}
+{% block header_sub %}{{ total }} application{{ total|pluralize }}{% endblock %}
+
+{% block content %}
+
+<!-- FILTER BAR -->
+<div class="card mb-6">
+  <form method="get" class="flex flex-wrap items-end gap-3">
+
+    <div style="flex: 1 1 220px;">
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Search</label>
+      <input type="text" name="q" value="{{ search }}" class="input w-full" placeholder="Name, guardian, ref #">
+    </div>
+
+    <div style="flex: 0 0 200px;">
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Status</label>
+      <select name="status" class="select w-full">
+        <option value="">All</option>
+        <option value="new" {% if status == 'new' %}selected{% endif %}>New</option>
+        <option value="reviewing" {% if status == 'reviewing' %}selected{% endif %}>Reviewing</option>
+        <option value="interview" {% if status == 'interview' %}selected{% endif %}>Interview</option>
+        <option value="offered" {% if status == 'offered' %}selected{% endif %}>Offered</option>
+        <option value="accepted" {% if status == 'accepted' %}selected{% endif %}>Accepted</option>
+        <option value="enrolled" {% if status == 'enrolled' %}selected{% endif %}>Enrolled</option>
+        <option value="rejected" {% if status == 'rejected' %}selected{% endif %}>Rejected</option>
+        <option value="withdrawn" {% if status == 'withdrawn' %}selected{% endif %}>Withdrawn</option>
+      </select>
+    </div>
+
+    <div class="flex gap-2">
+      <button type="submit" class="btn btn-primary">
+        {% include 'partials/icons.html' with name="search" size=16 %}
+        Filter
+      </button>
+      <a href="{% url 'secretary_application_list' %}" class="btn btn-secondary">Reset</a>
+    </div>
+
+  </form>
+</div>
+
+<!-- ACTION BAR -->
+<div class="flex flex-wrap items-center gap-3 mb-6">
+  <a href="{% url 'secretary_application_create' %}" class="btn btn-primary">
+    {% include 'partials/icons.html' with name="plus" size=16 %}
+    New Application
+  </a>
+</div>
+
+<!-- TABLE -->
+{% if applications %}
+<div class="card" style="padding: 0; overflow: hidden;">
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Ref #</th>
+          <th>Applicant</th>
+          <th>Applying For</th>
+          <th>Guardian</th>
+          <th>Status</th>
+          <th style="text-align: right;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for a in applications %}
+        <tr>
+          <td style="font-family: var(--font-mono); font-size: var(--text-sm); font-weight: 600; color: var(--ink-900);">
+            <a href="{% url 'secretary_application_detail' a.id %}" style="color: var(--ink-900); text-decoration: none;">
+              {{ a.reference_number }}
+            </a>
+          </td>
+          <td>
+            <a href="{% url 'secretary_application_detail' a.id %}"
+               style="font-weight: 600; color: var(--ink-900); text-decoration: none;">
+              {{ a.full_name }}
+            </a>
+            <div class="text-xs" style="color: var(--ink-500);">{{ a.get_gender_display }}{% if a.date_of_birth %} &middot; {{ a.date_of_birth|date:"d M Y" }}{% endif %}</div>
+          </td>
+          <td style="color: var(--ink-700); font-size: var(--text-sm);">{{ a.applying_for_class }}</td>
+          <td style="color: var(--ink-700); font-size: var(--text-sm);">
+            {{ a.guardian_name }}
+            {% if a.guardian_phone %}
+            <div class="text-xs" style="color: var(--ink-500);">{{ a.guardian_phone }}</div>
+            {% endif %}
+          </td>
+          <td>
+            {% if a.status == 'enrolled' or a.status == 'accepted' %}
+              <span class="badge badge-success">{{ a.get_status_display }}</span>
+            {% elif a.status == 'rejected' or a.status == 'withdrawn' %}
+              <span class="badge badge-danger">{{ a.get_status_display }}</span>
+            {% elif a.status == 'new' %}
+              <span class="badge badge-primary">{{ a.get_status_display }}</span>
+            {% else %}
+              <span class="badge badge-warning">{{ a.get_status_display }}</span>
+            {% endif %}
+          </td>
+          <td style="text-align: right;">
+            <a href="{% url 'secretary_application_detail' a.id %}"
+               class="btn btn-secondary" style="padding: var(--s-2) var(--s-3); font-size: var(--text-xs);">
+              View
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if page_obj.paginator.num_pages > 1 %}
+  <div style="padding: var(--s-4) var(--s-5); border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+    <div class="text-xs" style="color: var(--ink-500);">
+      Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+    </div>
+    <div class="flex gap-2">
+      {% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}" class="btn btn-secondary">&larr;</a>{% endif %}
+      {% if page_obj.has_next %}<a href="?page={{ page_obj.next_page_number }}" class="btn btn-secondary">&rarr;</a>{% endif %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% else %}
+<div class="card" style="padding: var(--s-8); text-align: center;">
+  <p class="text-sm" style="color: var(--ink-500); margin: 0;">
+    No applications yet.
+    <a href="{% url 'secretary_application_create' %}" style="color: var(--primary);">Record the first one</a>.
+  </p>
+</div>
+{% endif %}
+
+{% endblock %}

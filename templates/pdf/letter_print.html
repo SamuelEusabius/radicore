@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>{{ letter.title }} — {{ school.name }}</title>
+  <style>
+    * { box-sizing: border-box; }
+
+    @page {
+      size: A4 portrait;
+      margin: 18mm 20mm;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: 12px;
+      color: #111;
+      line-height: 1.65;
+      margin: 0;
+      padding: 24px;
+    }
+    {% include 'pdf/_shared_styles.html' %}
+
+    .ref-line {
+      text-align: right;
+      font-size: 10px;
+      color: #4b5563;
+      margin-bottom: 18px;
+    }
+    .doc-body {
+      font-size: 12.5px;
+      line-height: 1.85;
+      color: #1f2937;
+      margin-bottom: 32px;
+    }
+    .doc-body .page-break {
+      page-break-after: always;
+      height: 0;
+      margin: 0;
+      padding: 0;
+      border: none;
+    }
+    .doc-body p { margin: 0 0 12px 0; }
+
+    .annex-section {
+      page-break-before: always;
+      margin-top: 24px;
+    }
+    .annex-header {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #111;
+      padding: 6px 0;
+      border-bottom: 2px solid #333;
+      margin-bottom: 16px;
+    }
+    .annex-item {
+      margin-bottom: 24px;
+      page-break-inside: avoid;
+    }
+    .annex-item .annex-title {
+      font-size: 11px;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 6px;
+    }
+    .annex-item .annex-file {
+      padding: 10px 14px;
+      background: #f9fafb;
+      border-left: 3px solid #6b7280;
+      font-size: 10.5px;
+      color: #4b5563;
+    }
+
+    .no-print {
+      text-align: center;
+      margin-bottom: 20px;
+      padding: 10px;
+      background: #eff6ff;
+      border-radius: 4px;
+    }
+    .no-print button {
+      padding: 8px 16px;
+      background: #2563eb;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    @media print {
+      body { padding: 0; margin: 0; }
+      .no-print { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="no-print">
+    <button onclick="window.print()">Print Letter</button>
+    {% if letter.attachments.all %}
+      <span style="margin-left: 12px; color: #6b7280; font-size: 11px;">
+        + {{ letter.attachments.count }} annex page(s)
+      </span>
+    {% endif %}
+  </div>
+
+  {% include 'pdf/_report_header.html' %}
+
+  <div class="ref-line">
+    Ref: <strong style="font-family: monospace;">{{ letter.reference_number }}</strong>
+    &middot; {{ letter.issued_at|date:"j F Y" }}
+  </div>
+
+  <div class="doc-title">{{ letter.title }}</div>
+
+  <div class="doc-body">
+  {% if '<p>' in letter.body or '<div class="page-break">' in letter.body %}
+    {{ letter.body|safe }}
+  {% else %}
+    {{ letter.body|linebreaks }}
+  {% endif %}
+</div>
+
+  <div class="sig-area">
+    <div class="sig-block">
+      <div class="sig-line">
+        <div class="sig-name">{{ letter.signatory_name }}</div>
+        <div class="sig-role">{{ letter.signatory_title }}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="doc-footer">
+    {{ school.name }}{% if school.physical_address %} &middot; {{ school.physical_address }}{% endif %}
+    {% if school.phone %} &middot; {{ school.phone }}{% endif %}
+    <br>
+    Issued {{ letter.issued_at|date:"j F Y" }}
+    {% if letter.generated_by %} by {{ letter.generated_by.get_full_name|default:letter.generated_by.email }}{% endif %}
+    &middot; This is an official school document.
+  </div>
+
+  <!-- ANNEX PAGES -->
+  {% if letter.attachments.all %}
+  <div class="annex-section">
+    <div class="annex-header">Annex — Attached Documents</div>
+    {% for att in letter.attachments.all %}
+      {% if att.include_in_print %}
+      <div class="annex-item">
+        <div class="annex-title">
+          {{ forloop.counter }}. {{ att.title }}
+          <span style="font-weight: 400; color: #6b7280;">— {{ att.get_doc_type_display }}</span>
+        </div>
+        <div class="annex-file">
+          📄 <strong>{{ att.file.name|slice:"-50:" }}</strong>
+          <br>
+          <span style="font-size: 10px;">
+            This document is attached to the physical letter when printed.
+            Reference: {{ att.file.name }}
+          </span>
+        </div>
+      </div>
+      {% endif %}
+    {% endfor %}
+    <p style="font-size: 10px; color: #6b7280; margin-top: 24px; text-align: center;">
+      — End of Annex —
+    </p>
+  </div>
+  {% endif %}
+
+  {% if auto_print %}
+  <script>
+    window.addEventListener('load', function () {
+      setTimeout(function () { window.print(); }, 600);
+    });
+  </script>
+  {% endif %}
+
+</body>
+</html>

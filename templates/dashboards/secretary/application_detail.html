@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ application.reference_number }}{% endblock %}
+{% block header_title %}{{ application.full_name }}{% endblock %}
+{% block header_sub %}{{ application.reference_number }} &middot; applying for {{ application.applying_for_class }}{% endblock %}
+
+{% block content %}
+
+<!-- STATUS STRIP -->
+<div class="card mb-6" style="padding: var(--s-5); border-left: 4px solid
+  {% if application.status == 'enrolled' or application.status == 'accepted' %}var(--success)
+  {% elif application.status == 'rejected' or application.status == 'withdrawn' %}var(--danger)
+  {% elif application.status == 'new' %}var(--primary)
+  {% else %}var(--warning){% endif %};">
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <div>
+      <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Status</div>
+      <div style="font-weight: 700; font-size: var(--text-lg); color: var(--ink-900); margin-top: 2px;">
+        {{ application.get_status_display }}
+      </div>
+    </div>
+    <div class="flex gap-2">
+      <a href="{% url 'secretary_application_edit' application.id %}" class="btn btn-primary">
+        {% include 'partials/icons.html' with name="edit" size=16 %}
+        Edit
+      </a>
+      <a href="{% url 'secretary_application_list' %}" class="btn btn-secondary">
+        {% include 'partials/icons.html' with name="arrow-left" size=16 %}
+        Back
+      </a>
+    </div>
+  </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+  <div class="lg:col-span-2">
+
+    <div class="card mb-6">
+      <h3 class="card-title mb-4">Applicant</h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Full Name</div>
+          <div style="font-weight: 600; color: var(--ink-900); margin-top: 2px;">{{ application.full_name }}</div>
+        </div>
+        <div>
+          <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Gender</div>
+          <div style="color: var(--ink-900); margin-top: 2px;">{{ application.get_gender_display }}</div>
+        </div>
+        <div>
+          <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Date of Birth</div>
+          <div style="color: var(--ink-900); margin-top: 2px;">
+            {% if application.date_of_birth %}{{ application.date_of_birth|date:"d M Y" }}{% else %}—{% endif %}
+          </div>
+        </div>
+        <div>
+          <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Applying For</div>
+          <div style="color: var(--ink-900); margin-top: 2px;">{{ application.applying_for_class }}</div>
+        </div>
+        {% if application.previous_school %}
+        <div class="md:col-span-2">
+          <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Previous School</div>
+          <div style="color: var(--ink-900); margin-top: 2px;">{{ application.previous_school }}</div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="card mb-6">
+      <h3 class="card-title mb-4">Guardian</h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Name</div>
+          <div style="font-weight: 600; color: var(--ink-900); margin-top: 2px;">{{ application.guardian_name }}</div>
+        </div>
+        <div>
+          <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Relationship</div>
+          <div style="color: var(--ink-900); margin-top: 2px;">{{ application.relationship|default:"—" }}</div>
+        </div>
+        <div>
+          <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Phone</div>
+          <div style="color: var(--ink-900); margin-top: 2px;">{{ application.guardian_phone }}</div>
+        </div>
+        <div>
+          <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Email</div>
+          <div style="color: var(--ink-900); margin-top: 2px;">{{ application.guardian_email|default:"—" }}</div>
+        </div>
+        {% if application.guardian_id_number %}
+        <div>
+          <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">ID Number</div>
+          <div style="color: var(--ink-900); margin-top: 2px; font-family: var(--font-mono);">{{ application.guardian_id_number }}</div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if application.birth_certificate or application.report_card or application.other_document %}
+    <div class="card mb-6">
+      <h3 class="card-title mb-4">Documents</h3>
+      <div class="flex flex-wrap gap-3">
+        {% if application.birth_certificate %}
+        <a href="{{ application.birth_certificate.url }}" target="_blank" class="btn btn-secondary">
+          Birth Certificate
+        </a>
+        {% endif %}
+        {% if application.report_card %}
+        <a href="{{ application.report_card.url }}" target="_blank" class="btn btn-secondary">
+          Report Card
+        </a>
+        {% endif %}
+        {% if application.other_document %}
+        <a href="{{ application.other_document.url }}" target="_blank" class="btn btn-secondary">
+          Other Document
+        </a>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+    {% if application.notes %}
+    <div class="card">
+      <h3 class="card-title mb-4">Notes</h3>
+      <p style="color: var(--ink-700); margin: 0;">{{ application.notes|linebreaksbr }}</p>
+    </div>
+    {% endif %}
+
+  </div>
+
+  <div class="lg:col-span-1">
+
+    <div class="card mb-6">
+      <h3 class="card-title mb-4">Audit</h3>
+      <div style="font-size: var(--text-sm); line-height: 1.9;">
+        <div class="flex justify-between mb-2">
+          <span style="color: var(--ink-500);">Received:</span>
+          <span style="color: var(--ink-900);">{{ application.created_at|date:"d M Y, H:i" }}</span>
+        </div>
+        <div class="flex justify-between mb-2">
+          <span style="color: var(--ink-500);">By:</span>
+          <span style="color: var(--ink-900);">
+            {{ application.received_by.get_full_name|default:application.received_by.email|default:"—" }}
+          </span>
+        </div>
+        {% if application.reviewed_by %}
+        <div class="flex justify-between mb-2">
+          <span style="color: var(--ink-500);">Reviewed:</span>
+          <span style="color: var(--ink-900);">
+            {{ application.reviewed_by.get_full_name|default:application.reviewed_by.email }}
+          </span>
+        </div>
+        {% endif %}
+        {% if application.converted_at %}
+        <div class="flex justify-between">
+          <span style="color: var(--ink-500);">Enrolled:</span>
+          <span style="color: var(--ink-900);">{{ application.converted_at|date:"d M Y" }}</span>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if application.converted_student %}
+    <div class="card" style="background: var(--success-light); border-left: 4px solid var(--success);">
+      <h3 class="card-title mb-2">Enrolled</h3>
+      <p class="text-sm" style="margin: 0; color: var(--ink-700);">
+        This applicant has been enrolled as a student.
+      </p>
+    </div>
+    {% endif %}
+
+  </div>
+
+</div>
+
+{% endblock %}

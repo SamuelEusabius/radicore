@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Complete Appointment{% endblock %}
+{% block header_title %}Complete Appointment{% endblock %}
+{% block header_sub %}{{ appointment.requester_name }}{% endblock %}
+
+{% block content %}
+
+<div class="card" style="max-width: 900px;">
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    <h3 class="card-title mb-4">Meeting Outcome</h3>
+
+    <div class="mb-4">
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Status</label>
+      {{ form.status }}
+    </div>
+
+    <div class="mb-4">
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Notes</label>
+      {{ form.notes }}
+      <p class="text-xs mt-1" style="color: var(--ink-500);">Summary of what was discussed or decided</p>
+    </div>
+
+    <div class="mb-6">
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Meeting Minutes (optional)</label>
+      {{ form.minutes }}
+      <p class="text-xs mt-1" style="color: var(--ink-500);">Upload PDF/DOCX of detailed minutes</p>
+    </div>
+
+    <div class="flex gap-3">
+      <button type="submit" class="btn btn-primary">
+        {% include 'partials/icons.html' with name="check-circle" size=16 %}
+        Mark Complete
+      </button>
+      <a href="{% url 'secretary_appointment_detail' appointment.id %}" class="btn btn-secondary">Cancel</a>
+    </div>
+
+  </form>
+</div>
+
+{% endblock %}

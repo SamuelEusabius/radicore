@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{% if mode == 'edit' %}Edit Application{% else %}New Application{% endif %}{% endblock %}
+{% block header_title %}{% if mode == 'edit' %}Edit Admission Application{% else %}New Admission Application{% endif %}{% endblock %}
+{% block header_sub %}Record a prospective student's application{% endblock %}
+
+{% block content %}
+
+<form method="post" enctype="multipart/form-data" class="card" style="max-width: 1000px;">
+  {% csrf_token %}
+
+  {% if form.non_field_errors %}
+  <div class="card mb-4" style="border-left: 4px solid var(--danger); padding: var(--s-3); background: var(--danger-light);">
+    {% for err in form.non_field_errors %}
+      <p class="text-sm" style="margin: 0; color: var(--danger);">{{ err }}</p>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <h3 class="card-title mb-4">Applicant</h3>
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
+        First Name <span style="color: var(--danger);">*</span>
+      </label>
+      {{ form.first_name }}
+    </div>
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Middle Name</label>
+      {{ form.middle_name }}
+    </div>
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
+        Last Name <span style="color: var(--danger);">*</span>
+      </label>
+      {{ form.last_name }}
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Gender</label>
+      {{ form.gender }}
+    </div>
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Date of Birth</label>
+      {{ form.date_of_birth }}
+    </div>
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
+        Applying For <span style="color: var(--danger);">*</span>
+      </label>
+      {{ form.applying_for_class }}
+    </div>
+  </div>
+
+  <div class="mb-6">
+    <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Previous School</label>
+    {{ form.previous_school }}
+  </div>
+
+  <hr style="border: none; border-top: 1px solid var(--border); margin: var(--s-5) 0;">
+
+  <h3 class="card-title mb-4">Parent / Guardian</h3>
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
+        Guardian Name <span style="color: var(--danger);">*</span>
+      </label>
+      {{ form.guardian_name }}
+    </div>
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
+        Phone <span style="color: var(--danger);">*</span>
+      </label>
+      {{ form.guardian_phone }}
+    </div>
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Email</label>
+      {{ form.guardian_email }}
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">ID Number</label>
+      {{ form.guardian_id_number }}
+    </div>
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Relationship</label>
+      {{ form.relationship }}
+    </div>
+  </div>
+
+  <hr style="border: none; border-top: 1px solid var(--border); margin: var(--s-5) 0;">
+
+  <h3 class="card-title mb-4">Documents</h3>
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Birth Certificate</label>
+      {{ form.birth_certificate }}
+    </div>
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Report Card</label>
+      {{ form.report_card }}
+    </div>
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Other</label>
+      {{ form.other_document }}
+    </div>
+  </div>
+
+  <hr style="border: none; border-top: 1px solid var(--border); margin: var(--s-5) 0;">
+
+  <h3 class="card-title mb-4">Status &amp; Notes</h3>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Status</label>
+      {{ form.status }}
+    </div>
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Notes</label>
+      {{ form.notes }}
+    </div>
+  </div>
+
+  <div class="flex gap-3">
+    <button type="submit" class="btn btn-primary">
+      {% include 'partials/icons.html' with name="check-circle" size=16 %}
+      {% if mode == 'edit' %}Save Changes{% else %}Record Application{% endif %}
+    </button>
+    <a href="{% if mode == 'edit' %}{% url 'secretary_application_detail' application.id %}{% else %}{% url 'secretary_application_list' %}{% endif %}" class="btn btn-secondary">Cancel</a>
+  </div>
+
+</form>
+
+{% endblock %}

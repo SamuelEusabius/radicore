@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Edit Template{% endblock %}
+{% block header_title %}{{ template.name }}{% endblock %}
+{% block header_sub %}{{ template.get_letter_type_display }}{% endblock %}
+
+{% block content %}
+
+<form method="post" class="card" style="max-width: 1000px;">
+  {% csrf_token %}
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Template Name</label>
+      <input type="text" name="name" value="{{ template.name }}" class="input w-full" required>
+    </div>
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Letter Title</label>
+      <input type="text" name="title" value="{{ template.title }}" class="input w-full" required>
+    </div>
+  </div>
+
+  <div class="mb-4">
+    <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
+      Body Template
+    </label>
+    <textarea name="body_template" rows="18" class="textarea w-full"
+              style="font-family: var(--font-mono); font-size: 12px; line-height: 1.6;">{{ template.body_template }}</textarea>
+    <p class="text-xs mt-2" style="color: var(--ink-500); line-height: 1.8;">
+      <strong>Available placeholders:</strong>
+      <code>{% templatetag openvariable %}student_name{% templatetag closevariable %}</code>
+      <code>{% templatetag openvariable %}admission_number{% templatetag closevariable %}</code>
+      <code>{% templatetag openvariable %}class_level{% templatetag closevariable %}</code>
+      <code>{% templatetag openvariable %}guardian_name{% templatetag closevariable %}</code>
+      <code>{% templatetag openvariable %}school_name{% templatetag closevariable %}</code>
+      <code>{% templatetag openvariable %}principal_name{% templatetag closevariable %}</code>
+      <code>{% templatetag openvariable %}today{% templatetag closevariable %}</code>
+      <code>{% templatetag openvariable %}reason{% templatetag closevariable %}</code>
+      <code>{% templatetag openvariable %}custom{% templatetag closevariable %}</code>
+      <br>
+      <span style="margin-top: 4px; display: inline-block;">
+        <strong>Page break:</strong> insert <code>---PAGE---</code> on its own line to start a new page.
+      </span>
+    </p>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Closing Line</label>
+      <input type="text" name="closing_line" value="{{ template.closing_line }}" class="input w-full">
+    </div>
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Signatory Name</label>
+      <input type="text" name="signatory_name" value="{{ template.signatory_name }}" class="input w-full"
+             placeholder="Blank = principal_name from School">
+    </div>
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Signatory Title</label>
+      <input type="text" name="signatory_title" value="{{ template.signatory_title }}" class="input w-full">
+    </div>
+  </div>
+
+  <div class="mb-6">
+    <label class="flex items-center gap-2 text-sm" style="color: var(--ink-700);">
+      <input type="checkbox" name="is_active" {% if template.is_active %}checked{% endif %}>
+      Active
+    </label>
+  </div>
+
+  <div class="flex gap-3">
+    <button type="submit" class="btn btn-primary">
+      {% include 'partials/icons.html' with name="check-circle" size=16 %}
+      Save Template
+    </button>
+    <a href="{% url 'secretary_letter_template_list' %}" class="btn btn-secondary">Cancel</a>
+  </div>
+
+</form>
+
+{% endblock %}

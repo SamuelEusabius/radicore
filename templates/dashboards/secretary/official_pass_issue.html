@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Issue Official Pass{% endblock %}
+{% block header_title %}Issue Official Pass{% endblock %}
+{% block header_sub %}{{ visitor.full_name }} &middot; {{ visitor.host_display }}{% endblock %}
+
+{% block content %}
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+  <div class="lg:col-span-2">
+    <div class="card" style="border-left: 4px solid var(--primary);">
+      <h3 class="card-title mb-4">Confirm Issuance</h3>
+
+      <p style="color: var(--ink-700); font-size: var(--text-sm); margin-bottom: var(--s-5);">
+        You are about to issue an <strong>Official Pass</strong> for this admin visitor.
+        The admin host will be notified via SMS. You will then need to confirm the host's signature when they receive the visitor.
+      </p>
+
+      <div class="card mb-5" style="background: var(--surface-1); padding: var(--s-4);">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Visitor</div>
+            <div style="font-weight: 600; color: var(--ink-900); margin-top: 2px;">{{ visitor.full_name }}</div>
+          </div>
+          <div>
+            <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Host</div>
+            <div style="font-weight: 600; color: var(--ink-900); margin-top: 2px;">{{ visitor.host_display }}</div>
+          </div>
+          <div>
+            <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Purpose</div>
+            <div style="color: var(--ink-700); margin-top: 2px;">{{ visitor.get_purpose_display }}</div>
+          </div>
+          <div>
+            <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Checked In</div>
+            <div style="color: var(--ink-700); margin-top: 2px;">{{ visitor.time_in|date:"d M Y, H:i" }}</div>
+          </div>
+        </div>
+      </div>
+
+      <form method="post">
+        {% csrf_token %}
+        <div class="flex gap-3">
+          <button type="submit" class="btn btn-primary">
+            {% include 'partials/icons.html' with name="check-circle" size=16 %}
+            Confirm — Issue Official Pass
+          </button>
+          <a href="{% url 'secretary_visitor_detail' visitor.id %}" class="btn btn-secondary">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="lg:col-span-1">
+    <div class="card" style="background: var(--info-light); border-left: 4px solid var(--info);">
+      <h3 class="card-title mb-2" style="color: var(--info);">What happens next?</h3>
+      <ol style="padding-left: var(--s-5); margin: 0; color: var(--ink-700); font-size: var(--text-sm); line-height: 1.8;">
+        <li>Pass is marked issued in the system.</li>
+        <li>Admin host gets an SMS alert.</li>
+        <li>Admin receives visitor &amp; signs the pass.</li>
+        <li>You confirm the signature in the system.</li>
+        <li>You check the visitor out.</li>
+      </ol>
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}
