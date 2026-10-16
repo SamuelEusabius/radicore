@@ -5,7 +5,8 @@ from . import views
 from apps.finance import store_views
 
 urlpatterns = [ 
-    path('', include('apps.security.urls')),        
+    path('', include('apps.security.urls')),
+    path('', include('apps.secretary.urls')),        
     path('subscribe/', RedirectView.as_view(
      url='/dashboard/subscriptions/', permanent=False
     )),

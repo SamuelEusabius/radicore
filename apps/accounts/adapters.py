@@ -29,7 +29,7 @@ class CustomAccountAdapter(DefaultAccountAdapter):
             'store_keeper':        'store_keeper_dashboard',
             'boarding_master':     'boarding_dashboard',
             'security_officer':    'cso_dashboard',
-            'secretary':           'dashboard_home',
+            'secretary':           'secretary_dashboard',
         }
         url_name = role_redirects.get(role, 'dashboard_home')
 
