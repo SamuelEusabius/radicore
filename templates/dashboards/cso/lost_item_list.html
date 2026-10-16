@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Lost & Found{% endblock %}
+{% block header_title %}Lost &amp; Found{% endblock %}
+{% block header_sub %}{{ total }} item{{ total|pluralize }} on record{% endblock %}
+
+{% block content %}
+
+<!-- FILTER BAR -->
+<div class="card mb-6">
+  <form method="get" class="flex flex-wrap items-end gap-3">
+
+    <div style="flex: 0 0 180px;">
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Status</label>
+      <select name="status" class="select w-full">
+        <option value="">All</option>
+        <option value="held" {% if status == 'held' %}selected{% endif %}>Held at Security</option>
+        <option value="claimed" {% if status == 'claimed' %}selected{% endif %}>Claimed</option>
+        <option value="donated" {% if status == 'donated' %}selected{% endif %}>Donated</option>
+        <option value="disposed" {% if status == 'disposed' %}selected{% endif %}>Disposed</option>
+      </select>
+    </div>
+
+    <div class="flex gap-2">
+      <button type="submit" class="btn btn-primary">
+        {% include 'partials/icons.html' with name="search" size=16 %}
+        Filter
+      </button>
+      <a href="{% url 'cso_lost_item_list' %}" class="btn btn-secondary">Reset</a>
+    </div>
+
+  </form>
+</div>
+
+<!-- ACTION BAR -->
+<div class="flex flex-wrap items-center gap-3 mb-6">
+  <a href="{% url 'cso_lost_item_create' %}" class="btn btn-primary">
+    {% include 'partials/icons.html' with name="plus" size=16 %}
+    Log Found Item
+  </a>
+  <a href="{% url 'cso_dashboard' %}" class="btn btn-secondary">
+    {% include 'partials/icons.html' with name="arrow-left" size=16 %}
+    Back to Dashboard
+  </a>
+</div>
+
+<!-- TABLE -->
+{% if items %}
+<div class="card" style="padding: 0; overflow: hidden;">
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Item</th>
+          <th>Location Found</th>
+          <th>Found On</th>
+          <th>Status</th>
+          <th style="text-align: right;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in items %}
+        <tr>
+          <td>
+            <div style="font-weight: 600; color: var(--ink-900);">{{ item.name }}</div>
+            {% if item.description %}
+            <div class="text-xs" style="color: var(--ink-500);">{{ item.description|truncatechars:60 }}</div>
+            {% endif %}
+          </td>
+          <td style="color: var(--ink-700); font-size: var(--text-sm);">{{ item.found_location|default:"—" }}</td>
+          <td style="color: var(--ink-600); font-size: var(--text-sm); white-space: nowrap;">
+            {{ item.found_at|date:"d M, H:i" }}
+          </td>
+          <td>
+            {% if item.status == 'held' %}
+              <span class="badge badge-warning">Held</span>
+            {% elif item.status == 'claimed' %}
+              <span class="badge badge-success">Claimed</span>
+            {% elif item.status == 'donated' %}
+              <span class="badge badge-info">Donated</span>
+            {% else %}
+              <span class="badge">{{ item.get_status_display }}</span>
+            {% endif %}
+          </td>
+          <td style="text-align: right;">
+            {% if item.status == 'held' %}
+            <a href="{% url 'cso_lost_item_claim' item.id %}"
+               class="btn btn-secondary" style="padding: var(--s-2) var(--s-3); font-size: var(--text-xs);">
+              Claim
+            </a>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% else %}
+<div class="card" style="padding: var(--s-8); text-align: center;">
+  <p class="text-sm" style="color: var(--ink-500); margin: 0;">
+    No items recorded.
+    <a href="{% url 'cso_lost_item_create' %}" style="color: var(--primary);">Log the first item</a>.
+  </p>
+</div>
+{% endif %}
+
+{% endblock %}

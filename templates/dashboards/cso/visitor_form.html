@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Register Visitor{% endblock %}
+{% block header_title %}Register Visitor{% endblock %}
+{% block header_sub %}Check in a visitor at the gate and issue a gate pass{% endblock %}
+
+{% block content %}
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+  <!-- FORM -->
+  <div class="lg:col-span-2">
+    <form method="post" class="card">
+      {% csrf_token %}
+
+      {% if form.non_field_errors %}
+        <div class="card mb-4" style="border-left: 4px solid var(--danger); padding: var(--s-3); background: var(--danger-light);">
+          {% for err in form.non_field_errors %}
+            <p class="text-sm" style="margin: 0; color: var(--danger);">{{ err }}</p>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      <!-- Visitor identity -->
+      <h3 class="card-title mb-4">Visitor Details</h3>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
+            Full Name <span style="color: var(--danger);">*</span>
+          </label>
+          {{ form.full_name }}
+          {% if form.full_name.errors %}<p class="text-xs mt-1" style="color: var(--danger);">{{ form.full_name.errors.0 }}</p>{% endif %}
+        </div>
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Phone</label>
+          {{ form.phone }}
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">ID Type</label>
+          {{ form.id_type }}
+        </div>
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">ID Number</label>
+          {{ form.id_number }}
+        </div>
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Vehicle Plate</label>
+          {{ form.vehicle_plate }}
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Organisation</label>
+          {{ form.organisation }}
+        </div>
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Badge Number</label>
+          {{ form.badge_number }}
+        </div>
+      </div>
+
+      <hr style="border: none; border-top: 1px solid var(--border); margin: var(--s-5) 0;">
+
+      <!-- Visit details -->
+      <h3 class="card-title mb-4">Visit Details</h3>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Purpose</label>
+          {{ form.purpose }}
+        </div>
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Visit Type</label>
+          {{ form.visit_type }}
+          <p class="text-xs mt-1" style="color: var(--ink-500);">
+            Official visits require admin signature; Secretary will coordinate.
+          </p>
+        </div>
+      </div>
+
+      <div class="mb-4">
+        <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Purpose Notes</label>
+        {{ form.purpose_note }}
+      </div>
+
+      <hr style="border: none; border-top: 1px solid var(--border); margin: var(--s-5) 0;">
+
+      <!-- Host -->
+      <h3 class="card-title mb-4">Host / Person Being Visited</h3>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Staff Member</label>
+          {{ form.host_user }}
+          <p class="text-xs mt-1" style="color: var(--ink-500);">Pick a staff member to notify them via SMS</p>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Or Free-Text Host</label>
+          {{ form.host_name }}
+          <p class="text-xs mt-1" style="color: var(--ink-500);">Use if host isn't a system user</p>
+        </div>
+      </div>
+
+      <div class="mb-6">
+        <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Host Role</label>
+        {{ form.host_role }}
+      </div>
+
+      <div class="flex gap-3">
+        <button type="submit" class="btn btn-primary">
+          {% include 'partials/icons.html' with name="check-circle" size=16 %}
+          Register &amp; Issue Pass
+        </button>
+        <a href="{% url 'cso_visitor_list' %}" class="btn btn-secondary">Cancel</a>
+      </div>
+
+    </form>
+  </div>
+
+  <!-- SIDE INFO -->
+  <div class="lg:col-span-1">
+    <div class="card">
+      <h3 class="card-title mb-4">Gate Protocol</h3>
+      <ol style="padding-left: var(--s-5); margin: 0; color: var(--ink-700); font-size: var(--text-sm); line-height: 1.7;">
+        <li>Verify the visitor's ID and record it here.</li>
+        <li>Issue the badge and gate pass.</li>
+        <li>The host is notified by SMS automatically.</li>
+        <li>For <strong>official visits</strong>, the Secretary is notified to prepare the official pass.</li>
+        <li>Log the visitor out when they exit the gate.</li>
+      </ol>
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}

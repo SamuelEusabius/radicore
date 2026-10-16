@@ -1,9 +1,11 @@
-from django.urls import path
-from . import views
-from django.views.generic import RedirectView
 from django.urls import path, include
+from django.views.generic import RedirectView
+
+from . import views
+from apps.finance import store_views
 
 urlpatterns = [ 
+    path('', include('apps.security.urls')),        
     path('subscribe/', RedirectView.as_view(
      url='/dashboard/subscriptions/', permanent=False
     )),
@@ -393,7 +395,36 @@ urlpatterns = [
         # Director of Studies
     path('dos/', include('apps.dashboard.dos_urls')),
         # Placeholder dashboards (until modules built)
-    path('store-keeper/', views.store_keeper_dashboard_placeholder, name='store_keeper_dashboard'),
+        # Store Keeper
+    path('store-keeper/', views.store_keeper_dashboard, name='store_keeper_dashboard'),
+    path('store-keeper/items/', views.store_items_list, name='store_items_list'),
+    path('store-keeper/items/new/', views.store_item_form, name='store_item_create'),
+    path('store-keeper/items/<int:item_id>/', views.store_item_detail, name='store_item_detail'),
+    path('store-keeper/items/<int:item_id>/edit/', views.store_item_form, name='store_item_edit'),
+    #store keeper valuation and Audits
+    
+    path('store-keeper/valuation/',
+         store_views.store_valuation_report,
+         name='store_valuation_report'),
+
+    path('store-keeper/valuation/pdf/',
+         store_views.store_valuation_pdf,
+         name='store_valuation_pdf'),
+
+    path('store-keeper/movements/',
+         store_views.store_movements,
+         name='store_movements'),
+
+    path('store-keeper/issues/', views.store_issue_list, name='store_issue_list'),
+    path('store-keeper/issues/new/', views.store_issue_create, name='store_issue_create'),
+    path('store-keeper/issues/<int:issue_id>/', views.store_issue_detail, name='store_issue_detail'),
+
+    path('store-keeper/receipts/', views.store_receipt_list, name='store_receipt_list'),
+    path('store-keeper/receipts/new/', views.store_receipt_create, name='store_receipt_create'),
+
+    path('store-keeper/low-stock/', views.store_low_stock, name='store_low_stock'),
+    path('store-keeper/categories/', views.store_categories, name='store_categories'),
+    path('store-keeper/suppliers/', views.store_suppliers, name='store_suppliers'),
     path('boarding/', views.boarding_dashboard_placeholder, name='boarding_dashboard'),
     
            # Deputy Principal — Academics
@@ -454,6 +485,7 @@ urlpatterns = [
     path('teacher/my-timetable/pdf/', views.teacher_my_timetable_pdf, name='teacher_my_timetable_pdf'),
     path('dpa-acad/_test-header/', views._test_header_pdf, name='_test_header_pdf'),
     path('dpa-acad/exams/new/', views.dpa_acad_exam_create, name='dpa_acad_exam_create'),
+    path('teacher/remedial/pdf/', views.teacher_remedial_timetable_pdf, name='teacher_remedial_timetable_pdf'),
     path('dpa-acad/exams/<int:exam_id>/edit/', views.dpa_acad_exam_edit, name='dpa_acad_exam_edit'),
     path('dpa-acad/exams/<int:exam_id>/delete/', views.dpa_acad_exam_delete, name='dpa_acad_exam_delete'),
     path('teacher/remedial/', views.teacher_remedial_schedule, name='teacher_remedial_schedule'),

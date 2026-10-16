@@ -21,24 +21,21 @@ def redirect_to_own_dashboard(request):
     role = request.user.role
 
     redirect_map = {
-        'super_admin':    'dash_super_admin',
-        'principal':   'dash_school_admin',
-        'teacher':        'dash_teacher',
-        'parent':         'dash_parent',
-        'accountant':     'dash_accountant',
-        'student':        'dash_student',
-        'driver':         'driver_dashboard',
-        'librarian':      'librarian_dashboard',
-        'lab_technician': 'lab_technician_dashboard',
-        'nurse':          'nurse_dashboard',
-        'chief_chef':     'chief_chef_dashboard',
+        'super_admin':         'dash_super_admin',
+        'principal':           'dash_school_admin',
+        'teacher':             'dash_teacher',
+        'parent':              'dash_parent',
+        'accountant':          'dash_accountant',
+        'student':             'dash_student',
+        'driver':              'driver_dashboard',
+        'librarian':           'librarian_dashboard',
+        'lab_technician':      'lab_technician_dashboard',
+        'nurse':               'nurse_dashboard',
+        'chief_chef':          'chief_chef_dashboard',
+        'director_of_studies': 'dos_dashboard',
+        'store_keeper':        'store_keeper_dashboard',
+        'security_officer':    'cso_dashboard',
     }
-
-    target = redirect_map.get(role)
-    if target:
-        return redirect(target)
-
-    return redirect('landing')
 
     target = redirect_map.get(role)
     if target:
@@ -127,13 +124,13 @@ ROLE_DASHBOARD_MAP = {
 
     # admin / finance
     'accountant':            'dash_accountant',
-    'secretary':             'dashboard_placeholder',
+    'secretary':        'secretary_dashboard',
 
     # operations
-    'store_keeper':          'dashboard_placeholder',
+    'store_keeper':          'store_keeper_dashboard',
     'boarding_master':       'dashboard_placeholder',
     'chief_chef':            'dashboard_placeholder',
-    'security_officer':      'dashboard_placeholder',
+    'security_officer': 'cso_dashboard',
     'driver':                'dashboard_placeholder',
     'lab_technician':        'dashboard_placeholder',
     'librarian':             'dashboard_placeholder',

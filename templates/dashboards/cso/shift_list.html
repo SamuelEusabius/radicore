@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Guard Roster{% endblock %}
+{% block header_title %}Guard Roster{% endblock %}
+{% block header_sub %}{{ total }} shift{{ total|pluralize }} scheduled{% endblock %}
+
+{% block content %}
+
+<div class="flex flex-wrap items-center gap-3 mb-6">
+  <a href="{% url 'cso_shift_create' %}" class="btn btn-primary">
+    {% include 'partials/icons.html' with name="plus" size=16 %}
+    Add Shift
+  </a>
+  <a href="{% url 'cso_dashboard' %}" class="btn btn-secondary">
+    {% include 'partials/icons.html' with name="arrow-left" size=16 %}
+    Back to Dashboard
+  </a>
+</div>
+
+{% if shifts %}
+<div class="card" style="padding: 0; overflow: hidden;">
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Shift</th>
+          <th>Guard</th>
+          <th>Post</th>
+          <th>Check-In</th>
+          <th>Check-Out</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in shifts %}
+        <tr>
+          <td style="font-weight: 600; color: var(--ink-900); white-space: nowrap;">
+            {{ s.shift_date|date:"d M Y" }}
+          </td>
+          <td>
+            <span class="badge
+              {% if s.shift_type == 'morning' %}badge-success
+              {% elif s.shift_type == 'afternoon' %}badge-warning
+              {% else %}badge-primary{% endif %}">
+              {{ s.get_shift_type_display }}
+            </span>
+          </td>
+          <td style="color: var(--ink-700);">{{ s.guard.get_full_name|default:s.guard.email }}</td>
+          <td style="color: var(--ink-700); font-size: var(--text-sm);">{{ s.post|default:"—" }}</td>
+          <td style="color: var(--ink-600); font-size: var(--text-sm); white-space: nowrap;">
+            {% if s.check_in %}{{ s.check_in|date:"H:i" }}{% else %}—{% endif %}
+          </td>
+          <td style="color: var(--ink-600); font-size: var(--text-sm); white-space: nowrap;">
+            {% if s.check_out %}{{ s.check_out|date:"H:i" }}{% else %}—{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% else %}
+<div class="card" style="padding: var(--s-8); text-align: center;">
+  <p class="text-sm" style="color: var(--ink-500); margin: 0;">
+    No shifts scheduled.
+    <a href="{% url 'cso_shift_create' %}" style="color: var(--primary);">Add the first shift</a>.
+  </p>
+</div>
+{% endif %}
+
+{% endblock %}

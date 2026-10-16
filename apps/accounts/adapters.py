@@ -15,7 +15,7 @@ class CustomAccountAdapter(DefaultAccountAdapter):
         # Role → URL name mapping
         role_redirects = {
             'super_admin':         'dashboard_home',
-            'principal':        'dashboard_home',
+            'principal':           'dashboard_home',
             'teacher':             'dashboard_home',
             'accountant':          'dashboard_home',
             'parent':              'dashboard_home',
@@ -28,6 +28,8 @@ class CustomAccountAdapter(DefaultAccountAdapter):
             'director_of_studies': 'dos_dashboard',
             'store_keeper':        'store_keeper_dashboard',
             'boarding_master':     'boarding_dashboard',
+            'security_officer':    'cso_dashboard',
+            'secretary':           'dashboard_home',
         }
         url_name = role_redirects.get(role, 'dashboard_home')
 

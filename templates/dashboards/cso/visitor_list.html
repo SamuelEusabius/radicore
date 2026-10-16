@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Visitor Log{% endblock %}
+{% block header_title %}Visitor Log{% endblock %}
+{% block header_sub %}{{ total }} visitor record{{ total|pluralize }} in {{ school.code }}{% endblock %}
+
+{% block content %}
+
+<!-- FILTER BAR -->
+<div class="card mb-6">
+  <form method="get" class="flex flex-wrap items-end gap-3">
+
+    <div style="flex: 1 1 200px;">
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Search</label>
+      <input type="text" name="q" value="{{ search }}" class="input w-full" placeholder="Name, phone, organisation, host">
+    </div>
+
+    <div style="flex: 0 0 140px;">
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Status</label>
+      <select name="status" class="select w-full">
+        <option value="">All</option>
+        <option value="in" {% if status == 'in' %}selected{% endif %}>On premises</option>
+        <option value="out" {% if status == 'out' %}selected{% endif %}>Exited</option>
+        <option value="registered" {% if status == 'registered' %}selected{% endif %}>Registered</option>
+        <option value="signed_out" {% if status == 'signed_out' %}selected{% endif %}>Signed out</option>
+      </select>
+    </div>
+
+    <div style="flex: 0 0 140px;">
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Type</label>
+      <select name="type" class="select w-full">
+        <option value="">All</option>
+        <option value="standard" {% if vtype == 'standard' %}selected{% endif %}>Standard</option>
+        <option value="official" {% if vtype == 'official' %}selected{% endif %}>Official</option>
+      </select>
+    </div>
+
+    <div style="flex: 0 0 140px;">
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Purpose</label>
+      <select name="purpose" class="select w-full">
+        <option value="">All</option>
+        {% for value, label in purpose_choices %}
+          <option value="{{ value }}" {% if purpose == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div style="flex: 0 0 140px;">
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">From</label>
+      <input type="date" name="from" value="{{ date_from }}" class="input w-full">
+    </div>
+
+    <div style="flex: 0 0 140px;">
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">To</label>
+      <input type="date" name="to" value="{{ date_to }}" class="input w-full">
+    </div>
+
+    <div class="flex gap-2">
+      <button type="submit" class="btn btn-primary">
+        {% include 'partials/icons.html' with name="search" size=16 %}
+        Filter
+      </button>
+      <a href="{% url 'cso_visitor_list' %}" class="btn btn-secondary">Reset</a>
+    </div>
+
+  </form>
+</div>
+
+<!-- ACTION BAR -->
+<div class="flex flex-wrap items-center gap-3 mb-6">
+  <a href="{% url 'cso_visitor_check_in' %}" class="btn btn-primary">
+    {% include 'partials/icons.html' with name="user-plus" size=16 %}
+    Register Visitor
+  </a>
+  <a href="{% url 'cso_dashboard' %}" class="btn btn-secondary">
+    {% include 'partials/icons.html' with name="arrow-left" size=16 %}
+    Back to Dashboard
+  </a>
+</div>
+
+<!-- TABLE -->
+{% if visitors %}
+<div class="card" style="padding: 0; overflow: hidden;">
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Purpose</th>
+          <th>Host</th>
+          <th>Type</th>
+          <th>Time In</th>
+          <th>Time Out</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for v in visitors %}
+        <tr>
+          <td>
+            <a href="{% url 'cso_visitor_detail' v.id %}"
+               style="font-weight: 600; color: var(--ink-900); text-decoration: none;">
+              {{ v.full_name }}
+            </a>
+            {% if v.organisation %}
+            <div class="text-xs" style="color: var(--ink-500);">{{ v.organisation }}</div>
+            {% endif %}
+            {% if v.phone %}
+            <div class="text-xs" style="color: var(--ink-500); font-family: var(--font-mono);">{{ v.phone }}</div>
+            {% endif %}
+          </td>
+          <td style="color: var(--ink-700); font-size: var(--text-sm);">{{ v.get_purpose_display }}</td>
+          <td style="color: var(--ink-700); font-size: var(--text-sm);">{{ v.host_display }}</td>
+          <td>
+            {% if v.is_official %}
+              <span class="badge badge-primary">Official</span>
+            {% else %}
+              <span class="badge">Standard</span>
+            {% endif %}
+          </td>
+          <td style="color: var(--ink-600); font-size: var(--text-sm); white-space: nowrap;">
+            {{ v.time_in|date:"d M, H:i" }}
+          </td>
+          <td style="color: var(--ink-600); font-size: var(--text-sm); white-space: nowrap;">
+            {% if v.time_out %}{{ v.time_out|date:"d M, H:i" }}{% else %}&mdash;{% endif %}
+          </td>
+          <td>
+            {% if v.time_out %}
+              <span class="badge">Exited</span>
+            {% elif v.status == 'in_meeting' %}
+              <span class="badge badge-info">In Meeting</span>
+            {% elif v.status == 'signed_out' %}
+              <span class="badge badge-warning">Signed Out</span>
+            {% else %}
+              <span class="badge badge-success">On Premises</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if page_obj.paginator.num_pages > 1 %}
+  <div style="padding: var(--s-4) var(--s-5); border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+    <div class="text-xs" style="color: var(--ink-500);">
+      Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }} &middot; {{ total }} record{{ total|pluralize }}
+    </div>
+    <div class="flex gap-2">
+      {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}{% if search %}&q={{ search }}{% endif %}{% if status %}&status={{ status }}{% endif %}" class="btn btn-secondary">&larr; Prev</a>
+      {% endif %}
+      {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}{% if search %}&q={{ search }}{% endif %}{% if status %}&status={{ status }}{% endif %}" class="btn btn-secondary">Next &rarr;</a>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% else %}
+<div class="card" style="padding: var(--s-8); text-align: center;">
+  <p class="text-sm" style="color: var(--ink-500); margin: 0;">
+    No visitors match your filters.
+    <a href="{% url 'cso_visitor_check_in' %}" style="color: var(--primary);">Register the first visitor</a>.
+  </p>
+</div>
+{% endif %}
+
+{% endblock %}

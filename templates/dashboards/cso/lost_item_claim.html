@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Claim Item{% endblock %}
+{% block header_title %}Claim Lost Item{% endblock %}
+{% block header_sub %}{{ item.name }}{% endblock %}
+
+{% block content %}
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+  <form method="post" class="card">
+    {% csrf_token %}
+
+    <h3 class="card-title mb-4">Claimant Details</h3>
+
+    <div class="mb-4">
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
+        Claimant Name <span style="color: var(--danger);">*</span>
+      </label>
+      {{ form.claimed_by_name }}
+    </div>
+
+    <div class="mb-6">
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
+        Claimant Phone
+      </label>
+      {{ form.claimed_by_phone }}
+    </div>
+
+    <div class="flex gap-3">
+      <button type="submit" class="btn btn-primary">
+        {% include 'partials/icons.html' with name="check-circle" size=16 %}
+        Confirm Claim
+      </button>
+      <a href="{% url 'cso_lost_item_list' %}" class="btn btn-secondary">Cancel</a>
+    </div>
+  </form>
+
+  <div class="card">
+    <h3 class="card-title mb-4">Item Details</h3>
+    <div class="grid grid-cols-1 gap-3">
+      <div>
+        <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Name</div>
+        <div style="font-weight: 600; color: var(--ink-900); margin-top: 2px;">{{ item.name }}</div>
+      </div>
+      {% if item.description %}
+      <div>
+        <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Description</div>
+        <div style="color: var(--ink-700); margin-top: 2px;">{{ item.description }}</div>
+      </div>
+      {% endif %}
+      <div>
+        <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Found At</div>
+        <div style="color: var(--ink-900); margin-top: 2px;">{{ item.found_at|date:"d M Y, H:i" }}</div>
+      </div>
+      {% if item.found_location %}
+      <div>
+        <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Location</div>
+        <div style="color: var(--ink-900); margin-top: 2px;">{{ item.found_location }}</div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}

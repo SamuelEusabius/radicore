@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Security Dashboard{% endblock %}
+{% block header_title %}Security Dashboard{% endblock %}
+{% block header_sub %}{{ school.name }} &middot; {{ today|date:"l, j F Y" }}{% endblock %}
+
+{% block content %}
+
+{% if messages %}
+  {% for msg in messages %}
+  <div class="card mb-6" style="border-left: 4px solid var(--primary); padding: var(--s-3);">
+    <p class="text-sm" style="margin: 0;">{{ msg }}</p>
+  </div>
+  {% endfor %}
+{% endif %}
+
+<!-- KPI ROW -->
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+
+  <a href="{% url 'cso_visitor_list' %}?status=in" class="stat card-hover" style="text-decoration: none;">
+    <div class="stat-header">
+      <span class="stat-label">On Premises</span>
+      <div class="stat-icon" style="background: var(--primary-light); color: var(--primary);">
+        {% include 'partials/icons.html' with name="users" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value">{{ stats.on_premises }}</div>
+    <div class="stat-meta">active visitors</div>
+  </a>
+
+  <a href="{% url 'cso_visitor_list' %}" class="stat card-hover" style="text-decoration: none;">
+    <div class="stat-header">
+      <span class="stat-label">Today's Visitors</span>
+      <div class="stat-icon" style="background: var(--info-light); color: var(--info);">
+        {% include 'partials/icons.html' with name="user-check" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value">{{ stats.today_visitors }}</div>
+    <div class="stat-meta">{{ stats.official_today }} official</div>
+  </a>
+
+  <a href="{% url 'cso_incident_list' %}?status=open" class="stat card-hover" style="text-decoration: none;">
+    <div class="stat-header">
+      <span class="stat-label">Open Incidents</span>
+      <div class="stat-icon" style="background: var(--danger-light); color: var(--danger);">
+        {% include 'partials/icons.html' with name="alert-triangle" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--danger);">{{ stats.open_incidents }}</div>
+    <div class="stat-meta">unresolved</div>
+  </a>
+
+  <a href="{% url 'cso_visitor_list' %}" class="stat card-hover" style="text-decoration: none;">
+    <div class="stat-header">
+      <span class="stat-label">This Week</span>
+      <div class="stat-icon" style="background: var(--success-light); color: var(--success);">
+        {% include 'partials/icons.html' with name="bar-chart" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value">{{ stats.week_visitors }}</div>
+    <div class="stat-meta">last 7 days</div>
+  </a>
+
+</div>
+
+<!-- ACTION QUEUES -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+
+  <!-- Currently inside -->
+  <div class="card" style="padding: 0; overflow: hidden;">
+    <div style="padding: var(--s-5); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+      <h3 class="card-title" style="margin: 0;">
+        {% include 'partials/icons.html' with name="users" size=18 %}
+        Currently on Premises
+      </h3>
+      <a href="{% url 'cso_visitor_list' %}?status=in" class="text-xs" style="color: var(--primary); text-decoration: none; font-weight: 500;">
+        View all &rarr;
+      </a>
+    </div>
+
+    {% if on_premises_list %}
+      {% for v in on_premises_list %}
+      <div style="padding: var(--s-4) var(--s-5); border-bottom: 1px solid var(--border);">
+        <div class="flex items-start justify-between gap-3">
+          <div class="flex-1 min-w-0">
+            <a href="{% url 'cso_visitor_detail' v.id %}"
+               style="font-weight: 600; color: var(--ink-900); font-size: var(--text-sm); text-decoration: none;">
+              {{ v.full_name }}
+            </a>
+            <div class="text-xs mt-1" style="color: var(--ink-500);">
+              Host: {{ v.host_display }} &middot; {{ v.time_in|date:"H:i" }}
+            </div>
+          </div>
+          {% if v.is_official %}
+            <span class="badge badge-primary">Official</span>
+          {% else %}
+            <span class="badge">Standard</span>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div style="padding: var(--s-8); text-align: center;">
+        <p class="text-sm" style="color: var(--ink-500); margin: 0;">No visitors on premises.</p>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Recent visits -->
+  <div class="card" style="padding: 0; overflow: hidden;">
+    <div style="padding: var(--s-5); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+      <h3 class="card-title" style="margin: 0;">
+        {% include 'partials/icons.html' with name="clock" size=18 %}
+        Recent Visits
+      </h3>
+      <a href="{% url 'cso_visitor_list' %}" class="text-xs" style="color: var(--primary); text-decoration: none; font-weight: 500;">
+        View all &rarr;
+      </a>
+    </div>
+
+    {% if recent_visitors %}
+      {% for v in recent_visitors %}
+      <div style="padding: var(--s-4) var(--s-5); border-bottom: 1px solid var(--border);">
+        <div class="flex items-start justify-between gap-3">
+          <div class="flex-1 min-w-0">
+            <a href="{% url 'cso_visitor_detail' v.id %}"
+               style="font-weight: 600; color: var(--ink-900); font-size: var(--text-sm); text-decoration: none;">
+              {{ v.full_name }}
+            </a>
+            <div class="text-xs mt-1" style="color: var(--ink-500);">
+              {{ v.get_purpose_display }} &middot; {{ v.time_in|date:"d M, H:i" }}
+            </div>
+          </div>
+          {% if v.time_out %}
+            <span class="badge">Exited</span>
+          {% else %}
+            <span class="badge badge-success">Active</span>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div style="padding: var(--s-8); text-align: center;">
+        <p class="text-sm" style="color: var(--ink-500); margin: 0;">No visits recorded yet.</p>
+      </div>
+    {% endif %}
+  </div>
+
+</div>
+
+<!-- QUICK ACTIONS -->
+<div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+  <a href="{% url 'cso_visitor_check_in' %}" class="card card-hover" style="text-decoration: none; text-align: center; padding: var(--s-5);">
+    <div style="font-weight: 600; color: var(--ink-900); font-size: var(--text-sm);">Register Visitor</div>
+    <div class="text-xs mt-1" style="color: var(--ink-500);">Check in at gate</div>
+  </a>
+
+  <a href="{% url 'cso_gate_pass_list' %}" class="card card-hover" style="text-decoration: none; text-align: center; padding: var(--s-5);">
+    <div style="font-weight: 600; color: var(--ink-900); font-size: var(--text-sm);">All Gate Passes</div>
+    <div class="text-xs mt-1" style="color: var(--ink-500);">Issued passes</div>
+  </a>
+
+  <a href="{% url 'cso_incident_create' %}" class="card card-hover" style="text-decoration: none; text-align: center; padding: var(--s-5);">
+    <div style="font-weight: 600; color: var(--ink-900); font-size: var(--text-sm);">Report Incident</div>
+    <div class="text-xs mt-1" style="color: var(--ink-500);">Log event</div>
+  </a>
+
+  <a href="{% url 'cso_lost_item_create' %}" class="card card-hover" style="text-decoration: none; text-align: center; padding: var(--s-5);">
+    <div style="font-weight: 600; color: var(--ink-900); font-size: var(--text-sm);">Log Found Item</div>
+    <div class="text-xs mt-1" style="color: var(--ink-500);">Lost &amp; found</div>
+  </a>
+</div>
+
+{% endblock %}

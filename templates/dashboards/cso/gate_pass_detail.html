@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Pass {{ gate_pass.pass_number }}{% endblock %}
+{% block header_title %}Gate Pass{% endblock %}
+{% block header_sub %}{{ gate_pass.pass_number }} &middot; {{ gate_pass.get_pass_type_display }}{% endblock %}
+
+{% block content %}
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+  <!-- LEFT: main card -->
+  <div class="lg:col-span-2">
+
+    <!-- STATUS STRIP -->
+    <div class="card mb-6" style="padding: var(--s-5); border-left: 4px solid
+      {% if gate_pass.status == 'active' %}var(--success)
+      {% elif gate_pass.status == 'used' %}var(--ink-400)
+      {% elif gate_pass.status == 'cancelled' %}var(--danger)
+      {% elif gate_pass.status == 'signed' %}var(--info)
+      {% else %}var(--warning){% endif %};">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Status</div>
+          <div style="font-weight: 700; font-size: var(--text-lg); color: var(--ink-900); margin-top: 2px;">
+            {{ gate_pass.get_status_display }}
+          </div>
+        </div>
+        <div class="flex gap-2">
+          <a href="{% url 'cso_gate_pass_print' gate_pass.id %}" target="_blank" class="btn btn-primary">
+            {% include 'partials/icons.html' with name="download" size=16 %}
+            Print Pass
+          </a>
+          {% if gate_pass.status == 'active' %}
+          <a href="{% url 'cso_gate_pass_cancel' gate_pass.id %}" class="btn btn-secondary">
+            {% include 'partials/icons.html' with name="x-circle" size=16 %}
+            Cancel
+          </a>
+          {% endif %}
+          <a href="{% url 'cso_gate_pass_list' %}" class="btn btn-secondary">
+            {% include 'partials/icons.html' with name="arrow-left" size=16 %}
+            Back
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- VISITOR -->
+    {% if visitor %}
+    <div class="card mb-6">
+      <h3 class="card-title mb-4">Visitor</h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Name</div>
+          <div style="font-weight: 600; color: var(--ink-900); margin-top: 2px;">
+            <a href="{% url 'cso_visitor_detail' visitor.id %}" style="color: var(--ink-900); text-decoration: none;">
+              {{ visitor.full_name }}
+            </a>
+          </div>
+        </div>
+        <div>
+          <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Phone</div>
+          <div style="color: var(--ink-900); margin-top: 2px;">{{ visitor.phone|default:"—" }}</div>
+        </div>
+        <div>
+          <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Organisation</div>
+          <div style="color: var(--ink-900); margin-top: 2px;">{{ visitor.organisation|default:"—" }}</div>
+        </div>
+        <div>
+          <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">ID Number</div>
+          <div style="color: var(--ink-900); margin-top: 2px;">{{ visitor.id_number|default:"—" }}</div>
+        </div>
+        <div>
+          <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Host</div>
+          <div style="color: var(--ink-900); margin-top: 2px;">{{ visitor.host_display }}</div>
+        </div>
+        <div>
+          <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Purpose</div>
+          <div style="color: var(--ink-900); margin-top: 2px;">{{ visitor.get_purpose_display }}</div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- PASS DETAILS -->
+    <div class="card mb-6">
+      <h3 class="card-title mb-4">Pass Details</h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Pass Number</div>
+          <div style="font-family: var(--font-mono); font-weight: 600; color: var(--ink-900); margin-top: 2px;">
+            {{ gate_pass.pass_number }}
+          </div>
+        </div>
+        <div>
+          <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Type</div>
+          <div style="margin-top: 2px;">
+            {% if gate_pass.pass_type == 'official' %}
+              <span class="badge badge-primary">Official</span>
+            {% else %}
+              <span class="badge">Standard</span>
+            {% endif %}
+          </div>
+        </div>
+        <div>
+          <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Destination</div>
+          <div style="color: var(--ink-900); margin-top: 2px;">{{ gate_pass.destination|default:"—" }}</div>
+        </div>
+        <div>
+          <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Issued</div>
+          <div style="color: var(--ink-900); margin-top: 2px;">
+            {{ gate_pass.issued_at|date:"d M Y, H:i" }}<br>
+            <span class="text-xs" style="color: var(--ink-500);">by {{ gate_pass.issued_by.get_full_name|default:gate_pass.issued_by.email|default:"—" }}</span>
+          </div>
+        </div>
+        {% if gate_pass.notes %}
+        <div class="md:col-span-2">
+          <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Notes</div>
+          <div style="color: var(--ink-700); margin-top: 2px;">{{ gate_pass.notes }}</div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- SIGNATURE (official) -->
+    {% if gate_pass.pass_type == 'official' %}
+    <div class="card">
+      <h3 class="card-title mb-4">Admin Signature</h3>
+      {% if gate_pass.signed_at %}
+        <div class="card" style="background: var(--success-light); padding: var(--s-4); border-left: 4px solid var(--success);">
+          <div style="font-weight: 600; color: var(--success);">
+            Signed by {{ gate_pass.signed_by_name|default:gate_pass.signed_by_user.get_full_name|default:"—" }}
+          </div>
+          <div class="text-xs mt-1" style="color: var(--ink-600);">{{ gate_pass.signed_at|date:"d M Y, H:i" }}</div>
+        </div>
+      {% else %}
+        <div class="card" style="background: var(--warning-light); padding: var(--s-4); border-left: 4px solid var(--warning);">
+          <div style="font-weight: 600; color: var(--warning);">Pending signature</div>
+          <p class="text-sm mt-1" style="margin: 0; color: var(--ink-700);">
+            Secretary will confirm once admin has signed.
+          </p>
+        </div>
+      {% endif %}
+    </div>
+    {% endif %}
+
+  </div>
+
+  <!-- RIGHT: quick actions -->
+  <div class="lg:col-span-1">
+
+    <div class="card mb-6">
+      <h3 class="card-title mb-4">Quick Actions</h3>
+      <div class="flex flex-col gap-2">
+        <a href="{% url 'cso_gate_pass_print' gate_pass.id %}" target="_blank" class="btn btn-primary">
+          {% include 'partials/icons.html' with name="download" size=16 %}
+          Print / Export PDF
+        </a>
+        {% if visitor %}
+        <a href="{% url 'cso_visitor_detail' visitor.id %}" class="btn btn-secondary">
+          {% include 'partials/icons.html' with name="eye" size=16 %}
+          View Full Visitor
+        </a>
+        {% endif %}
+        {% if gate_pass.status == 'active' %}
+        <a href="{% url 'cso_gate_pass_cancel' gate_pass.id %}" class="btn btn-secondary">
+          {% include 'partials/icons.html' with name="x-circle" size=16 %}
+          Cancel Pass
+        </a>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if visitor.gate_pass %}
+    <div class="card">
+      <h3 class="card-title mb-4">Linked Visitor</h3>
+      <p class="text-sm" style="color: var(--ink-500); margin: 0 0 var(--s-3) 0;">
+        This pass is bound to the visitor record.
+      </p>
+      <a href="{% url 'cso_visitor_detail' visitor.id %}" class="btn btn-secondary">
+        Open Visitor Record
+      </a>
+    </div>
+    {% endif %}
+
+  </div>
+
+</div>
+
+{% endblock %}

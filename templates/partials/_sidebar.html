@@ -876,6 +876,161 @@
   </a>
 {% endif %}
 
+<!-- ============================================ -->
+<!-- CHIEF SECURITY OFFICER                        -->
+<!-- ============================================ -->
+{% if user.role == 'security_officer' %}
+  <div class="sidebar-section-label">Overview</div>
+  <a href="{% url 'cso_dashboard' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="home" size=18 %}
+    <span class="sidebar-link-text">Security Dashboard</span>
+  </a>
+
+  <div class="sidebar-section-label">Gate Operations</div>
+  <a href="{% url 'cso_visitor_check_in' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="user-plus" size=18 %}
+    <span class="sidebar-link-text">Register Visitor</span>
+  </a>
+  <a href="{% url 'cso_visitor_list' %}?status=in" class="sidebar-link">
+    {% include 'partials/icons.html' with name="users" size=18 %}
+    <span class="sidebar-link-text">On Premises</span>
+  </a>
+  <a href="{% url 'cso_visitor_list' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="clipboard" size=18 %}
+    <span class="sidebar-link-text">Visitor Log</span>
+  </a>
+
+  <div class="sidebar-section-label">Gate Passes</div>
+  <a href="{% url 'cso_gate_pass_list' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="file-text" size=18 %}
+    <span class="sidebar-link-text">All Passes</span>
+  </a>
+
+  <div class="sidebar-section-label">Incidents</div>
+  <a href="{% url 'cso_incident_list' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="alert-triangle" size=18 %}
+    <span class="sidebar-link-text">All Incidents</span>
+  </a>
+  <a href="{% url 'cso_incident_create' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="plus" size=18 %}
+    <span class="sidebar-link-text">Report Incident</span>
+  </a>
+
+  <div class="sidebar-section-label">Lost &amp; Found</div>
+  <a href="{% url 'cso_lost_item_list' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="archive" size=18 %}
+    <span class="sidebar-link-text">Held Items</span>
+  </a>
+  <a href="{% url 'cso_lost_item_create' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="plus" size=18 %}
+    <span class="sidebar-link-text">Log Found Item</span>
+  </a>
+
+  <div class="sidebar-section-label">Shifts</div>
+  <a href="{% url 'cso_shift_list' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="clock" size=18 %}
+    <span class="sidebar-link-text">Guard Roster</span>
+  </a>
+  <a href="{% url 'cso_shift_create' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="plus" size=18 %}
+    <span class="sidebar-link-text">Add Shift</span>
+  </a>
+
+  <div class="sidebar-section-label">My HR</div>
+  <a href="{% url 'my_leave_requests' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="calendar" size=18 %}
+    <span class="sidebar-link-text">My Leave</span>
+  </a>
+  <a href="{% url 'my_professionalism' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="award" size=18 %}
+    <span class="sidebar-link-text">My Professionalism</span>
+  </a>
+
+  <div class="sidebar-section-label">Communication</div>
+  <a href="{% url 'messages_inbox' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="mail" size=18 %}
+    <span class="sidebar-link-text">Inbox</span>
+  </a>
+{% endif %}
+
+<!-- ============================================ -->
+<!-- STORE KEEPER                                  -->
+<!-- ============================================ -->
+{% if user.role == 'store_keeper' %}
+  <div class="sidebar-section-label">Overview</div>
+  <a href="{% url 'store_keeper_dashboard' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="home" size=18 %}
+    <span class="sidebar-link-text">Dashboard</span>
+  </a>
+
+  <div class="sidebar-section-label">Inventory</div>
+  <a href="{% url 'store_items_list' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="briefcase" size=18 %}
+    <span class="sidebar-link-text">All Items</span>
+  </a>
+  <a href="{% url 'store_item_create' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="plus" size=18 %}
+    <span class="sidebar-link-text">Add Item</span>
+  </a>
+  <a href="{% url 'store_low_stock' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="alert-triangle" size=18 %}
+    <span class="sidebar-link-text">Low Stock</span>
+  </a>
+  <a href="{% url 'store_categories' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="grid" size=18 %}
+    <span class="sidebar-link-text">Categories</span>
+  </a>
+
+  <div class="sidebar-section-label">Stock Movements</div>
+  <a href="{% url 'store_receipt_list' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="download" size=18 %}
+    <span class="sidebar-link-text">Receipts (In)</span>
+  </a>
+  <a href="{% url 'store_receipt_create' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="plus" size=18 %}
+    <span class="sidebar-link-text">Receive Stock</span>
+  </a>
+    <a href="{% url 'store_movements' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="activity" size=18 %}
+    <span class="sidebar-link-text">Audit Trail</span>
+  </a>
+    <div class="sidebar-section-label">Reports</div>
+  <a href="{% url 'store_valuation_report' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="bar-chart" size=18 %}
+    <span class="sidebar-link-text">Stock Valuation</span>
+  </a>
+  <a href="{% url 'store_issue_list' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="upload" size=18 %}
+    <span class="sidebar-link-text">Issues (Out)</span>
+  </a>
+  <a href="{% url 'store_issue_create' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="plus" size=18 %}
+    <span class="sidebar-link-text">Issue Stock</span>
+  </a>
+
+  <div class="sidebar-section-label">Suppliers</div>
+  <a href="{% url 'store_suppliers' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="truck" size=18 %}
+    <span class="sidebar-link-text">All Suppliers</span>
+  </a>
+
+  <div class="sidebar-section-label">My HR</div>
+  <a href="{% url 'my_leave_requests' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="calendar" size=18 %}
+    <span class="sidebar-link-text">My Leave</span>
+  </a>
+  <a href="{% url 'my_professionalism' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="award" size=18 %}
+    <span class="sidebar-link-text">My Professionalism</span>
+  </a>
+
+  <div class="sidebar-section-label">Communication</div>
+  <a href="{% url 'messages_inbox' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="mail" size=18 %}
+    <span class="sidebar-link-text">Inbox</span>
+  </a>
+{% endif %}
+
     <!-- ============================================ -->
     <!-- PARENT                                        -->
     <!-- ============================================ -->

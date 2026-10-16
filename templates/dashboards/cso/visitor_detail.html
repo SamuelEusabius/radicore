@@ -1,0 +1,251 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Visitor — {{ visitor.full_name }}{% endblock %}
+{% block header_title %}{{ visitor.full_name }}{% endblock %}
+{% block header_sub %}{% if visitor.organisation %}{{ visitor.organisation }} &middot; {% endif %}{{ visitor.get_purpose_display }}{% endblock %}
+
+{% block content %}
+
+<!-- STATUS STRIP -->
+<div class="card mb-6" style="padding: var(--s-5); border-left: 4px solid
+  {% if visitor.time_out %}var(--ink-400)
+  {% elif visitor.is_official %}var(--primary)
+  {% else %}var(--success){% endif %};">
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <div>
+      <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Current Status</div>
+      <div style="font-weight: 700; font-size: var(--text-lg); color: var(--ink-900); margin-top: 2px;">
+        {% if visitor.time_out %}
+          Exited at {{ visitor.time_out|date:"d M Y, H:i" }}
+        {% elif visitor.status == 'signed_out' %}
+          Admin signed out — pending exit
+        {% elif visitor.status == 'in_meeting' %}
+          In meeting with {{ visitor.host_display }}
+        {% else %}
+          On premises
+        {% endif %}
+      </div>
+    </div>
+    <div class="flex gap-2">
+      {% if not visitor.time_out %}
+        <a href="{% url 'cso_visitor_check_out' visitor.id %}" class="btn btn-secondary">
+          {% include 'partials/icons.html' with name="log-out" size=16 %}
+          Check Out
+        </a>
+      {% endif %}
+      <a href="{% url 'cso_visitor_list' %}" class="btn btn-secondary">
+        {% include 'partials/icons.html' with name="arrow-left" size=16 %}
+        Back to Log
+      </a>
+    </div>
+  </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+  <!-- LEFT: Visit details -->
+  <div class="lg:col-span-2">
+
+    <div class="card mb-6">
+      <h3 class="card-title mb-4">Visit Details</h3>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Purpose</div>
+          <div style="color: var(--ink-900); font-weight: 500; margin-top: 2px;">{{ visitor.get_purpose_display }}</div>
+        </div>
+        <div>
+          <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Visit Type</div>
+          <div style="margin-top: 2px;">
+            {% if visitor.is_official %}
+              <span class="badge badge-primary">Official</span>
+            {% else %}
+              <span class="badge">Standard</span>
+            {% endif %}
+          </div>
+        </div>
+        <div>
+          <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Host</div>
+          <div style="color: var(--ink-900); font-weight: 500; margin-top: 2px;">{{ visitor.host_display }}</div>
+        </div>
+        <div>
+          <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Time In</div>
+          <div style="color: var(--ink-900); font-weight: 500; margin-top: 2px;">{{ visitor.time_in|date:"d M Y, H:i" }}</div>
+        </div>
+        {% if visitor.purpose_note %}
+        <div class="md:col-span-2">
+          <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Notes</div>
+          <div style="color: var(--ink-700); margin-top: 2px;">{{ visitor.purpose_note }}</div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="card mb-6">
+      <h3 class="card-title mb-4">Visitor Identity</h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Phone</div>
+          <div style="color: var(--ink-900); margin-top: 2px;">{{ visitor.phone|default:"—" }}</div>
+        </div>
+        <div>
+          <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Organisation</div>
+          <div style="color: var(--ink-900); margin-top: 2px;">{{ visitor.organisation|default:"—" }}</div>
+        </div>
+        <div>
+          <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">ID</div>
+          <div style="color: var(--ink-900); margin-top: 2px;">
+            {{ visitor.get_id_type_display }}{% if visitor.id_number %} &middot; {{ visitor.id_number }}{% endif %}
+          </div>
+        </div>
+        <div>
+          <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Vehicle</div>
+          <div style="color: var(--ink-900); margin-top: 2px; font-family: var(--font-mono);">{{ visitor.vehicle_plate|default:"—" }}</div>
+        </div>
+      </div>
+    </div>
+
+    {% if visitor.is_official %}
+    <div class="card mb-6">
+      <h3 class="card-title mb-4">Official Visit — Admin Signature</h3>
+
+      {% if visitor.admin_signed_at %}
+        <div class="card" style="background: var(--success-light); padding: var(--s-4); border-left: 4px solid var(--success);">
+          <div style="font-weight: 600; color: var(--success);">Signed by {{ visitor.admin_signed_name|default:visitor.admin_signed_by.get_full_name }}</div>
+          <div class="text-xs mt-1" style="color: var(--ink-600);">{{ visitor.admin_signed_at|date:"d M Y, H:i" }}</div>
+          {% if visitor.admin_signature_notes %}
+          <p class="text-sm mt-2" style="margin: 0;">{{ visitor.admin_signature_notes }}</p>
+          {% endif %}
+        </div>
+      {% else %}
+        <div class="card" style="background: var(--warning-light); padding: var(--s-4); border-left: 4px solid var(--warning);">
+          <div style="font-weight: 600; color: var(--warning);">Pending admin signature</div>
+          <p class="text-sm mt-1" style="margin: 0; color: var(--ink-700);">
+            Secretary coordinates the official pass. Signature will appear here once received.
+          </p>
+        </div>
+      {% endif %}
+
+      {% if visitor.official_pass_issued_at %}
+      <div class="mt-4">
+        <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Official Pass Issued</div>
+        <div style="color: var(--ink-700); margin-top: 2px;">
+          {{ visitor.official_pass_issued_at|date:"d M Y, H:i" }}
+          by {{ visitor.official_pass_issued_by.get_full_name|default:visitor.official_pass_issued_by.email }}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+
+  </div>
+
+  <!-- RIGHT: Gate pass + audit -->
+  <div class="lg:col-span-1">
+
+    {% if gate_pass %}
+    <div class="card mb-6">
+      <h3 class="card-title mb-4">
+        {% include 'partials/icons.html' with name="file-text" size=18 %}
+        Gate Pass
+      </h3>
+
+      <div class="mb-4">
+        <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Pass Number</div>
+        <div style="font-family: var(--font-mono); font-weight: 700; color: var(--ink-900); font-size: var(--text-lg); margin-top: 2px;">
+          {{ gate_pass.pass_number }}
+        </div>
+      </div>
+
+      <div class="mb-4">
+        <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Type</div>
+        <div style="margin-top: 2px;">
+          {% if gate_pass.pass_type == 'official' %}
+            <span class="badge badge-primary">Official</span>
+          {% else %}
+            <span class="badge">Standard</span>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="mb-4">
+        <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Status</div>
+        <div style="margin-top: 2px;">
+          {% if gate_pass.status == 'active' %}
+            <span class="badge badge-success">Active</span>
+          {% elif gate_pass.status == 'signed' %}
+            <span class="badge badge-info">Signed</span>
+          {% elif gate_pass.status == 'used' %}
+            <span class="badge">Used</span>
+          {% elif gate_pass.status == 'cancelled' %}
+            <span class="badge badge-danger">Cancelled</span>
+          {% else %}
+            <span class="badge">{{ gate_pass.get_status_display }}</span>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="mb-4">
+        <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Issued</div>
+        <div style="color: var(--ink-700); margin-top: 2px;">
+          {{ gate_pass.issued_at|date:"d M Y, H:i" }}<br>
+          <span class="text-xs" style="color: var(--ink-500);">by {{ gate_pass.issued_by.get_full_name|default:gate_pass.issued_by.email|default:"—" }}</span>
+        </div>
+      </div>
+
+      <div class="flex flex-col gap-2">
+        <a href="{% url 'cso_gate_pass_print' gate_pass.id %}" target="_blank" class="btn btn-primary">
+          {% include 'partials/icons.html' with name="download" size=16 %}
+          Print Pass
+        </a>
+        <a href="{% url 'cso_gate_pass_detail' gate_pass.id %}" class="btn btn-secondary">
+          {% include 'partials/icons.html' with name="eye" size=16 %}
+          View Pass
+        </a>
+      </div>
+    </div>
+    {% else %}
+    <div class="card mb-6">
+      <h3 class="card-title mb-4">Gate Pass</h3>
+      <p class="text-sm" style="color: var(--ink-500); margin: 0;">No gate pass issued yet.</p>
+      <a href="{% url 'cso_gate_pass_issue' visitor.id %}" class="btn btn-primary mt-4">
+        {% include 'partials/icons.html' with name="plus" size=16 %}
+        Issue Pass
+      </a>
+    </div>
+    {% endif %}
+
+    <div class="card">
+      <h3 class="card-title mb-4">Audit Trail</h3>
+      <div style="font-size: var(--text-sm); line-height: 1.8;">
+        <div class="flex justify-between mb-2">
+          <span style="color: var(--ink-500);">Registered:</span>
+          <span style="color: var(--ink-900); font-weight: 500;">{{ visitor.time_in|date:"H:i" }}</span>
+        </div>
+        <div class="flex justify-between mb-2">
+          <span style="color: var(--ink-500);">Registered by:</span>
+          <span style="color: var(--ink-900); font-weight: 500;">
+            {{ visitor.registered_by.get_full_name|default:visitor.registered_by.email|default:"—" }}
+          </span>
+        </div>
+        {% if visitor.time_out %}
+        <div class="flex justify-between mb-2">
+          <span style="color: var(--ink-500);">Checked out:</span>
+          <span style="color: var(--ink-900); font-weight: 500;">{{ visitor.time_out|date:"H:i" }}</span>
+        </div>
+        <div class="flex justify-between">
+          <span style="color: var(--ink-500);">Checked out by:</span>
+          <span style="color: var(--ink-900); font-weight: 500;">
+            {{ visitor.logged_out_by.get_full_name|default:visitor.logged_out_by.email|default:"—" }}
+          </span>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+{% endblock %}

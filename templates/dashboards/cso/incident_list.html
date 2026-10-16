@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Incidents{% endblock %}
+{% block header_title %}Security Incidents{% endblock %}
+{% block header_sub %}{{ total }} incident{{ total|pluralize }} logged{% endblock %}
+
+{% block content %}
+
+<!-- FILTER BAR -->
+<div class="card mb-6">
+  <form method="get" class="flex flex-wrap items-end gap-3">
+
+    <div style="flex: 0 0 160px;">
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Status</label>
+      <select name="status" class="select w-full">
+        <option value="">All</option>
+        <option value="open" {% if status == 'open' %}selected{% endif %}>Open</option>
+        <option value="investigating" {% if status == 'investigating' %}selected{% endif %}>Investigating</option>
+        <option value="resolved" {% if status == 'resolved' %}selected{% endif %}>Resolved</option>
+        <option value="escalated" {% if status == 'escalated' %}selected{% endif %}>Escalated</option>
+      </select>
+    </div>
+
+    <div style="flex: 0 0 160px;">
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Severity</label>
+      <select name="severity" class="select w-full">
+        <option value="">All</option>
+        {% for value, label in severity_choices %}
+          <option value="{{ value }}" {% if severity == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div style="flex: 0 0 200px;">
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Category</label>
+      <select name="category" class="select w-full">
+        <option value="">All</option>
+        {% for value, label in category_choices %}
+          <option value="{{ value }}" {% if category == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="flex gap-2">
+      <button type="submit" class="btn btn-primary">
+        {% include 'partials/icons.html' with name="search" size=16 %}
+        Filter
+      </button>
+      <a href="{% url 'cso_incident_list' %}" class="btn btn-secondary">Reset</a>
+    </div>
+
+  </form>
+</div>
+
+<!-- ACTION BAR -->
+<div class="flex flex-wrap items-center gap-3 mb-6">
+  <a href="{% url 'cso_incident_create' %}" class="btn btn-primary">
+    {% include 'partials/icons.html' with name="plus" size=16 %}
+    Report Incident
+  </a>
+  <a href="{% url 'cso_dashboard' %}" class="btn btn-secondary">
+    {% include 'partials/icons.html' with name="arrow-left" size=16 %}
+    Back to Dashboard
+  </a>
+</div>
+
+<!-- TABLE -->
+{% if incidents %}
+<div class="card" style="padding: 0; overflow: hidden;">
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Reference</th>
+          <th>Title</th>
+          <th>Category</th>
+          <th>Severity</th>
+          <th>Occurred</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for inc in incidents %}
+        <tr>
+          <td style="font-family: var(--font-mono); font-weight: 600; color: var(--ink-900);">
+            <a href="{% url 'cso_incident_detail' inc.id %}" style="color: var(--ink-900); text-decoration: none;">
+              {{ inc.reference }}
+            </a>
+          </td>
+          <td>
+            <a href="{% url 'cso_incident_detail' inc.id %}" style="font-weight: 500; color: var(--ink-900); text-decoration: none;">
+              {{ inc.title }}
+            </a>
+            {% if inc.location %}
+            <div class="text-xs" style="color: var(--ink-500);">{{ inc.location }}</div>
+            {% endif %}
+          </td>
+          <td style="color: var(--ink-700); font-size: var(--text-sm);">{{ inc.get_category_display }}</td>
+          <td>
+            {% if inc.severity == 'critical' %}
+              <span class="badge badge-danger">{{ inc.get_severity_display }}</span>
+            {% elif inc.severity == 'high' %}
+              <span class="badge badge-warning">{{ inc.get_severity_display }}</span>
+            {% elif inc.severity == 'medium' %}
+              <span class="badge badge-primary">{{ inc.get_severity_display }}</span>
+            {% else %}
+              <span class="badge">{{ inc.get_severity_display }}</span>
+            {% endif %}
+          </td>
+          <td style="color: var(--ink-600); font-size: var(--text-sm); white-space: nowrap;">
+            {{ inc.occurred_at|date:"d M, H:i" }}
+          </td>
+          <td>
+            {% if inc.status == 'resolved' %}
+              <span class="badge badge-success">Resolved</span>
+            {% elif inc.status == 'investigating' %}
+              <span class="badge badge-info">Investigating</span>
+            {% elif inc.status == 'escalated' %}
+              <span class="badge badge-danger">Escalated</span>
+            {% else %}
+              <span class="badge badge-warning">Open</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if page_obj.paginator.num_pages > 1 %}
+  <div style="padding: var(--s-4) var(--s-5); border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+    <div class="text-xs" style="color: var(--ink-500);">
+      Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }} &middot; {{ total }} incident{{ total|pluralize }}
+    </div>
+    <div class="flex gap-2">
+      {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}" class="btn btn-secondary">&larr; Prev</a>
+      {% endif %}
+      {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}" class="btn btn-secondary">Next &rarr;</a>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% else %}
+<div class="card" style="padding: var(--s-8); text-align: center;">
+  <p class="text-sm" style="color: var(--ink-500); margin: 0;">
+    No incidents logged yet.
+    <a href="{% url 'cso_incident_create' %}" style="color: var(--primary);">Report the first one</a>.
+  </p>
+</div>
+{% endif %}
+
+{% endblock %}

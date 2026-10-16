@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{% if incident %}Edit Incident{% else %}Report Incident{% endif %}{% endblock %}
+{% block header_title %}{% if incident %}Edit Incident{% else %}Report Incident{% endif %}{% endblock %}
+{% block header_sub %}{% if incident %}{{ incident.reference }}{% else %}Log a new security incident{% endif %}{% endblock %}
+
+{% block content %}
+
+<div class="card" style="max-width: 900px;">
+  <form method="post">
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+    <div class="card mb-4" style="border-left: 4px solid var(--danger); padding: var(--s-3); background: var(--danger-light);">
+      {% for err in form.non_field_errors %}
+        <p class="text-sm" style="margin: 0; color: var(--danger);">{{ err }}</p>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <h3 class="card-title mb-4">Incident Overview</h3>
+
+    <div class="mb-4">
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
+        Title <span style="color: var(--danger);">*</span>
+      </label>
+      {{ form.title }}
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+      <div>
+        <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Category</label>
+        {{ form.category }}
+      </div>
+      <div>
+        <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Severity</label>
+        {{ form.severity }}
+      </div>
+      <div>
+        <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Status</label>
+        {{ form.status }}
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+      <div>
+        <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Location</label>
+        {{ form.location }}
+      </div>
+      <div>
+        <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Occurred At</label>
+        {{ form.occurred_at }}
+      </div>
+    </div>
+
+    <div class="mb-4">
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Involved Student</label>
+      {{ form.involved_student }}
+    </div>
+
+    <hr style="border: none; border-top: 1px solid var(--border); margin: var(--s-5) 0;">
+
+    <h3 class="card-title mb-4">Details</h3>
+
+    <div class="mb-4">
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
+        Description <span style="color: var(--danger);">*</span>
+      </label>
+      {{ form.description }}
+    </div>
+
+    <div class="mb-4">
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Action Taken</label>
+      {{ form.action_taken }}
+    </div>
+
+    <div class="mb-6">
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Resolution</label>
+      {{ form.resolution }}
+    </div>
+
+    <div class="flex gap-3">
+      <button type="submit" class="btn btn-primary">
+        {% include 'partials/icons.html' with name="check-circle" size=16 %}
+        {% if incident %}Save Changes{% else %}Log Incident{% endif %}
+      </button>
+      <a href="{% if incident %}{% url 'cso_incident_detail' incident.id %}{% else %}{% url 'cso_incident_list' %}{% endif %}" class="btn btn-secondary">Cancel</a>
+    </div>
+
+  </form>
+</div>
+
+{% endblock %}

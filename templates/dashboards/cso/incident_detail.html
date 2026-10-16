@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Incident {{ incident.reference }}{% endblock %}
+{% block header_title %}{{ incident.title }}{% endblock %}
+{% block header_sub %}{{ incident.reference }} &middot; {{ incident.get_category_display }}{% endblock %}
+
+{% block content %}
+
+<!-- STATUS STRIP -->
+<div class="card mb-6" style="padding: var(--s-5); border-left: 4px solid
+  {% if incident.severity == 'critical' %}var(--danger)
+  {% elif incident.severity == 'high' %}var(--warning)
+  {% elif incident.severity == 'medium' %}var(--primary)
+  {% else %}var(--ink-400){% endif %};">
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <div class="flex flex-wrap items-center gap-4">
+      <div>
+        <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Status</div>
+        <div style="font-weight: 700; font-size: var(--text-lg); color: var(--ink-900); margin-top: 2px;">
+          {{ incident.get_status_display }}
+        </div>
+      </div>
+      <div>
+        <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Severity</div>
+        <div style="margin-top: 4px;">
+          {% if incident.severity == 'critical' %}
+            <span class="badge badge-danger">Critical</span>
+          {% elif incident.severity == 'high' %}
+            <span class="badge badge-warning">High</span>
+          {% elif incident.severity == 'medium' %}
+            <span class="badge badge-primary">Medium</span>
+          {% else %}
+            <span class="badge">Low</span>
+          {% endif %}
+        </div>
+      </div>
+      <div>
+        <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Category</div>
+        <div style="color: var(--ink-900); font-weight: 500; margin-top: 2px;">
+          {{ incident.get_category_display }}
+        </div>
+      </div>
+    </div>
+    <div class="flex gap-2">
+      <a href="{% url 'cso_incident_edit' incident.id %}" class="btn btn-primary">
+        {% include 'partials/icons.html' with name="edit" size=16 %}
+        Edit
+      </a>
+      <a href="{% url 'cso_incident_list' %}" class="btn btn-secondary">
+        {% include 'partials/icons.html' with name="arrow-left" size=16 %}
+        Back
+      </a>
+    </div>
+  </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+  <div class="lg:col-span-2">
+
+    <div class="card mb-6">
+      <h3 class="card-title mb-4">Description</h3>
+      <p style="color: var(--ink-700); line-height: 1.7; margin: 0;">{{ incident.description|linebreaksbr }}</p>
+    </div>
+
+    {% if incident.action_taken %}
+    <div class="card mb-6">
+      <h3 class="card-title mb-4">Action Taken</h3>
+      <p style="color: var(--ink-700); line-height: 1.7; margin: 0;">{{ incident.action_taken|linebreaksbr }}</p>
+    </div>
+    {% endif %}
+
+    {% if incident.resolution %}
+    <div class="card mb-6" style="background: var(--success-light); border-left: 4px solid var(--success);">
+      <h3 class="card-title mb-4">Resolution</h3>
+      <p style="color: var(--ink-700); line-height: 1.7; margin: 0;">{{ incident.resolution|linebreaksbr }}</p>
+    </div>
+    {% endif %}
+
+  </div>
+
+  <div class="lg:col-span-1">
+
+    <div class="card mb-6">
+      <h3 class="card-title mb-4">Details</h3>
+      <div style="font-size: var(--text-sm); line-height: 1.9;">
+        <div class="flex justify-between mb-2">
+          <span style="color: var(--ink-500);">Reference:</span>
+          <span style="color: var(--ink-900); font-family: var(--font-mono); font-weight: 600;">{{ incident.reference }}</span>
+        </div>
+        <div class="flex justify-between mb-2">
+          <span style="color: var(--ink-500);">Occurred:</span>
+          <span style="color: var(--ink-900); font-weight: 500;">{{ incident.occurred_at|date:"d M Y, H:i" }}</span>
+        </div>
+        {% if incident.location %}
+        <div class="flex justify-between mb-2">
+          <span style="color: var(--ink-500);">Location:</span>
+          <span style="color: var(--ink-900); font-weight: 500;">{{ incident.location }}</span>
+        </div>
+        {% endif %}
+        <div class="flex justify-between mb-2">
+          <span style="color: var(--ink-500);">Reported by:</span>
+          <span style="color: var(--ink-900); font-weight: 500;">
+            {{ incident.reported_by.get_full_name|default:incident.reported_by.email|default:"—" }}
+          </span>
+        </div>
+        {% if incident.handled_by %}
+        <div class="flex justify-between">
+          <span style="color: var(--ink-500);">Handled by:</span>
+          <span style="color: var(--ink-900); font-weight: 500;">
+            {{ incident.handled_by.get_full_name|default:incident.handled_by.email }}
+          </span>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if incident.involved_student %}
+    <div class="card">
+      <h3 class="card-title mb-4">Involved Student</h3>
+      <div>
+        <div style="font-weight: 600; color: var(--ink-900);">
+          {{ incident.involved_student.first_name }} {{ incident.involved_student.last_name }}
+        </div>
+        <div class="text-xs mt-1" style="color: var(--ink-500);">
+          Adm: {{ incident.involved_student.admission_number }}
+        </div>
+        {% if incident.involved_student.class_level %}
+        <div class="text-xs" style="color: var(--ink-500);">
+          Class: {{ incident.involved_student.class_level }}
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+
+</div>
+
+{% endblock %}

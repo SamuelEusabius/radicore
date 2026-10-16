@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Add Shift{% endblock %}
+{% block header_title %}Add Shift to Roster{% endblock %}
+{% block header_sub %}Schedule a guard shift{% endblock %}
+
+{% block content %}
+
+<div class="card" style="max-width: 800px;">
+  <form method="post">
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+    <div class="card mb-4" style="border-left: 4px solid var(--danger); padding: var(--s-3); background: var(--danger-light);">
+      {% for err in form.non_field_errors %}
+        <p class="text-sm" style="margin: 0; color: var(--danger);">{{ err }}</p>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+      <div>
+        <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
+          Guard <span style="color: var(--danger);">*</span>
+        </label>
+        {{ form.guard }}
+      </div>
+      <div>
+        <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
+          Shift Date <span style="color: var(--danger);">*</span>
+        </label>
+        {{ form.shift_date }}
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+      <div>
+        <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Shift Type</label>
+        {{ form.shift_type }}
+      </div>
+      <div>
+        <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Post</label>
+        {{ form.post }}
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+      <div>
+        <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Check-In</label>
+        {{ form.check_in }}
+      </div>
+      <div>
+        <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Check-Out</label>
+        {{ form.check_out }}
+      </div>
+    </div>
+
+    <div class="mb-6">
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Notes</label>
+      {{ form.notes }}
+    </div>
+
+    <div class="flex gap-3">
+      <button type="submit" class="btn btn-primary">
+        {% include 'partials/icons.html' with name="check-circle" size=16 %}
+        Save Shift
+      </button>
+      <a href="{% url 'cso_shift_list' %}" class="btn btn-secondary">Cancel</a>
+    </div>
+
+  </form>
+</div>
+
+{% endblock %}

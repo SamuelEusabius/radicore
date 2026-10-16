@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Issue Gate Pass{% endblock %}
+{% block header_title %}Issue Gate Pass{% endblock %}
+{% block header_sub %}For {{ visitor.full_name }}{% endblock %}
+
+{% block content %}
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+  <div class="lg:col-span-2">
+    <form method="post" class="card">
+      {% csrf_token %}
+
+      {% if form.non_field_errors %}
+      <div class="card mb-4" style="border-left: 4px solid var(--danger); padding: var(--s-3); background: var(--danger-light);">
+        {% for err in form.non_field_errors %}
+          <p class="text-sm" style="margin: 0; color: var(--danger);">{{ err }}</p>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <h3 class="card-title mb-4">Pass Details</h3>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Pass Type</label>
+          {{ form.pass_type }}
+        </div>
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Destination</label>
+          {{ form.destination }}
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Valid From</label>
+          {{ form.valid_from }}
+        </div>
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Valid Until</label>
+          {{ form.valid_until }}
+          <p class="text-xs mt-1" style="color: var(--ink-500);">Leave blank for single-day pass</p>
+        </div>
+      </div>
+
+      <div class="mb-6">
+        <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Notes</label>
+        {{ form.notes }}
+      </div>
+
+      <div class="flex gap-3">
+        <button type="submit" class="btn btn-primary">
+          {% include 'partials/icons.html' with name="check-circle" size=16 %}
+          Issue Pass
+        </button>
+        <a href="{% url 'cso_visitor_detail' visitor.id %}" class="btn btn-secondary">Cancel</a>
+      </div>
+
+    </form>
+  </div>
+
+  <div class="lg:col-span-1">
+    <div class="card">
+      <h3 class="card-title mb-4">Visitor</h3>
+      <div class="grid grid-cols-1 gap-4">
+        <div>
+          <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Name</div>
+          <div style="font-weight: 600; color: var(--ink-900); margin-top: 2px;">{{ visitor.full_name }}</div>
+        </div>
+        <div>
+          <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Host</div>
+          <div style="color: var(--ink-900); margin-top: 2px;">{{ visitor.host_display }}</div>
+        </div>
+        <div>
+          <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Purpose</div>
+          <div style="color: var(--ink-900); margin-top: 2px;">{{ visitor.get_purpose_display }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}

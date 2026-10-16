@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Log Found Item{% endblock %}
+{% block header_title %}Log Found Item{% endblock %}
+{% block header_sub %}Record an item brought to security{% endblock %}
+
+{% block content %}
+
+<div class="card" style="max-width: 800px;">
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+    <div class="card mb-4" style="border-left: 4px solid var(--danger); padding: var(--s-3); background: var(--danger-light);">
+      {% for err in form.non_field_errors %}
+        <p class="text-sm" style="margin: 0; color: var(--danger);">{{ err }}</p>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="mb-4">
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
+        Item Name <span style="color: var(--danger);">*</span>
+      </label>
+      {{ form.name }}
+    </div>
+
+    <div class="mb-4">
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
+        Description
+      </label>
+      {{ form.description }}
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+      <div>
+        <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Found At</label>
+        {{ form.found_at }}
+      </div>
+      <div>
+        <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Location</label>
+        {{ form.found_location }}
+      </div>
+    </div>
+
+    <div class="mb-6">
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Status</label>
+      {{ form.status }}
+    </div>
+
+    <div class="flex gap-3">
+      <button type="submit" class="btn btn-primary">
+        {% include 'partials/icons.html' with name="check-circle" size=16 %}
+        Save Item
+      </button>
+      <a href="{% url 'cso_lost_item_list' %}" class="btn btn-secondary">Cancel</a>
+    </div>
+
+  </form>
+</div>
+
+{% endblock %}
