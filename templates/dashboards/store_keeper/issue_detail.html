@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ issue.issue_number }}{% endblock %}
+{% block header_title %}Issue {{ issue.issue_number }}{% endblock %}
+{% block header_sub %}
+  {{ issue.recipient_name }} · {{ issue.issued_date|date:"j F Y" }}
+{% endblock %}
+
+{% block content %}
+
+<div class="flex flex-wrap items-center justify-between gap-3 mb-6">
+  <a href="{% url 'store_issue_list' %}" class="btn btn-secondary">
+    {% include 'partials/icons.html' with name="arrow-right" size=16 %}
+    Back to Issues
+  </a>
+  <a href="#" target="_blank" class="btn btn-primary" style="display: none;">
+    {% include 'partials/icons.html' with name="printer" size=16 %}
+    Download PDF
+  </a>
+</div>
+
+<!-- Header card -->
+<div class="card mb-6">
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
+    <div>
+      <div class="text-xs font-semibold uppercase tracking-wider mb-1" style="color: var(--ink-500);">Issue Number</div>
+      <div style="color: var(--ink-800); font-weight: 600; font-family: var(--font-mono);">{{ issue.issue_number }}</div>
+    </div>
+    <div>
+      <div class="text-xs font-semibold uppercase tracking-wider mb-1" style="color: var(--ink-500);">Date Issued</div>
+      <div style="color: var(--ink-800); font-weight: 600;">
+        {{ issue.issued_date|date:"j F Y" }}
+        {% if issue.issued_time %} · {{ issue.issued_time|time:"H:i" }}{% endif %}
+      </div>
+    </div>
+    <div>
+      <div class="text-xs font-semibold uppercase tracking-wider mb-1" style="color: var(--ink-500);">Recipient Type</div>
+      <div>
+        <span class="badge badge-primary">{{ issue.get_recipient_type_display }}</span>
+      </div>
+    </div>
+    <div>
+      <div class="text-xs font-semibold uppercase tracking-wider mb-1" style="color: var(--ink-500);">Recipient</div>
+      <div style="color: var(--ink-800); font-weight: 600;">{{ issue.recipient_name }}</div>
+    </div>
+    <div>
+      <div class="text-xs font-semibold uppercase tracking-wider mb-1" style="color: var(--ink-500);">Issued By</div>
+      <div style="color: var(--ink-800);">
+        {{ issue.issued_by.get_full_name|default:issue.issued_by.email|default:"—" }}
+      </div>
+    </div>
+    {% if issue.authorized_by %}
+    <div>
+      <div class="text-xs font-semibold uppercase tracking-wider mb-1" style="color: var(--ink-500);">Authorized By</div>
+      <div style="color: var(--ink-800);">
+        {{ issue.authorized_by.get_full_name|default:issue.authorized_by.email }}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  {% if issue.purpose %}
+  <div class="mt-5 pt-5" style="border-top: 1px solid var(--border);">
+    <div class="text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-500);">Purpose</div>
+    <p class="text-sm" style="color: var(--ink-700); margin: 0;">{{ issue.purpose }}</p>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Line items -->
+<div class="card mb-6" style="padding: 0; overflow: hidden;">
+  <div style="padding: var(--s-5); border-bottom: 1px solid var(--border);">
+    <h3 class="card-title" style="margin: 0;">
+      {% include 'partials/icons.html' with name="briefcase" size=18 %}
+      Items Issued
+    </h3>
+  </div>
+
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Item</th>
+          <th style="width: 100px; text-align: right;">Quantity</th>
+          <th style="width: 130px; text-align: right;">Unit Cost</th>
+          <th style="width: 130px; text-align: right;">Line Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for line in lines %}
+        <tr>
+          <td>
+            <div style="font-weight: 500; color: var(--ink-900);">{{ line.item.name }}</div>
+            <div class="text-xs" style="color: var(--ink-500); font-family: var(--font-mono);">
+              {{ line.item.code|default:"" }}
+            </div>
+          </td>
+          <td style="text-align: right; color: var(--ink-700);">
+            {{ line.quantity }} {{ line.item.unit }}
+          </td>
+          <td style="text-align: right; color: var(--ink-700);">
+            KES {{ line.unit_cost|floatformat:2 }}
+          </td>
+          <td style="text-align: right; font-weight: 600; color: var(--ink-900);">
+            KES {% widthratio line.quantity 1 line.unit_cost %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr style="background: var(--surface-muted); font-weight: 600;">
+          <td colspan="3" style="text-align: right; padding: 12px;">Total Value</td>
+          <td style="text-align: right; padding: 12px; color: var(--primary); font-size: 14pt;">
+            KES {{ total_value|floatformat:2 }}
+          </td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+</div>
+
+{% if issue.notes %}
+<div class="card">
+  <div class="text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-500);">Notes</div>
+  <p class="text-sm" style="color: var(--ink-700); white-space: pre-line; margin: 0;">{{ issue.notes }}</p>
+</div>
+{% endif %}
+
+{% endblock %}

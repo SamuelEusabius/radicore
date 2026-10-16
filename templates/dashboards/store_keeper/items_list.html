@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Inventory Items{% endblock %}
+{% block header_title %}Inventory Items{% endblock %}
+{% block header_sub %}
+  {{ total }} item{{ total|pluralize }} · {{ school.name }}
+{% endblock %}
+
+{% block content %}
+
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Total Items</span>
+      <div class="stat-icon" style="background: var(--primary-light); color: var(--primary);">
+        {% include 'partials/icons.html' with name="briefcase" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value">{{ total }}</div>
+    <div class="stat-meta">in view</div>
+  </div>
+
+  <a href="?status=low" class="stat card-hover" style="text-decoration: none;">
+    <div class="stat-header">
+      <span class="stat-label">Low Stock</span>
+      <div class="stat-icon" style="background: var(--warning-light); color: var(--warning);">
+        {% include 'partials/icons.html' with name="alert-circle" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--warning);">{{ low_count }}</div>
+    <div class="stat-meta">below minimum</div>
+  </a>
+
+  <a href="?status=out" class="stat card-hover" style="text-decoration: none;">
+    <div class="stat-header">
+      <span class="stat-label">Out of Stock</span>
+      <div class="stat-icon" style="background: var(--danger-light); color: var(--danger);">
+        {% include 'partials/icons.html' with name="x-circle" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--danger);">{{ out_count }}</div>
+    <div class="stat-meta">zero quantity</div>
+  </a>
+
+  <a href="{% url 'store_item_create' %}" class="stat card-hover" style="text-decoration: none;">
+    <div class="stat-header">
+      <span class="stat-label">Add New</span>
+      <div class="stat-icon" style="background: var(--info-light); color: var(--info);">
+        {% include 'partials/icons.html' with name="plus" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--info);">+</div>
+    <div class="stat-meta">new item</div>
+  </a>
+</div>
+
+<!-- Filter -->
+<div class="card mb-6">
+  <form method="get" class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
+    <div class="md:col-span-5">
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Search</label>
+      <input name="q" value="{{ search }}" placeholder="Name, code, description" class="input w-full">
+    </div>
+    <div class="md:col-span-3">
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Category</label>
+      <select name="category" class="select w-full">
+        <option value="">All Categories</option>
+        {% for c in categories %}
+        <option value="{{ c.id }}" {% if category_filter == c.id|stringformat:"s" %}selected{% endif %}>{{ c.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="md:col-span-2">
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Status</label>
+      <select name="status" class="select w-full">
+        <option value="">All</option>
+        <option value="low" {% if status_filter == 'low' %}selected{% endif %}>Low Stock</option>
+        <option value="out" {% if status_filter == 'out' %}selected{% endif %}>Out of Stock</option>
+        <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active</option>
+      </select>
+    </div>
+    <div class="md:col-span-2 flex gap-2">
+      <button type="submit" class="btn btn-primary flex-1">
+        {% include 'partials/icons.html' with name="search" size=16 %}
+        Filter
+      </button>
+      {% if search or category_filter or status_filter %}
+      <a href="{% url 'store_items_list' %}" class="btn btn-secondary">
+        {% include 'partials/icons.html' with name="x-circle" size=16 %}
+      </a>
+      {% endif %}
+    </div>
+  </form>
+</div>
+
+<!-- Items table -->
+{% if items %}
+<div class="card" style="padding: 0; overflow: hidden;">
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Item</th>
+          <th style="width: 160px;">Category</th>
+          <th style="width: 130px;">Stock</th>
+          <th style="width: 130px; text-align: right;">Unit Cost</th>
+          <th style="width: 130px; text-align: right;">Total Value</th>
+          <th style="text-align: right;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in items %}
+        <tr>
+          <td>
+            <a href="{% url 'store_item_detail' item.id %}"
+               style="font-weight: 600; color: var(--ink-900); text-decoration: none;">
+              {{ item.name }}
+            </a>
+            <div class="text-xs mt-1" style="color: var(--ink-500); font-family: var(--font-mono);">
+              {{ item.code|default:"—" }}
+              {% if item.storage_location %} · {{ item.storage_location }}{% endif %}
+            </div>
+          </td>
+          <td style="color: var(--ink-700); font-size: var(--text-sm);">
+            {{ item.category.name|default:"—" }}
+          </td>
+          <td>
+            {% if item.quantity <= 0 %}
+              <span class="badge badge-danger">{{ item.quantity }} {{ item.unit }}</span>
+            {% elif item.min_stock > 0 and item.quantity <= item.min_stock %}
+              <span class="badge badge-warning">{{ item.quantity }} {{ item.unit }}</span>
+            {% else %}
+              <span class="badge badge-success">{{ item.quantity }} {{ item.unit }}</span>
+            {% endif %}
+          </td>
+          <td style="text-align: right; color: var(--ink-700);">
+            KES {{ item.unit_cost|floatformat:2 }}
+          </td>
+          <td style="text-align: right; font-weight: 600; color: var(--ink-900);">
+            KES {% widthratio item.quantity 1 item.unit_cost %}
+          </td>
+          <td>
+            <div class="table-actions" style="justify-content: flex-end;">
+              <a href="{% url 'store_item_detail' item.id %}" class="view" title="View">
+                {% include 'partials/icons.html' with name="eye" size=14 %}
+              </a>
+              <a href="{% url 'store_item_edit' item.id %}" class="edit" title="Edit">
+                {% include 'partials/icons.html' with name="edit" size=14 %}
+              </a>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% if page_obj.has_other_pages %}
+<div class="flex justify-center mt-4 gap-2">
+  {% if page_obj.has_previous %}
+  <a href="?page={{ page_obj.previous_page_number }}{% if search %}&q={{ search }}{% endif %}" class="btn btn-secondary">
+    ← Previous
+  </a>
+  {% endif %}
+  <span class="btn btn-secondary" style="cursor: default;">
+    Page {{ page_obj.number }} of {{ paginator.num_pages }}
+  </span>
+  {% if page_obj.has_next %}
+  <a href="?page={{ page_obj.next_page_number }}{% if search %}&q={{ search }}{% endif %}" class="btn btn-secondary">
+    Next →
+  </a>
+  {% endif %}
+</div>
+{% endif %}
+
+{% else %}
+<div class="card">
+  <div class="empty">
+    {% include 'partials/icons.html' with name="briefcase" size=56 %}
+    <h3>No items found</h3>
+    <p>{% if search or category_filter or status_filter %}No items match the current filters.{% else %}Start by adding your first inventory item.{% endif %}</p>
+    <a href="{% url 'store_item_create' %}" class="btn btn-primary">
+      {% include 'partials/icons.html' with name="plus" size=16 %}
+      Add Item
+    </a>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

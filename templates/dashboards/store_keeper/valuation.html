@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Stock Valuation{% endblock %}
+{% block header_title %}Stock Valuation Report{% endblock %}
+{% block header_sub %}{{ school.name }} · Generated {{ generated_at|date:"j M Y, H:i" }}{% endblock %}
+
+{% block content %}
+
+<!-- SUMMARY KPIs -->
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Total Stock Value</span>
+      <div class="stat-icon" style="background: var(--success-light); color: var(--success);">
+        {% include 'partials/icons.html' with name="dollar" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--success);">KES {{ grand_total|floatformat:0 }}</div>
+    <div class="stat-meta">current valuation</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Total Units</span>
+      <div class="stat-icon" style="background: var(--primary-light); color: var(--primary);">
+        {% include 'partials/icons.html' with name="package" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value">{{ grand_units|floatformat:0 }}</div>
+    <div class="stat-meta">across all items</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Active Items</span>
+      <div class="stat-icon" style="background: var(--info-light); color: var(--info);">
+        {% include 'partials/icons.html' with name="briefcase" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value">{{ item_count }}</div>
+    <div class="stat-meta">in catalogue</div>
+  </div>
+
+  <a href="{% url 'store_low_stock' %}" class="stat card-hover" style="text-decoration: none;">
+    <div class="stat-header">
+      <span class="stat-label">Low Stock</span>
+      <div class="stat-icon" style="background: var(--warning-light); color: var(--warning);">
+        {% include 'partials/icons.html' with name="alert-circle" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--warning);">{{ low_count }}</div>
+    <div class="stat-meta">need reorder</div>
+  </a>
+
+</div>
+
+<!-- ACTION BAR -->
+<div class="flex flex-wrap items-center gap-3 mb-6">
+  <a href="{% url 'store_valuation_pdf' %}" target="_blank" class="btn btn-primary">
+    {% include 'partials/icons.html' with name="download" size=16 %}
+    Print / Export PDF
+  </a>
+  <a href="{% url 'store_keeper_dashboard' %}" class="btn btn-secondary">
+    {% include 'partials/icons.html' with name="arrow-left" size=16 %}
+    Back to Dashboard
+  </a>
+</div>
+
+<!-- VALUATION TABLE GROUPED BY CATEGORY -->
+{% if grouped %}
+  {% for category, data in grouped.items %}
+  <div class="card mb-6" style="padding: 0; overflow: hidden;">
+
+    <div style="padding: var(--s-5); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: var(--surface-2);">
+      <h3 class="card-title" style="margin: 0;">
+        {% include 'partials/icons.html' with name="grid" size=18 %}
+        {{ category }}
+      </h3>
+      <div class="text-sm" style="font-weight: 600; color: var(--ink-900);">
+        Subtotal: <span style="color: var(--success);">KES {{ data.subtotal|floatformat:0 }}</span>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Item</th>
+            <th>Code</th>
+            <th style="text-align: right;">Qty</th>
+            <th style="text-align: right;">Unit Cost</th>
+            <th style="text-align: right;">Value</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in data.items %}
+          <tr>
+            <td>
+              <a href="{% url 'store_item_detail' row.item.id %}"
+                 style="font-weight: 600; color: var(--ink-900); text-decoration: none;">
+                {{ row.item.name }}
+              </a>
+            </td>
+            <td style="color: var(--ink-500); font-family: var(--font-mono); font-size: var(--text-sm);">
+              {{ row.item.code|default:"—" }}
+            </td>
+            <td style="text-align: right; color: var(--ink-700);">
+              {{ row.item.quantity|floatformat:0 }} {{ row.item.get_unit_display }}
+            </td>
+            <td style="text-align: right; color: var(--ink-600);">
+              KES {{ row.item.unit_cost|floatformat:2 }}
+            </td>
+            <td style="text-align: right; font-weight: 600; color: var(--ink-900);">
+              KES {{ row.line_value|floatformat:0 }}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+  {% endfor %}
+
+  <!-- GRAND TOTAL -->
+  <div class="card" style="padding: var(--s-5); background: var(--primary-light); border-left: 4px solid var(--primary);">
+    <div class="flex justify-between items-center">
+      <div>
+        <div class="text-xs uppercase tracking-wider" style="color: var(--ink-600); font-weight: 600;">
+          Grand Total Stock Value
+        </div>
+        <div class="text-xs" style="color: var(--ink-500); margin-top: 2px;">
+          {{ item_count }} active item{{ item_count|pluralize }} across {{ grouped|length }} categor{{ grouped|length|pluralize:"y,ies" }}
+        </div>
+      </div>
+      <div style="font-size: var(--text-2xl); font-weight: 700; color: var(--primary);">
+        KES {{ grand_total|floatformat:0 }}
+      </div>
+    </div>
+  </div>
+
+{% else %}
+  <div class="card" style="padding: var(--s-8); text-align: center;">
+    <p class="text-sm" style="color: var(--ink-500); margin: 0;">
+      No active items in inventory. Add items from the
+      <a href="{% url 'store_items_list' %}" style="color: var(--primary);">items list</a>.
+    </p>
+  </div>
+{% endif %}
+
+{% endblock %}

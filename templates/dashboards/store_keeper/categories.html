@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Item Categories{% endblock %}
+{% block header_title %}Item Categories{% endblock %}
+{% block header_sub %}Organize inventory items into categories{% endblock %}
+
+{% block content %}
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+  <!-- ============ ADD CATEGORY FORM ============ -->
+  <div class="lg:col-span-1">
+    <div class="card">
+      <h3 class="card-title mb-4">Add Category</h3>
+      <form method="post">
+        {% csrf_token %}
+        <div class="mb-4">
+          <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
+            Category Name <span style="color: var(--danger);">*</span>
+          </label>
+          <input type="text" name="name" required class="input w-full" placeholder="e.g. Stationery">
+        </div>
+        <div class="mb-4">
+          <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
+            Description
+          </label>
+          <textarea name="description" rows="2" class="textarea w-full" placeholder="Optional"></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary w-full">
+          {% include 'partials/icons.html' with name="plus" size=16 %}
+          Add Category
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ============ CATEGORIES TABLE ============ -->
+  <div class="lg:col-span-2">
+    {% if categories %}
+    <div class="card" style="padding: 0; overflow: hidden;">
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Category</th>
+              <th>Description</th>
+              <th style="width: 120px; text-align: center;">Items</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for c in categories %}
+            <tr>
+              <td style="font-weight: 600; color: var(--ink-900);">{{ c.name }}</td>
+              <td style="color: var(--ink-600); font-size: var(--text-sm);">
+                {{ c.description|default:"—" }}
+              </td>
+              <td style="text-align: center;">
+                <a href="{% url 'store_items_list' %}?category={{ c.id }}"
+                   class="badge badge-primary" style="text-decoration: none;">
+                  {{ c.item_count }} item{{ c.item_count|pluralize }}
+                </a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% else %}
+    <div class="card" style="padding: var(--s-8); text-align: center;">
+      <p class="text-sm" style="color: var(--ink-500); margin: 0;">
+        No categories yet. Add your first one →
+      </p>
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+
+{% endblock %}

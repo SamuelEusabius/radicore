@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Suppliers{% endblock %}
+{% block header_title %}Suppliers{% endblock %}
+{% block header_sub %}Manage vendors that supply stock to the school{% endblock %}
+
+{% block content %}
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+  <!-- ============ ADD SUPPLIER FORM ============ -->
+  <div class="lg:col-span-1">
+    <div class="card">
+      <h3 class="card-title mb-4">Add Supplier</h3>
+      <form method="post">
+        {% csrf_token %}
+        <div class="mb-4">
+          <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
+            Supplier Name <span style="color: var(--danger);">*</span>
+          </label>
+          <input type="text" name="name" required class="input w-full" placeholder="e.g. Nairobi Stationers Ltd">
+        </div>
+        <div class="mb-4">
+          <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
+            Contact Person
+          </label>
+          <input type="text" name="contact_person" class="input w-full" placeholder="e.g. Jane Wanjiku">
+        </div>
+        <div class="mb-4">
+          <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
+            Phone
+          </label>
+          <input type="tel" name="phone" class="input w-full" placeholder="07XX XXX XXX">
+        </div>
+        <div class="mb-4">
+          <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
+            Email
+          </label>
+          <input type="email" name="email" class="input w-full" placeholder="info@supplier.co.ke">
+        </div>
+        <div class="mb-4">
+          <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
+            KRA PIN
+          </label>
+          <input type="text" name="kra_pin" class="input w-full" placeholder="P051234567X">
+        </div>
+        <button type="submit" class="btn btn-primary w-full">
+          {% include 'partials/icons.html' with name="plus" size=16 %}
+          Add Supplier
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ============ SUPPLIERS TABLE ============ -->
+  <div class="lg:col-span-2">
+    {% if suppliers %}
+    <div class="card" style="padding: 0; overflow: hidden;">
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Supplier</th>
+              <th>Contact</th>
+              <th>Phone</th>
+              <th style="width: 90px; text-align: center;">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for s in suppliers %}
+            <tr>
+              <td>
+                <div style="font-weight: 600; color: var(--ink-900);">{{ s.name }}</div>
+                {% if s.kra_pin %}
+                <div class="text-xs mt-1" style="color: var(--ink-500); font-family: var(--font-mono);">
+                  {{ s.kra_pin }}
+                </div>
+                {% endif %}
+              </td>
+              <td style="color: var(--ink-700); font-size: var(--text-sm);">
+                {{ s.contact_person|default:"—" }}
+              </td>
+              <td style="color: var(--ink-700); font-size: var(--text-sm);">
+                {{ s.phone|default:"—" }}
+              </td>
+              <td style="text-align: center;">
+                {% if s.is_active %}
+                  <span class="badge badge-success">Active</span>
+                {% else %}
+                  <span class="badge">Inactive</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% else %}
+    <div class="card" style="padding: var(--s-8); text-align: center;">
+      <p class="text-sm" style="color: var(--ink-500); margin: 0;">
+        No suppliers yet. Add your first one →
+      </p>
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+
+{% endblock %}

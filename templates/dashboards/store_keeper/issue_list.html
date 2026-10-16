@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Stock Issues{% endblock %}
+{% block header_title %}Stock Issues{% endblock %}
+{% block header_sub %}
+  {{ total }} issue{{ total|pluralize }} · {{ school.name }}
+{% endblock %}
+
+{% block content %}
+
+<div class="flex flex-wrap items-center justify-between gap-3 mb-6">
+  <div></div>
+  <a href="{% url 'store_issue_create' %}" class="btn btn-primary">
+    {% include 'partials/icons.html' with name="plus" size=16 %}
+    New Issue
+  </a>
+</div>
+
+<!-- Filter -->
+<div class="card mb-6">
+  <form method="get" class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
+    <div class="md:col-span-8">
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Search</label>
+      <input name="q" value="{{ search }}" placeholder="Issue number, recipient, or purpose" class="input w-full">
+    </div>
+    <div class="md:col-span-4 flex gap-2">
+      <button type="submit" class="btn btn-primary flex-1">
+        {% include 'partials/icons.html' with name="search" size=16 %}
+        Filter
+      </button>
+      {% if search %}
+      <a href="{% url 'store_issue_list' %}" class="btn btn-secondary">
+        {% include 'partials/icons.html' with name="x-circle" size=16 %}
+      </a>
+      {% endif %}
+    </div>
+  </form>
+</div>
+
+{% if issues %}
+<div class="card" style="padding: 0; overflow: hidden;">
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th style="width: 130px;">Issue #</th>
+          <th>Recipient</th>
+          <th style="width: 130px;">Type</th>
+          <th style="width: 130px;">Date</th>
+          <th>Purpose</th>
+          <th style="text-align: right;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for issue in issues %}
+        <tr>
+          <td style="font-weight: 600; color: var(--ink-900); font-family: var(--font-mono); font-size: var(--text-sm);">
+            {{ issue.issue_number }}
+          </td>
+          <td>
+            <a href="{% url 'store_issue_detail' issue.id %}"
+               style="color: var(--ink-900); font-weight: 500; text-decoration: none;">
+              {{ issue.recipient_name }}
+            </a>
+          </td>
+          <td>
+            <span class="badge badge-primary">{{ issue.get_recipient_type_display }}</span>
+          </td>
+          <td style="color: var(--ink-600); font-size: var(--text-sm);">{{ issue.issued_date|date:"j M Y" }}</td>
+          <td style="color: var(--ink-700); font-size: var(--text-sm);">{{ issue.purpose|default:"—" }}</td>
+          <td>
+            <div class="table-actions" style="justify-content: flex-end;">
+              <a href="{% url 'store_issue_detail' issue.id %}" class="view" title="View">
+                {% include 'partials/icons.html' with name="eye" size=14 %}
+              </a>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% if page_obj.has_other_pages %}
+<div class="flex justify-center mt-4 gap-2">
+  {% if page_obj.has_previous %}
+  <a href="?page={{ page_obj.previous_page_number }}{% if search %}&q={{ search }}{% endif %}" class="btn btn-secondary">← Previous</a>
+  {% endif %}
+  <span class="btn btn-secondary" style="cursor: default;">Page {{ page_obj.number }} of {{ paginator.num_pages }}</span>
+  {% if page_obj.has_next %}
+  <a href="?page={{ page_obj.next_page_number }}{% if search %}&q={{ search }}{% endif %}" class="btn btn-secondary">Next →</a>
+  {% endif %}
+</div>
+{% endif %}
+
+{% else %}
+<div class="card">
+  <div class="empty">
+    {% include 'partials/icons.html' with name="arrow-right" size=56 %}
+    <h3>No stock issues yet</h3>
+    <p>Record the first stock issue to staff, students, or departments.</p>
+    <a href="{% url 'store_issue_create' %}" class="btn btn-primary">
+      {% include 'partials/icons.html' with name="plus" size=16 %}
+      Record First Issue
+    </a>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

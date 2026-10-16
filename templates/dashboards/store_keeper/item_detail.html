@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ item.name }}{% endblock %}
+{% block header_title %}{{ item.name }}{% endblock %}
+{% block header_sub %}
+  {% if item.category %}{{ item.category.name }} · {% endif %}{{ item.code|default:"" }}
+{% endblock %}
+
+{% block content %}
+
+<div class="flex flex-wrap items-center justify-between gap-3 mb-6">
+  <a href="{% url 'store_items_list' %}" class="btn btn-secondary">
+    {% include 'partials/icons.html' with name="arrow-right" size=16 %}
+    Back to Items
+  </a>
+  <div class="flex gap-2">
+    <a href="{% url 'store_item_edit' item.id %}" class="btn btn-secondary">
+      {% include 'partials/icons.html' with name="edit" size=16 %}
+      Edit
+    </a>
+    <a href="{% url 'store_issue_create' %}" class="btn btn-primary">
+      {% include 'partials/icons.html' with name="arrow-right" size=16 %}
+      Issue This Item
+    </a>
+  </div>
+</div>
+
+<!-- Item summary -->
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Current Stock</span>
+      <div class="stat-icon" style="background: {% if item.quantity <= 0 %}var(--danger-light){% elif item.min_stock > 0 and item.quantity <= item.min_stock %}var(--warning-light){% else %}var(--success-light){% endif %}; color: {% if item.quantity <= 0 %}var(--danger){% elif item.min_stock > 0 and item.quantity <= item.min_stock %}var(--warning){% else %}var(--success){% endif %};">
+        {% include 'partials/icons.html' with name="briefcase" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value">{{ item.quantity }} <span style="font-size: 12pt; color: var(--ink-500); font-weight: normal;">{{ item.unit }}</span></div>
+    <div class="stat-meta">min: {{ item.min_stock }}</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Unit Cost</span>
+      <div class="stat-icon" style="background: var(--info-light); color: var(--info);">
+        {% include 'partials/icons.html' with name="dollar" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="font-size: 16pt;">KES {{ item.unit_cost|floatformat:2 }}</div>
+    <div class="stat-meta">per {{ item.unit }}</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Total Value</span>
+      <div class="stat-icon" style="background: var(--primary-light); color: var(--primary);">
+        {% include 'partials/icons.html' with name="trending-up" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="font-size: 16pt; color: var(--primary);">
+      KES {% widthratio item.quantity 1 item.unit_cost %}
+    </div>
+    <div class="stat-meta">current value</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Storage</span>
+      <div class="stat-icon" style="background: var(--surface-muted); color: var(--ink-600);">
+        {% include 'partials/icons.html' with name="grid" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="font-size: 12pt;">{{ item.storage_location|default:"—" }}</div>
+    <div class="stat-meta">location</div>
+  </div>
+</div>
+
+<!-- Item details -->
+<div class="card mb-6">
+  <h3 class="card-title mb-4">
+    {% include 'partials/icons.html' with name="info" size=18 %}
+    Item Details
+  </h3>
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <div>
+      <div class="text-xs font-semibold uppercase tracking-wider mb-1" style="color: var(--ink-500);">Category</div>
+      <div style="color: var(--ink-800);">{{ item.category.name|default:"—" }}</div>
+    </div>
+    <div>
+      <div class="text-xs font-semibold uppercase tracking-wider mb-1" style="color: var(--ink-500);">Primary Supplier</div>
+      <div style="color: var(--ink-800);">{{ item.primary_supplier.name|default:"—" }}</div>
+    </div>
+    <div>
+      <div class="text-xs font-semibold uppercase tracking-wider mb-1" style="color: var(--ink-500);">Status</div>
+      <div>
+        {% if item.is_active %}
+          <span class="badge badge-success">Active</span>
+        {% else %}
+          <span class="badge badge-neutral">Inactive</span>
+        {% endif %}
+      </div>
+    </div>
+    {% if item.description %}
+    <div class="sm:col-span-2">
+      <div class="text-xs font-semibold uppercase tracking-wider mb-1" style="color: var(--ink-500);">Description</div>
+      <div style="color: var(--ink-700); white-space: pre-line;">{{ item.description }}</div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Movement history -->
+<div class="card" style="padding: 0; overflow: hidden;">
+  <div style="padding: var(--s-5); border-bottom: 1px solid var(--border);">
+    <h3 class="card-title" style="margin: 0;">
+      {% include 'partials/icons.html' with name="activity" size=18 %}
+      Movement History
+    </h3>
+  </div>
+
+  {% if movements %}
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th style="width: 150px;">Date</th>
+          <th style="width: 120px;">Action</th>
+          <th style="width: 120px; text-align: right;">Quantity</th>
+          <th style="width: 130px; text-align: right;">Balance After</th>
+          <th>Reason</th>
+          <th style="width: 160px;">Performed By</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for m in movements %}
+        <tr>
+          <td style="color: var(--ink-600); font-size: var(--text-sm);">{{ m.created_at|date:"j M Y H:i" }}</td>
+          <td>
+            {% if m.action == 'receipt' %}
+              <span class="badge badge-success">Receipt</span>
+            {% elif m.action == 'issue' %}
+              <span class="badge badge-warning">Issue</span>
+            {% elif m.action == 'return' %}
+              <span class="badge badge-info">Return</span>
+            {% else %}
+              <span class="badge badge-neutral">{{ m.action|title }}</span>
+            {% endif %}
+          </td>
+          <td style="text-align: right; font-weight: 600; color: {% if m.quantity < 0 %}var(--danger){% else %}var(--success){% endif %};">
+            {{ m.quantity }}
+          </td>
+          <td style="text-align: right; color: var(--ink-700);">{{ m.balance_after }}</td>
+          <td style="color: var(--ink-700); font-size: var(--text-sm);">{{ m.reason|default:"—" }}</td>
+          <td style="color: var(--ink-600); font-size: var(--text-xs);">
+            {{ m.performed_by.get_full_name|default:m.performed_by.email|default:"—" }}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div style="padding: var(--s-8); text-align: center;">
+    <p class="text-sm" style="color: var(--ink-500); margin: 0;">
+      No movement records for this item yet.
+    </p>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}

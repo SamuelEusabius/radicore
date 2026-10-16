@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Low Stock Alert{% endblock %}
+{% block header_title %}Low Stock / Reorder List{% endblock %}
+{% block header_sub %}
+  {{ total }} item{{ total|pluralize }} need attention
+{% endblock %}
+
+{% block content %}
+
+<div class="flex flex-wrap items-center justify-between gap-3 mb-6">
+  <a href="{% url 'store_keeper_dashboard' %}" class="btn btn-secondary">
+    {% include 'partials/icons.html' with name="arrow-right" size=16 %}
+    Back to Dashboard
+  </a>
+</div>
+
+{% if out_of_stock %}
+<div class="card mb-6" style="padding: 0; overflow: hidden;">
+  <div style="padding: var(--s-4) var(--s-5); border-bottom: 1px solid var(--border); background: var(--danger-light);">
+    <h3 class="card-title" style="margin: 0; color: var(--danger);">
+      {% include 'partials/icons.html' with name="x-circle" size=18 %}
+      Out of Stock — Urgent
+    </h3>
+  </div>
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Item</th>
+          <th>Category</th>
+          <th style="width: 120px;">Supplier</th>
+          <th style="width: 120px; text-align: right;">In Stock</th>
+          <th style="width: 100px; text-align: right;">Min</th>
+          <th style="text-align: right;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in out_of_stock %}
+        <tr>
+          <td style="font-weight: 600; color: var(--ink-900);">{{ item.name }}</td>
+          <td style="color: var(--ink-700); font-size: var(--text-sm);">{{ item.category.name|default:"—" }}</td>
+          <td style="color: var(--ink-600); font-size: var(--text-sm);">{{ item.primary_supplier.name|default:"—" }}</td>
+          <td style="text-align: right;">
+            <span class="badge badge-danger">{{ item.quantity }} {{ item.unit }}</span>
+          </td>
+          <td style="text-align: right; color: var(--ink-500);">{{ item.min_stock }}</td>
+          <td>
+            <div class="table-actions" style="justify-content: flex-end;">
+              <a href="{% url 'store_receipt_create' %}" class="view" title="Receive stock">
+                {% include 'partials/icons.html' with name="download" size=14 %}
+              </a>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+{% if low_stock %}
+<div class="card" style="padding: 0; overflow: hidden;">
+  <div style="padding: var(--s-4) var(--s-5); border-bottom: 1px solid var(--border); background: var(--warning-light);">
+    <h3 class="card-title" style="margin: 0; color: var(--warning);">
+      {% include 'partials/icons.html' with name="alert-triangle" size=18 %}
+      Running Low — Plan to Reorder
+    </h3>
+  </div>
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Item</th>
+          <th>Category</th>
+          <th style="width: 120px;">Supplier</th>
+          <th style="width: 120px; text-align: right;">In Stock</th>
+          <th style="width: 100px; text-align: right;">Min</th>
+          <th style="text-align: right;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in low_stock %}
+        <tr>
+          <td style="font-weight: 600; color: var(--ink-900);">{{ item.name }}</td>
+          <td style="color: var(--ink-700); font-size: var(--text-sm);">{{ item.category.name|default:"—" }}</td>
+          <td style="color: var(--ink-600); font-size: var(--text-sm);">{{ item.primary_supplier.name|default:"—" }}</td>
+          <td style="text-align: right;">
+            <span class="badge badge-warning">{{ item.quantity }} {{ item.unit }}</span>
+          </td>
+          <td style="text-align: right; color: var(--ink-500);">{{ item.min_stock }}</td>
+          <td>
+            <div class="table-actions" style="justify-content: flex-end;">
+              <a href="{% url 'store_item_detail' item.id %}" class="view" title="View item">
+                {% include 'partials/icons.html' with name="eye" size=14 %}
+              </a>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+{% if not out_of_stock and not low_stock %}
+<div class="card">
+  <div class="empty">
+    {% include 'partials/icons.html' with name="check-circle" size=56 %}
+    <h3>All good</h3>
+    <p>No items are below their minimum stock level. Inventory is healthy.</p>
+    <a href="{% url 'store_keeper_dashboard' %}" class="btn btn-primary">
+      {% include 'partials/icons.html' with name="arrow-right" size=16 %}
+      Back to Dashboard
+    </a>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

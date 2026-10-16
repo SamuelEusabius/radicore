@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Store Keeper Dashboard{% endblock %}
+{% block header_title %}Store Keeper Dashboard{% endblock %}
+{% block header_sub %}
+  {{ school.name }} · {{ today|date:"l, j F Y" }}
+{% endblock %}
+
+{% block content %}
+
+{% if messages %}
+  {% for msg in messages %}
+  <div class="card mb-6" style="border-left: 4px solid var(--primary); padding: var(--s-3);">
+    <p class="text-sm" style="margin: 0;">{{ msg }}</p>
+  </div>
+  {% endfor %}
+{% endif %}
+
+<!-- KPI ROW -->
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+
+  <a href="{% url 'store_items_list' %}" class="stat card-hover" style="text-decoration: none;">
+    <div class="stat-header">
+      <span class="stat-label">Inventory Items</span>
+      <div class="stat-icon" style="background: var(--primary-light); color: var(--primary);">
+        {% include 'partials/icons.html' with name="briefcase" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value">{{ stats.total_items }}</div>
+    <div class="stat-meta">active items</div>
+  </a>
+
+  <div class="stat">
+    <div class="stat-header">
+      <span class="stat-label">Stock Value</span>
+      <div class="stat-icon" style="background: var(--success-light); color: var(--success);">
+        {% include 'partials/icons.html' with name="dollar" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--success);">KES {{ stats.stock_value|floatformat:0 }}</div>
+    <div class="stat-meta">{{ stats.suppliers }} suppliers</div>
+  </div>
+
+  <a href="{% url 'store_low_stock' %}" class="stat card-hover" style="text-decoration: none;">
+    <div class="stat-header">
+      <span class="stat-label">Low Stock</span>
+      <div class="stat-icon" style="background: var(--warning-light); color: var(--warning);">
+        {% include 'partials/icons.html' with name="alert-circle" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--warning);">{{ stats.low_stock }}</div>
+    <div class="stat-meta">need reorder</div>
+  </a>
+
+  <a href="{% url 'store_items_list' %}?status=out" class="stat card-hover" style="text-decoration: none;">
+    <div class="stat-header">
+      <span class="stat-label">Out of Stock</span>
+      <div class="stat-icon" style="background: var(--danger-light); color: var(--danger);">
+        {% include 'partials/icons.html' with name="x-circle" size=18 %}
+      </div>
+    </div>
+    <div class="stat-value" style="color: var(--danger);">{{ stats.out_of_stock }}</div>
+    <div class="stat-meta">unavailable</div>
+  </a>
+
+</div>
+
+<!-- ACTION QUEUES -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+
+  <!-- Low stock -->
+  <div class="card" style="padding: 0; overflow: hidden;">
+    <div style="padding: var(--s-5); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+      <h3 class="card-title" style="margin: 0;">
+        {% include 'partials/icons.html' with name="alert-triangle" size=18 %}
+        Low Stock Alerts
+      </h3>
+      <a href="{% url 'store_low_stock' %}" class="text-xs" style="color: var(--primary); text-decoration: none; font-weight: 500;">
+        View all →
+      </a>
+    </div>
+
+    {% if low_stock_items %}
+      {% for item in low_stock_items %}
+      <div style="padding: var(--s-4) var(--s-5); border-bottom: 1px solid var(--border);">
+        <div class="flex items-start justify-between gap-3">
+          <div class="flex-1 min-w-0">
+            <a href="{% url 'store_item_detail' item.id %}"
+               style="font-weight: 600; color: var(--ink-900); font-size: var(--text-sm); text-decoration: none;">
+              {{ item.name }}
+            </a>
+            <div class="text-xs mt-1" style="color: var(--ink-500);">
+              {{ item.code|default:"—" }} · Min: {{ item.min_stock }} {{ item.unit }}
+            </div>
+          </div>
+          <span class="badge {% if item.quantity <= 0 %}badge-danger{% else %}badge-warning{% endif %}">
+            {{ item.quantity }} {{ item.unit }}
+          </span>
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div style="padding: var(--s-8); text-align: center;">
+        <p class="text-sm" style="color: var(--ink-500); margin: 0;">
+          All stock levels are healthy.
+        </p>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Recent issues -->
+  <div class="card" style="padding: 0; overflow: hidden;">
+    <div style="padding: var(--s-5); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+      <h3 class="card-title" style="margin: 0;">
+        {% include 'partials/icons.html' with name="arrow-right" size=18 %}
+        Recent Issues
+      </h3>
+      <a href="{% url 'store_issue_list' %}" class="text-xs" style="color: var(--primary); text-decoration: none; font-weight: 500;">
+        View all →
+      </a>
+    </div>
+
+    {% if recent_issues %}
+      {% for issue in recent_issues %}
+      <div style="padding: var(--s-4) var(--s-5); border-bottom: 1px solid var(--border);">
+        <div class="flex items-start justify-between gap-3">
+          <div class="flex-1 min-w-0">
+            <a href="{% url 'store_issue_detail' issue.id %}"
+               style="font-weight: 600; color: var(--ink-900); font-size: var(--text-sm); text-decoration: none;">
+              {{ issue.issue_number }}
+            </a>
+            <div class="text-xs mt-1" style="color: var(--ink-500);">
+              {{ issue.recipient_name }} · {{ issue.issued_date|date:"j M Y" }}
+            </div>
+          </div>
+          <span class="badge badge-primary">{{ issue.get_recipient_type_display }}</span>
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div style="padding: var(--s-8); text-align: center;">
+        <p class="text-sm" style="color: var(--ink-500); margin: 0;">
+          No issues recorded yet.
+        </p>
+      </div>
+    {% endif %}
+  </div>
+
+</div>
+
+<!-- RECENT RECEIPTS -->
+<div class="card mb-6" style="padding: 0; overflow: hidden;">
+  <div style="padding: var(--s-5); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+    <h3 class="card-title" style="margin: 0;">
+      {% include 'partials/icons.html' with name="download" size=18 %}
+      Recent Stock Receipts
+    </h3>
+    <a href="{% url 'store_receipt_list' %}" class="text-xs" style="color: var(--primary); text-decoration: none; font-weight: 500;">
+      View all →
+    </a>
+  </div>
+
+  {% if recent_receipts %}
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Receipt No.</th>
+          <th>Supplier</th>
+          <th>Date</th>
+          <th style="text-align: right;">Total Cost</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in recent_receipts %}
+        <tr>
+          <td style="font-weight: 600; color: var(--ink-900); font-family: var(--font-mono); font-size: var(--text-sm);">
+            {{ r.receipt_number }}
+          </td>
+          <td style="color: var(--ink-700);">{{ r.supplier.name|default:"—" }}</td>
+          <td style="color: var(--ink-600); font-size: var(--text-sm);">{{ r.received_date|date:"j M Y" }}</td>
+          <td style="text-align: right; font-weight: 600; color: var(--ink-900);">
+            KES {{ r.total_cost|floatformat:0 }}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div style="padding: var(--s-8); text-align: center;">
+    <p class="text-sm" style="color: var(--ink-500); margin: 0;">
+      No stock receipts recorded yet.
+    </p>
+  </div>
+  {% endif %}
+</div>
+
+<!-- QUICK ACTIONS -->
+<div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+  <a href="{% url 'store_issue_create' %}" class="card card-hover" style="text-decoration: none; text-align: center; padding: var(--s-5);">
+    <div style="font-weight: 600; color: var(--ink-900); font-size: var(--text-sm);">Issue Stock</div>
+    <div class="text-xs mt-1" style="color: var(--ink-500);">Record stock out</div>
+  </a>
+
+  <a href="{% url 'store_receipt_create' %}" class="card card-hover" style="text-decoration: none; text-align: center; padding: var(--s-5);">
+    <div style="font-weight: 600; color: var(--ink-900); font-size: var(--text-sm);">Receive Stock</div>
+    <div class="text-xs mt-1" style="color: var(--ink-500);">Goods in</div>
+  </a>
+
+  <a href="{% url 'store_item_create' %}" class="card card-hover" style="text-decoration: none; text-align: center; padding: var(--s-5);">
+    <div style="font-weight: 600; color: var(--ink-900); font-size: var(--text-sm);">Add Item</div>
+    <div class="text-xs mt-1" style="color: var(--ink-500);">New inventory item</div>
+  </a>
+
+  <a href="{% url 'store_low_stock' %}" class="card card-hover" style="text-decoration: none; text-align: center; padding: var(--s-5);">
+    <div style="font-weight: 600; color: var(--ink-900); font-size: var(--text-sm);">Reorder List</div>
+    <div class="text-xs mt-1" style="color: var(--ink-500);">{{ stats.low_stock }} items</div>
+  </a>
+</div>
+
+{% endblock %}
