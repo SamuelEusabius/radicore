@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}School MS{% endblock %}</title>
+  <title>{% block title %}RacodCore — Smart School Management{% endblock %}</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -36,6 +36,7 @@
       gap: var(--s-6);
     }
 
+    /* ============ LOGO ============ */
     .pub-logo {
       display: flex;
       align-items: center;
@@ -45,10 +46,10 @@
     }
 
     .pub-logo-mark {
-      width: 40px;
-      height: 40px;
-      min-width: 40px;
-      min-height: 40px;
+      width: 48px;
+      height: 48px;
+      min-width: 48px;
+      min-height: 48px;
       border-radius: var(--radius);
       background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
       display: flex;
@@ -58,63 +59,62 @@
       color: #FFFFFF;
       font-family: var(--font-heading);
       font-weight: 800;
-      font-size: var(--text-sm);
-      letter-spacing: -0.02em;
+      font-size: 20px;
+      letter-spacing: -0.03em;
       box-shadow: 0 4px 12px rgba(10, 138, 95, 0.25);
       flex-shrink: 0;
-    }
-
-    .pub-logo-mark img {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-      display: block;
     }
 
     .pub-logo-text {
       font-family: var(--font-heading);
       font-weight: 800;
-      font-size: var(--text-md);
+      font-size: 19px;
       color: var(--ink-900);
-      letter-spacing: -0.02em;
+      letter-spacing: -0.025em;
+      line-height: 1.1;
     }
     .pub-logo-text small {
       display: block;
-      font-size: 10px;
-      font-weight: 500;
+      font-size: 11px;
+      font-weight: 600;
       color: var(--ink-500);
-      letter-spacing: 0.06em;
+      letter-spacing: 0.10em;
       text-transform: uppercase;
-      margin-top: 1px;
+      margin-top: 2px;
+    }
+    .pub-logo-text .brand-gold {
+      color: #D4A017;
     }
 
+    /* ============ NAV MENU ============ */
     .pub-menu {
       display: flex;
       align-items: center;
-      gap: var(--s-6);
+      gap: var(--s-7);
       flex: 1;
       justify-content: center;
     }
     .pub-menu-link {
-      font-size: var(--text-sm);
-      font-weight: 500;
-      color: var(--ink-700);
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--ink-800);
       text-decoration: none;
       transition: color var(--t-fast);
       padding: var(--s-2) 0;
       position: relative;
+      letter-spacing: -0.005em;
     }
     .pub-menu-link:hover {
       color: var(--primary);
     }
     .pub-menu-link.active {
       color: var(--primary);
-      font-weight: 600;
+      font-weight: 700;
     }
     .pub-menu-link.active::after {
       content: '';
       position: absolute;
-      bottom: -4px;
+      bottom: -6px;
       left: 0;
       right: 0;
       height: 2px;
@@ -125,14 +125,14 @@
     .pub-cta {
       display: flex;
       align-items: center;
-      gap: var(--s-2);
+      gap: var(--s-3);
     }
 
     /* Hamburger */
     .pub-hamburger {
       display: none;
-      width: 40px;
-      height: 40px;
+      width: 44px;
+      height: 44px;
       align-items: center;
       justify-content: center;
       background: transparent;
@@ -155,8 +155,8 @@
       top: 0;
       right: 0;
       bottom: 0;
-      width: 320px;
-      max-width: 88vw;
+      width: 340px;
+      max-width: 90vw;
       background: var(--surface);
       box-shadow: -8px 0 32px rgba(15, 23, 42, 0.15);
       padding: var(--s-6);
@@ -182,10 +182,10 @@
       gap: 10px;
     }
     .pub-mobile-brand-mark {
-      width: 36px;
-      height: 36px;
-      min-width: 36px;
-      min-height: 36px;
+      width: 40px;
+      height: 40px;
+      min-width: 40px;
+      min-height: 40px;
       border-radius: var(--radius);
       background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
       display: flex;
@@ -195,31 +195,47 @@
       color: #FFFFFF;
       font-family: var(--font-heading);
       font-weight: 800;
-      font-size: var(--text-xs);
+      font-size: 16px;
+      letter-spacing: -0.03em;
       flex-shrink: 0;
-    }
-    .pub-mobile-brand-mark img {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-      display: block;
     }
     .pub-mobile-brand-text {
       font-family: var(--font-heading);
       font-weight: 700;
-      font-size: var(--text-sm);
+      font-size: 16px;
       color: var(--ink-900);
       line-height: 1.2;
     }
+    .pub-mobile-brand-text .brand-gold {
+      color: #D4A017;
+    }
     .pub-mobile-brand-text small {
       display: block;
-      font-size: 9px;
-      font-weight: 500;
+      font-size: 10px;
+      font-weight: 600;
       color: var(--ink-500);
-      letter-spacing: 0.06em;
+      letter-spacing: 0.10em;
       text-transform: uppercase;
       margin-top: 1px;
     }
+    .pub-mobile-close {
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--surface-muted);
+      border: none;
+      cursor: pointer;
+      border-radius: var(--radius);
+      color: var(--ink-700);
+      transition: all var(--t-fast);
+    }
+    .pub-mobile-close:hover {
+      background: var(--danger-light);
+      color: var(--danger);
+    }
+    .pub-mobile-close svg { width: 20px; height: 20px; }
 
     .pub-mobile-section-label {
       padding: var(--s-4) var(--s-3) var(--s-2);
@@ -228,28 +244,15 @@
       font-weight: 700;
       color: var(--ink-400);
       text-transform: uppercase;
-      letter-spacing: 0.1em;
+      letter-spacing: 0.10em;
     }
-    .pub-mobile-close {
-      width: 36px;
-      height: 36px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: var(--surface-muted);
-      border: none;
-      border-radius: var(--radius);
-      cursor: pointer;
-      color: var(--ink-700);
-    }
-    .pub-mobile-close svg { width: 20px; height: 20px; }
 
     .pub-mobile-link {
       display: flex;
       align-items: center;
       gap: 12px;
       padding: 12px 14px;
-      font-size: var(--text-sm);
+      font-size: 15px;
       font-weight: 600;
       color: var(--ink-800);
       text-decoration: none;
@@ -277,10 +280,7 @@
       flex-shrink: 0;
       transition: all var(--t-fast);
     }
-    .pub-mobile-link-icon svg {
-      width: 16px;
-      height: 16px;
-    }
+    .pub-mobile-link-icon svg { width: 16px; height: 16px; }
     .pub-mobile-link:hover .pub-mobile-link-icon {
       background: var(--primary);
       color: #FFFFFF;
@@ -289,6 +289,7 @@
       background: var(--primary);
       color: #FFFFFF;
     }
+
     .pub-mobile-actions {
       margin-top: var(--s-6);
       padding-top: var(--s-5);
@@ -340,38 +341,40 @@
       margin-bottom: var(--s-4);
     }
     .pub-footer-brand-mark {
-      width: 44px;
-      height: 44px;
-      min-width: 44px;
-      min-height: 44px;
+      width: 48px;
+      height: 48px;
+      min-width: 48px;
+      min-height: 48px;
       border-radius: var(--radius);
-      background: #FFFFFF;
-      padding: 4px;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
       display: flex;
       align-items: center;
       justify-content: center;
       overflow: hidden;
+      color: #FFFFFF;
+      font-family: var(--font-heading);
+      font-weight: 800;
+      font-size: 18px;
+      letter-spacing: -0.03em;
       flex-shrink: 0;
-    }
-    .pub-footer-brand-mark img {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-      display: block;
     }
     .pub-footer-brand-name {
       font-family: var(--font-heading);
       font-weight: 800;
-      font-size: var(--text-md);
+      font-size: 18px;
       color: #FFFFFF;
       line-height: 1.2;
+      letter-spacing: -0.02em;
+    }
+    .pub-footer-brand-name .brand-gold {
+      color: #D4A017;
     }
     .pub-footer-brand-name small {
       display: block;
-      font-size: 11px;
-      font-weight: 500;
+      font-size: 10px;
+      font-weight: 600;
       color: #64748B;
-      letter-spacing: 0.06em;
+      letter-spacing: 0.10em;
       text-transform: uppercase;
       margin-top: 2px;
     }
@@ -455,27 +458,19 @@
     /* ============ RESPONSIVE ============ */
     @media (max-width: 900px) {
       .pub-menu,
-      .pub-cta {
-        display: none;
-      }
-      .pub-hamburger {
-        display: flex;
-      }
-      .pub-footer-grid {
-        grid-template-columns: 1fr 1fr;
-      }
+      .pub-cta .btn { display: none; }
+      .pub-hamburger { display: flex; }
+      .pub-footer-grid { grid-template-columns: 1fr 1fr; }
+      .pub-logo-text { font-size: 17px; }
+      .pub-logo-mark { width: 44px; height: 44px; min-width: 44px; min-height: 44px; }
     }
     @media (max-width: 560px) {
       .pub-footer-grid {
         grid-template-columns: 1fr;
         gap: var(--s-6);
       }
-      .pub-footer-inner {
-        padding: 0 var(--s-4);
-      }
-      .pub-nav-inner {
-        padding: var(--s-3) var(--s-4);
-      }
+      .pub-footer-inner { padding: 0 var(--s-4); }
+      .pub-nav-inner { padding: var(--s-3) var(--s-4); }
       .pub-footer-bottom {
         flex-direction: column;
         text-align: center;
@@ -493,16 +488,18 @@
 <nav class="pub-nav">
   <div class="pub-nav-inner">
 
+    <!-- LOGO -->
     <a href="{% url 'landing' %}" class="pub-logo">
-      <div class="pub-logo-mark">
-        <img src="{% static 'images/graduation-cap-books.png' %}" alt="School MS">
-      </div>
-      <div class="pub-logo-text">
-        School MS
-        <small>Modern Management</small>
+      <div class="pub-logo-mark">RC</div>
+      <div>
+        <div class="pub-logo-text">
+          Racod<span class="brand-gold">Core</span>
+          <small>Smart School Management</small>
+        </div>
       </div>
     </a>
 
+    <!-- DESKTOP MENU -->
     <div class="pub-menu">
       <a href="{% url 'landing' %}#features" class="pub-menu-link {% if request.resolver_match.url_name == 'landing' %}active{% endif %}">Features</a>
       <a href="{% url 'about' %}" class="pub-menu-link {% if request.resolver_match.url_name == 'about' %}active{% endif %}">About</a>
@@ -510,6 +507,7 @@
       <a href="{% url 'contact' %}" class="pub-menu-link {% if request.resolver_match.url_name == 'contact' %}active{% endif %}">Contact</a>
     </div>
 
+    <!-- CTA -->
     <div class="pub-cta">
       <a href="{% url 'account_login' %}" class="btn btn-secondary">Sign In</a>
       <a href="{% url 'school_signup' %}" class="btn btn-primary">Get Started</a>
@@ -531,12 +529,10 @@
 <div class="pub-mobile-menu" id="pub-mobile-menu">
   <div class="pub-mobile-menu-header">
     <div class="pub-mobile-brand">
-      <div class="pub-mobile-brand-mark">
-        <img src="{% static 'images/graduation-cap-books.png' %}" alt="School MS">
-      </div>
+      <div class="pub-mobile-brand-mark">RC</div>
       <div class="pub-mobile-brand-text">
-        School MS
-        <small>Modern Management</small>
+        Racod<span class="brand-gold">Core</span>
+        <small>Smart School Mgmt</small>
       </div>
     </div>
     <button type="button" class="pub-mobile-close" id="pub-mobile-close" aria-label="Close menu">
@@ -561,13 +557,6 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
     </span>
     <span>Features</span>
-  </a>
-
-  <a href="{% url 'landing' %}#pricing" class="pub-mobile-link">
-    <span class="pub-mobile-link-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
-    </span>
-    <span>Pricing</span>
   </a>
 
   <a href="{% url 'about' %}" class="pub-mobile-link {% if request.resolver_match.url_name == 'about' %}active{% endif %}">
@@ -637,12 +626,10 @@
 
       <div>
         <div class="pub-footer-brand">
-          <div class="pub-footer-brand-mark">
-            <img src="{% static 'images/graduation-cap-books.png' %}" alt="School MS">
-          </div>
+          <div class="pub-footer-brand-mark">RC</div>
           <div class="pub-footer-brand-name">
-            School MS
-            <small>Modern Management</small>
+            Racod<span class="brand-gold">Core</span>
+            <small>Smart School Management</small>
           </div>
         </div>
         <p class="pub-footer-desc">
@@ -668,8 +655,8 @@
         <div class="pub-footer-col-title">Product</div>
         <div class="pub-footer-links">
           <a href="{% url 'landing' %}#features" class="pub-footer-link">Features</a>
-          <a href="{% url 'landing' %}#pricing" class="pub-footer-link">Pricing</a>
           <a href="{% url 'school_signup' %}" class="pub-footer-link">Get Started</a>
+          <a href="{% url 'account_login' %}" class="pub-footer-link">Sign In</a>
         </div>
       </div>
 
@@ -693,7 +680,7 @@
     </div>
 
     <div class="pub-footer-bottom">
-      <div>© {% now "Y" %} <strong>School MS</strong> · All Rights Reserved</div>
+      <div>© {% now "Y" %} <strong>RacodCore</strong> · All Rights Reserved</div>
       <div>Built for Kenya · LoyTech Developer Limited</div>
     </div>
 
