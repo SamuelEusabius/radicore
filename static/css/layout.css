@@ -14,6 +14,7 @@
   min-width: var(--sidebar-width);
   height: 100vh;
   position: sticky;
+  top: var(--topbar-height);
   top: 0;
   background: linear-gradient(180deg, var(--sidebar-bg-start) 0%, var(--sidebar-bg-end) 100%);
   color: var(--sidebar-text);
@@ -441,4 +442,783 @@
   .card { padding: var(--s-4); }
   .toast-container { left: var(--s-4); right: var(--s-4); max-width: none; }
   .toast { min-width: 0; }
+}
+
+
+/* ============================================================
+   TOPBAR — KNP-inspired layout (school brand + search + user)
+   ============================================================ */
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-5);
+  padding: var(--s-3) var(--s-6);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  min-height: 72px;
+}
+
+/* ============ LEFT: School brand ============ */
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+  flex-shrink: 0;
+}
+
+.topbar-toggle {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  color: var(--ink-700);
+  transition: all var(--t-fast);
+  flex-shrink: 0;
+}
+.topbar-toggle:hover {
+  background: var(--surface-muted);
+  color: var(--primary);
+}
+
+.topbar-school-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  text-decoration: none;
+  color: var(--ink-900);
+  padding-left: var(--s-3);
+  border-left: 1px solid var(--border);
+}
+.topbar-school-info {
+  line-height: 1.15;
+}
+.topbar-school-name {
+  font-family: var(--font-heading);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink-900);
+  letter-spacing: -0.015em;
+  white-space: nowrap;
+}
+.topbar-school-role {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--primary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-top: 2px;
+  white-space: nowrap;
+}
+
+/* ============ CENTER: Search ============ */
+.topbar-center {
+  flex: 1;
+  max-width: 520px;
+  margin: 0 auto;
+}
+.topbar-search {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  background: var(--surface-muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  transition: all var(--t-fast);
+}
+.topbar-search:focus-within {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(10, 138, 95, 0.12);
+}
+.topbar-search-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 var(--s-3);
+  color: var(--ink-500);
+}
+.topbar-search-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  padding: 10px 0;
+  font-size: 14px;
+  color: var(--ink-900);
+}
+.topbar-search-input::placeholder {
+  color: var(--ink-400);
+}
+.topbar-search-btn {
+  background: var(--primary);
+  color: #FFFFFF;
+  border: none;
+  padding: 0 var(--s-5);
+  height: 42px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--t-fast);
+  white-space: nowrap;
+}
+.topbar-search-btn:hover {
+  background: var(--primary-hover);
+}
+
+/* ============ RIGHT: Notifications + User ============ */
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  flex-shrink: 0;
+}
+
+.topbar-icon-btn {
+  position: relative;
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border-radius: var(--radius);
+  color: var(--ink-600);
+  text-decoration: none;
+  transition: all var(--t-fast);
+}
+.topbar-icon-btn:hover {
+  background: var(--surface-muted);
+  color: var(--primary);
+}
+.topbar-badge {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  background: var(--danger);
+  color: #FFFFFF;
+  font-size: 10px;
+  font-weight: 700;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--surface);
+}
+
+.topbar-user {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-2) var(--s-3);
+  border-radius: var(--radius);
+  text-decoration: none;
+  color: var(--ink-900);
+  transition: background var(--t-fast);
+  margin-left: var(--s-2);
+  border-left: 1px solid var(--border);
+  padding-left: var(--s-4);
+}
+.topbar-user:hover {
+  background: var(--surface-muted);
+}
+.topbar-user-avatar {
+  width: 38px;
+  height: 38px;
+  min-width: 38px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  color: #FFFFFF;
+  font-family: var(--font-heading);
+  font-weight: 800;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.topbar-user-info {
+  line-height: 1.15;
+  max-width: 180px;
+}
+.topbar-user-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-900);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.topbar-user-email {
+  font-size: 11px;
+  color: var(--ink-500);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 1px;
+}
+
+/* ============ RESPONSIVE ============ */
+@media (max-width: 1024px) {
+  .topbar-center { max-width: 380px; }
+  .topbar-user-info { display: none; }
+  .topbar-user { padding-left: var(--s-3); }
+}
+@media (max-width: 720px) {
+  .topbar {
+    padding: var(--s-3) var(--s-4);
+    gap: var(--s-3);
+    min-height: 64px;
+  }
+  .topbar-center { display: none; }
+  .topbar-school-name { font-size: 13px; }
+  .topbar-school-role { font-size: 10px; }
+  .topbar-search-btn { padding: 0 var(--s-4); }
+}
+
+/* ============================================================
+   LAYOUT RESTRUCTURE — Topbar full width, sidebar below
+   ============================================================ */
+
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: var(--bg);
+}
+
+/* The new wrapper holding sidebar + main */
+.app-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+/* Topbar — full width, above everything */
+.topbar {
+  width: 100%;
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+/* Sidebar — now inside .app-body */
+.sidebar {
+  flex-shrink: 0;
+  /* Keep your existing sidebar width */
+}
+
+/* Main area — fills remaining space */
+.main-area {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+}
+
+
+/* ============================================================
+   TOPBAR + SIDEBAR FIXES — topbar on top, sidebar below
+   ============================================================ */
+
+/* 1. App shell — column layout */
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* 2. Body wrapper — sidebar + main side by side */
+.app-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+/* 3. Topbar — full width, tallest, on top */
+.topbar {
+  width: 100%;
+  min-height: 82px;
+  height: 82px;
+  padding: var(--s-3) var(--s-6);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-5);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 60 !important;
+  box-sizing: border-box;
+}
+
+/* 4. Sidebar — sticky below topbar, lower z-index */
+.sidebar {
+  position: sticky;
+  top: 78px;
+  height: calc(100vh - 78px);
+  overflow-y: auto;
+  z-index: 40 !important;
+  flex-shrink: 0;
+}
+
+/* 5. Main area */
+.main-area {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+}
+
+/* 6. Search adjustments for taller topbar */
+.topbar-search {
+  height: 46px;
+}
+.topbar-search-btn {
+  height: 46px;
+  padding: 0 var(--s-5);
+}
+.topbar-search-input {
+  padding: 12px 0;
+  font-size: 14px;
+}
+
+/* 7. Mobile — sidebar stays as drawer, not sticky */
+@media (max-width: 900px) {
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    z-index: 100 !important;
+    transform: translateX(-100%);
+    transition: transform var(--t-base);
+  }
+  .sidebar.open {
+    transform: translateX(0);
+  }
+  .topbar {
+    height: 64px;
+    min-height: 64px;
+  }
+}
+
+
+/* ============================================================
+   SIDEBAR HEADER + COLLAPSE
+   ============================================================ */
+
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+  padding: var(--s-3) var(--s-4);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  margin-bottom: var(--s-2);
+  flex-shrink: 0;
+}
+
+.sidebar-header-title {
+  font-family: var(--font-heading);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.10em;
+  color: var(--sidebar-section, #64748b);
+}
+
+.sidebar-collapse-btn {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: var(--radius);
+  color: var(--sidebar-text, #cbd5e1);
+  cursor: pointer;
+  transition: all var(--t-fast);
+  flex-shrink: 0;
+}
+
+.sidebar-collapse-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #FFFFFF;
+}
+
+.sidebar-collapse-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* ============================================================
+   COLLAPSED STATE — icons only, narrow sidebar
+   ============================================================ */
+
+.sidebar.collapsed {
+  width: 72px;
+  min-width: 72px;
+}
+
+.sidebar.collapsed .sidebar-header-title,
+.sidebar.collapsed .sidebar-link-text,
+.sidebar.collapsed .sidebar-section-label,
+.sidebar.collapsed .sidebar-user-info {
+  display: none;
+}
+
+.sidebar.collapsed .sidebar-link {
+  justify-content: center;
+  padding: var(--s-3);
+}
+
+.sidebar.collapsed .sidebar-header {
+  justify-content: center;
+  padding: var(--s-3) 0;
+}
+
+.sidebar.collapsed .sidebar-user {
+  justify-content: center;
+  padding: var(--s-3) 0;
+}
+
+/* Smooth transition */
+.sidebar {
+  transition: width 220ms cubic-bezier(0.4, 0, 0.2, 1), 
+              min-width 220ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Main area adjusts when sidebar collapses */
+.main-area {
+  transition: margin-left 220ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ============================================================
+   MOBILE — sidebar hides fully
+   ============================================================ */
+
+@media (max-width: 900px) {
+  .sidebar.collapsed {
+    width: 0;
+    min-width: 0;
+    overflow: hidden;
+  }
+  .sidebar-header {
+    display: none;  /* hamburger is in topbar on mobile */
+  }
+}
+/* ============================================================
+   HIDE TOPBAR HAMBURGER ON DESKTOP
+   ============================================================ */
+
+/* Desktop: no topbar hamburger (sidebar has its own) */
+@media (min-width: 901px) {
+  .topbar-toggle {
+    display: none !important;
+  }
+  
+  /* Optional: give the sidebar brand + topbar-left more spacing without the hamburger */
+  .topbar-left {
+    margin-left: 0;
+  }
+}
+
+/* Tablet + mobile (≤900px): show topbar hamburger */
+@media (max-width: 900px) {
+  .topbar-toggle {
+    display: flex !important;
+  }
+}
+
+/* ============================================================
+   MOBILE SIDEBAR — slide in/out (mobile-open class)
+   ============================================================ */
+
+@media (max-width: 768px) {
+  /* Sidebar is hidden by default on mobile */
+  .sidebar {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    bottom: 0 !important;
+    width: 280px !important;
+    max-width: 85vw !important;
+    height: 100vh !important;
+    transform: translateX(-100%) !important;
+    transition: transform 260ms cubic-bezier(0.4, 0, 0.2, 1) !important;
+    z-index: 200 !important;
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.2);
+    overflow-y: auto;
+  }
+
+  /* Slide in when .mobile-open is added */
+  .sidebar.mobile-open {
+    transform: translateX(0) !important;
+  }
+
+  /* Backdrop */
+  .mobile-backdrop {
+    display: none !important;
+    position: fixed !important;
+    inset: 0 !important;
+    background: rgba(15, 23, 42, 0.5) !important;
+    z-index: 150 !important;
+    opacity: 0;
+    transition: opacity 220ms ease;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  .mobile-backdrop.open {
+    display: block !important;
+    opacity: 1 !important;
+  }
+
+  /* Make sure main-area doesn't shift on mobile */
+  .main-area {
+    margin-left: 0 !important;
+  }
+}
+
+/* Desktop: hide backdrop */
+@media (min-width: 769px) {
+  .mobile-backdrop {
+    display: none !important;
+  }
+}
+/* ============================================================
+   MOBILE SIDEBAR — force full width, no collapse
+   ============================================================ */
+
+@media (max-width: 768px) {
+  .sidebar {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    bottom: 0 !important;
+    width: 280px !important;
+    max-width: 85vw !important;
+    min-width: 280px !important;
+    height: 100vh !important;
+    transform: translateX(-100%) !important;
+    transition: transform 260ms cubic-bezier(0.4, 0, 0.2, 1) !important;
+    z-index: 200 !important;
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.25);
+    overflow-y: auto;
+    background: linear-gradient(to bottom, var(--sidebar-bg-start), var(--sidebar-bg-end));
+  }
+
+  .sidebar.mobile-open {
+    transform: translateX(0) !important;
+  }
+
+  /* Force-expand even if .collapsed was previously applied */
+  .sidebar.mobile-open.collapsed {
+    width: 280px !important;
+    min-width: 280px !important;
+  }
+
+  .sidebar.mobile-open.collapsed .sidebar-link-text,
+  .sidebar.mobile-open.collapsed .sidebar-section-label,
+  .sidebar.mobile-open.collapsed .sidebar-header-title,
+  .sidebar.mobile-open.collapsed .sidebar-user-info {
+    display: initial !important;
+  }
+
+  .sidebar.mobile-open.collapsed .sidebar-link {
+    justify-content: flex-start !important;
+    padding: var(--s-3) var(--s-4) !important;
+  }
+
+  /* Backdrop — NO blur, just dark */
+  .mobile-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.5);
+    z-index: 150;
+    opacity: 0;
+    transition: opacity 220ms ease;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  .mobile-backdrop.open {
+    display: block;
+    opacity: 1;
+  }
+
+  .main-area {
+    margin-left: 0 !important;
+  }
+}
+
+/* Desktop: no backdrop ever */
+@media (min-width: 769px) {
+  .mobile-backdrop {
+    display: none !important;
+  }
+}
+/* ============================================================
+   MOBILE SIDEBAR — below topbar, not covering it
+   ============================================================ */
+
+@media (max-width: 768px) {
+  .topbar {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 300 !important;   /* above sidebar */
+  }
+
+  .sidebar {
+    position: fixed !important;
+    top: 64px !important;       /* topbar height on mobile */
+    left: 0 !important;
+    bottom: 0 !important;
+    width: 280px !important;
+    max-width: 85vw !important;
+    min-width: 280px !important;
+    height: calc(100vh - 64px) !important;  /* subtract topbar */
+    transform: translateX(-100%) !important;
+    transition: transform 260ms cubic-bezier(0.4, 0, 0.2, 1) !important;
+    z-index: 200 !important;
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.25);
+    overflow-y: auto;
+    background: linear-gradient(to bottom, var(--sidebar-bg-start), var(--sidebar-bg-end));
+  }
+
+  .sidebar.mobile-open {
+    transform: translateX(0) !important;
+  }
+
+  /* Ensure full text when open, even if previously collapsed */
+  .sidebar.mobile-open.collapsed {
+    width: 280px !important;
+    min-width: 280px !important;
+  }
+  .sidebar.mobile-open.collapsed .sidebar-link-text,
+  .sidebar.mobile-open.collapsed .sidebar-section-label,
+  .sidebar.mobile-open.collapsed .sidebar-user-info {
+    display: initial !important;
+  }
+  .sidebar.mobile-open.collapsed .sidebar-link {
+    justify-content: flex-start !important;
+    padding: var(--s-3) var(--s-4) !important;
+  }
+
+  /* Backdrop below topbar */
+  .mobile-backdrop {
+    display: none;
+    position: fixed;
+    top: 64px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(15, 23, 42, 0.5);
+    z-index: 150;
+    opacity: 0;
+    transition: opacity 220ms ease;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  .mobile-backdrop.open {
+    display: block;
+    opacity: 1;
+  }
+}
+/* ============================================================
+   TABLET + MOBILE SIDEBAR — drawer mode up to 1024px
+   ============================================================ */
+
+@media (max-width: 1024px) {
+  .topbar {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 300 !important;
+  }
+
+  /* Tablet topbar height is 72px (between mobile 64 and desktop 78) */
+  .sidebar {
+    position: fixed !important;
+    top: 72px !important;
+    left: 0 !important;
+    bottom: 0 !important;
+    width: 280px !important;
+    max-width: 85vw !important;
+    min-width: 280px !important;
+    height: calc(100vh - 72px) !important;
+    transform: translateX(-100%) !important;
+    transition: transform 260ms cubic-bezier(0.4, 0, 0.2, 1) !important;
+    z-index: 200 !important;
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.25);
+    overflow-y: auto;
+    background: linear-gradient(to bottom, var(--sidebar-bg-start), var(--sidebar-bg-end));
+  }
+
+  .sidebar.mobile-open {
+    transform: translateX(0) !important;
+  }
+
+  .sidebar.mobile-open.collapsed {
+    width: 280px !important;
+    min-width: 280px !important;
+  }
+  .sidebar.mobile-open.collapsed .sidebar-link-text,
+  .sidebar.mobile-open.collapsed .sidebar-section-label,
+  .sidebar.mobile-open.collapsed .sidebar-user-info {
+    display: initial !important;
+  }
+  .sidebar.mobile-open.collapsed .sidebar-link {
+    justify-content: flex-start !important;
+    padding: var(--s-3) var(--s-4) !important;
+  }
+
+  .mobile-backdrop {
+    display: none;
+    position: fixed;
+    top: 72px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(15, 23, 42, 0.5);
+    z-index: 150;
+    opacity: 0;
+    transition: opacity 220ms ease;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  .mobile-backdrop.open {
+    display: block;
+    opacity: 1;
+  }
+}
+
+/* Small phones: shorter topbar */
+@media (max-width: 640px) {
+  .sidebar {
+    top: 64px !important;
+    height: calc(100vh - 64px) !important;
+  }
+  .mobile-backdrop {
+    top: 64px;
+  }
 }

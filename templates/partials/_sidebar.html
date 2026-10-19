@@ -1,38 +1,17 @@
 {% load static %}
 <aside class="sidebar" id="sidebar">
 
-  <!-- ============ BRAND ============ -->
-  <div class="sidebar-brand">
-    <div class="sidebar-logo">
-  <img src="{% static 'images/graduation-cap-books.png' %}" alt="School MS">
-</div>
-    <div class="sidebar-brand-text">
-      <p class="sidebar-brand-name">{{ current_school.name|default:"School MS"|truncatechars:18 }}</p>
-          <p class="sidebar-brand-role">
-            {% if user.role == 'super_admin' %}Super Admin
-      {% elif user.role == 'principal' %}Principal
-      {% elif user.role == 'deputy_admin' %}Deputy Principal
-      {% elif user.role == 'deputy_academics' %}Deputy Principal
-      {% elif user.role == 'director_of_studies' %}Director of Studies
-      {% elif user.role == 'class_teacher' %}Class Teacher
-      {% elif user.role == 'teacher' %}Teacher
-      {% elif user.role == 'accountant' %}Accountant
-      {% elif user.role == 'secretary' %}Secretary
-      {% elif user.role == 'store_keeper' %}Store Keeper
-      {% elif user.role == 'boarding_master' %}Boarding Master
-      {% elif user.role == 'chief_chef' %}Chief Chef
-      {% elif user.role == 'security_officer' %}Security Officer
-      {% elif user.role == 'driver' %}Driver
-      {% elif user.role == 'lab_technician' %}Lab Technician
-      {% elif user.role == 'librarian' %}Librarian
-      {% elif user.role == 'nurse' %}Nurse
-      {% elif user.role == 'student' %}Student
-      {% elif user.role == 'parent' %}Parent
-      {% else %}{{ user.role|default:"User" }}{% endif %}
-    </p>
-    </div>
+  <!-- Sidebar header with collapse button -->
+  <div class="sidebar-header">
+    <button type="button" class="sidebar-collapse-btn" id="sidebarCollapseBtn" aria-label="Collapse sidebar">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="3" y1="6" x2="21" y2="6"></line>
+        <line x1="3" y1="12" x2="21" y2="12"></line>
+        <line x1="3" y1="18" x2="21" y2="18"></line>
+      </svg>
+    </button>
+    <span class="sidebar-header-title">Menu</span>
   </div>
-
   <!-- ============ NAV ============ -->
   <nav class="sidebar-nav">
 
@@ -174,7 +153,10 @@
         {% include 'partials/icons.html' with name="users" size=18 %}
         <span class="sidebar-link-text">Department Staff</span>
       </a>
-
+      <a href="{% url 'global_search' %}" class="sidebar-link">
+  {% include 'partials/icons.html' with name="search" size=18 %}
+  <span class="sidebar-link-text">Search</span>
+   </a>
       <div class="sidebar-section-label">Tools</div>
       <a href="{% url 'manage_users' %}" class="sidebar-link">
         {% include 'partials/icons.html' with name="user-plus" size=18 %}

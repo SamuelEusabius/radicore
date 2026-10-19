@@ -1,0 +1,56 @@
+{% comment %}
+Reusable school logo partial.
+Falls back: school.logo → school.initials → default icon.
+
+Usage:
+    {% include 'partials/_school_logo.html' with size=40 %}
+{% endcomment %}
+
+{% if school.logo %}
+  <img src="{{ school.logo.url }}"
+       alt="{{ school.name }}"
+       style="
+         width: {{ size|default:40 }}px;
+         height: {{ size|default:40 }}px;
+         object-fit: contain;
+         border-radius: 8px;
+         background: #FFFFFF;
+         padding: 2px;
+         flex-shrink: 0;
+       ">
+{% elif school.initials %}
+  <div style="
+    width: {{ size|default:40 }}px;
+    height: {{ size|default:40 }}px;
+    min-width: {{ size|default:40 }}px;
+    min-height: {{ size|default:40 }}px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    color: #FFFFFF;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-heading);
+    font-weight: 800;
+    font-size: {{ size|default:40|add:'-14' }}px;
+    letter-spacing: -0.02em;
+    flex-shrink: 0;
+  ">{{ school.initials }}</div>
+{% else %}
+  <div style="
+    width: {{ size|default:40 }}px;
+    height: {{ size|default:40 }}px;
+    border-radius: 8px;
+    background: var(--surface-muted);
+    color: var(--ink-400);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  ">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M22 10v6M2 10l10-5 10 5-10 5z"></path>
+      <path d="M6 12v5c3 3 9 3 12 0v-5"></path>
+    </svg>
+  </div>
+{% endif %}

@@ -1,17 +1,58 @@
 <header class="topbar">
+
+  <!-- ============ LEFT: School identity ============ -->
   <div class="topbar-left">
 
     <button type="button" class="topbar-toggle" id="sidebarToggle" aria-label="Toggle sidebar">
       {% include 'partials/icons.html' with name="menu" size=20 %}
     </button>
 
-    <div class="topbar-page">
-      <h2 class="topbar-title">{% block header_title %}Dashboard{% endblock %}</h2>
-      <p class="topbar-sub">{% block header_sub %}{{ current_school.name|default:"" }}{% endblock %}</p>
-    </div>
+    <a href="{% url 'dashboard_home' %}" class="topbar-school-brand">
+      {% include 'partials/_school_logo.html' with size=40 school=current_school %}
+      <div class="topbar-school-info">
+        <div class="topbar-school-name">{{ current_school.name|default:"School" }}</div>
+        <div class="topbar-school-role">
+          {% if user.role == 'store_keeper' %}Store Keeper
+          {% elif user.role == 'security_officer' %}Chief Security Officer
+          {% elif user.role == 'secretary' %}Secretary
+          {% elif user.role == 'principal' %}Principal
+          {% elif user.role == 'deputy_admin' %}Deputy Principal — Admin
+          {% elif user.role == 'deputy_academics' %}Deputy Principal — Academics
+          {% elif user.role == 'director_of_studies' %}Director of Studies
+          {% elif user.role == 'accountant' %}Accountant
+          {% elif user.role == 'teacher' or user.role == 'class_teacher' %}Teacher
+          {% elif user.role == 'parent' %}Parent
+          {% elif user.role == 'student' %}Student
+          {% elif user.role == 'librarian' %}Librarian
+          {% elif user.role == 'lab_technician' %}Lab Technician
+          {% elif user.role == 'nurse' %}Nurse
+          {% elif user.role == 'driver' %}Driver
+          {% elif user.role == 'chief_chef' %}Chief Chef
+          {% elif user.role == 'boarding_master' %}Boarding Master
+          {% elif user.role == 'super_admin' %}Super Admin
+          {% else %}{{ user.role|default:"" }}{% endif %}
+        </div>
+      </div>
+    </a>
 
   </div>
 
+  <!-- ============ CENTER: Search ============ -->
+  <div class="topbar-center">
+    <form method="get" action="{% url 'global_search' %}" class="topbar-search">
+      <span class="topbar-search-icon">
+        {% include 'partials/icons.html' with name="search" size=18 %}
+      </span>
+      <input type="search"
+             name="q"
+             class="topbar-search-input"
+             placeholder="Search within dashboard..."
+             autocomplete="off">
+      <button type="submit" class="topbar-search-btn">Search</button>
+    </form>
+  </div>
+
+  <!-- ============ RIGHT: Notifications + User ============ -->
   <div class="topbar-right">
 
     <a href="{% url 'notifications_list' %}" class="topbar-icon-btn" aria-label="Notifications">
@@ -21,10 +62,14 @@
       {% endif %}
     </a>
 
-    <div class="topbar-user">
+    <a href="{% url 'super_admin_profile' %}" class="topbar-user" title="View Profile">
       <div class="topbar-user-avatar">{{ user.email|first|upper }}</div>
-      <span class="topbar-user-email">{{ user.email }}</span>
-    </div>
+      <div class="topbar-user-info">
+        <div class="topbar-user-name">{{ user.get_full_name|default:user.email|truncatechars:22 }}</div>
+        <div class="topbar-user-email">{{ user.email|truncatechars:24 }}</div>
+      </div>
+    </a>
 
   </div>
+
 </header>

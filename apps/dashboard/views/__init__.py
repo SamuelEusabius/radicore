@@ -335,3 +335,4 @@ from .dpa_admin import (
     principal_leave_approve,
     principal_leave_reject,
 )
+from .search import global_search

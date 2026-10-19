@@ -5,6 +5,8 @@ from . import views
 from apps.finance import store_views
 
 urlpatterns = [ 
+                   # Global search
+    path('search/', views.global_search, name='global_search'),
     path('', include('apps.security.urls')),
     path('', include('apps.secretary.urls')),        
     path('subscribe/', RedirectView.as_view(

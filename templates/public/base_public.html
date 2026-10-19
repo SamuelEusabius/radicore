@@ -128,7 +128,7 @@
       gap: var(--s-3);
     }
 
-    /* Hamburger */
+    /* ============ HAMBURGER BUTTON ============ */
     .pub-hamburger {
       display: none;
       width: 44px;
@@ -148,26 +148,26 @@
     }
     .pub-hamburger svg { width: 24px; height: 24px; }
 
-    /* Mobile drawer */
+    /* ============ MOBILE DRAWER ============ */
     .pub-mobile-menu {
-      display: none;
       position: fixed;
       top: 0;
       right: 0;
       bottom: 0;
       width: 340px;
       max-width: 90vw;
-      background: var(--surface);
-      box-shadow: -8px 0 32px rgba(15, 23, 42, 0.15);
-      padding: var(--s-6);
-      z-index: 300;
-      transform: translateX(100%);
-      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      background: #FFFFFF;
+      box-shadow: -8px 0 32px rgba(15, 23, 42, 0.2);
+      padding: 24px;
+      z-index: 9999;
+      transform: translateX(105%);
+      transition: transform 0.32s cubic-bezier(0.4, 0, 0.2, 1);
       overflow-y: auto;
     }
     .pub-mobile-menu.open {
       transform: translateX(0);
     }
+
     .pub-mobile-menu-header {
       display: flex;
       align-items: center;
@@ -281,10 +281,7 @@
       transition: all var(--t-fast);
     }
     .pub-mobile-link-icon svg { width: 16px; height: 16px; }
-    .pub-mobile-link:hover .pub-mobile-link-icon {
-      background: var(--primary);
-      color: #FFFFFF;
-    }
+    .pub-mobile-link:hover .pub-mobile-link-icon,
     .pub-mobile-link.active .pub-mobile-link-icon {
       background: var(--primary);
       color: #FFFFFF;
@@ -299,16 +296,15 @@
       gap: var(--s-3);
     }
 
+    /* ============ BACKDROP ============ */
     .pub-backdrop {
       display: none;
       position: fixed;
       inset: 0;
       background: rgba(15, 23, 42, 0.5);
-      backdrop-filter: blur(4px);
-      -webkit-backdrop-filter: blur(4px);
-      z-index: 250;
+      z-index: 9998;
       opacity: 0;
-      transition: opacity var(--t-base);
+      transition: opacity 0.22s ease;
     }
     .pub-backdrop.open {
       display: block;
@@ -455,25 +451,51 @@
       min-height: calc(100vh - 400px);
     }
 
-    /* ============ RESPONSIVE ============ */
-    @media (max-width: 900px) {
+    /* ============ RESPONSIVE — Hamburger shows on tablet AND mobile (≤1024px) ============ */
+    @media (max-width: 1024px) {
       .pub-menu,
-      .pub-cta .btn { display: none; }
-      .pub-hamburger { display: flex; }
-      .pub-footer-grid { grid-template-columns: 1fr 1fr; }
-      .pub-logo-text { font-size: 17px; }
-      .pub-logo-mark { width: 44px; height: 44px; min-width: 44px; min-height: 44px; }
+      .pub-cta .btn {
+        display: none;
+      }
+      .pub-hamburger {
+        display: flex;
+      }
+      .pub-footer-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+      .pub-logo-text {
+        font-size: 17px;
+      }
+      .pub-logo-mark {
+        width: 44px;
+        height: 44px;
+        min-width: 44px;
+        min-height: 44px;
+      }
     }
+
     @media (max-width: 560px) {
       .pub-footer-grid {
         grid-template-columns: 1fr;
         gap: var(--s-6);
       }
-      .pub-footer-inner { padding: 0 var(--s-4); }
-      .pub-nav-inner { padding: var(--s-3) var(--s-4); }
+      .pub-footer-inner {
+        padding: 0 var(--s-4);
+      }
+      .pub-nav-inner {
+        padding: var(--s-3) var(--s-4);
+      }
       .pub-footer-bottom {
         flex-direction: column;
         text-align: center;
+      }
+    }
+
+    /* Hide drawer on desktop only (>1024px) */
+    @media (min-width: 1025px) {
+      .pub-mobile-menu,
+      .pub-backdrop {
+        display: none !important;
       }
     }
   </style>
@@ -513,6 +535,7 @@
       <a href="{% url 'school_signup' %}" class="btn btn-primary">Get Started</a>
     </div>
 
+    <!-- HAMBURGER (tablet + mobile) -->
     <button type="button" class="pub-hamburger" id="pub-hamburger" aria-label="Open menu">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <line x1="3" y1="6" x2="21" y2="6"></line>
@@ -524,8 +547,11 @@
   </div>
 </nav>
 
-<!-- Mobile menu -->
+<!-- ============================================ -->
+<!-- MOBILE DRAWER + BACKDROP                     -->
+<!-- ============================================ -->
 <div class="pub-backdrop" id="pub-backdrop"></div>
+
 <div class="pub-mobile-menu" id="pub-mobile-menu">
   <div class="pub-mobile-menu-header">
     <div class="pub-mobile-brand">
@@ -606,7 +632,6 @@
       Get Started
     </a>
   </div>
-
 </div>
 
 <!-- ============================================ -->
@@ -687,37 +712,58 @@
   </div>
 </footer>
 
+<!-- ============================================ -->
+<!-- MOBILE DRAWER JAVASCRIPT                    -->
+<!-- ============================================ -->
 <script>
-  (function() {
-    const btn = document.getElementById('pub-hamburger');
-    const closeBtn = document.getElementById('pub-mobile-close');
-    const menu = document.getElementById('pub-mobile-menu');
-    const backdrop = document.getElementById('pub-backdrop');
+  document.addEventListener('DOMContentLoaded', function() {
+    var hamburger = document.getElementById('pub-hamburger');
+    var menu = document.getElementById('pub-mobile-menu');
+    var backdrop = document.getElementById('pub-backdrop');
+    var closeBtn = document.getElementById('pub-mobile-close');
 
-    if (!btn || !menu) return;
+    console.log('[MENU] Elements:', { hamburger: hamburger, menu: menu, backdrop: backdrop });
+
+    if (!hamburger || !menu) {
+      console.error('[MENU] Missing hamburger or menu — check IDs');
+      return;
+    }
 
     function openMenu() {
       menu.classList.add('open');
-      backdrop.classList.add('open');
+      if (backdrop) backdrop.classList.add('open');
       document.body.style.overflow = 'hidden';
+      console.log('[MENU] Opened');
     }
 
     function closeMenu() {
       menu.classList.remove('open');
-      backdrop.classList.remove('open');
+      if (backdrop) backdrop.classList.remove('open');
       document.body.style.overflow = '';
+      console.log('[MENU] Closed');
     }
 
-    btn.addEventListener('click', openMenu);
+    hamburger.addEventListener('click', function(e) {
+      e.preventDefault();
+      if (menu.classList.contains('open')) {
+        closeMenu();
+      } else {
+        openMenu();
+      }
+    });
+
     if (closeBtn) closeBtn.addEventListener('click', closeMenu);
     if (backdrop) backdrop.addEventListener('click', closeMenu);
 
-    menu.querySelectorAll('a').forEach(a => a.addEventListener('click', closeMenu));
+    var links = menu.querySelectorAll('a');
+    for (var i = 0; i < links.length; i++) {
+      links[i].addEventListener('click', closeMenu);
+    }
 
-    document.addEventListener('keydown', (e) => {
+    document.addEventListener('keydown', function(e) {
       if (e.key === 'Escape') closeMenu();
     });
-  })();
+  });
 </script>
 
 {% block extra_js %}{% endblock %}

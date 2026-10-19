@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Search: {{ query|default:"—" }}{% endblock %}
+{% block header_title %}Search Results{% endblock %}
+{% block header_sub %}{% if query %}"{{ query }}" &middot; {{ total }} result{{ total|pluralize }}{% else %}Type to search{% endif %}{% endblock %}
+
+{% block content %}
+
+<!-- SEARCH BAR AT TOP -->
+<div class="card mb-6">
+  <form method="get" action="{% url 'global_search' %}" class="flex gap-2" style="align-items: center;">
+    <input type="search" name="q" value="{{ query }}"
+           class="input" style="flex: 1;"
+           placeholder="Search students, staff, visitors, invoices, books..."
+           autofocus>
+    <button type="submit" class="btn btn-primary">
+      {% include 'partials/icons.html' with name="search" size=16 %}
+      Search
+    </button>
+  </form>
+</div>
+
+{% if too_short %}
+  <div class="card" style="padding: var(--s-6); text-align: center;">
+    <p class="text-sm" style="color: var(--ink-500); margin: 0;">
+      Enter at least 2 characters to search.
+    </p>
+  </div>
+{% elif not query %}
+  <div class="card" style="padding: var(--s-8); text-align: center;">
+    <h3 class="card-title mb-3" style="justify-content: center;">
+      {% include 'partials/icons.html' with name="search" size=24 %}
+      Search everything
+    </h3>
+    <p class="text-sm" style="color: var(--ink-500); margin: 0 0 var(--s-4);">
+      Search across students, staff, visitors, invoices, books, incidents, mail, and applications.
+    </p>
+    <div class="flex flex-wrap justify-center gap-2">
+      <span class="badge badge-primary">Students</span>
+      <span class="badge badge-primary">Staff</span>
+      <span class="badge badge-primary">Visitors</span>
+      <span class="badge badge-primary">Invoices</span>
+      <span class="badge badge-primary">Books</span>
+      <span class="badge badge-primary">Incidents</span>
+    </div>
+  </div>
+{% elif total == 0 %}
+  <div class="card" style="padding: var(--s-8); text-align: center;">
+    <h3 class="card-title mb-3" style="justify-content: center; color: var(--ink-500);">
+      {% include 'partials/icons.html' with name="search" size=24 %}
+      No results for "{{ query }}"
+    </h3>
+    <p class="text-sm" style="color: var(--ink-500); margin: 0;">
+      Try different keywords, or check your spelling.
+    </p>
+  </div>
+{% else %}
+  {% for group in groups %}
+  <div class="card mb-6" style="padding: 0; overflow: hidden;">
+
+    <div style="padding: var(--s-4) var(--s-5); border-bottom: 1px solid var(--border); background: var(--surface-1);">
+      <h3 class="card-title" style="margin: 0; font-size: var(--text-sm);">
+        {{ group.label }}
+        <span class="badge" style="margin-left: var(--s-2);">{{ group.items|length }}</span>
+      </h3>
+    </div>
+
+    {% for item in group.items %}
+    {% if item.url %}
+      <a href="{{ item.url }}" style="display: block; text-decoration: none; color: inherit;">
+    {% else %}
+      <div>
+    {% endif %}
+        <div style="padding: var(--s-4) var(--s-5); border-bottom: 1px solid var(--border); transition: background var(--t-fast);"
+             onmouseover="this.style.background='var(--surface-hover)'"
+             onmouseout="this.style.background=''">
+          <div class="flex items-start gap-3">
+            <div style="width: 36px; height: 36px; border-radius: 8px; background: var(--primary-light); color: var(--primary); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+              {% include 'partials/icons.html' with name=item.icon size=18 %}
+            </div>
+            <div style="flex: 1; min-width: 0;">
+              <div style="font-weight: 600; color: var(--ink-900); font-size: var(--text-sm);">
+                {{ item.title }}
+              </div>
+              <div class="text-xs mt-1" style="color: var(--ink-500);">
+                {{ item.subtitle }}
+              </div>
+            </div>
+            <div style="color: var(--ink-400);">
+              {% include 'partials/icons.html' with name="arrow-right" size=16 %}
+            </div>
+          </div>
+        </div>
+    {% if item.url %}</a>{% else %}</div>{% endif %}
+    {% endfor %}
+
+  </div>
+  {% endfor %}
+{% endif %}
+
+{% endblock %}
