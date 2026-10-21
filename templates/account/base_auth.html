@@ -4,437 +4,285 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}School MS{% endblock %}</title>
+  <title>{% block title %}RacodCore{% endblock %}</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 
   <link rel="stylesheet" href="{% static 'css/design-tokens.css' %}">
-  <link rel="stylesheet" href="{% static 'css/components.css' %}">
-  <link rel="stylesheet" href="{% static 'css/utilities.css' %}">
 
   <style>
-    /* ============ PUBLIC NAV (same as base_public.html) ============ */
-    .pub-nav {
-      position: sticky;
-      top: 0;
-      z-index: 100;
-      background: rgba(255, 255, 255, 0.92);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border-bottom: 1px solid var(--border);
-    }
-    .pub-nav-inner {
-      max-width: 1280px;
-      margin: 0 auto;
-      padding: var(--s-3) var(--s-6);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: var(--s-6);
-    }
-    .pub-logo {
-      display: flex;
-      align-items: center;
-      gap: var(--s-3);
-      text-decoration: none;
-      color: var(--ink-900);
-    }
-    .pub-logo-mark {
-      width: 40px;
-      height: 40px;
-      border-radius: var(--radius);
-      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #FFFFFF;
-      font-family: var(--font-heading);
-      font-weight: 800;
-      font-size: var(--text-sm);
-      letter-spacing: -0.02em;
-      box-shadow: 0 4px 12px rgba(10, 138, 95, 0.25);
-    }
-    .pub-logo-text {
-      font-family: var(--font-heading);
-      font-weight: 800;
-      font-size: var(--text-md);
-      color: var(--ink-900);
-      letter-spacing: -0.02em;
-    }
-    .pub-logo-text small {
-      display: block;
-      font-size: 10px;
-      font-weight: 500;
-      color: var(--ink-500);
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      margin-top: 1px;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: var(--font-sans); background: #F7F8FA; min-height: 100vh; display: flex; flex-direction: column; }
 
-    .pub-menu {
-      display: flex;
-      align-items: center;
-      gap: var(--s-6);
-      flex: 1;
-      justify-content: center;
-    }
-    .pub-menu-link {
-      font-size: var(--text-sm);
-      font-weight: 500;
-      color: var(--ink-700);
-      text-decoration: none;
-      transition: color var(--t-fast);
-      padding: var(--s-2) 0;
-      position: relative;
-    }
-    .pub-menu-link:hover { color: var(--primary); }
-    .pub-menu-link.active {
-      color: var(--primary);
-      font-weight: 600;
-    }
-    .pub-menu-link.active::after {
-      content: '';
-      position: absolute;
-      bottom: -4px;
-      left: 0;
-      right: 0;
-      height: 2px;
-      background: var(--primary);
-      border-radius: 2px;
-    }
+    /* ============ NAV ============ */
+    .auth-nav { background: #FFFFFF; border-bottom: 1px solid var(--border); padding: 16px 32px; display: flex; align-items: center; justify-content: space-between; position: relative; z-index: 100; }
+    .auth-nav-logo { display: flex; align-items: center; gap: 12px; text-decoration: none; color: var(--ink-900); }
+    .auth-nav-mark { width: 40px; height: 40px; border-radius: var(--radius); background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-family: var(--font-heading); font-weight: 800; font-size: 15px; box-shadow: 0 4px 12px rgba(10, 138, 95, 0.25); }
+    .auth-nav-text { font-family: var(--font-heading); font-weight: 800; font-size: 17px; letter-spacing: -0.02em; }
+    .auth-nav-text span { color: #D4A017; }
+    .auth-nav-text small { display: block; font-size: 10px; font-weight: 600; color: var(--ink-500); letter-spacing: 0.10em; text-transform: uppercase; margin-top: 1px; }
+    
+    /* Desktop Links */
+    .auth-nav-links { display: flex; gap: 24px; }
+    .auth-nav-links a { font-size: 14px; font-weight: 500; color: var(--ink-600); text-decoration: none; transition: color 150ms; }
+    .auth-nav-links a:hover { color: var(--primary); }
 
-    .pub-cta {
-      display: flex;
-      align-items: center;
-      gap: var(--s-2);
-    }
-
-    /* Hamburger */
-    .pub-hamburger {
+    /* Hamburger Button */
+    .auth-hamburger {
       display: none;
-      width: 40px;
-      height: 40px;
-      align-items: center;
-      justify-content: center;
-      background: transparent;
-      border: none;
-      cursor: pointer;
-      border-radius: var(--radius);
+      width: 40px; height: 40px;
+      align-items: center; justify-content: center;
+      background: transparent; border: none; cursor: pointer;
       color: var(--ink-700);
-      transition: all var(--t-fast);
     }
-    .pub-hamburger:hover { background: var(--surface-muted); color: var(--primary); }
-    .pub-hamburger svg { width: 24px; height: 24px; }
+    .auth-hamburger svg { width: 24px; height: 24px; }
 
-    /* Mobile drawer */
-    .pub-mobile-menu {
-      display: none;
+    /* Mobile Menu Drawer */
+    .auth-mobile-menu {
       position: fixed;
-      top: 0;
-      right: 0;
-      bottom: 0;
-      width: 320px;
-      max-width: 88vw;
-      background: var(--surface);
+      top: 0; right: 0; bottom: 0;
+      width: 280px; max-width: 85vw;
+      background: #FFFFFF;
       box-shadow: -8px 0 32px rgba(15, 23, 42, 0.15);
-      padding: var(--s-6);
-      z-index: 300;
-      transform: translateX(100%);
-      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      overflow-y: auto;
-    }
-    .pub-mobile-menu.open { transform: translateX(0); }
-    .pub-mobile-menu-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: var(--s-5);
-      padding-bottom: var(--s-4);
-      border-bottom: 1px solid var(--border);
-    }
-    .pub-mobile-brand { display: flex; align-items: center; gap: 10px; }
-    .pub-mobile-brand-mark {
-      width: 36px;
-      height: 36px;
-      border-radius: var(--radius);
-      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-      display: flex; align-items: center; justify-content: center;
-      color: #FFFFFF; font-family: var(--font-heading);
-      font-weight: 800; font-size: var(--text-xs);
-    }
-    .pub-mobile-brand-text {
-      font-family: var(--font-heading);
-      font-weight: 700;
-      font-size: var(--text-sm);
-      color: var(--ink-900);
-      line-height: 1.2;
-    }
-    .pub-mobile-brand-text small {
-      display: block;
-      font-size: 9px;
-      font-weight: 500;
-      color: var(--ink-500);
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      margin-top: 1px;
-    }
-    .pub-mobile-close {
-      width: 36px; height: 36px;
-      display: flex; align-items: center; justify-content: center;
-      background: var(--surface-muted); border: none;
-      border-radius: var(--radius); cursor: pointer; color: var(--ink-700);
-    }
-    .pub-mobile-close svg { width: 20px; height: 20px; }
-
-    .pub-mobile-section-label {
-      padding: var(--s-4) var(--s-3) var(--s-2);
-      font-family: var(--font-heading);
-      font-size: 10px;
-      font-weight: 700;
-      color: var(--ink-400);
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-    }
-    .pub-mobile-link {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 12px 14px;
-      font-size: var(--text-sm);
-      font-weight: 600;
-      color: var(--ink-800);
-      text-decoration: none;
-      border-radius: var(--radius);
-      transition: all var(--t-fast);
-      margin-bottom: 2px;
-    }
-    .pub-mobile-link:hover,
-    .pub-mobile-link.active {
-      background: var(--primary-soft);
-      color: var(--primary);
-    }
-    .pub-mobile-link-icon {
-      width: 32px;
-      height: 32px;
-      border-radius: var(--radius-sm);
-      background: var(--surface-muted);
-      color: var(--ink-600);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-      transition: all var(--t-fast);
-    }
-    .pub-mobile-link-icon svg { width: 16px; height: 16px; }
-    .pub-mobile-link:hover .pub-mobile-link-icon,
-    .pub-mobile-link.active .pub-mobile-link-icon {
-      background: var(--primary);
-      color: #FFFFFF;
-    }
-
-    .pub-mobile-actions {
-      margin-top: var(--s-6);
-      padding-top: var(--s-5);
-      border-top: 1px solid var(--border);
+      z-index: 9999;
+      transform: translateX(105%);
+      transition: transform 0.3s ease;
+      padding: 24px;
       display: flex;
       flex-direction: column;
-      gap: var(--s-3);
     }
+    .auth-mobile-menu.open { transform: translateX(0); }
+    .auth-mobile-header { display: flex; justify-content: flex-end; margin-bottom: 24px; }
+    .auth-mobile-close { background: var(--surface-muted); border: none; width: 36px; height: 36px; border-radius: var(--radius); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--ink-600); }
+    .auth-mobile-links { display: flex; flex-direction: column; gap: 8px; }
+    .auth-mobile-links a { padding: 12px 16px; font-size: 15px; font-weight: 600; color: var(--ink-800); text-decoration: none; border-radius: var(--radius); transition: background 150ms; }
+    .auth-mobile-links a:hover { background: var(--primary-soft); color: var(--primary); }
 
-    .pub-backdrop {
+    /* Mobile Backdrop */
+    .auth-backdrop {
       display: none;
       position: fixed;
       inset: 0;
       background: rgba(15, 23, 42, 0.5);
-      backdrop-filter: blur(4px);
-      z-index: 250;
+      z-index: 9998;
       opacity: 0;
-      transition: opacity var(--t-base);
+      transition: opacity 0.3s ease;
     }
-    .pub-backdrop.open { display: block; opacity: 1; }
+    .auth-backdrop.open { display: block; opacity: 1; }
 
-    /* ============ AUTH LAYOUT ============ */
-    /* Split-screen: nav on top, then two columns filling the rest of the viewport */
-    body.auth-page {
-      margin: 0;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      background: var(--bg);
-      font-family: var(--font-sans);
-    }
-    .auth-split {
-      flex: 1;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      min-height: calc(100vh - 72px);
-    }
+    /* ============ LAYOUT ============ */
+    .auth-main { flex: 1; display: grid; grid-template-columns: 1fr 1fr; min-height: calc(100vh - 73px); }
 
+    /* ============ LEFT PANEL ============ */
+    .auth-left { position: relative; background: #0B1220; overflow: hidden; padding: 64px 56px; display: flex; flex-direction: column; justify-content: space-between; color: #FFFFFF; }
+    .auth-left::before { content: ''; position: absolute; inset: 0; background: radial-gradient(circle at 20% 80%, rgba(10, 138, 95, 0.30) 0%, transparent 55%), radial-gradient(circle at 80% 20%, rgba(16, 185, 129, 0.15) 0%, transparent 45%), linear-gradient(135deg, #0B1220 0%, #0F2937 100%); z-index: 0; }
+    .auth-left > * { position: relative; z-index: 1; }
+
+    .auth-left-brand { display: flex; align-items: center; gap: 12px; margin-bottom: 48px; }
+    .auth-left-brand-mark { width: 44px; height: 44px; border-radius: 10px; background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-family: var(--font-heading); font-weight: 800; font-size: 16px; box-shadow: 0 6px 20px rgba(10, 138, 95, 0.4); }
+    .auth-left-brand-text { font-family: var(--font-heading); font-weight: 800; font-size: 18px; letter-spacing: -0.02em; color: #FFFFFF; }
+    .auth-left-brand-text span { color: #D4A017; }
+    .auth-left-brand-text small { display: block; font-size: 10px; font-weight: 600; color: #94A3B8; letter-spacing: 0.10em; text-transform: uppercase; margin-top: 2px; }
+
+    .auth-left-hero h1 { font-family: var(--font-heading); font-size: 42px; font-weight: 800; line-height: 1.1; letter-spacing: -0.03em; color: #FFFFFF; margin-bottom: 20px; }
+    .auth-left-hero p { font-size: 15px; line-height: 1.7; color: rgba(255, 255, 255, 0.75); max-width: 420px; }
+
+    .auth-left-features { margin-top: 40px; display: flex; flex-direction: column; gap: 16px; }
+    .auth-feature { display: flex; align-items: flex-start; gap: 12px; }
+    .auth-feature-icon { width: 24px; height: 24px; min-width: 24px; border-radius: 6px; background: rgba(16, 185, 129, 0.2); color: #10B981; display: flex; align-items: center; justify-content: center; margin-top: 1px; }
+    .auth-feature-text strong { display: block; font-family: var(--font-heading); font-weight: 700; font-size: 13px; color: #FFFFFF; margin-bottom: 1px; }
+    .auth-feature-text span { font-size: 12px; color: rgba(255, 255, 255, 0.6); }
+
+    .auth-left-footer { font-size: 11px; color: rgba(255, 255, 255, 0.4); margin-top: 48px; }
+
+    /* ============ RIGHT PANEL ============ */
+    .auth-right { display: flex; align-items: center; justify-content: center; padding: 40px 32px; background: #FFFFFF; }
+    .auth-form-wrap { width: 100%; max-width: 400px; }
+
+    .auth-form-header { text-align: center; margin-bottom: 32px; }
+    .auth-form-icon { width: 56px; height: 56px; border-radius: 50%; background: var(--primary-soft); color: var(--primary); display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; }
+    .auth-form-header h2 { font-family: var(--font-heading); font-size: 26px; font-weight: 800; letter-spacing: -0.02em; color: var(--ink-900); margin-bottom: 6px; }
+    .auth-form-header p { font-size: 14px; color: var(--ink-500); }
+
+    .auth-form-group { margin-bottom: 18px; }
+    .auth-form-label { display: block; font-size: 12px; font-weight: 600; color: var(--ink-700); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; }
+    .auth-form-input-wrap { position: relative; }
+    .auth-form-input-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--ink-400); pointer-events: none; }
+    .auth-form-input { width: 100%; padding: 12px 14px 12px 42px; font-family: var(--font-sans); font-size: 14px; color: var(--ink-900); background: var(--surface-muted); border: 1.5px solid transparent; border-radius: var(--radius); transition: all 150ms; outline: none; }
+    .auth-form-input:focus { background: #FFFFFF; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(10, 138, 95, 0.12); }
+
+    .auth-form-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; font-size: 13px; }
+    .auth-form-check { display: flex; align-items: center; gap: 6px; color: var(--ink-600); cursor: pointer; }
+    .auth-form-check input { accent-color: var(--primary); width: 15px; height: 15px; }
+    .auth-form-forgot { color: var(--primary); text-decoration: none; font-weight: 500; }
+    .auth-form-forgot:hover { text-decoration: underline; }
+
+    .auth-btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 14px; background: var(--primary); color: #FFFFFF; font-family: var(--font-heading); font-weight: 700; font-size: 14px; border: none; border-radius: var(--radius); cursor: pointer; transition: all 150ms; text-decoration: none; }
+    .auth-btn:hover { background: var(--primary-hover); transform: translateY(-1px); box-shadow: 0 6px 16px rgba(10, 138, 95, 0.3); }
+    .auth-btn.secondary { background: #FFFFFF; color: var(--ink-700); border: 1.5px solid var(--border-strong); }
+    .auth-btn.secondary:hover { background: var(--surface-muted); box-shadow: none; transform: none; }
+
+    .auth-form-footer { text-align: center; margin-top: 24px; font-size: 13px; color: var(--ink-500); }
+    .auth-form-footer a { color: var(--primary); text-decoration: none; font-weight: 500; }
+    .auth-form-footer a:hover { text-decoration: underline; }
+
+    .auth-form-links { display: flex; flex-direction: column; gap: 10px; margin-top: 24px; }
+    .auth-legal { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); font-size: 11px; color: var(--ink-400); text-align: center; }
+
+    /* ============ RESPONSIVE (MOBILE/TABLET) ============ */
     @media (max-width: 900px) {
-      .auth-split { grid-template-columns: 1fr; min-height: auto; }
+      .auth-main { 
+        grid-template-columns: 1fr; 
+        grid-template-rows: auto 1fr; 
+      }
+      .auth-left { 
+        padding: 32px 24px; 
+        min-height: auto; 
+      }
+      .auth-left-brand { margin-bottom: 24px; }
+      .auth-left-hero h1 { font-size: 28px; margin-bottom: 12px; }
+      .auth-left-hero p { font-size: 14px; margin-bottom: 0; }
+      .auth-left-features { display: none; }
+      .auth-left-footer { display: none; }
+      
+      .auth-right { 
+        padding: 32px 24px; 
+        align-items: flex-start; 
+      }
+      
+      /* Show hamburger, hide desktop links */
+      .auth-nav-links { display: none; }
+      .auth-hamburger { display: flex; }
+      .auth-nav { padding: 16px 24px; }
     }
-    /* Force all brand-mark images to fit their containers */
-.pub-logo-mark,
-.pub-mobile-brand-mark,
-.pub-footer-brand-mark,
-.login-brand-logo-mark,
-.logout-brand-logo-mark,
-.reset-brand-logo-mark {
-  overflow: hidden;
-}
-
-.pub-logo-mark img,
-.pub-mobile-brand-mark img,
-.pub-footer-brand-mark img,
-.login-brand-logo-mark img,
-.logout-brand-logo-mark img,
-.reset-brand-logo-mark img {
-  width: 100%;
-  height: 100%;
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain;
-  display: block;
-}
   </style>
-
-  {% block extra_css %}{% endblock %}
 </head>
-<body class="auth-page">
+<body>
 
-<!-- ============================================ -->
-<!-- PUBLIC NAV                                  -->
-<!-- ============================================ -->
-<nav class="pub-nav">
-  <div class="pub-nav-inner">
-
-    <a href="{% url 'landing' %}" class="pub-logo">
-      <div class="pub-logo-mark"><img src="/static/images/graduation-cap-books.png" alt="School MS"></div>
-      <div class="pub-logo-text">
-        School MS
-        <small>Modern Management</small>
+  <!-- NAV -->
+  <nav class="auth-nav">
+    <a href="{% url 'landing' %}" class="auth-nav-logo">
+      <div class="auth-nav-mark">RC</div>
+      <div class="auth-nav-text">
+        Racod<span>Core</span>
+        <small>Smart School Management</small>
       </div>
     </a>
-
-    <div class="pub-menu">
-      <a href="{% url 'landing' %}#features" class="pub-menu-link">Features</a>
-      <a href="{% url 'about' %}" class="pub-menu-link">About</a>
-      <a href="{% url 'help_page' %}" class="pub-menu-link">Help</a>
-      <a href="{% url 'contact' %}" class="pub-menu-link">Contact</a>
+    
+    <!-- Desktop Links -->
+    <div class="auth-nav-links">
+      <a href="{% url 'landing' %}#features">Features</a>
+      <a href="{% url 'about' %}">About</a>
+      <a href="{% url 'help_page' %}">Help</a>
+      <a href="{% url 'contact' %}">Contact</a>
     </div>
 
-    <div class="pub-cta">
-      <a href="{% url 'school_signup' %}" class="btn btn-primary">Get Started</a>
-    </div>
-
-    <button type="button" class="pub-hamburger" id="pub-hamburger" aria-label="Open menu">
+    <!-- Hamburger Button (Mobile/Tablet) -->
+    <button class="auth-hamburger" id="auth-hamburger" aria-label="Open menu">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <line x1="3" y1="6" x2="21" y2="6"></line>
         <line x1="3" y1="12" x2="21" y2="12"></line>
         <line x1="3" y1="18" x2="21" y2="18"></line>
       </svg>
     </button>
+  </nav>
 
+  <!-- Mobile Menu Drawer -->
+  <div class="auth-backdrop" id="auth-backdrop"></div>
+  <div class="auth-mobile-menu" id="auth-mobile-menu">
+    <div class="auth-mobile-header">
+      <button class="auth-mobile-close" id="auth-mobile-close" aria-label="Close menu">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
+    </div>
+    <div class="auth-mobile-links">
+      <a href="{% url 'landing' %}#features">Features</a>
+      <a href="{% url 'about' %}">About</a>
+      <a href="{% url 'help_page' %}">Help</a>
+      <a href="{% url 'contact' %}">Contact</a>
+    </div>
   </div>
-</nav>
 
-<!-- Mobile menu -->
-<div class="pub-backdrop" id="pub-backdrop"></div>
-<div class="pub-mobile-menu" id="pub-mobile-menu">
-  <div class="pub-mobile-menu-header">
-    <div class="pub-mobile-brand">
-      <div class="pub-mobile-brand-mark"><img src="/static/images/graduation-cap-books.png" alt="School MS"></div>
-      <div class="pub-mobile-brand-text">
-        School MS
-        <small>Modern Management</small>
+  <!-- MAIN -->
+  <main class="auth-main">
+
+    <!-- LEFT: Branding -->
+    <div class="auth-left">
+      <div>
+        <div class="auth-left-brand">
+          <div class="auth-left-brand-mark">RC</div>
+          <div class="auth-left-brand-text">
+            Racod<span>Core</span>
+            <small>{% block brand_tagline %}Smart School Management{% endblock %}</small>
+          </div>
+        </div>
+
+        <div class="auth-left-hero">
+          <h1>{% block hero_title %}Building the digital foundation for every Kenyan school.{% endblock %}</h1>
+          <p>{% block hero_sub %}Our vision is to become the most trusted digital partner for schools across East Africa — empowering administrators, teachers, parents, and students with technology built for our local reality.{% endblock %}</p>
+        </div>
+
+        <div class="auth-left-features">
+          {% block features %}
+          <div class="auth-feature">
+            <div class="auth-feature-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></div>
+            <div class="auth-feature-text"><strong>Multi-school SaaS</strong><span>One login, all your schools</span></div>
+          </div>
+          <div class="auth-feature">
+            <div class="auth-feature-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></div>
+            <div class="auth-feature-text"><strong>M-Pesa &amp; SMS built in</strong><span>Collect fees faster, keep parents informed</span></div>
+          </div>
+          <div class="auth-feature">
+            <div class="auth-feature-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></div>
+            <div class="auth-feature-text"><strong>Bank-grade security</strong><span>Complete tenant isolation, always</span></div>
+          </div>
+          {% endblock %}
+        </div>
+      </div>
+
+      <div class="auth-left-footer">
+        © {% now "Y" %} RacodCore · Developed by LoyTech Developer Limited · Powered by Kenya
       </div>
     </div>
-    <button type="button" class="pub-mobile-close" id="pub-mobile-close" aria-label="Close menu">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <line x1="18" y1="6" x2="6" y2="18"></line>
-        <line x1="6" y1="6" x2="18" y2="18"></line>
-      </svg>
-    </button>
-  </div>
 
-  <div class="pub-mobile-section-label">Navigate</div>
+    <!-- RIGHT: Form -->
+    <div class="auth-right">
+      <div class="auth-form-wrap">
+        {% block auth_content %}{% endblock %}
+      </div>
+    </div>
 
-  <a href="{% url 'landing' %}" class="pub-mobile-link">
-    <span class="pub-mobile-link-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
-    </span>
-    <span>Home</span>
-  </a>
-  <a href="{% url 'landing' %}#features" class="pub-mobile-link">
-    <span class="pub-mobile-link-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
-    </span>
-    <span>Features</span>
-  </a>
-  <a href="{% url 'about' %}" class="pub-mobile-link">
-    <span class="pub-mobile-link-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
-    </span>
-    <span>About</span>
-  </a>
-  <a href="{% url 'help_page' %}" class="pub-mobile-link">
-    <span class="pub-mobile-link-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
-    </span>
-    <span>Help</span>
-  </a>
-  <a href="{% url 'contact' %}" class="pub-mobile-link">
-    <span class="pub-mobile-link-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
-    </span>
-    <span>Contact</span>
-  </a>
+  </main>
 
-  <div class="pub-mobile-actions">
-    <a href="{% url 'school_signup' %}" class="btn btn-primary" style="width: 100%;">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16" style="margin-right: 6px;"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
-      Get Started
-    </a>
-  </div>
-</div>
+  <script>
+    // Hamburger Menu Logic
+    document.addEventListener('DOMContentLoaded', function() {
+      var hamburger = document.getElementById('auth-hamburger');
+      var menu = document.getElementById('auth-mobile-menu');
+      var closeBtn = document.getElementById('auth-mobile-close');
+      var backdrop = document.getElementById('auth-backdrop');
 
-<!-- ============================================ -->
-<!-- PAGE CONTENT                                -->
-<!-- ============================================ -->
-{% block content %}{% endblock %}
+      if (!hamburger || !menu) return;
 
-<script>
-  (function() {
-    const btn = document.getElementById('pub-hamburger');
-    const closeBtn = document.getElementById('pub-mobile-close');
-    const menu = document.getElementById('pub-mobile-menu');
-    const backdrop = document.getElementById('pub-backdrop');
+      function openMenu() {
+        menu.classList.add('open');
+        backdrop.classList.add('open');
+        document.body.style.overflow = 'hidden';
+      }
+      function closeMenu() {
+        menu.classList.remove('open');
+        backdrop.classList.remove('open');
+        document.body.style.overflow = '';
+      }
 
-    if (!btn || !menu) return;
-
-    function openMenu() {
-      menu.classList.add('open');
-      backdrop.classList.add('open');
-      document.body.style.overflow = 'hidden';
-    }
-    function closeMenu() {
-      menu.classList.remove('open');
-      backdrop.classList.remove('open');
-      document.body.style.overflow = '';
-    }
-
-    btn.addEventListener('click', openMenu);
-    if (closeBtn) closeBtn.addEventListener('click', closeMenu);
-    if (backdrop) backdrop.addEventListener('click', closeMenu);
-    menu.querySelectorAll('a').forEach(a => a.addEventListener('click', closeMenu));
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') closeMenu();
+      hamburger.addEventListener('click', openMenu);
+      if (closeBtn) closeBtn.addEventListener('click', closeMenu);
+      if (backdrop) backdrop.addEventListener('click', closeMenu);
+      document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeMenu(); });
     });
-  })();
-</script>
+  </script>
 
-{% block extra_js %}{% endblock %}
 </body>
 </html>

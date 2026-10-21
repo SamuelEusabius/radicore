@@ -70,6 +70,11 @@
       <a href="{% url 'students_list' %}" class="sidebar-link">
         {% include 'partials/icons.html' with name="graduation-cap" size=18 %}
         <span class="sidebar-link-text">Students</span>
+
+    <a href="{% url 'secretary_application_create' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="user-plus" size=18 %}
+    <span class="sidebar-link-text">Add New Student</span>
+  </a>
       </a>
       <a href="{% url 'teachers_list' %}" class="sidebar-link">
         {% include 'partials/icons.html' with name="teacher" size=18 %}
@@ -785,6 +790,25 @@
     <span class="sidebar-link-text">Official Visitors</span>
   </a>
 
+    <div class="sidebar-section-label">Students</div>
+  <a href="{% url 'students_list' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="users" size=18 %}
+    <span class="sidebar-link-text">All Students</span>
+  </a>
+  <div class="sidebar-section-label">Admissions</div>
+  <a href="{% url 'secretary_application_list' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="file-text" size=18 %}
+    <span class="sidebar-link-text">All Applications</span>
+  </a>
+  <a href="{% url 'secretary_application_create' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="user-plus" size=18 %}
+    <span class="sidebar-link-text">New Application</span>
+  </a>
+ <a href="{% url 'secretary_application_create' %}" class="sidebar-link">
+  {% include 'partials/icons.html' with name="user-plus" size=18 %}
+  <span class="sidebar-link-text">Add New Student</span>
+</a>
+
   <div class="sidebar-section-label">Appointments</div>
   <a href="{% url 'secretary_appointment_list' %}" class="sidebar-link">
     {% include 'partials/icons.html' with name="calendar" size=18 %}
@@ -804,7 +828,8 @@
     {% include 'partials/icons.html' with name="plus" size=18 %}
     <span class="sidebar-link-text">Log Correspondence</span>
   </a>
-    <div class="sidebar-section-label">Letters</div>
+
+  <div class="sidebar-section-label">Letters</div>
   <a href="{% url 'secretary_letter_list' %}" class="sidebar-link">
     {% include 'partials/icons.html' with name="file-text" size=18 %}
     <span class="sidebar-link-text">Generated Letters</span>
@@ -817,6 +842,7 @@
     {% include 'partials/icons.html' with name="edit" size=18 %}
     <span class="sidebar-link-text">Letter Templates</span>
   </a>
+
   <div class="sidebar-section-label">Notice Board</div>
   <a href="{% url 'secretary_notice_list' %}" class="sidebar-link">
     {% include 'partials/icons.html' with name="bell" size=18 %}
@@ -825,16 +851,6 @@
   <a href="{% url 'secretary_notice_create' %}" class="sidebar-link">
     {% include 'partials/icons.html' with name="plus" size=18 %}
     <span class="sidebar-link-text">Post Notice</span>
-  </a>
-
-  <div class="sidebar-section-label">Admissions</div>
-  <a href="{% url 'secretary_application_list' %}" class="sidebar-link">
-    {% include 'partials/icons.html' with name="file-text" size=18 %}
-    <span class="sidebar-link-text">Applications</span>
-  </a>
-  <a href="{% url 'secretary_application_create' %}" class="sidebar-link">
-    {% include 'partials/icons.html' with name="plus" size=18 %}
-    <span class="sidebar-link-text">New Application</span>
   </a>
 
   <div class="sidebar-section-label">My HR</div>
@@ -853,7 +869,6 @@
     <span class="sidebar-link-text">Inbox</span>
   </a>
 {% endif %}
-
 
     <!-- ============================================ -->
     <!-- NURSE                                         -->

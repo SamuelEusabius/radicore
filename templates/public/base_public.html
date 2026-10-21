@@ -10,493 +10,179 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="{% static 'css/design-tokens.css' %}">
-  <link rel="stylesheet" href="{% static 'css/components.css' %}">
-  <link rel="stylesheet" href="{% static 'css/utilities.css' %}">
+  <link rel="stylesheet" href="{% static 'css/design-tokens.css' %}?v={% now 'U' %}">
+  <link rel="stylesheet" href="{% static 'css/components.css' %}?v={% now 'U' %}">
+  <link rel="stylesheet" href="{% static 'css/utilities.css' %}?v={% now 'U' %}">
 
   <style>
-    /* ============ PUBLIC NAV ============ */
+    /* ============ PUBLIC NAV (GLOBAL) ============ */
     .pub-nav {
       position: sticky;
       top: 0;
       z-index: 100;
-      background: rgba(255, 255, 255, 0.92);
+      background: rgba(255, 255, 255, 0.95);
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
       border-bottom: 1px solid var(--border);
-      transition: all var(--t-base);
     }
     .pub-nav-inner {
       max-width: 1280px;
       margin: 0 auto;
-      padding: var(--s-4) var(--s-6);
+      padding: 16px 32px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: var(--s-6);
+      gap: 24px;
     }
 
-    /* ============ LOGO ============ */
+    /* Logo */
     .pub-logo {
       display: flex;
       align-items: center;
-      gap: var(--s-3);
+      gap: 12px;
       text-decoration: none;
       color: var(--ink-900);
     }
-
     .pub-logo-mark {
-      width: 48px;
-      height: 48px;
-      min-width: 48px;
-      min-height: 48px;
+      width: 44px; height: 44px;
       border-radius: var(--radius);
       background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
+      display: flex; align-items: center; justify-content: center;
       color: #FFFFFF;
       font-family: var(--font-heading);
       font-weight: 800;
-      font-size: 20px;
-      letter-spacing: -0.03em;
+      font-size: 17px;
       box-shadow: 0 4px 12px rgba(10, 138, 95, 0.25);
-      flex-shrink: 0;
     }
-
     .pub-logo-text {
       font-family: var(--font-heading);
       font-weight: 800;
       font-size: 19px;
-      color: var(--ink-900);
       letter-spacing: -0.025em;
       line-height: 1.1;
     }
     .pub-logo-text small {
       display: block;
-      font-size: 11px;
+      font-size: 10px;
       font-weight: 600;
       color: var(--ink-500);
       letter-spacing: 0.10em;
       text-transform: uppercase;
       margin-top: 2px;
     }
-    .pub-logo-text .brand-gold {
-      color: #D4A017;
-    }
+    .brand-gold { color: #D4A017; }
 
-    /* ============ NAV MENU ============ */
+    /* Desktop Menu */
     .pub-menu {
       display: flex;
       align-items: center;
-      gap: var(--s-7);
+      gap: 28px;
       flex: 1;
       justify-content: center;
     }
     .pub-menu-link {
-      font-size: 16px;
+      font-size: 15px;
       font-weight: 600;
-      color: var(--ink-800);
+      color: var(--ink-700);
       text-decoration: none;
-      transition: color var(--t-fast);
-      padding: var(--s-2) 0;
-      position: relative;
-      letter-spacing: -0.005em;
+      transition: color 150ms;
     }
-    .pub-menu-link:hover {
+    .pub-menu-link:hover, .pub-menu-link.active {
       color: var(--primary);
-    }
-    .pub-menu-link.active {
-      color: var(--primary);
-      font-weight: 700;
-    }
-    .pub-menu-link.active::after {
-      content: '';
-      position: absolute;
-      bottom: -6px;
-      left: 0;
-      right: 0;
-      height: 2px;
-      background: var(--primary);
-      border-radius: 2px;
     }
 
+    /* CTA Buttons */
     .pub-cta {
       display: flex;
       align-items: center;
-      gap: var(--s-3);
+      gap: 12px;
+    }
+    .pub-btn {
+      padding: 10px 20px;
+      border-radius: var(--radius);
+      font-size: 14px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 150ms;
+    }
+    .pub-btn-ghost {
+      color: var(--ink-700);
+      background: transparent;
+    }
+    .pub-btn-ghost:hover { background: var(--surface-muted); }
+    .pub-btn-primary {
+      background: var(--primary);
+      color: #FFFFFF;
+    }
+    .pub-btn-primary:hover {
+      background: var(--primary-hover);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(10, 138, 95, 0.3);
     }
 
-    /* ============ HAMBURGER BUTTON ============ */
+    /* Hamburger */
     .pub-hamburger {
       display: none;
-      width: 44px;
-      height: 44px;
-      align-items: center;
-      justify-content: center;
-      background: transparent;
-      border: none;
-      cursor: pointer;
-      border-radius: var(--radius);
-      color: var(--ink-700);
-      transition: all var(--t-fast);
-    }
-    .pub-hamburger:hover {
-      background: var(--surface-muted);
-      color: var(--primary);
+      width: 44px; height: 44px;
+      align-items: center; justify-content: center;
+      background: transparent; border: none;
+      color: var(--ink-700); cursor: pointer;
     }
     .pub-hamburger svg { width: 24px; height: 24px; }
 
-    /* ============ MOBILE DRAWER ============ */
+    /* Mobile Drawer */
     .pub-mobile-menu {
-      position: fixed;
-      top: 0;
-      right: 0;
-      bottom: 0;
-      width: 340px;
-      max-width: 90vw;
+      position: fixed; top: 0; right: 0; bottom: 0;
+      width: 320px; max-width: 85vw;
       background: #FFFFFF;
-      box-shadow: -8px 0 32px rgba(15, 23, 42, 0.2);
-      padding: 24px;
       z-index: 9999;
       transform: translateX(105%);
-      transition: transform 0.32s cubic-bezier(0.4, 0, 0.2, 1);
-      overflow-y: auto;
+      transition: transform 0.3s ease;
+      padding: 24px;
+      box-shadow: -8px 0 32px rgba(15, 23, 42, 0.2);
+      display: flex; flex-direction: column;
     }
-    .pub-mobile-menu.open {
-      transform: translateX(0);
-    }
-
-    .pub-mobile-menu-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: var(--s-5);
-      padding-bottom: var(--s-4);
+    .pub-mobile-menu.open { transform: translateX(0); }
+    .pub-mobile-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 24px; padding-bottom: 16px;
       border-bottom: 1px solid var(--border);
     }
-    .pub-mobile-brand {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    .pub-mobile-brand-mark {
-      width: 40px;
-      height: 40px;
-      min-width: 40px;
-      min-height: 40px;
-      border-radius: var(--radius);
-      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
-      color: #FFFFFF;
-      font-family: var(--font-heading);
-      font-weight: 800;
-      font-size: 16px;
-      letter-spacing: -0.03em;
-      flex-shrink: 0;
-    }
-    .pub-mobile-brand-text {
-      font-family: var(--font-heading);
-      font-weight: 700;
-      font-size: 16px;
-      color: var(--ink-900);
-      line-height: 1.2;
-    }
-    .pub-mobile-brand-text .brand-gold {
-      color: #D4A017;
-    }
-    .pub-mobile-brand-text small {
-      display: block;
-      font-size: 10px;
-      font-weight: 600;
-      color: var(--ink-500);
-      letter-spacing: 0.10em;
-      text-transform: uppercase;
-      margin-top: 1px;
-    }
     .pub-mobile-close {
-      width: 40px;
-      height: 40px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: var(--surface-muted);
-      border: none;
-      cursor: pointer;
-      border-radius: var(--radius);
-      color: var(--ink-700);
-      transition: all var(--t-fast);
+      background: var(--surface-muted); border: none; width: 36px; height: 36px;
+      border-radius: var(--radius); cursor: pointer; color: var(--ink-600);
+      display: flex; align-items: center; justify-content: center;
     }
-    .pub-mobile-close:hover {
-      background: var(--danger-light);
-      color: var(--danger);
+    .pub-mobile-links { display: flex; flex-direction: column; gap: 4px; flex: 1; }
+    .pub-mobile-links a {
+      padding: 14px 16px; font-size: 15px; font-weight: 600;
+      color: var(--ink-800); text-decoration: none; border-radius: var(--radius);
     }
-    .pub-mobile-close svg { width: 20px; height: 20px; }
-
-    .pub-mobile-section-label {
-      padding: var(--s-4) var(--s-3) var(--s-2);
-      font-family: var(--font-heading);
-      font-size: 10px;
-      font-weight: 700;
-      color: var(--ink-400);
-      text-transform: uppercase;
-      letter-spacing: 0.10em;
-    }
-
-    .pub-mobile-link {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 12px 14px;
-      font-size: 15px;
-      font-weight: 600;
-      color: var(--ink-800);
-      text-decoration: none;
-      border-radius: var(--radius);
-      transition: all var(--t-fast);
-      margin-bottom: 2px;
-    }
-    .pub-mobile-link:hover {
-      background: var(--primary-soft);
-      color: var(--primary);
-    }
-    .pub-mobile-link.active {
-      background: var(--primary-soft);
-      color: var(--primary);
-    }
-    .pub-mobile-link-icon {
-      width: 32px;
-      height: 32px;
-      border-radius: var(--radius-sm);
-      background: var(--surface-muted);
-      color: var(--ink-600);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-      transition: all var(--t-fast);
-    }
-    .pub-mobile-link-icon svg { width: 16px; height: 16px; }
-    .pub-mobile-link:hover .pub-mobile-link-icon,
-    .pub-mobile-link.active .pub-mobile-link-icon {
-      background: var(--primary);
-      color: #FFFFFF;
-    }
-
+    .pub-mobile-links a:hover { background: var(--primary-soft); color: var(--primary); }
+    
     .pub-mobile-actions {
-      margin-top: var(--s-6);
-      padding-top: var(--s-5);
+      display: flex; flex-direction: column; gap: 10px;
+      margin-top: 24px; padding-top: 24px;
       border-top: 1px solid var(--border);
-      display: flex;
-      flex-direction: column;
-      gap: var(--s-3);
     }
 
-    /* ============ BACKDROP ============ */
+    /* Backdrop */
     .pub-backdrop {
-      display: none;
-      position: fixed;
-      inset: 0;
+      position: fixed; inset: 0;
       background: rgba(15, 23, 42, 0.5);
       z-index: 9998;
-      opacity: 0;
-      transition: opacity 0.22s ease;
+      opacity: 0; display: none; transition: opacity 0.3s ease;
     }
-    .pub-backdrop.open {
-      display: block;
-      opacity: 1;
-    }
+    .pub-backdrop.open { display: block; opacity: 1; }
 
-    /* ============ FOOTER ============ */
-    .pub-footer {
-      background: #0B1220;
-      color: #94A3B8;
-      padding: var(--s-10) 0 var(--s-6);
-      margin-top: var(--s-10);
-    }
-    .pub-footer-inner {
-      max-width: 1280px;
-      margin: 0 auto;
-      padding: 0 var(--s-6);
-    }
-    .pub-footer-grid {
-      display: grid;
-      grid-template-columns: 2fr 1fr 1fr 1fr;
-      gap: var(--s-8);
-      padding-bottom: var(--s-8);
-      border-bottom: 1px solid rgba(148, 163, 184, 0.15);
-    }
-    .pub-footer-brand {
-      display: flex;
-      align-items: center;
-      gap: var(--s-3);
-      margin-bottom: var(--s-4);
-    }
-    .pub-footer-brand-mark {
-      width: 48px;
-      height: 48px;
-      min-width: 48px;
-      min-height: 48px;
-      border-radius: var(--radius);
-      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
-      color: #FFFFFF;
-      font-family: var(--font-heading);
-      font-weight: 800;
-      font-size: 18px;
-      letter-spacing: -0.03em;
-      flex-shrink: 0;
-    }
-    .pub-footer-brand-name {
-      font-family: var(--font-heading);
-      font-weight: 800;
-      font-size: 18px;
-      color: #FFFFFF;
-      line-height: 1.2;
-      letter-spacing: -0.02em;
-    }
-    .pub-footer-brand-name .brand-gold {
-      color: #D4A017;
-    }
-    .pub-footer-brand-name small {
-      display: block;
-      font-size: 10px;
-      font-weight: 600;
-      color: #64748B;
-      letter-spacing: 0.10em;
-      text-transform: uppercase;
-      margin-top: 2px;
-    }
-    .pub-footer-desc {
-      font-size: var(--text-sm);
-      color: #94A3B8;
-      line-height: 1.7;
-      margin: 0 0 var(--s-5);
-      max-width: 380px;
-    }
+    /* Utility */
+    .pub-main { min-height: calc(100vh - 400px); }
 
-    .pub-footer-col-title {
-      font-family: var(--font-heading);
-      font-weight: 700;
-      font-size: var(--text-xs);
-      color: #FFFFFF;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      margin-bottom: var(--s-4);
-    }
-    .pub-footer-links {
-      display: flex;
-      flex-direction: column;
-      gap: var(--s-3);
-    }
-    .pub-footer-link {
-      font-size: var(--text-sm);
-      color: #94A3B8;
-      text-decoration: none;
-      transition: color var(--t-fast);
-    }
-    .pub-footer-link:hover {
-      color: var(--primary);
-    }
-
-    .pub-footer-social {
-      display: flex;
-      gap: var(--s-2);
-    }
-    .pub-footer-social a {
-      width: 36px;
-      height: 36px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: rgba(148, 163, 184, 0.1);
-      border-radius: var(--radius);
-      color: #94A3B8;
-      transition: all var(--t-fast);
-      text-decoration: none;
-    }
-    .pub-footer-social a:hover {
-      background: var(--primary);
-      color: #FFFFFF;
-    }
-    .pub-footer-social svg {
-      width: 18px;
-      height: 18px;
-    }
-
-    .pub-footer-bottom {
-      padding-top: var(--s-5);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: var(--s-3);
-      font-size: var(--text-xs);
-      color: #64748B;
-    }
-    .pub-footer-bottom strong {
-      color: #94A3B8;
-      font-weight: 600;
-    }
-
-    /* ============ PAGE CONTENT ============ */
-    .pub-main {
-      min-height: calc(100vh - 400px);
-    }
-
-    /* ============ RESPONSIVE — Hamburger shows on tablet AND mobile (≤1024px) ============ */
+    /* Responsive */
     @media (max-width: 1024px) {
-      .pub-menu,
-      .pub-cta .btn {
-        display: none;
-      }
-      .pub-hamburger {
-        display: flex;
-      }
-      .pub-footer-grid {
-        grid-template-columns: 1fr 1fr;
-      }
-      .pub-logo-text {
-        font-size: 17px;
-      }
-      .pub-logo-mark {
-        width: 44px;
-        height: 44px;
-        min-width: 44px;
-        min-height: 44px;
-      }
-    }
-
-    @media (max-width: 560px) {
-      .pub-footer-grid {
-        grid-template-columns: 1fr;
-        gap: var(--s-6);
-      }
-      .pub-footer-inner {
-        padding: 0 var(--s-4);
-      }
-      .pub-nav-inner {
-        padding: var(--s-3) var(--s-4);
-      }
-      .pub-footer-bottom {
-        flex-direction: column;
-        text-align: center;
-      }
-    }
-
-    /* Hide drawer on desktop only (>1024px) */
-    @media (min-width: 1025px) {
-      .pub-mobile-menu,
-      .pub-backdrop {
-        display: none !important;
-      }
+      .pub-menu, .pub-cta { display: none; }
+      .pub-hamburger { display: flex; }
+      .pub-nav-inner { padding: 16px 24px; }
     }
   </style>
 
@@ -504,268 +190,114 @@
 </head>
 <body>
 
-<!-- ============================================ -->
-<!-- PUBLIC NAV                                  -->
-<!-- ============================================ -->
-<nav class="pub-nav">
-  <div class="pub-nav-inner">
+  <!-- ============================================ -->
+  <!-- GLOBAL PUBLIC NAV                            -->
+  <!-- ============================================ -->
+  <nav class="pub-nav">
+    <div class="pub-nav-inner">
 
-    <!-- LOGO -->
-    <a href="{% url 'landing' %}" class="pub-logo">
-      <div class="pub-logo-mark">RC</div>
-      <div>
+      <a href="{% url 'landing' %}" class="pub-logo">
+        <div class="pub-logo-mark">RC</div>
         <div class="pub-logo-text">
           Racod<span class="brand-gold">Core</span>
           <small>Smart School Management</small>
         </div>
+      </a>
+
+      <div class="pub-menu">
+        <a href="{% url 'landing' %}#features" class="pub-menu-link {% if request.resolver_match.url_name == 'landing' %}active{% endif %}">Features</a>
+        <a href="{% url 'about' %}" class="pub-menu-link {% if request.resolver_match.url_name == 'about' %}active{% endif %}">About</a>
+        <a href="{% url 'help_page' %}" class="pub-menu-link {% if request.resolver_match.url_name == 'help_page' %}active{% endif %}">Help</a>
+        <a href="{% url 'contact' %}" class="pub-menu-link {% if request.resolver_match.url_name == 'contact' %}active{% endif %}">Contact</a>
       </div>
-    </a>
 
-    <!-- DESKTOP MENU -->
-    <div class="pub-menu">
-      <a href="{% url 'landing' %}#features" class="pub-menu-link {% if request.resolver_match.url_name == 'landing' %}active{% endif %}">Features</a>
-      <a href="{% url 'about' %}" class="pub-menu-link {% if request.resolver_match.url_name == 'about' %}active{% endif %}">About</a>
-      <a href="{% url 'help_page' %}" class="pub-menu-link {% if request.resolver_match.url_name == 'help_page' %}active{% endif %}">Help</a>
-      <a href="{% url 'contact' %}" class="pub-menu-link {% if request.resolver_match.url_name == 'contact' %}active{% endif %}">Contact</a>
+      <div class="pub-cta">
+        <a href="{% url 'account_login' %}" class="pub-btn pub-btn-ghost">Sign In</a>
+        <a href="{% url 'school_signup' %}" class="pub-btn pub-btn-primary">Get Started</a>
+      </div>
+
+      <button class="pub-hamburger" id="pub-hamburger" aria-label="Open menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="3" y1="6" x2="21" y2="6"></line>
+          <line x1="3" y1="12" x2="21" y2="12"></line>
+          <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>
+      </button>
+
     </div>
+  </nav>
 
-    <!-- CTA -->
-    <div class="pub-cta">
-      <a href="{% url 'account_login' %}" class="btn btn-secondary">Sign In</a>
-      <a href="{% url 'school_signup' %}" class="btn btn-primary">Get Started</a>
+  <!-- Mobile Menu Drawer -->
+  <div class="pub-backdrop" id="pub-backdrop"></div>
+  <div class="pub-mobile-menu" id="pub-mobile-menu">
+    <div class="pub-mobile-header">
+      <a href="{% url 'landing' %}" class="pub-logo">
+        <div class="pub-logo-mark" style="width: 36px; height: 36px; font-size: 14px;">RC</div>
+        <div class="pub-logo-text" style="font-size: 16px;">
+          Racod<span class="brand-gold">Core</span>
+        </div>
+      </a>
+      <button class="pub-mobile-close" id="pub-mobile-close" aria-label="Close menu">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
     </div>
-
-    <!-- HAMBURGER (tablet + mobile) -->
-    <button type="button" class="pub-hamburger" id="pub-hamburger" aria-label="Open menu">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <line x1="3" y1="6" x2="21" y2="6"></line>
-        <line x1="3" y1="12" x2="21" y2="12"></line>
-        <line x1="3" y1="18" x2="21" y2="18"></line>
-      </svg>
-    </button>
-
+    <div class="pub-mobile-links">
+      <a href="{% url 'landing' %}#features">Features</a>
+      <a href="{% url 'about' %}">About</a>
+      <a href="{% url 'help_page' %}">Help</a>
+      <a href="{% url 'contact' %}">Contact</a>
+    </div>
+    <div class="pub-mobile-actions">
+      <a href="{% url 'account_login' %}" class="pub-btn pub-btn-ghost" style="text-align: center; border: 1px solid var(--border);">Sign In</a>
+      <a href="{% url 'school_signup' %}" class="pub-btn pub-btn-primary" style="text-align: center;">Get Started</a>
+    </div>
   </div>
-</nav>
 
-<!-- ============================================ -->
-<!-- MOBILE DRAWER + BACKDROP                     -->
-<!-- ============================================ -->
-<div class="pub-backdrop" id="pub-backdrop"></div>
+  <!-- ============================================ -->
+  <!-- MAIN PAGE CONTENT                            -->
+  <!-- ============================================ -->
+  <main class="pub-main">
+    {% block content %}{% endblock %}
+  </main>
 
-<div class="pub-mobile-menu" id="pub-mobile-menu">
-  <div class="pub-mobile-menu-header">
-    <div class="pub-mobile-brand">
-      <div class="pub-mobile-brand-mark">RC</div>
-      <div class="pub-mobile-brand-text">
-        Racod<span class="brand-gold">Core</span>
-        <small>Smart School Mgmt</small>
-      </div>
-    </div>
-    <button type="button" class="pub-mobile-close" id="pub-mobile-close" aria-label="Close menu">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <line x1="18" y1="6" x2="6" y2="18"></line>
-        <line x1="6" y1="6" x2="18" y2="18"></line>
-      </svg>
-    </button>
-  </div>
+  <!-- ============================================ -->
+  <!-- GLOBAL FOOTER (Optional — can keep if needed)-->
+  <!-- ============================================ -->
+  {% block footer %}{% endblock %}
 
-  <div class="pub-mobile-section-label">Navigate</div>
+  <!-- ============================================ -->
+  <!-- HAMBURGER JS                                 -->
+  <!-- ============================================ -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      var hamburger = document.getElementById('pub-hamburger');
+      var menu = document.getElementById('pub-mobile-menu');
+      var closeBtn = document.getElementById('pub-mobile-close');
+      var backdrop = document.getElementById('pub-backdrop');
 
-  <a href="{% url 'landing' %}" class="pub-mobile-link {% if request.resolver_match.url_name == 'landing' %}active{% endif %}">
-    <span class="pub-mobile-link-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
-    </span>
-    <span>Home</span>
-  </a>
+      if (!hamburger || !menu) return;
 
-  <a href="{% url 'landing' %}#features" class="pub-mobile-link">
-    <span class="pub-mobile-link-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
-    </span>
-    <span>Features</span>
-  </a>
-
-  <a href="{% url 'about' %}" class="pub-mobile-link {% if request.resolver_match.url_name == 'about' %}active{% endif %}">
-    <span class="pub-mobile-link-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
-    </span>
-    <span>About Us</span>
-  </a>
-
-  <a href="{% url 'help_page' %}" class="pub-mobile-link {% if request.resolver_match.url_name == 'help_page' %}active{% endif %}">
-    <span class="pub-mobile-link-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
-    </span>
-    <span>Help Center</span>
-  </a>
-
-  <a href="{% url 'contact' %}" class="pub-mobile-link {% if request.resolver_match.url_name == 'contact' %}active{% endif %}">
-    <span class="pub-mobile-link-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
-    </span>
-    <span>Contact</span>
-  </a>
-
-  <div class="pub-mobile-section-label">Legal</div>
-
-  <a href="{% url 'privacy' %}" class="pub-mobile-link {% if request.resolver_match.url_name == 'privacy' %}active{% endif %}">
-    <span class="pub-mobile-link-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
-    </span>
-    <span>Privacy Policy</span>
-  </a>
-
-  <a href="{% url 'terms' %}" class="pub-mobile-link {% if request.resolver_match.url_name == 'terms' %}active{% endif %}">
-    <span class="pub-mobile-link-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
-    </span>
-    <span>Terms of Service</span>
-  </a>
-
-  <div class="pub-mobile-actions">
-    <a href="{% url 'account_login' %}" class="btn btn-secondary" style="width: 100%;">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16" style="margin-right: 6px;"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg>
-      Sign In
-    </a>
-    <a href="{% url 'school_signup' %}" class="btn btn-primary" style="width: 100%;">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16" style="margin-right: 6px;"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
-      Get Started
-    </a>
-  </div>
-</div>
-
-<!-- ============================================ -->
-<!-- PAGE CONTENT                                -->
-<!-- ============================================ -->
-<main class="pub-main">
-  {% block content %}{% endblock %}
-</main>
-
-<!-- ============================================ -->
-<!-- DARK NAVY FOOTER                            -->
-<!-- ============================================ -->
-<footer class="pub-footer">
-  <div class="pub-footer-inner">
-
-    <div class="pub-footer-grid">
-
-      <div>
-        <div class="pub-footer-brand">
-          <div class="pub-footer-brand-mark">RC</div>
-          <div class="pub-footer-brand-name">
-            Racod<span class="brand-gold">Core</span>
-            <small>Smart School Management</small>
-          </div>
-        </div>
-        <p class="pub-footer-desc">
-          Everything your school needs to run smoothly — students, staff, fees, exams, and parent communication — in one platform built for Kenya.
-        </p>
-        <div class="pub-footer-social">
-          <a href="#" aria-label="Twitter">
-            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-          </a>
-          <a href="#" aria-label="LinkedIn">
-            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.063 2.063 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
-          </a>
-          <a href="#" aria-label="Email">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-          </a>
-          <a href="#" aria-label="Phone">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-          </a>
-        </div>
-      </div>
-
-      <div>
-        <div class="pub-footer-col-title">Product</div>
-        <div class="pub-footer-links">
-          <a href="{% url 'landing' %}#features" class="pub-footer-link">Features</a>
-          <a href="{% url 'school_signup' %}" class="pub-footer-link">Get Started</a>
-          <a href="{% url 'account_login' %}" class="pub-footer-link">Sign In</a>
-        </div>
-      </div>
-
-      <div>
-        <div class="pub-footer-col-title">Company</div>
-        <div class="pub-footer-links">
-          <a href="{% url 'about' %}" class="pub-footer-link">About Us</a>
-          <a href="{% url 'contact' %}" class="pub-footer-link">Contact</a>
-          <a href="{% url 'help_page' %}" class="pub-footer-link">Help Center</a>
-        </div>
-      </div>
-
-      <div>
-        <div class="pub-footer-col-title">Legal</div>
-        <div class="pub-footer-links">
-          <a href="{% url 'privacy' %}" class="pub-footer-link">Privacy Policy</a>
-          <a href="{% url 'terms' %}" class="pub-footer-link">Terms of Service</a>
-        </div>
-      </div>
-
-    </div>
-
-    <div class="pub-footer-bottom">
-      <div>© {% now "Y" %} <strong>RacodCore</strong> · All Rights Reserved</div>
-      <div>Built for Kenya · LoyTech Developer Limited</div>
-    </div>
-
-  </div>
-</footer>
-
-<!-- ============================================ -->
-<!-- MOBILE DRAWER JAVASCRIPT                    -->
-<!-- ============================================ -->
-<script>
-  document.addEventListener('DOMContentLoaded', function() {
-    var hamburger = document.getElementById('pub-hamburger');
-    var menu = document.getElementById('pub-mobile-menu');
-    var backdrop = document.getElementById('pub-backdrop');
-    var closeBtn = document.getElementById('pub-mobile-close');
-
-    console.log('[MENU] Elements:', { hamburger: hamburger, menu: menu, backdrop: backdrop });
-
-    if (!hamburger || !menu) {
-      console.error('[MENU] Missing hamburger or menu — check IDs');
-      return;
-    }
-
-    function openMenu() {
-      menu.classList.add('open');
-      if (backdrop) backdrop.classList.add('open');
-      document.body.style.overflow = 'hidden';
-      console.log('[MENU] Opened');
-    }
-
-    function closeMenu() {
-      menu.classList.remove('open');
-      if (backdrop) backdrop.classList.remove('open');
-      document.body.style.overflow = '';
-      console.log('[MENU] Closed');
-    }
-
-    hamburger.addEventListener('click', function(e) {
-      e.preventDefault();
-      if (menu.classList.contains('open')) {
-        closeMenu();
-      } else {
-        openMenu();
+      function openMenu() {
+        menu.classList.add('open');
+        if (backdrop) backdrop.classList.add('open');
+        document.body.style.overflow = 'hidden';
       }
+      function closeMenu() {
+        menu.classList.remove('open');
+        if (backdrop) backdrop.classList.remove('open');
+        document.body.style.overflow = '';
+      }
+
+      hamburger.addEventListener('click', openMenu);
+      if (closeBtn) closeBtn.addEventListener('click', closeMenu);
+      if (backdrop) backdrop.addEventListener('click', closeMenu);
+      
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closeMenu();
+      });
     });
+  </script>
 
-    if (closeBtn) closeBtn.addEventListener('click', closeMenu);
-    if (backdrop) backdrop.addEventListener('click', closeMenu);
-
-    var links = menu.querySelectorAll('a');
-    for (var i = 0; i < links.length; i++) {
-      links[i].addEventListener('click', closeMenu);
-    }
-
-    document.addEventListener('keydown', function(e) {
-      if (e.key === 'Escape') closeMenu();
-    });
-  });
-</script>
-
-{% block extra_js %}{% endblock %}
+  {% block extra_js %}{% endblock %}
 </body>
 </html>
