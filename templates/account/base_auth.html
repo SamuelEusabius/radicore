@@ -76,8 +76,27 @@
     .auth-main { flex: 1; display: grid; grid-template-columns: 1fr 1fr; min-height: calc(100vh - 73px); }
 
     /* ============ LEFT PANEL ============ */
-    .auth-left { position: relative; background: #0B1220; overflow: hidden; padding: 64px 56px; display: flex; flex-direction: column; justify-content: space-between; color: #FFFFFF; }
-    .auth-left::before { content: ''; position: absolute; inset: 0; background: radial-gradient(circle at 20% 80%, rgba(10, 138, 95, 0.30) 0%, transparent 55%), radial-gradient(circle at 80% 20%, rgba(16, 185, 129, 0.15) 0%, transparent 45%), linear-gradient(135deg, #0B1220 0%, #0F2937 100%); z-index: 0; }
+    .auth-left { 
+      position: relative; 
+      background-color: #0B1220; 
+      background-size: cover;
+      background-position: center;
+      overflow: hidden; 
+      padding: 64px 56px; 
+      display: flex; 
+      flex-direction: column; 
+      justify-content: space-between; 
+      color: #FFFFFF; 
+    }
+    
+    .auth-left::before { 
+      content: ''; 
+      position: absolute; 
+      inset: 0; 
+      background: linear-gradient(135deg, rgba(11, 18, 32, 0.88) 0%, rgba(5, 90, 62, 0.72) 55%, rgba(11, 18, 32, 0.85) 100%); 
+      z-index: 0; 
+    }
+    
     .auth-left > * { position: relative; z-index: 1; }
 
     .auth-left-brand { display: flex; align-items: center; gap: 12px; margin-bottom: 48px; }
@@ -152,7 +171,6 @@
         align-items: flex-start; 
       }
       
-      /* Show hamburger, hide desktop links */
       .auth-nav-links { display: none; }
       .auth-hamburger { display: flex; }
       .auth-nav { padding: 16px 24px; }
@@ -161,17 +179,17 @@
 </head>
 <body>
 
-  <!-- NAV -->
   <nav class="auth-nav">
     <a href="{% url 'landing' %}" class="auth-nav-logo">
-      <div class="auth-nav-mark">RC</div>
+      <div class="auth-nav-mark" style="background: none; box-shadow: none;">
+  <img src="{% static 'images/graduation-cap-books.png' %}" alt="RacodCore" style="width: 100%; height: 100%; object-fit: contain;">
+</div>
       <div class="auth-nav-text">
         Racod<span>Core</span>
         <small>Smart School Management</small>
       </div>
     </a>
     
-    <!-- Desktop Links -->
     <div class="auth-nav-links">
       <a href="{% url 'landing' %}#features">Features</a>
       <a href="{% url 'about' %}">About</a>
@@ -179,7 +197,6 @@
       <a href="{% url 'contact' %}">Contact</a>
     </div>
 
-    <!-- Hamburger Button (Mobile/Tablet) -->
     <button class="auth-hamburger" id="auth-hamburger" aria-label="Open menu">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <line x1="3" y1="6" x2="21" y2="6"></line>
@@ -189,7 +206,6 @@
     </button>
   </nav>
 
-  <!-- Mobile Menu Drawer -->
   <div class="auth-backdrop" id="auth-backdrop"></div>
   <div class="auth-mobile-menu" id="auth-mobile-menu">
     <div class="auth-mobile-header">
@@ -205,14 +221,16 @@
     </div>
   </div>
 
-  <!-- MAIN -->
   <main class="auth-main">
 
     <!-- LEFT: Branding -->
-    <div class="auth-left">
+    <!-- THE BLOCK IS ADDED HERE -->
+    <div class="auth-left" {% block left_panel_style %}{% endblock %}>
       <div>
         <div class="auth-left-brand">
-          <div class="auth-left-brand-mark">RC</div>
+          <div class="auth-left-brand-mark" style="background: none; box-shadow: none;">
+  <img src="{% static 'images/graduation-cap-books.png' %}" alt="RacodCore" style="width: 100%; height: 100%; object-fit: contain;">
+</div>
           <div class="auth-left-brand-text">
             Racod<span>Core</span>
             <small>{% block brand_tagline %}Smart School Management{% endblock %}</small>
@@ -257,7 +275,6 @@
   </main>
 
   <script>
-    // Hamburger Menu Logic
     document.addEventListener('DOMContentLoaded', function() {
       var hamburger = document.getElementById('auth-hamburger');
       var menu = document.getElementById('auth-mobile-menu');

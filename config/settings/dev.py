@@ -4,6 +4,12 @@ Development settings. Safe defaults, zero setup required.
 from .base import *
 from decouple import config
 import dj_database_url
+import os
+from pathlib import Path
+
+# Build paths inside the project like this: BASE_DIR / 'subdir'.
+# Since this file is in config/settings/dev.py, BASE_DIR needs to go up 3 levels.
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 DEBUG = True
 ALLOWED_HOSTS = ['*']
@@ -19,6 +25,19 @@ DATABASES = {
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 ACCOUNT_EMAIL_VERIFICATION = 'none'   # dev convenience
+
+# ==========================================================
+# STATIC FILES (Required for images, CSS, JS to load in dev)
+# ==========================================================
+STATIC_URL = '/static/'
+
+STATICFILES_DIRS = [
+    BASE_DIR / "static",
+]
+
+# Media files (Uploads from users)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / "media"
 
 # Optional SQL logging: set DEBUG_SQL=True in .env
 if config('DEBUG_SQL', default=False, cast=bool):

@@ -39,10 +39,12 @@ urlpatterns = [
          views.notice_print_all, name='secretary_notice_print_all'),
 
     # ----- Admission Applications -----
-    path('secretary/admissions/',                 views.application_list,   name='secretary_application_list'),
-    path('secretary/admissions/create/',          views.application_create, name='secretary_application_create'),
-    path('secretary/admissions/<int:pk>/',        views.application_detail, name='secretary_application_detail'),
-    path('secretary/admissions/<int:pk>/edit/',   views.application_edit,   name='secretary_application_edit'),
+    path('secretary/admissions/',                     views.application_list,    name='secretary_application_list'),
+    path('secretary/admissions/create/',              views.application_create,  name='secretary_application_create'),
+    path('secretary/admissions/<int:pk>/',            views.application_detail,  name='secretary_application_detail'),
+    path('secretary/admissions/<int:pk>/edit/',       views.application_edit,    name='secretary_application_edit'),
+    path('secretary/admissions/<int:pk>/print/',      views.application_print,   name='secretary_application_print'),
+    path('secretary/admissions/<int:pk>/admit/',      views.application_admit,   name='secretary_application_admit'),
         # ----- Letter Templates -----
     path('secretary/letter-templates/',           views.letter_template_list, name='secretary_letter_template_list'),
     path('secretary/letter-templates/<int:pk>/edit/', views.letter_template_edit, name='secretary_letter_template_edit'),

@@ -3,7 +3,10 @@
 
 {% block title %}Signed Out &middot; RacodCore{% endblock %}
 
-{# LOGOUT PAGE SPECIFIC TEXT #}
+{# --- BACKGROUND IMAGE INJECTION --- #}
+{% block left_panel_style %}style="background-image: url('{% static "images/landing/auth-logout-bg.jpg" %}');"{% endblock %}
+
+{# --- LOGOUT PAGE SPECIFIC TEXT --- #}
 {% block hero_title %}Building the digital foundation for every Kenyan school.{% endblock %}
 {% block hero_sub %}Our vision is to become the most trusted digital partner for schools across East Africa — empowering administrators, teachers, parents, and students with technology built for our local reality.{% endblock %}
 
@@ -28,5 +31,7 @@
   <a href="{% url 'landing' %}" style="text-align: center; font-size: 13px; color: var(--ink-500); text-decoration: none; padding: 8px;">Return to Homepage</a>
 </div>
 
-<div class="auth-legal">RacodCore · Integrated Management System<br>© {% now "Y" %} All Rights Reserved · Built for Kenyan Schools</div>
+<div class="auth-legal">
+  RacodCore · Integrated Management System<br>© {% now "Y" %} All Rights Reserved · Built for Kenyan Schools
+</div>
 {% endblock %}

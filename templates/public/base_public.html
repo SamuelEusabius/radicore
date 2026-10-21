@@ -43,27 +43,29 @@
       text-decoration: none;
       color: var(--ink-900);
     }
-    .pub-logo-mark {
-      width: 44px; height: 44px;
-      border-radius: var(--radius);
-      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-      display: flex; align-items: center; justify-content: center;
-      color: #FFFFFF;
-      font-family: var(--font-heading);
-      font-weight: 800;
-      font-size: 17px;
-      box-shadow: 0 4px 12px rgba(10, 138, 95, 0.25);
+      .pub-logo-mark {
+      width: 65px; 
+      height: 65px;
+      display: flex; 
+      align-items: center; 
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .pub-logo-mark img {
+      width: 100%; 
+      height: 100%; 
+      object-fit: contain;
     }
     .pub-logo-text {
       font-family: var(--font-heading);
       font-weight: 800;
-      font-size: 19px;
+      font-size: 22px; /* Increased font size slightly */
       letter-spacing: -0.025em;
       line-height: 1.1;
     }
     .pub-logo-text small {
       display: block;
-      font-size: 10px;
+      font-size: 11px;
       font-weight: 600;
       color: var(--ink-500);
       letter-spacing: 0.10em;
@@ -197,7 +199,9 @@
     <div class="pub-nav-inner">
 
       <a href="{% url 'landing' %}" class="pub-logo">
-        <div class="pub-logo-mark">RC</div>
+        <div class="pub-logo-mark">
+          <img src="{% static 'images/graduation-cap-books.png' %}" alt="RacodCore">
+        </div>
         <div class="pub-logo-text">
           Racod<span class="brand-gold">Core</span>
           <small>Smart School Management</small>
@@ -232,8 +236,10 @@
   <div class="pub-mobile-menu" id="pub-mobile-menu">
     <div class="pub-mobile-header">
       <a href="{% url 'landing' %}" class="pub-logo">
-        <div class="pub-logo-mark" style="width: 36px; height: 36px; font-size: 14px;">RC</div>
-        <div class="pub-logo-text" style="font-size: 16px;">
+        <div class="pub-logo-mark" style="width: 44px; height: 44px;">
+          <img src="{% static 'images/graduation-cap-books.png' %}" alt="RacodCore">
+        </div>
+        <div class="pub-logo-text" style="font-size: 18px;">
           Racod<span class="brand-gold">Core</span>
         </div>
       </a>
@@ -259,11 +265,6 @@
   <main class="pub-main">
     {% block content %}{% endblock %}
   </main>
-
-  <!-- ============================================ -->
-  <!-- GLOBAL FOOTER (Optional — can keep if needed)-->
-  <!-- ============================================ -->
-  {% block footer %}{% endblock %}
 
   <!-- ============================================ -->
   <!-- HAMBURGER JS                                 -->

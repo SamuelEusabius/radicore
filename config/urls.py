@@ -2,11 +2,13 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+
 from apps.accounts.views import logout_view, school_blocked
 from apps.accounts.views import logout_view, school_blocked, change_password, profile_view
 from apps.accounts.views import logout_view, school_blocked, change_password, profile_view, super_admin_profile
 
 urlpatterns = [
+    path('api/', include('apps.locations.urls')),
     path('admin/', admin.site.urls),
     path('accounts/password/change/', change_password, name='change_password'),
     path('accounts/profile/', profile_view, name='profile_view'),
@@ -39,3 +41,4 @@ urlpatterns = [
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

@@ -151,3 +151,7 @@ setup_*.py
 apps_backup_before_user_role_fix/
 
 .env
+
+db.sqlite3
+.env
+.env.*

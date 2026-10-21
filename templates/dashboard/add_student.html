@@ -1,279 +1,286 @@
 {% extends 'base.html' %}
 {% load static %}
+
 {% block title %}Add Student{% endblock %}
 {% block header_title %}Add New Student{% endblock %}
-{% block header_sub %}{{ current_school.name|default:"School" }} · register a new student{% endblock %}
+{% block header_sub %}{{ current_school.name|default:"School" }} &middot; register a new student{% endblock %}
 
 {% block content %}
 
 <div style="max-width: 900px; margin: 0 auto;">
 
   <a href="{% url 'students_list' %}" class="btn btn-ghost btn-sm" style="margin-bottom: var(--s-4);">
-    ← Back to Students
+    {% include 'partials/icons.html' with name="arrow-left" size=16 %}
+    Back to Students List
   </a>
 
-  <form method="post" enctype="multipart/form-data">
+  <!-- Flash messages -->
+  {% if messages %}
+    {% for m in messages %}
+    <div class="card mb-4" style="border-left: 4px solid
+      {% if m.tags == 'error' %}var(--danger){% else %}var(--primary){% endif %};
+      padding: var(--s-3); background: {% if m.tags == 'error' %}var(--danger-light){% else %}var(--primary-soft){% endif %};">
+      <p class="text-sm" style="margin: 0; color:
+        {% if m.tags == 'error' %}var(--danger){% else %}var(--primary-dark){% endif %};">
+        {{ m }}
+      </p>
+    </div>
+    {% endfor %}
+  {% endif %}
+
+  <form method="post" enctype="multipart/form-data" class="card">
     {% csrf_token %}
 
     <!-- ============================================ -->
-    <!-- ADMISSION NUMBER — TOP PRIORITY CARD         -->
+    <!-- ADMISSION NUMBER                              -->
     <!-- ============================================ -->
-    <div class="card mb-6" style="border-left: 4px solid var(--primary); background: var(--primary-soft);">
+    <h3 class="card-title mb-4">Admission Number</h3>
 
-      <div style="display: flex; align-items: flex-start; gap: var(--s-4);">
-
-        <div style="width: 48px; height: 48px; border-radius: var(--radius); background: var(--primary); color: #FFFFFF; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-          {% include 'partials/icons.html' with name="user-plus" size=22 %}
-        </div>
-
-        <div style="flex: 1; min-width: 0;">
-          <h3 style="font-size: var(--text-md); font-weight: 700; color: var(--primary-dark); margin: 0 0 var(--s-2);">
-            Admission Number
-          </h3>
-          <p style="font-size: var(--text-sm); color: var(--primary-dark); margin: 0 0 var(--s-4); line-height: 1.5; opacity: 0.85;">
-            Let the system generate a unique admission number automatically, or enter one manually.
-            Auto-generated numbers follow the format <strong>00001B</strong> (boy) or <strong>00001G</strong> (girl).
-          </p>
-
-          <!-- Toggle -->
-          <label style="display: flex; align-items: center; gap: var(--s-3); cursor: pointer; margin-bottom: var(--s-3);">
-            <input type="checkbox" name="auto_generate_admission" id="auto_generate_admission"
-                   onchange="toggleAutoAdmission()"
-                   style="width: 18px; height: 18px; accent-color: var(--primary);"
-                   checked>
-            <span style="font-size: var(--text-sm); font-weight: 600; color: var(--primary-dark);">
-              Auto-generate admission number
-            </span>
-          </label>
-
-          <!-- Start from -->
-          <div id="start_from_wrapper" style="margin-left: var(--s-6);">
-            <label style="display: block; font-size: var(--text-xs); font-weight: 600; color: var(--primary-dark); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: var(--s-1);">
-              Start numbering from
-            </label>
-            <input type="number" name="start_from" value="1" min="1" class="input" style="max-width: 240px;" placeholder="1">
-            <p class="form-hint" style="color: var(--primary-dark); opacity: 0.75;">
-              Leave as 1 to start from 00001, or enter a custom number (e.g. 100 → 00100B)
-            </p>
-          </div>
-
-          <!-- Manual admission -->
-          <div id="manual_admission_wrapper" style="margin-left: var(--s-6); display: none;">
-            <label class="form-label">
-              Admission Number <span class="required">*</span>
-            </label>
-            <input type="text" name="admission_number" id="manual_admission_input"
-                   value="{{ form_data.admission_number|default:'' }}"
-                   placeholder="e.g. MANUAL001"
-                   class="input" style="max-width: 240px;">
-          </div>
-
-        </div>
-      </div>
-    </div>
-
-    <!-- ============================================ -->
-    <!-- PERSONAL INFORMATION                         -->
-    <!-- ============================================ -->
-    <div class="card mb-6">
-      <div class="card-title">
-        {% include 'partials/icons.html' with name="user" size=18 %}
-        Personal Information
-      </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-
-        <div class="form-group">
-          <label class="form-label">First Name <span class="required">*</span></label>
-          <input type="text" name="first_name" required value="{{ form_data.first_name|default:'' }}" class="input">
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">Middle Name</label>
-          <input type="text" name="middle_name" value="{{ form_data.middle_name|default:'' }}" class="input">
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">Last Name <span class="required">*</span></label>
-          <input type="text" name="last_name" required value="{{ form_data.last_name|default:'' }}" class="input">
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">Gender <span class="required">*</span></label>
-          <select name="gender" required class="select">
-            <option value="">— Select —</option>
-            <option value="M" {% if form_data.gender == 'M' %}selected{% endif %}>Male</option>
-            <option value="F" {% if form_data.gender == 'F' %}selected{% endif %}>Female</option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">Date of Birth</label>
-          <input type="date" name="date_of_birth" value="{{ form_data.date_of_birth|default:'' }}" class="input">
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">Photo</label>
-          <input type="file" name="photo" accept="image/*" class="input" style="padding: 8px;">
-          <p class="form-hint">JPG or PNG, up to 5MB</p>
-        </div>
-
-      </div>
-    </div>
-
-    <!-- ============================================ -->
-    <!-- IDENTIFICATION                               -->
-    <!-- ============================================ -->
-    <div class="card mb-6">
-      <div class="card-title">
-        {% include 'partials/icons.html' with name="file-text" size=18 %}
-        Identification
-      </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-        <div class="form-group">
-          <label class="form-label">UPI (NEMIS)</label>
-          <input type="text" name="upi" value="{{ form_data.upi|default:'' }}"
-                 placeholder="e.g. 12345678901" class="input font-mono">
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">Birth Certificate Number</label>
-          <input type="text" name="birth_certificate_number" value="{{ form_data.birth_certificate_number|default:'' }}"
-                 placeholder="e.g. 1234567" class="input font-mono">
-        </div>
-
-      </div>
-    </div>
-
-    <!-- ============================================ -->
-    <!-- ACADEMIC INFORMATION                         -->
-    <!-- ============================================ -->
-    <div class="card mb-6">
-      <div class="card-title">
-        {% include 'partials/icons.html' with name="graduation-cap" size=18 %}
-        Academic Information
-      </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-
-        <div class="form-group">
-          <label class="form-label">CBC Level</label>
-          <select name="cbc_level" class="select">
-            <option value="">— Select Level —</option>
-            {% for value, label in cbc_levels %}
-              <option value="{{ value }}" {% if form_data.cbc_level == value %}selected{% endif %}>{{ label }}</option>
-            {% endfor %}
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">Class / Stream</label>
-          <input type="text" name="class_level" value="{{ form_data.class_level|default:'' }}"
-                 placeholder="e.g. GRADE 5 EAST" class="input">
-          <p class="form-hint">Must match a class in Manage Classes</p>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">Admission Date</label>
-          <input type="date" name="admission_date" value="{{ form_data.admission_date|default:'' }}" class="input">
-        </div>
-
-      </div>
-    </div>
-
-    <!-- ============================================ -->
-    <!-- GUARDIAN INFORMATION                         -->
-    <!-- ============================================ -->
-    <div class="card mb-6">
-      <div class="card-title">
-        {% include 'partials/icons.html' with name="users" size=18 %}
-        Guardian Information
-      </div>
-
-      <p class="form-hint" style="margin-bottom: var(--s-4); margin-top: calc(-1 * var(--s-3));">
-        Fill this if the student is not yet linked to a Parent/Guardian account.
-      </p>
-
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-
-        <div class="form-group">
-          <label class="form-label">Guardian Name</label>
-          <input type="text" name="guardian_name" value="{{ form_data.guardian_name|default:'' }}" class="input">
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">Guardian Phone</label>
-          <input type="tel" name="guardian_phone" value="{{ form_data.guardian_phone|default:'' }}"
-                 placeholder="+2547XXXXXXXX" class="input font-mono">
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">Relationship</label>
-          <input type="text" name="guardian_relationship" value="{{ form_data.guardian_relationship|default:'' }}"
-                 placeholder="Mother / Father / Guardian" class="input">
-        </div>
-
-      </div>
-    </div>
-
-    <!-- ============================================ -->
-    <!-- SPECIAL NEEDS                                -->
-    <!-- ============================================ -->
-    <div class="card mb-6">
-      <div class="card-title">
-        {% include 'partials/icons.html' with name="info" size=18 %}
-        Special Needs
-      </div>
-
-      <label style="display: flex; align-items: center; gap: var(--s-3); margin-bottom: var(--s-3); cursor: pointer;">
-        <input type="checkbox" name="has_special_needs"
-               {% if form_data.has_special_needs %}checked{% endif %}
-               style="width: 18px; height: 18px; accent-color: var(--primary);">
-        <span style="font-size: var(--text-sm); color: var(--ink-800);">Student has special needs</span>
+    <div class="mb-6">
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
+        Admission Number <span style="color: var(--danger);">*</span>
       </label>
 
-      <textarea name="special_needs_notes" rows="3" class="textarea"
-                placeholder="Describe any needs, accommodations, or support required...">{{ form_data.special_needs_notes|default:'' }}</textarea>
+      {% if not has_existing_students %}
+        <!-- FIRST STUDENT — Manual Entry -->
+        <input type="text"
+               name="admission_number"
+               id="admission_number"
+               class="input w-full"
+               value="{{ form_data.admission_number|default:'' }}"
+               placeholder="e.g. SCH0006-2026-0001"
+               required>
+
+        <div class="card mt-3" style="background: var(--info-light); padding: var(--s-3); border-left: 4px solid var(--info);">
+          <p class="text-xs" style="margin: 0; color: var(--ink-700);">
+            <strong>First student:</strong> Enter a starting number here (e.g. <code style="font-family: var(--font-mono);">SCH0006-2026-0001</code>).
+            All future students will auto-increment from this number.
+          </p>
+        </div>
+      {% else %}
+        <!-- SUBSEQUENT STUDENTS — Auto-Generated -->
+        <div class="input w-full" style="background: var(--surface-muted); cursor: not-allowed; display: flex; align-items: center; justify-content: space-between; padding: 10px 12px;">
+          <span style="font-family: var(--font-mono); font-weight: 600; color: var(--ink-900); font-size: 14px;">
+            {{ next_admission_number }}
+          </span>
+          <span class="badge badge-success">Auto-generated</span>
+        </div>
+
+        <input type="hidden" name="admission_number" value="{{ next_admission_number }}">
+
+        <p class="text-xs mt-1" style="color: var(--ink-500);">
+          Automatically incremented from the last student in your school. No manual entry needed.
+        </p>
+      {% endif %}
+    </div>
+
+    <hr style="border: none; border-top: 1px solid var(--border); margin: var(--s-5) 0;">
+
+    <!-- ============================================ -->
+    <!-- PERSONAL DETAILS                              -->
+    <!-- ============================================ -->
+    <h3 class="card-title mb-4">Personal Details</h3>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+      <div>
+        <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
+          First Name <span style="color: var(--danger);">*</span>
+        </label>
+        <input type="text" name="first_name" class="input w-full" required
+               value="{{ form_data.first_name|default:'' }}" placeholder="First name">
+      </div>
+      <div>
+        <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
+          Middle Name
+        </label>
+        <input type="text" name="middle_name" class="input w-full"
+               value="{{ form_data.middle_name|default:'' }}" placeholder="Middle name (optional)">
+      </div>
+      <div>
+        <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
+          Last Name <span style="color: var(--danger);">*</span>
+        </label>
+        <input type="text" name="last_name" class="input w-full" required
+               value="{{ form_data.last_name|default:'' }}" placeholder="Last name">
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+      <div>
+        <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
+          Gender <span style="color: var(--danger);">*</span>
+        </label>
+        <select name="gender" class="select w-full" required>
+          <option value="">— Select —</option>
+          <option value="M" {% if form_data.gender == 'M' %}selected{% endif %}>Male</option>
+          <option value="F" {% if form_data.gender == 'F' %}selected{% endif %}>Female</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
+          Date of Birth
+        </label>
+        <input type="date" name="date_of_birth" class="input w-full"
+               value="{{ form_data.date_of_birth|default:'' }}">
+      </div>
+      <div>
+        <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
+          Admission Date
+        </label>
+        <input type="date" name="admission_date" class="input w-full"
+               value="{{ form_data.admission_date|default:'' }}">
+      </div>
+    </div>
+
+    <hr style="border: none; border-top: 1px solid var(--border); margin: var(--s-5) 0;">
+
+    <!-- ============================================ -->
+    <!-- ACADEMIC DETAILS                              -->
+    <!-- ============================================ -->
+    <h3 class="card-title mb-4">Academic Details</h3>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+      <div>
+        <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
+          CBC Level
+        </label>
+        <select name="cbc_level" class="select w-full">
+          <option value="">— Select —</option>
+          {% for value, label in cbc_levels %}
+            <option value="{{ value }}" {% if form_data.cbc_level == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
+          Class / Stream
+        </label>
+        <input type="text" name="class_level" class="input w-full"
+               value="{{ form_data.class_level|default:'' }}"
+               placeholder="e.g. Grade 5 East">
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+      <div>
+        <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
+          UPI Number
+        </label>
+        <input type="text" name="upi" class="input w-full"
+               value="{{ form_data.upi|default:'' }}"
+               placeholder="NEMIS UPI number">
+      </div>
+      <div>
+        <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
+          Birth Certificate #
+        </label>
+        <input type="text" name="birth_certificate_number" class="input w-full"
+               value="{{ form_data.birth_certificate_number|default:'' }}"
+               placeholder="Birth certificate number">
+      </div>
+    </div>
+
+    <hr style="border: none; border-top: 1px solid var(--border); margin: var(--s-5) 0;">
+
+    <!-- ============================================ -->
+    <!-- GUARDIAN DETAILS                              -->
+    <!-- ============================================ -->
+    <h3 class="card-title mb-4">Guardian / Parent Details</h3>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+      <div>
+        <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
+          Guardian Name
+        </label>
+        <input type="text" name="guardian_name" class="input w-full"
+               value="{{ form_data.guardian_name|default:'' }}"
+               placeholder="Full name">
+      </div>
+      <div>
+        <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
+          Guardian Phone
+        </label>
+        <input type="tel" name="guardian_phone" class="input w-full"
+               value="{{ form_data.guardian_phone|default:'' }}"
+               placeholder="07XX XXX XXX">
+      </div>
+      <div>
+        <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
+          Relationship
+        </label>
+        <input type="text" name="guardian_relationship" class="input w-full"
+               value="{{ form_data.guardian_relationship|default:'' }}"
+               placeholder="e.g. Mother, Father, Guardian">
+      </div>
+    </div>
+
+    <hr style="border: none; border-top: 1px solid var(--border); margin: var(--s-5) 0;">
+
+    <!-- ============================================ -->
+    <!-- SPECIAL NEEDS                                 -->
+    <!-- ============================================ -->
+    <h3 class="card-title mb-4">Special Needs</h3>
+
+    <div class="mb-4">
+      <label class="flex items-center gap-2 text-sm" style="color: var(--ink-700);">
+        <input type="checkbox" name="has_special_needs" id="has_special_needs"
+               {% if form_data.has_special_needs %}checked{% endif %}>
+        <span>This student has special needs</span>
+      </label>
+    </div>
+
+    <div class="mb-6" id="special_needs_notes_wrap" style="display: none;">
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
+        Special Needs Notes
+      </label>
+      <textarea name="special_needs_notes" rows="3" class="textarea w-full"
+                placeholder="Describe the special needs and required support...">{{ form_data.special_needs_notes|default:'' }}</textarea>
+    </div>
+
+    <hr style="border: none; border-top: 1px solid var(--border); margin: var(--s-5) 0;">
+
+    <!-- ============================================ -->
+    <!-- PHOTO                                         -->
+    <!-- ============================================ -->
+    <h3 class="card-title mb-4">Photo</h3>
+
+    <div class="mb-6">
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
+        Student Photo
+      </label>
+      <input type="file" name="photo" class="input w-full" accept="image/*">
+      <p class="text-xs mt-1" style="color: var(--ink-500);">JPG or PNG, max 5MB</p>
     </div>
 
     <!-- ============================================ -->
-    <!-- ACTIONS                                      -->
+    <!-- SUBMIT                                        -->
     <!-- ============================================ -->
-    <div style="display: flex; justify-content: flex-end; gap: var(--s-3); margin-bottom: var(--s-10);">
-      <a href="{% url 'students_list' %}" class="btn btn-secondary">
-        Cancel
-      </a>
-      <button type="submit" class="btn btn-primary" style="padding: 12px 32px;">
-        {% include 'partials/icons.html' with name="save" size=15 %}
-        <span>Save Student</span>
+    <div class="flex gap-3">
+      <button type="submit" class="btn btn-primary">
+        {% include 'partials/icons.html' with name="check-circle" size=16 %}
+        Add Student
       </button>
+      <a href="{% url 'students_list' %}" class="btn btn-secondary">Cancel</a>
     </div>
 
   </form>
 
 </div>
 
+{% endblock %}
+
+{% block extra_js %}
 <script>
-function toggleAutoAdmission() {
-  const auto = document.getElementById('auto_generate_admission');
-  const startWrapper = document.getElementById('start_from_wrapper');
-  const manualWrapper = document.getElementById('manual_admission_wrapper');
-  const manualInput = document.getElementById('manual_admission_input');
-
-  if (auto.checked) {
-    startWrapper.style.display = 'block';
-    manualWrapper.style.display = 'none';
-    manualInput.removeAttribute('required');
-  } else {
-    startWrapper.style.display = 'none';
-    manualWrapper.style.display = 'block';
-    manualInput.setAttribute('required', 'required');
-  }
-}
-
-document.addEventListener('DOMContentLoaded', toggleAutoAdmission);
+(function() {
+    var checkbox = document.getElementById('has_special_needs');
+    var wrap = document.getElementById('special_needs_notes_wrap');
+    if (checkbox && wrap) {
+        function toggle() {
+            wrap.style.display = checkbox.checked ? 'block' : 'none';
+        }
+        checkbox.addEventListener('change', toggle);
+        toggle();
+    }
+})();
 </script>
-
 {% endblock %}

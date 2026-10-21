@@ -1,3 +1,4 @@
+{% load static %}
 <header class="topbar">
 
   <!-- ============ LEFT: School identity ============ -->
@@ -7,9 +8,12 @@
       {% include 'partials/icons.html' with name="menu" size=20 %}
     </button>
 
-    <a href="{% url 'dashboard_home' %}" class="topbar-school-brand">
-      {% include 'partials/_school_logo.html' with size=40 school=current_school %}
-      <div class="topbar-school-info">
+    <a href="{% url 'dashboard_home' %}" class="topbar-school-brand" style="display: flex; align-items: center; gap: 12px;">
+      <div style="width: 44px; height: 44px; flex-shrink: 0;">
+        {% include 'partials/_school_logo.html' with size=44 school=current_school %}
+      </div>
+      
+      <div class="topbar-school-info" style="display: flex; flex-direction: column; justify-content: center;">
         <div class="topbar-school-name">{{ current_school.name|default:"School" }}</div>
         <div class="topbar-school-role">
           {% if user.role == 'store_keeper' %}Store Keeper

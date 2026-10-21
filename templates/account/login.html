@@ -3,7 +3,9 @@
 
 {% block title %}Sign In &middot; RacodCore{% endblock %}
 
-{# LOGIN PAGE SPECIFIC TEXT #}
+{# --- BACKGROUND IMAGE INJECTION --- #}
+{% block left_panel_style %}style="background-image: url('{% static "images/landing/auth-login-bg.jpg" %}');"{% endblock %}
+
 {% block hero_title %}Everything your school needs, in one place.{% endblock %}
 {% block hero_sub %}Manage students, teachers, fees, exams, attendance, and parent communication — all from a single, powerful platform built for Kenyan schools.{% endblock %}
 
@@ -25,10 +27,13 @@
 
 <form method="post" action="{% url 'account_login' %}" novalidate>
   {% csrf_token %}
+  
   <div class="auth-form-group">
     <label class="auth-form-label">Email Address</label>
     <div class="auth-form-input-wrap">
-      <span class="auth-form-input-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg></span>
+      <span class="auth-form-input-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+      </span>
       <input type="email" name="login" id="id_login" class="auth-form-input" placeholder="you@school.co.ke" required autofocus value="{{ form.login.value|default:'' }}">
     </div>
   </div>
@@ -36,7 +41,9 @@
   <div class="auth-form-group">
     <label class="auth-form-label">Password</label>
     <div class="auth-form-input-wrap">
-      <span class="auth-form-input-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></span>
+      <span class="auth-form-input-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+      </span>
       <input type="password" name="password" id="id_password" class="auth-form-input" placeholder="Enter your password" required>
       <button type="button" onclick="togglePassword()" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; color:var(--ink-400); padding:4px;">
         <svg id="eye-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
@@ -55,8 +62,13 @@
   </button>
 </form>
 
-<div class="auth-form-footer">Don't have an account? <a href="{% url 'school_signup' %}">Register your school</a></div>
-<div class="auth-legal">© {% now "Y" %} RacodCore · Integrated Management System<br>All Rights Reserved · Built for Kenyan Schools</div>
+<div class="auth-form-footer">
+  Don't have an account? <a href="{% url 'school_signup' %}">Register your school</a>
+</div>
+
+<div class="auth-legal">
+  © {% now "Y" %} RacodCore · Integrated Management System<br>All Rights Reserved · Built for Kenyan Schools
+</div>
 {% endblock %}
 
 {% block extra_js %}
