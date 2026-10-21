@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Merged Report Cards — {{ cls.name }}{% endblock %}
+{% block header_title %}Merged Report Cards{% endblock %}
+{% block header_sub %}{{ cls.name }} &middot; Download all report cards as a single PDF{% endblock %}
+
+{% block content %}
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+  <!-- ============================================================ -->
+  <!-- LEFT: Config Panel                                           -->
+  <!-- ============================================================ -->
+  <div class="lg:col-span-2">
+
+    <div class="card mb-6">
+      <h3 class="card-title mb-4">1. Select Exam</h3>
+
+      {% if not exams %}
+        <div class="card" style="padding: var(--s-5); background: var(--warning-light); border-left: 4px solid var(--warning);">
+          <p class="text-sm" style="margin: 0; color: var(--ink-700);">
+            <strong>No exams yet.</strong> An admin or Director of Studies needs to create an exam
+            and enter marks before merged report cards can be generated.
+          </p>
+        </div>
+      {% else %}
+        <form method="get" class="mb-4">
+          <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
+            Exam
+          </label>
+          <select name="exam" class="select w-full" onchange="this.form.submit()">
+            {% for e in exams %}
+              <option value="{{ e.id }}" {% if exam and exam.id == e.id %}selected{% endif %}>
+                {{ e.name }} · {{ e.term }} {{ e.year }}
+              </option>
+            {% endfor %}
+          </select>
+        </form>
+
+        {% if exam %}
+        <div class="card" style="padding: var(--s-4); background: var(--primary-soft); border-left: 4px solid var(--primary);">
+          <div class="flex justify-between items-center flex-wrap gap-3">
+            <div>
+              <div style="font-weight: 600; color: var(--ink-900);">{{ exam.name }}</div>
+              <div class="text-xs" style="color: var(--ink-500);">
+                {{ exam.term }} · {{ exam.year }}
+                {% if exam.date %}· {{ exam.date|date:"d M Y" }}{% endif %}
+              </div>
+            </div>
+            <span class="badge badge-primary">{{ student_count }} student{{ student_count|pluralize }}</span>
+          </div>
+        </div>
+        {% endif %}
+      {% endif %}
+    </div>
+
+    <div class="card mb-6">
+      <h3 class="card-title mb-4">2. What you'll get</h3>
+      <p class="text-sm mb-3" style="color: var(--ink-700);">
+        A single PDF file containing all {{ student_count }} student{{ student_count|pluralize }} report cards
+        for this class, ready to print and distribute.
+      </p>
+      <ul class="text-sm" style="color: var(--ink-600); padding-left: var(--s-5); line-height: 1.8;">
+        <li>All students in <strong>{{ cls.name }}</strong></li>
+        <li>Each student's report card on its own page(s)</li>
+        <li>Automatic rankings and subject positions</li>
+        <li>School letterhead and signature areas</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3 class="card-title mb-4">3. Generate PDF</h3>
+      {% if exam %}
+        <a href="{% url 'class_teacher_all_report_cards_merged' %}?exam={{ exam.id }}"
+           target="_blank"
+           class="btn btn-primary">
+          {% include 'partials/icons.html' with name="download" size=16 %}
+          Download All Merged Report Cards (PDF)
+        </a>
+        <p class="text-xs mt-3" style="color: var(--ink-500); margin: 0;">
+          Opens in a new tab. Use your browser's print option to save or send to printer.
+        </p>
+      {% else %}
+        <button class="btn btn-secondary" disabled>Select an exam first</button>
+      {% endif %}
+    </div>
+
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- RIGHT: Quick Actions                                         -->
+  <!-- ============================================================ -->
+  <div class="lg:col-span-1">
+
+    <div class="card mb-6">
+      <h3 class="card-title mb-4">Individual Report Cards</h3>
+      <p class="text-sm mb-4" style="color: var(--ink-500);">
+        Need one student's report card? Open the mark sheets page.
+      </p>
+      <a href="{% url 'class_teacher_grades' %}{% if exam %}?exam={{ exam.id }}{% endif %}"
+         class="btn btn-secondary w-full">
+        {% include 'partials/icons.html' with name="file-text" size=16 %}
+        View Mark Sheets
+      </a>
+    </div>
+
+    <div class="card">
+      <h3 class="card-title mb-4">Back</h3>
+      <a href="{% url 'class_teacher_dashboard' %}" class="btn btn-secondary w-full">
+        {% include 'partials/icons.html' with name="arrow-left" size=16 %}
+        Back to Class Dashboard
+      </a>
+    </div>
+
+  </div>
+
+</div>
+
+{% endblock %}

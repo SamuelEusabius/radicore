@@ -81,15 +81,13 @@ def trip_detail(request, trip_id):
         driver=request.user,
     )
     trip_students = trip.trip_students.select_related(
-        'student', 'student__current_class'
+        'student'
     ).order_by('student__first_name', 'student__last_name')
-    # Ensure checklist exists
     checklist, _ = PreTripChecklist.objects.get_or_create(trip=trip)
 
     return render(request, 'departments/driver/trip_detail.html', {
         'trip': trip,
         'trip_students': trip_students,
-        'checklist': checklist,
         'boarded_count': trip_students.filter(boarding_status='boarded').count(),
         'dropped_count': trip_students.filter(boarding_status='dropped').count(),
         'pending_count': trip_students.filter(boarding_status='pending').count(),
@@ -190,6 +188,7 @@ def checklist_update(request, trip_id):
     return render(request, 'departments/driver/checklist_form.html', {
         'trip': trip,
         'checklist': checklist,
+        'today': timezone.localdate()
     })
 
 
@@ -466,3 +465,150 @@ def my_students_pdf(request):
         return redirect('my_students')
 
     return response
+
+# ==========================================================
+# DRIVER PDF REPORTS
+# ==========================================================
+
+@login_required
+def driver_trip_history_pdf(request):
+    """PDF of the driver's trip history for a selectable period."""
+    if not _driver_required(request):
+        return redirect('dashboard_home')
+
+    school = request.user.school
+    period = request.GET.get('period', 'month').strip()
+
+    # Calculate date range
+    today = timezone.localdate()
+    if period == 'today':
+        start_date = today
+        period_label = 'Today'
+    elif period == 'week':
+        start_date = today - timedelta(days=7)
+        period_label = 'Last 7 Days'
+    elif period == 'month':
+        start_date = today.replace(day=1)
+        period_label = 'This Month'
+    elif period == 'term':
+        # Assume term is ~3 months
+        start_date = today - timedelta(days=90)
+        period_label = 'Last 90 Days (Term)'
+    elif period == 'year':
+        start_date = today.replace(month=1, day=1)
+        period_label = 'This Year'
+    else:
+        start_date = today.replace(day=1)
+        period_label = 'This Month'
+
+    trips = Trip.objects.filter(
+        school=school,
+        driver=request.user,
+        date__gte=start_date,
+        date__lte=today,
+    ).select_related('route', 'vehicle').order_by('-date', 'direction')
+
+    # Aggregate fuel
+    fuel_qs = FuelLog.objects.filter(
+        school=school,
+        driver=request.user,
+        date__gte=start_date,
+    )
+    fuel_total = fuel_qs.aggregate(total=Sum('amount_kes'))['total'] or 0
+    fuel_litres = fuel_qs.aggregate(total=Sum('litres'))['total'] or 0
+
+    from apps.core.pdf_utils import html_to_pdf_response, build_pdf_context
+    from django.template.loader import render_to_string
+
+    context = build_pdf_context(
+        school, request.user,
+        driver=request.user,
+        trips=trips,
+        period_label=period_label,
+        period_start=start_date,
+        period_end=today,
+        fuel_total=fuel_total,
+        fuel_litres=fuel_litres,
+        trip_count=trips.count(),
+    )
+
+    html_string = render_to_string('pdf/driver_trip_history.html', context)
+    return html_to_pdf_response(
+        html_string,
+        f'trip_history_{request.user.id}_{period}.pdf',
+    )
+
+
+@login_required
+def driver_fuel_report_pdf(request):
+    """PDF of the driver's fuel usage and KM covered for a period."""
+    if not _driver_required(request):
+        return redirect('dashboard_home')
+
+    school = request.user.school
+    period = request.GET.get('period', 'month').strip()
+
+    today = timezone.localdate()
+    if period == 'today':
+        start_date = today
+        period_label = 'Today'
+    elif period == 'week':
+        start_date = today - timedelta(days=7)
+        period_label = 'Last 7 Days'
+    elif period == 'month':
+        start_date = today.replace(day=1)
+        period_label = 'This Month'
+    elif period == 'term':
+        start_date = today - timedelta(days=90)
+        period_label = 'Last 90 Days (Term)'
+    elif period == 'year':
+        start_date = today.replace(month=1, day=1)
+        period_label = 'This Year'
+    else:
+        start_date = today.replace(day=1)
+        period_label = 'This Month'
+
+    fuel_logs = FuelLog.objects.filter(
+        school=school,
+        driver=request.user,
+        date__gte=start_date,
+        date__lte=today,
+    ).select_related('vehicle').order_by('-date')
+
+    fuel_total = fuel_logs.aggregate(total=Sum('amount_kes'))['total'] or 0
+    fuel_litres = fuel_logs.aggregate(total=Sum('litres'))['total'] or 0
+
+    # Total KM from trips
+    trips = Trip.objects.filter(
+        school=school,
+        driver=request.user,
+        date__gte=start_date,
+        date__lte=today,
+        status='completed',
+    )
+    total_km = trips.aggregate(total=Sum('km_covered'))['total'] or 0 if hasattr(Trip, 'km_covered') else 0
+
+    cost_per_km = round(float(fuel_total) / total_km, 2) if total_km > 0 else 0
+
+    from apps.core.pdf_utils import html_to_pdf_response, build_pdf_context
+    from django.template.loader import render_to_string
+
+    context = build_pdf_context(
+        school, request.user,
+        driver=request.user,
+        fuel_logs=fuel_logs,
+        period_label=period_label,
+        period_start=start_date,
+        period_end=today,
+        fuel_total=fuel_total,
+        fuel_litres=fuel_litres,
+        total_km=total_km,
+        cost_per_km=cost_per_km,
+        trip_count=trips.count(),
+    )
+
+    html_string = render_to_string('pdf/driver_fuel_report.html', context)
+    return html_to_pdf_response(
+        html_string,
+        f'fuel_report_{request.user.id}_{period}.pdf',
+    )

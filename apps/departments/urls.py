@@ -6,6 +6,13 @@ from . import views, views_transport, views_library, views_health, views_kitchen
 from . import views, views_transport, views_library, views_health, views_kitchen, views_lab
 
 urlpatterns = [
+        # Driver PDF Reports
+    path('driver/trips/pdf/',
+         views_transport.driver_trip_history_pdf,
+         name='driver_trip_history_pdf'),
+    path('driver/fuel/pdf/',
+         views_transport.driver_fuel_report_pdf,
+         name='driver_fuel_report_pdf'),
     path('driver/', views.driver_dashboard, name='driver_dashboard'),
     path('librarian/', views.librarian_dashboard, name='librarian_dashboard'),
     path('lab/', views.lab_technician_dashboard, name='lab_technician_dashboard'),

@@ -161,6 +161,12 @@ urlpatterns = [
          name='class_teacher_all_report_cards_zip'),
 
     path('teacher/my-class/report-cards/merged/',
+         views.class_teacher_merged_reports_page,
+         name='class_teacher_merged_reports_page'),
+    path('report-card/<int:student_id>/<int:exam_id>/view/',
+         views.public_report_card_view,
+         name='public_report_card_view'),
+    path('teacher/my-class/report-cards/merged/pdf/',
          views.class_teacher_all_report_cards_merged,
          name='class_teacher_all_report_cards_merged'),
     

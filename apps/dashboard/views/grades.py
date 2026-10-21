@@ -15,6 +15,12 @@ from django.http import HttpResponse
 from django.db.models import Q, Count, Sum, Avg
 from .teachers import _ct_teacher_and_class
 from apps.core.pdf_utils import build_pdf_context
+from apps.finance.models import Invoice, Payment
+from django.db.models import Sum
+import qrcode
+from io import BytesIO
+import base64
+from django.urls import reverse
 
 from apps.accounts.decorators import (
     role_required, school_staff_only, teacher_only,
@@ -319,16 +325,63 @@ def class_results_pdf(request):
     class_teacher = Teacher.objects.filter(
         school=school, current_class=selected_class, is_class_teacher=True,
     ).select_related('user').first()
+        # --- FEE BALANCE CALCULATION ---
+    total_billed = Invoice.objects.filter(student=student).aggregate(
+        total=Sum('total_amount')
+    )['total'] or 0
+    
 
-    html_string = render_to_string('pdf/class_results.html',
+    total_paid = Payment.objects.filter(student=student).aggregate(
+        total=Sum('amount')
+    )['total'] or 0
+    
+    fee_balance = total_billed - total_paid
+
+    # --- TERM DATES ---
+    term_close_date = exam.date if exam else None
+    next_term_open_date = None 
+    
+    qr_data_uri = None
+    try:
+        from django.urls import reverse as _rev
+        qr_url = request.build_absolute_uri(
+            _rev('public_report_card_view', args=[student.id, exam.id])
+        )
+        print(f"[QR CARD] Building for {qr_url}")
+
+        qr = qrcode.QRCode(version=1, box_size=10, border=1)
+        qr.add_data(qr_url)
+        qr.make(fit=True)
+        img = qr.make_image(fill_color="black", back_color="white")
+
+        qr_buffer = BytesIO()
+        img.save(qr_buffer, format="PNG")
+        qr_base64 = base64.b64encode(qr_buffer.getvalue()).decode('utf-8')
+        qr_data_uri = f"data:image/png;base64,{qr_base64}"
+        print(f"[QR CARD] Generated, length: {len(qr_data_uri)}")
+    except Exception as e:
+        print(f"[QR CARD ERROR] {e}")
+        qr_data_uri = None 
+    html_string = render_to_string('pdf/report_card.html',
         build_pdf_context(
-            school=school,
-            generated_by=user,
-            selected_class=selected_class,
-            selected_exam=selected_exam,
-            results=results,
-            total_students=total,
-            class_teacher=class_teacher,
+            school=student.school,
+            generated_by=request.user,
+            student=student,
+            exam=exam,
+            prev_exam=prev_exam,
+            grade_rows=grade_rows,
+            avg_pct=avg_pct,
+            overall_grade=overall_grade,
+            class_rank=class_rank_info['rank'],
+            class_size=class_size,
+            total_marks=total_marks,
+            total_out_of=total_out_of,
+            chart_data_uri=chart_path,
+            teacher_remarks='',
+            fee_balance=fee_balance,
+            term_close_date=term_close_date,
+            next_term_open_date=next_term_open_date,
+            qr_data_uri=qr_data_uri,   
         )
     )
     filename = f'class_results_{selected_class.name}_{selected_exam.name}.pdf'
@@ -704,114 +757,6 @@ def _ct_build_rankings(exam, cls, students, subjects):
         r['rank'] = rank
 
     return rows, subjects
-
-
-@login_required
-@class_teacher_only
-def class_teacher_results_sheet_pdf(request):
-    """Printable A4 landscape class results sheet (CBC)."""
-    from apps.grades.models import Exam, Grade
-    from apps.students.models import Student
-    from apps.academics.models import Subject
-    from apps.core.pdf_utils import html_to_pdf_response, image_to_base64
-    from apps.grades.services.report_card import (
-        cbc_grade, cbc_points, compute_rankings, subject_positions,
-    )
-    from django.template.loader import render_to_string
-
-    teacher, cls = _ct_teacher_and_class(request)
-    if teacher is None:
-        return redirect('dashboard_home')
-    if cls is None:
-        return redirect('class_teacher_dashboard')
-
-    exams = Exam.objects.filter(school=request.user.school).order_by('-year', '-id')
-    exam_id = request.GET.get('exam')
-
-    exam = None
-    if exam_id:
-        try:
-            exam = Exam.objects.get(id=exam_id, school=request.user.school)
-        except Exam.DoesNotExist:
-            pass
-    if not exam and exams.exists():
-        exam = exams.first()
-
-    if not exam:
-        return HttpResponse('<h1>No exam selected</h1>', status=404)
-
-    students = Student.objects.filter(
-        school=request.user.school, class_level=cls.name, is_active=True,
-    ).order_by('first_name', 'last_name')
-
-    # Subjects present in this exam for this class
-    subject_ids = Grade.objects.filter(
-        exam=exam, student__in=students
-    ).values_list('subject_id', flat=True).distinct()
-
-    subjects = list(
-        Subject.objects.filter(id__in=subject_ids).order_by('name')
-    )
-    if not subjects:
-        subjects = list(Subject.objects.filter(school=request.user.school).order_by('name'))
-
-    # Marks matrix
-    all_grades = Grade.objects.filter(
-        exam=exam, student__in=students
-    ).values('student_id', 'subject_id', 'marks', 'out_of')
-
-    marks_matrix = {}
-    for g in all_grades:
-        sid = g['student_id']
-        sub_id = g['subject_id']
-        pct = (float(g['marks']) / float(g['out_of'] or 100)) * 100
-        marks_matrix.setdefault(sid, {})[sub_id] = round(pct, 1)
-
-    rankings = compute_rankings(exam, students)
-
-    rows = []
-    for s in students:
-        r = rankings.get(s.id, {'total': 0, 'avg': 0, 'rank': '—'})
-        subject_cells = []
-        for sub in subjects:
-            pct = marks_matrix.get(s.id, {}).get(sub.id)
-            subject_cells.append({
-                'subject': sub.name,
-                'pct': pct if pct is not None else None,
-                'grade': cbc_grade(pct) if pct is not None else '—',
-            })
-
-        rows.append({
-            'student': s,
-            'subject_cells': subject_cells,
-            'total': r['total'],
-            'avg': r['avg'],
-            'rank': r['rank'],
-            'grade': cbc_grade(r['avg']),
-            'points': cbc_points(r['avg']),
-        })
-
-    rows.sort(key=lambda x: x['rank'] if isinstance(x['rank'], int) else 999)
-
-    # Class averages
-    class_avg = round(sum(r['avg'] for r in rows) / len(rows), 1) if rows else 0
-
-    school_logo_b64 = image_to_base64(request.user.school.logo) if request.user.school.logo else None
-
-    html_string = render_to_string('pdf/class_results.html',
-        build_pdf_context(
-            school=request.user.school,
-            generated_by=request.user,
-            exam=exam,
-            class_level=cls,
-            subjects=subjects,
-            rows=rows,
-            school_logo_b64=school_logo_b64,
-        )
-    )
-    filename = f"results_{cls.name.replace(' ', '_')}_{exam.name.replace(' ', '_')}.pdf"
-    return html_to_pdf_response(html_string, filename)
-
 @login_required
 @class_teacher_only
 def class_teacher_all_report_cards_zip(request):
@@ -986,6 +931,45 @@ def _render_report_card_pdf(request, student, exam, rankings, positions, class_s
         })
 
     overall_grade = cbc_grade(avg_pct)
+    
+        # --- FEE BALANCE (using the model's built-in .balance property) ---
+    from apps.finance.models import Invoice
+    from django.db.models import Sum, F, DecimalField, ExpressionWrapper
+
+    balance_agg = Invoice.objects.filter(student=student).aggregate(
+        total=Sum(
+            ExpressionWrapper(
+                F('amount_due') - F('amount_paid'),
+                output_field=DecimalField(max_digits=12, decimal_places=2),
+            )
+        )
+    )
+    fee_balance = balance_agg['total'] or 0
+
+    # --- TERM DATES ---
+    term_close_date = exam.date if exam else None
+    next_term_open_date = None
+    qr_data_uri = None
+    try:
+        from django.urls import reverse as _rev
+        qr_url = request.build_absolute_uri(
+            _rev('public_report_card_view', args=[student.id, exam.id])
+        )
+        print(f"[QR CARD] Building for {qr_url}")
+
+        qr = qrcode.QRCode(version=1, box_size=10, border=1)
+        qr.add_data(qr_url)
+        qr.make(fit=True)
+        img = qr.make_image(fill_color="black", back_color="white")
+
+        qr_buffer = BytesIO()
+        img.save(qr_buffer, format="PNG")
+        qr_base64 = base64.b64encode(qr_buffer.getvalue()).decode('utf-8')
+        qr_data_uri = f"data:image/png;base64,{qr_base64}"
+        print(f"[QR CARD] Generated, length: {len(qr_data_uri)}")
+    except Exception as e:
+        print(f"[QR CARD ERROR] {e}")
+        qr_data_uri = None
 
     html_string = render_to_string('pdf/report_card.html',
         build_pdf_context(
@@ -1001,8 +985,12 @@ def _render_report_card_pdf(request, student, exam, rankings, positions, class_s
             class_size=class_size,
             total_marks=total_marks,
             total_out_of=total_out_of,
-            chart_path=chart_path,
+            chart_data_uri=chart_path,
             teacher_remarks='',
+            fee_balance=fee_balance,
+            term_close_date=term_close_date,
+            next_term_open_date=next_term_open_date,
+            qr_data_uri=qr_data_uri,
         )
     )
 
@@ -1140,3 +1128,75 @@ def _ct_teacher_and_class(request):
         return teacher, None
 
     return teacher, teacher.current_class
+
+@login_required
+@class_teacher_only
+def class_teacher_merged_reports_page(request):
+    """
+    Landing page for merged report cards.
+    Shows an exam selector + a button to generate the merged PDF.
+    """
+    from apps.grades.models import Exam
+    from apps.students.models import Student
+
+    teacher, cls = _ct_teacher_and_class(request)
+    if teacher is None:
+        return redirect('dashboard_home')
+    if cls is None:
+        return redirect('class_teacher_dashboard')
+
+    exams = Exam.objects.filter(school=request.user.school).order_by('-year', '-id')
+
+    exam_id = request.GET.get('exam')
+    exam = None
+    if exam_id:
+        try:
+            exam = Exam.objects.get(id=exam_id, school=request.user.school)
+        except Exam.DoesNotExist:
+            pass
+    if not exam and exams.exists():
+        exam = exams.first()
+
+    # Count students in this class
+    student_count = Student.objects.filter(
+        school=request.user.school,
+        class_level=cls.name,
+        is_active=True,
+    ).count()
+
+    return render(request, 'dashboard/class_teacher_merged_reports.html', {
+        'teacher': teacher,
+        'cls': cls,
+        'exams': exams,
+        'exam': exam,
+        'student_count': student_count,
+    })
+@login_required
+def public_report_card_view(request, student_id, exam_id):
+    """A web-based view of the report card (used by QR code)."""
+    from apps.students.models import Student
+    from apps.grades.models import Exam, Grade
+    from apps.grades.services.report_card import compute_rankings, subject_positions
+
+    student = get_object_or_404(Student, id=student_id, school=request.user.school)
+    exam = get_object_or_404(Exam, id=exam_id, school=request.user.school)
+
+    # Re-use logic to build the report card data
+    classmates = Student.objects.filter(
+        school=request.user.school, class_level=student.class_level, is_active=True
+    )
+    rankings = compute_rankings(exam, classmates)
+    positions = subject_positions(exam, classmates)
+    grades = Grade.objects.filter(exam=exam, student=student).select_related('subject')
+
+    context = {
+        'student': student,
+        'exam': exam,
+        'grades': grades,
+        'rankings': rankings,
+        'class_size': classmates.count(),
+        'school': request.user.school,
+    }
+    
+    # You can render a dedicated HTML template here, or re-use the PDF one
+    return render(request, 'dashboard/public_report_card.html', context)

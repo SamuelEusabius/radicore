@@ -189,7 +189,7 @@ def previous_exam_for(exam, school):
 def build_performance_chart(current_grades, previous_grades):
     """
     Builds a matplotlib bar+line chart as base64 data URI.
-    Optimized for xhtml2pdf — small image, low DPI, high compression.
+    High-contrast, bold colors with abbreviated subject names.
     """
     import matplotlib
     matplotlib.use('Agg')
@@ -204,74 +204,143 @@ def build_performance_chart(current_grades, previous_grades):
     curr_vals = [current_grades.get(s, 0) for s in subject_names]
     prev_vals = [previous_grades.get(s, 0) for s in subject_names]
 
-    # ---- SMALL figure, low DPI ----
-    fig, ax = plt.subplots(figsize=(6.5, 2.0), dpi=70)
+    # ---- Figure setup ----
+    # Slightly wider figure to accommodate the legend without overlapping bars
+    fig, ax = plt.subplots(figsize=(7.0, 2.4), dpi=110)
 
     x = list(range(len(subject_names)))
-    bar_width = 0.38
+    bar_width = 0.35
 
-    # Current bars (teal)
+    # ---- BOLD, SATURATED Colors ----
+    color_current = '#0F766E'      # Deep Teal
+    color_previous = '#F59E0B'     # Amber Orange
+    color_current_edge = '#134E4A'
+    color_previous_edge = '#B45309'
+    color_line = '#0F172A'         # Dark navy
+
+    # ---- CURRENT BARS (Bold Teal) ----
     ax.bar(
         [i - bar_width/2 for i in x],
         curr_vals,
         width=bar_width,
-        color='#00695c',
-        edgecolor='#004d40',
-        linewidth=0.6,
+        color=color_current,
+        edgecolor=color_current_edge,
+        linewidth=1.5,
         label='Current',
         zorder=3,
     )
 
-    # Previous bars (gray)
+    # ---- PREVIOUS BARS (Bold Orange) ----
     if previous_grades:
         ax.bar(
             [i + bar_width/2 for i in x],
             prev_vals,
             width=bar_width,
-            color='#cbd5e1',
-            edgecolor='#94a3b8',
-            linewidth=0.6,
+            color=color_previous,
+            edgecolor=color_previous_edge,
+            linewidth=1.5,
             label='Previous',
             zorder=3,
         )
 
-    # Trend line
+    # ---- TREND LINE (Thick, Dark) ----
     ax.plot(
         x, curr_vals,
         marker='o', linestyle='-',
-        color='#004d40', linewidth=1.6, markersize=4,
+        color=color_line, linewidth=2.5, markersize=6,
+        markerfacecolor='#EF4444', markeredgecolor='#7F1D1D', markeredgewidth=1.5,
         label='Trend',
         zorder=4,
     )
 
-    # Value labels
+    # ---- VALUE LABELS on bars ----
     for i, v in enumerate(curr_vals):
         ax.annotate(
             f'{int(v)}',
-            (i, v),
-            textcoords='offset points',
-            xytext=(0, 4),
+            (i - bar_width/2, v),
+            textcoords="offset points",
+            xytext=(0, 3),
             ha='center',
-            fontsize=6,
-            color='#004d40',
+            fontsize=7,
             fontweight='bold',
+            color=color_current_edge,
         )
+    if previous_grades:
+        for i, v in enumerate(prev_vals):
+            ax.annotate(
+                f'{int(v)}',
+                (i + bar_width/2, v),
+                textcoords="offset points",
+                xytext=(0, 3),
+                ha='center',
+                fontsize=7,
+                fontweight='bold',
+                color=color_previous_edge,
+            )
 
-    # Styling
+    # ---- SUBJECT ABBREVIATIONS ----
+    def _abbrev(name):
+        n = name.upper().strip()
+        # Custom mappings for common Kenyan subjects
+        mappings = {
+            'CHRISTIAN RELIGIOUS EDUCATION': 'CRE',
+            'CRE': 'CRE',
+            'ISLAMIC RELIGIOUS EDUCATION': 'IRE',
+            'IRE': 'IRE',
+            'HINDU RELIGIOUS EDUCATION': 'HRE',
+            'ENGLISH': 'ENG',
+            'KISWAHILI': 'KIS',
+            'MATHEMATICS': 'MATH',
+            'SCIENCE': 'SCI',
+            'SOCIAL STUDIES': 'SST',
+            'PERFORMING ART': 'P.ART',
+            'PERFORMING ARTS': 'P.ART',
+            'AGRICULTURE': 'AGR',
+            'BUSINESS STUDIES': 'BST',
+            'PHYSICAL EDUCATION': 'PE',
+            'COMPUTER SCIENCE': 'CS',
+        }
+        if n in mappings:
+            return mappings[n]
+        
+        # Fallback for multi-word subjects: take first letter of each word
+        if len(n.split()) > 1:
+            return ''.join(w[0] for w in n.split())
+        
+        # Single word: take first 4 letters
+        return n[:4]
+
+    abbrevs = [_abbrev(s) for s in subject_names]
+
+    # ---- Axes styling ----
     ax.set_xticks(x)
-    short_names = [s[:10] + '…' if len(s) > 10 else s for s in subject_names]
-    ax.set_xticklabels(short_names, fontsize=6, rotation=0)
-    ax.set_ylim(0, 105)
-    ax.grid(axis='y', linestyle=':', alpha=0.3, zorder=0)
-    ax.legend(loc='upper right', fontsize=6, frameon=False, ncol=3)
-    ax.tick_params(axis='both', colors='#4b5563', labelsize=6)
+    ax.set_xticklabels(abbrevs, rotation=0, ha='center', fontsize=9, fontweight='bold')
+    ax.set_ylabel('Score (%)', fontsize=9, fontweight='bold')
+    ax.set_ylim(0, 110)
 
-    for spine in ['top', 'right']:
-        ax.spines[spine].set_visible(False)
-    ax.spines['left'].set_color('#cbd5e1')
-    ax.spines['bottom'].set_color('#cbd5e1')
+    # Gridlines (subtle, horizontal only)
+    ax.yaxis.grid(True, linestyle='--', linewidth=0.5, color='#CBD5E1', alpha=0.7, zorder=0)
+    ax.set_axisbelow(True)
 
-    plt.tight_layout(pad=0.3)
+    # Remove top and right spines
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.spines['left'].set_linewidth(1.2)
+    ax.spines['bottom'].set_linewidth(1.2)
+
+    # ---- Legend (high contrast, upper right) ----
+    legend = ax.legend(
+        loc='upper right',
+        fontsize=8,
+        frameon=True,
+        facecolor='#FFFFFF',
+        edgecolor='#94A3B8',
+        framealpha=1.0,
+    )
+    for text in legend.get_texts():
+        text.set_fontweight('bold')
+
+    plt.tight_layout()
 
     # ---- Encode as base64 ----
     buffer = BytesIO()
@@ -281,7 +350,6 @@ def build_performance_chart(current_grades, previous_grades):
         bbox_inches='tight',
         pad_inches=0.05,
         facecolor='white',
-        optimize=True,
     )
     plt.close(fig)
 
@@ -290,11 +358,7 @@ def build_performance_chart(current_grades, previous_grades):
 
     print(f"[CHART] PNG size: {len(img_bytes)} bytes")
 
-    encoded = base64.b64encode(img_bytes).decode('ascii')
-    data_uri = f'data:image/png;base64,{encoded}'
-    print(f"[CHART] Data URI length: {len(data_uri)} chars")
-
-    return data_uri
+    return f"data:image/png;base64,{base64.b64encode(img_bytes).decode('ascii')}"
    
 # ============================================================
 # AUTO-GENERATED REMARKS

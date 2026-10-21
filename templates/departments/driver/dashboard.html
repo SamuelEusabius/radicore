@@ -12,9 +12,41 @@
     <p class="page-subtitle">Today is {{ today|date:"l, j F Y" }}</p>
   </div>
 </div>
+<!-- REPORTS -->
+<div class="card mb-6">
+  <h3 class="card-title mb-4">Download Reports</h3>
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+    <!-- Trip History -->
+    <div>
+      <p class="text-xs mb-2" style="color: var(--ink-500); font-weight: 600; text-transform: uppercase;">Trip History PDF</p>
+      <div class="flex flex-wrap gap-2">
+        <a href="{% url 'driver_trip_history_pdf' %}?period=today" target="_blank" class="btn btn-secondary" style="padding: var(--s-2) var(--s-3); font-size: var(--text-xs);">Today</a>
+        <a href="{% url 'driver_trip_history_pdf' %}?period=week" target="_blank" class="btn btn-secondary" style="padding: var(--s-2) var(--s-3); font-size: var(--text-xs);">Week</a>
+        <a href="{% url 'driver_trip_history_pdf' %}?period=month" target="_blank" class="btn btn-secondary" style="padding: var(--s-2) var(--s-3); font-size: var(--text-xs);">Month</a>
+        <a href="{% url 'driver_trip_history_pdf' %}?period=term" target="_blank" class="btn btn-secondary" style="padding: var(--s-2) var(--s-3); font-size: var(--text-xs);">Term</a>
+        <a href="{% url 'driver_trip_history_pdf' %}?period=year" target="_blank" class="btn btn-secondary" style="padding: var(--s-2) var(--s-3); font-size: var(--text-xs);">Year</a>
+      </div>
+    </div>
+
+    <!-- Fuel Report -->
+    <div>
+      <p class="text-xs mb-2" style="color: var(--ink-500); font-weight: 600; text-transform: uppercase;">Fuel &amp; KM Report PDF</p>
+      <div class="flex flex-wrap gap-2">
+        <a href="{% url 'driver_fuel_report_pdf' %}?period=today" target="_blank" class="btn btn-secondary" style="padding: var(--s-2) var(--s-3); font-size: var(--text-xs);">Today</a>
+        <a href="{% url 'driver_fuel_report_pdf' %}?period=week" target="_blank" class="btn btn-secondary" style="padding: var(--s-2) var(--s-3); font-size: var(--text-xs);">Week</a>
+        <a href="{% url 'driver_fuel_report_pdf' %}?period=month" target="_blank" class="btn btn-secondary" style="padding: var(--s-2) var(--s-3); font-size: var(--text-xs);">Month</a>
+        <a href="{% url 'driver_fuel_report_pdf' %}?period=term" target="_blank" class="btn btn-secondary" style="padding: var(--s-2) var(--s-3); font-size: var(--text-xs);">Term</a>
+        <a href="{% url 'driver_fuel_report_pdf' %}?period=year" target="_blank" class="btn btn-secondary" style="padding: var(--s-2) var(--s-3); font-size: var(--text-xs);">Year</a>
+      </div>
+    </div>
+
+  </div>
+</div>
 
 <!-- KPI Row -->
 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+  
   <div class="card">
     <div class="stat-label">Today's Trips</div>
     <div class="stat-value">{{ today_trip_count }}</div>

@@ -380,11 +380,23 @@
 </div>
 
 <!-- PERFORMANCE CHART -->
+<!-- PERFORMANCE CHART -->
 {% if chart_data_uri %}
-<div class="chart-section">
-  <p class="chart-title">Performance Trend{% if prev_exam %} vs {{ prev_exam.name }}{% endif %}</p>
-   <img class="chart-img" src="{{ chart_data_uri|safe }}" alt="Chart">
-</div>
+<table cellpadding="0" cellspacing="0" style="width: 100%; margin-top: 12px; margin-bottom: 12px; page-break-inside: avoid;">
+  <tr>
+    <td style="padding: 6px 0; font-size: 9px; font-weight: bold; color: #0f172a; text-transform: uppercase;">
+      Performance Trend{% if prev_exam %} vs {{ prev_exam.name }}{% endif %}
+    </td>
+  </tr>
+  <tr>
+    <td style="text-align: center; padding: 8px; border: 1px solid #e5e7eb; background: #ffffff;">
+      <img src="{{ chart_data_uri|safe }}"
+           alt="Performance Chart"
+           style="display: block; width: 620px; height: auto; max-width: 100%;"
+           width="620" height="195">
+    </td>
+  </tr>
+</table>
 {% endif %}
 
 <!-- TEACHER REMARKS -->
@@ -399,6 +411,69 @@
   <div class="remarks-text">{{ principal_remarks|default:"&nbsp;" }}</div>
 </div>
 
+<!-- FEE & TERM INFO -->
+<table style="width: 100%; margin-top: 15px; font-size: 10px; page-break-inside: avoid;">
+  <tr>
+    <td style="width: 50%; vertical-align: top;">
+      <div style="border: 1px solid #cbd5e1; padding: 8px; background: #f8fafc;">
+        <p style="margin: 0 0 4px 0; font-weight: bold; color: #0f172a;">Fee Balance:</p>
+        <p style="margin: 0; font-size: 12px;">
+          {% if fee_balance > 0 %}
+            <span style="color: #dc2626; font-weight: bold;">KES {{ fee_balance|floatformat:2 }}</span>
+          {% else %}
+            <span style="color: #16a34a; font-weight: bold;">Fully Paid</span>
+          {% endif %}
+        </p>
+      </div>
+    </td>
+    <td style="width: 50%; vertical-align: top; padding-left: 10px;">
+      <div style="border: 1px solid #cbd5e1; padding: 8px; background: #f8fafc;">
+        <p style="margin: 0 0 4px 0; font-weight: bold; color: #0f172a;">School Calendar:</p>
+        <p style="margin: 0; font-size: 10px;"><strong>Closes:</strong> {{ term_close_date|date:"d M Y"|default:"—" }}</p>
+        <p style="margin: 0; font-size: 10px;"><strong>Opens:</strong> {{ next_term_open_date|date:"d M Y"|default:"—" }}</p>
+      </div>
+    </td>
+  </tr>
+</table>
+
+<!-- SIGNATURES & RUBBERSTAMP & QR CODE -->
+<table style="width: 100%; margin-top: 25px; page-break-inside: avoid;">
+  <tr>
+    <!-- Class Teacher -->
+    <td style="width: 25%; vertical-align: bottom;">
+      <div style="border-bottom: 1px solid #000; height: 30px; margin-bottom: 4px;"></div>
+      <p style="margin: 0; font-size: 9px; font-weight: bold;">Class Teacher Signature</p>
+      <p style="margin: 0; font-size: 8px; color: #475569;">Date: _______________</p>
+    </td>
+
+    <!-- Principal -->
+    <td style="width: 25%; vertical-align: bottom; padding-left: 10px;">
+      <div style="border-bottom: 1px solid #000; height: 30px; margin-bottom: 4px;"></div>
+      <p style="margin: 0; font-size: 9px; font-weight: bold;">Principal Signature</p>
+      <p style="margin: 0; font-size: 8px; color: #475569;">Date: _______________</p>
+    </td>
+
+    <!-- Rubberstamp Space -->
+    <td style="width: 25%; vertical-align: bottom; text-align: center; padding-left: 10px;">
+      <div style="border: 2px dashed #94a3b8; height: 60px; width: 110px; margin: 0 auto; display: flex; align-items: center; justify-content: center;">
+        <span style="font-size: 8px; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; text-align: center;">
+          Official School<br>Rubberstamp
+        </span>
+      </div>
+    </td>
+        <!-- QR Code -->
+    <td style="width: 25%; vertical-align: bottom; text-align: right;">
+      {% if qr_data_uri %}
+        <div style="width: 80px; height: 80px; margin-left: auto;">
+          <img src="{{ qr_data_uri }}" alt="QR Code" style="width: 80px; height: 80px;" />
+        </div>
+        <p style="margin: 2px 0 0 0; font-size: 7px; color: #64748b; text-align: center;">Scan to verify</p>
+      {% else %}
+        <p style="font-size: 8px; color: red;">QR Not Generated</p>
+      {% endif %}
+    </td>
+  </tr>
+</table>
 <!-- SIGNATURES -->
 <div class="signature-block">
   <table class="signature-table">

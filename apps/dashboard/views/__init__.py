@@ -88,6 +88,8 @@ from .grades import (
     class_teacher_all_report_cards_zip,
     class_teacher_all_report_cards_merged,
     _render_report_card_pdf,
+    class_teacher_merged_reports_page,
+    public_report_card_view,
 )
 
 from .finance import (
