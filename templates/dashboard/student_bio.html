@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Bio Data — {{ student.first_name }} {{ student.last_name }}{% endblock %}
+{% block header_title %}Student Bio Data{% endblock %}
+{% block header_sub %}{{ student.first_name }} {{ student.last_name }} &middot; {{ student.admission_number }}{% endblock %}
+
+{% block content %}
+
+<!-- ACTION BAR -->
+<div class="flex flex-wrap items-center gap-3 mb-6">
+  <a href="{% url 'student_biodata_pdf' student.id %}" target="_blank" class="btn btn-primary">
+    {% include 'partials/icons.html' with name="download" size=16 %}
+    Download PDF
+  </a>
+  <a href="{% url 'student_detail' student.id %}" class="btn btn-secondary">
+    {% include 'partials/icons.html' with name="eye" size=16 %}
+    View Profile
+  </a>
+  <a href="{% url 'students_list' %}" class="btn btn-secondary">
+    {% include 'partials/icons.html' with name="arrow-left" size=16 %}
+    Back to Students
+  </a>
+</div>
+
+<!-- BIO DATA -->
+<div class="card mb-6">
+  <h3 class="card-title mb-4">Student Information</h3>
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div>
+      <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Full Name</div>
+      <div style="font-weight: 600; color: var(--ink-900); margin-top: 2px;">
+        {{ student.first_name }} {{ student.middle_name }} {{ student.last_name }}
+      </div>
+    </div>
+    <div>
+      <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Admission #</div>
+      <div style="color: var(--ink-900); font-family: var(--font-mono); margin-top: 2px;">{{ student.admission_number }}</div>
+    </div>
+    <div>
+      <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">UPI</div>
+      <div style="color: var(--ink-900); margin-top: 2px;">{{ student.upi|default:"—" }}</div>
+    </div>
+    <div>
+      <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Gender</div>
+      <div style="color: var(--ink-900); margin-top: 2px;">{{ student.get_gender_display }}</div>
+    </div>
+    <div>
+      <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Date of Birth</div>
+      <div style="color: var(--ink-900); margin-top: 2px;">
+        {% if student.date_of_birth %}{{ student.date_of_birth|date:"d M Y" }}{% else %}—{% endif %}
+      </div>
+    </div>
+    <div>
+      <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Class</div>
+      <div style="color: var(--ink-900); margin-top: 2px;">{{ student.class_level|default:"—" }}</div>
+    </div>
+    <div>
+      <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">CBC Level</div>
+      <div style="color: var(--ink-900); margin-top: 2px;">{{ student.get_cbc_level_display|default:"—" }}</div>
+    </div>
+    <div>
+      <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Admission Date</div>
+      <div style="color: var(--ink-900); margin-top: 2px;">
+        {% if student.admission_date %}{{ student.admission_date|date:"d M Y" }}{% else %}—{% endif %}
+      </div>
+    </div>
+    <div>
+      <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Birth Cert #</div>
+      <div style="color: var(--ink-900); margin-top: 2px;">{{ student.birth_certificate_number|default:"—" }}</div>
+    </div>
+  </div>
+</div>
+
+<!-- HOME LOCATION -->
+{% if student.county_fk or student.sub_county %}
+<div class="card mb-6">
+  <h3 class="card-title mb-4">Home Location</h3>
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div>
+      <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">County</div>
+      <div style="color: var(--ink-900); margin-top: 2px;">{{ student.county_fk.name|default:"—" }}</div>
+    </div>
+    <div>
+      <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Constituency</div>
+      <div style="color: var(--ink-900); margin-top: 2px;">{{ student.constituency_fk.name|default:"—" }}</div>
+    </div>
+    <div>
+      <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Ward</div>
+      <div style="color: var(--ink-900); margin-top: 2px;">{{ student.ward_fk.name|default:"—" }}</div>
+    </div>
+    <div>
+      <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Sub-County</div>
+      <div style="color: var(--ink-900); margin-top: 2px;">{{ student.sub_county|default:"—" }}</div>
+    </div>
+    <div>
+      <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Location</div>
+      <div style="color: var(--ink-900); margin-top: 2px;">{{ student.location|default:"—" }}</div>
+    </div>
+    <div>
+      <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Village</div>
+      <div style="color: var(--ink-900); margin-top: 2px;">{{ student.village|default:"—" }}</div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- GUARDIAN -->
+<div class="card mb-6">
+  <h3 class="card-title mb-4">Guardian</h3>
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div>
+      <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Name</div>
+      <div style="color: var(--ink-900); margin-top: 2px;">{{ student.guardian_name|default:"—" }}</div>
+    </div>
+    <div>
+      <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Phone</div>
+      <div style="color: var(--ink-900); margin-top: 2px;">{{ student.guardian_phone|default:"—" }}</div>
+    </div>
+    <div>
+      <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Relationship</div>
+      <div style="color: var(--ink-900); margin-top: 2px;">{{ student.guardian_relationship|default:"—" }}</div>
+    </div>
+  </div>
+</div>
+
+<!-- MEDICAL -->
+{% if student.has_disability or student.has_medical_condition or student.requires_medication %}
+<div class="card mb-6" style="border-left: 4px solid var(--warning);">
+  <h3 class="card-title mb-4">Medical</h3>
+  {% if student.has_disability %}
+  <p style="margin: 0 0 var(--s-3);"><strong>Disability:</strong> {{ student.disability_details }}</p>
+  {% endif %}
+  {% if student.has_medical_condition %}
+  <p style="margin: 0 0 var(--s-3);"><strong>Medical Condition:</strong> {{ student.medical_condition_details }}</p>
+  {% endif %}
+  {% if student.requires_medication %}
+  <p style="margin: 0;"><strong>Medication:</strong> {{ student.medication_notes }}</p>
+  {% endif %}
+</div>
+{% endif %}
+
+<!-- BOARDING -->
+{% if student.is_boarding %}
+<div class="card mb-6">
+  <h3 class="card-title mb-4">Boarding</h3>
+  {% if boarding %}
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div>
+      <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Dormitory</div>
+      <div style="color: var(--ink-900); margin-top: 2px;">{{ boarding.dormitory.name }}</div>
+    </div>
+    <div>
+      <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Bed</div>
+      <div style="color: var(--ink-900); margin-top: 2px;">{{ boarding.bed.bed_number }}</div>
+    </div>
+  </div>
+  {% else %}
+  <p class="text-sm" style="color: var(--ink-500); margin: 0;">Boarding student — bed not yet assigned.</p>
+  {% endif %}
+</div>
+{% endif %}
+
+{% endblock %}

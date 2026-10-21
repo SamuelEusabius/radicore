@@ -380,6 +380,96 @@ class AdmissionApplication(models.Model):
             self.reference_number = f"APP-{self.school.code}-{seq:05d}"
         super().save(*args, **kwargs)
         
+            # ============ ACADEMIC HISTORY ============
+    previous_class = models.CharField(max_length=40, blank=True, default='')
+    previous_academic_results = models.FileField(
+        upload_to='admissions/results/', blank=True, null=True,
+    )
+    leaving_certificate = models.FileField(
+        upload_to='admissions/leaving/', blank=True, null=True,
+    )
+
+    # ============ LOCATION (Kenyan cascade) ============
+    county_fk = models.ForeignKey(
+        'locations.County', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='admission_apps',
+    )
+    constituency_fk = models.ForeignKey(
+        'locations.Constituency', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='admission_apps',
+    )
+    ward_fk = models.ForeignKey(
+        'locations.Ward', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='admission_apps',
+    )
+    sub_county = models.CharField(max_length=50, blank=True, default='')
+    location = models.CharField(max_length=100, blank=True, default='')
+    village = models.CharField(max_length=100, blank=True, default='')
+
+    # ============ IDENTITY ============
+    birth_certificate_number = models.CharField(max_length=30, blank=True, default='')
+    birth_certificate_file = models.FileField(
+        upload_to='admissions/birth_certs/', blank=True, null=True,
+    )
+    parent_id_file = models.FileField(
+        upload_to='admissions/parent_ids/', blank=True, null=True,
+    )
+
+    # ============ DISABILITY & MEDICAL ============
+    has_disability = models.BooleanField(default=False)
+    disability_details = models.TextField(blank=True, default='')
+    disability_support_document = models.FileField(
+        upload_to='admissions/disability/', blank=True, null=True,
+    )
+    has_medical_condition = models.BooleanField(default=False)
+    medical_condition_details = models.TextField(blank=True, default='')
+    medical_report = models.FileField(
+        upload_to='admissions/medical/', blank=True, null=True,
+    )
+    requires_medication = models.BooleanField(default=False)
+    medication_notes = models.TextField(blank=True, default='')
+
+    # ============ PARENT DETAILS ============
+    parent_id_number = models.CharField(max_length=30, blank=True, default='')
+    parent_occupation = models.CharField(max_length=100, blank=True, default='')
+    parent_county_fk = models.ForeignKey(
+        'locations.County', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='parent_admission_apps',
+    )
+    parent_sub_county = models.CharField(max_length=50, blank=True, default='')
+    parent_constituency_fk = models.ForeignKey(
+        'locations.Constituency', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='parent_admission_apps',
+    )
+    parent_ward_fk = models.ForeignKey(
+        'locations.Ward', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='parent_admission_apps',
+    )
+    parent_location = models.CharField(max_length=100, blank=True, default='')
+    parent_village = models.CharField(max_length=100, blank=True, default='')
+
+    # ============ SECOND PARENT ============
+    second_parent_name = models.CharField(max_length=120, blank=True, default='')
+    second_parent_phone = models.CharField(max_length=20, blank=True, default='')
+    second_parent_email = models.EmailField(blank=True, default='')
+    second_parent_id_number = models.CharField(max_length=30, blank=True, default='')
+    second_parent_occupation = models.CharField(max_length=100, blank=True, default='')
+    second_parent_relationship = models.CharField(max_length=20, blank=True, default='')
+
+    # ============ BOARDING ============
+    is_boarding = models.BooleanField(default=False)
+    assigned_dormitory = models.ForeignKey(
+        'boarding.BoardingDormitory', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='admission_applications',
+    )
+    assigned_bed = models.ForeignKey(
+        'boarding.BoardingBed', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='admission_applications',
+    )
+
+    # ============ CONVERSION TRACKING ============
+    parent_created_at = models.DateTimeField(null=True, blank=True)
+        
         # ============================================================
 # LETTER TEMPLATE — reusable letter templates per school
 # ============================================================

@@ -753,12 +753,16 @@ def application_create(request):
     else:
         form = AdmissionApplicationForm(initial={'status': 'new'})
 
+    # --- ADD THIS BLOCK ---
+    from apps.dashboard.views.students import generate_next_admission_number
+    next_admission_number = generate_next_admission_number(school)
+
     return render(request, 'dashboards/secretary/application_form.html', {
         'school': school,
         'form': form,
         'mode': 'create',
+        'next_admission_number': next_admission_number, # Pass to template
     })
-
 
 @role_required(*SECRETARY_ROLES)
 def application_detail(request, pk):
@@ -1119,3 +1123,174 @@ def notice_print_all(request):
         'generated_on': timezone.now(),
         'auto_print': request.GET.get('auto', '1') == '1',
     })
+    
+    # ==========================================================
+# CONVERT APPLICATION → STUDENT
+# ==========================================================
+
+@role_required(*SECRETARY_ROLES)
+def application_admit(request, pk):
+    """
+    Convert an AdmissionApplication into a Student record.
+    """
+    school = _school(request)
+    application = get_object_or_404(AdmissionApplication, pk=pk, school=school)
+
+    if application.converted_student:
+        messages.warning(request, "This application is already admitted.")
+        return redirect('secretary_application_detail', pk=application.pk)
+
+    if request.method == 'POST':
+        try:
+            with transaction.atomic():
+                from apps.students.models import Student
+                from apps.parents.models import Parent
+                from apps.accounts.models import User
+                from apps.boarding.models import find_and_assign_bed
+                from apps.dashboard.views.students import generate_next_admission_number
+
+                # --- 1. Generate admission number ---
+                admission_number = generate_next_admission_number(school)
+
+                # --- 2. Create Student ---
+                student = Student.objects.create(
+                    school=school,
+                    first_name=application.first_name,
+                    middle_name=application.middle_name,
+                    last_name=application.last_name,
+                    gender=application.gender,
+                    date_of_birth=application.date_of_birth,
+                    cbc_level='',
+                    class_level=application.applying_for_class,
+                    admission_number=admission_number,
+                    admission_date=timezone.localdate(),
+                    guardian_name=application.guardian_name,
+                    guardian_phone=application.guardian_phone,
+                    guardian_relationship=application.relationship,
+                    # Location
+                    county_fk=application.county_fk,
+                    constituency_fk=application.constituency_fk,
+                    ward_fk=application.ward_fk,
+                    sub_county=application.sub_county,
+                    location=application.location,
+                    village=application.village,
+                    # Medical
+                    has_disability=application.has_disability,
+                    disability_details=application.disability_details,
+                    has_medical_condition=application.has_medical_condition,
+                    medical_condition_details=application.medical_condition_details,
+                    requires_medication=application.requires_medication,
+                    medication_notes=application.medication_notes,
+                    # Boarding
+                    is_boarding=application.is_boarding,
+                    # Explicit defaults
+                    is_cleared=False,
+                )
+
+                # --- 3. Create Parent record (no User account) ---
+                parent_record = None
+                if application.guardian_email:
+                    existing_user = User.objects.filter(
+                        email__iexact=application.guardian_email, role='parent',
+                    ).first()
+
+                    if existing_user and hasattr(existing_user, 'parent_profile'):
+                        parent_record = existing_user.parent_profile
+                    else:
+                        first_p = (application.guardian_name or '').split(' ')[0]
+                        last_p = ' '.join((application.guardian_name or '').split(' ')[1:])
+                        new_user = User.objects.create(
+                            username=application.guardian_email,
+                            email=application.guardian_email,
+                            first_name=first_p,
+                            last_name=last_p,
+                            role='parent',
+                            school=school,
+                            phone=application.guardian_phone,
+                            is_active=False,
+                        )
+                        new_user.set_unusable_password()
+                        new_user.save()
+
+                        parent_record = Parent.objects.create(
+                            user=new_user,
+                            first_name=first_p,
+                            last_name=last_p,
+                            id_number=application.parent_id_number or '',
+                            occupation=application.parent_occupation or '',
+                            phone=application.guardian_phone,
+                            relationship=application.relationship or 'guardian',
+                        )
+
+                    if parent_record:
+                        parent_record.students.add(student)
+
+                # --- 4. Auto-assign boarding bed ---
+                if application.is_boarding:
+                    try:
+                        assignment = find_and_assign_bed(student, assigned_by=request.user)
+                        if assignment:
+                            messages.info(
+                                request,
+                                f"Boarding bed auto-assigned: {assignment.dormitory.name} · Bed {assignment.bed.bed_number}",
+                            )
+                        else:
+                            messages.warning(request, "No boarding beds available — assign manually.")
+                    except Exception as e:
+                        logger.exception("Bed assignment failed: %s", e)
+
+                # --- 5. Update application ---
+                application.status = AdmissionApplication.Status.ENROLLED
+                application.converted_student = student
+                application.converted_at = timezone.now()
+                application.converted_by = request.user
+                application.parent_created_at = timezone.now() if parent_record else None
+                application.save()
+
+            messages.success(
+                request,
+                f"✅ Student admitted: {student.first_name} {student.last_name} (Adm: {student.admission_number})"
+            )
+            return redirect('secretary_application_detail', pk=application.pk)
+
+        except Exception as e:
+            logger.exception("Admit failed: %s", e)
+            messages.error(request, f"Admission failed: {e}")
+            return redirect('secretary_application_detail', pk=application.pk)
+
+    # GET — show confirmation page
+    return render(request, 'dashboards/secretary/application_admit.html', {
+        'school': school,
+        'application': application,
+    })
+
+def _generate_admission_number(school):
+    """Generate the next admission number for the school."""
+    from apps.dashboard.views.students import generate_next_admission_number
+    return generate_next_admission_number(school)
+
+@role_required(*SECRETARY_ROLES)
+def application_print(request, pk):
+    """
+    Printable admission dossier — renders the full application
+    with school letterhead for physical filing.
+    """
+    school = _school(request)
+    application = get_object_or_404(
+        AdmissionApplication.objects.select_related(
+            'county_fk', 'constituency_fk', 'ward_fk',
+            'parent_county_fk', 'parent_constituency_fk', 'parent_ward_fk',
+            'assigned_dormitory', 'assigned_bed',
+            'converted_student',
+        ),
+        pk=pk, school=school,
+    )
+
+    from apps.core.pdf_utils import build_pdf_context
+    context = build_pdf_context(
+        school,
+        request.user,
+        application=application,
+        auto_print=request.GET.get('auto', '1') == '1',
+    )
+    return render(request, 'pdf/admission_dossier.html', context)

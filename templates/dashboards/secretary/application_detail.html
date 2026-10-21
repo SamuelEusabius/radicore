@@ -7,7 +7,9 @@
 
 {% block content %}
 
-<!-- STATUS STRIP -->
+<!-- ============================================================ -->
+<!-- STATUS STRIP                                                 -->
+<!-- ============================================================ -->
 <div class="card mb-6" style="padding: var(--s-5); border-left: 4px solid
   {% if application.status == 'enrolled' or application.status == 'accepted' %}var(--success)
   {% elif application.status == 'rejected' or application.status == 'withdrawn' %}var(--danger)
@@ -19,9 +21,28 @@
       <div style="font-weight: 700; font-size: var(--text-lg); color: var(--ink-900); margin-top: 2px;">
         {{ application.get_status_display }}
       </div>
+      {% if application.is_boarding %}
+        <span class="badge badge-primary" style="margin-top: var(--s-2);">Boarding Student</span>
+      {% endif %}
     </div>
-    <div class="flex gap-2">
-      <a href="{% url 'secretary_application_edit' application.id %}" class="btn btn-primary">
+    <div class="flex flex-wrap gap-2">
+      {% if application.status == 'accepted' and not application.converted_student %}
+        <a href="{% url 'secretary_application_admit' application.id %}" class="btn btn-primary">
+          {% include 'partials/icons.html' with name="check-circle" size=16 %}
+          Admit Student
+        </a>
+      {% endif %}
+      {% if application.converted_student %}
+        <span class="badge badge-success" style="padding: var(--s-2) var(--s-4);">
+          {% include 'partials/icons.html' with name="check-circle" size=14 %}
+          Admitted as {{ application.converted_student.admission_number }}
+        </span>
+      {% endif %}
+      <a href="{% url 'secretary_application_print' application.id %}" target="_blank" class="btn btn-secondary">
+        {% include 'partials/icons.html' with name="download" size=16 %}
+        Print Dossier
+      </a>
+      <a href="{% url 'secretary_application_edit' application.id %}" class="btn btn-secondary">
         {% include 'partials/icons.html' with name="edit" size=16 %}
         Edit
       </a>
@@ -35,8 +56,12 @@
 
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
+  <!-- ============================================================ -->
+  <!-- LEFT COLUMN                                                  -->
+  <!-- ============================================================ -->
   <div class="lg:col-span-2">
 
+    <!-- ---- APPLICANT ---- -->
     <div class="card mb-6">
       <h3 class="card-title mb-4">Applicant</h3>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -58,17 +83,92 @@
           <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Applying For</div>
           <div style="color: var(--ink-900); margin-top: 2px;">{{ application.applying_for_class }}</div>
         </div>
+      </div>
+    </div>
+
+    <!-- ---- PREVIOUS SCHOOL ---- -->
+    {% if application.previous_school or application.previous_class or application.previous_academic_results or application.leaving_certificate %}
+    <div class="card mb-6">
+      <h3 class="card-title mb-4">Previous School</h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         {% if application.previous_school %}
-        <div class="md:col-span-2">
-          <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Previous School</div>
+        <div>
+          <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">School</div>
           <div style="color: var(--ink-900); margin-top: 2px;">{{ application.previous_school }}</div>
+        </div>
+        {% endif %}
+        {% if application.previous_class %}
+        <div>
+          <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Class</div>
+          <div style="color: var(--ink-900); margin-top: 2px;">{{ application.previous_class }}</div>
+        </div>
+        {% endif %}
+      </div>
+      <div class="flex flex-wrap gap-3 mt-4">
+        {% if application.previous_academic_results %}
+          <a href="{{ application.previous_academic_results.url }}" target="_blank" class="btn btn-secondary">
+            {% include 'partials/icons.html' with name="download" size=14 %}
+            Previous Results
+          </a>
+        {% endif %}
+        {% if application.leaving_certificate %}
+          <a href="{{ application.leaving_certificate.url }}" target="_blank" class="btn btn-secondary">
+            {% include 'partials/icons.html' with name="download" size=14 %}
+            Leaving Certificate
+          </a>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- ---- LOCATION ---- -->
+    {% if application.county_fk or application.sub_county or application.location or application.village %}
+    <div class="card mb-6">
+      <h3 class="card-title mb-4">Home Location</h3>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {% if application.county_fk %}
+        <div>
+          <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">County</div>
+          <div style="color: var(--ink-900); margin-top: 2px;">{{ application.county_fk.name }}</div>
+        </div>
+        {% endif %}
+        {% if application.constituency_fk %}
+        <div>
+          <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Constituency</div>
+          <div style="color: var(--ink-900); margin-top: 2px;">{{ application.constituency_fk.name }}</div>
+        </div>
+        {% endif %}
+        {% if application.ward_fk %}
+        <div>
+          <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Ward</div>
+          <div style="color: var(--ink-900); margin-top: 2px;">{{ application.ward_fk.name }}</div>
+        </div>
+        {% endif %}
+        {% if application.sub_county %}
+        <div>
+          <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Sub-County</div>
+          <div style="color: var(--ink-900); margin-top: 2px;">{{ application.sub_county }}</div>
+        </div>
+        {% endif %}
+        {% if application.location %}
+        <div>
+          <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Location</div>
+          <div style="color: var(--ink-900); margin-top: 2px;">{{ application.location }}</div>
+        </div>
+        {% endif %}
+        {% if application.village %}
+        <div>
+          <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Village</div>
+          <div style="color: var(--ink-900); margin-top: 2px;">{{ application.village }}</div>
         </div>
         {% endif %}
       </div>
     </div>
+    {% endif %}
 
+    <!-- ---- GUARDIAN ---- -->
     <div class="card mb-6">
-      <h3 class="card-title mb-4">Guardian</h3>
+      <h3 class="card-title mb-4">Parent / Guardian</h3>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Name</div>
@@ -86,38 +186,138 @@
           <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Email</div>
           <div style="color: var(--ink-900); margin-top: 2px;">{{ application.guardian_email|default:"—" }}</div>
         </div>
-        {% if application.guardian_id_number %}
+        {% if application.parent_id_number %}
         <div>
           <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">ID Number</div>
-          <div style="color: var(--ink-900); margin-top: 2px; font-family: var(--font-mono);">{{ application.guardian_id_number }}</div>
+          <div style="color: var(--ink-900); margin-top: 2px; font-family: var(--font-mono);">{{ application.parent_id_number }}</div>
+        </div>
+        {% endif %}
+        {% if application.parent_occupation %}
+        <div>
+          <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Occupation</div>
+          <div style="color: var(--ink-900); margin-top: 2px;">{{ application.parent_occupation }}</div>
+        </div>
+        {% endif %}
+        {% if application.parent_county_fk %}
+        <div>
+          <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Parent County</div>
+          <div style="color: var(--ink-900); margin-top: 2px;">{{ application.parent_county_fk.name }}</div>
+        </div>
+        {% endif %}
+        {% if application.parent_location %}
+        <div>
+          <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Parent Location</div>
+          <div style="color: var(--ink-900); margin-top: 2px;">{{ application.parent_location }}</div>
         </div>
         {% endif %}
       </div>
     </div>
 
-    {% if application.birth_certificate or application.report_card or application.other_document %}
+    <!-- ---- SECOND PARENT ---- -->
+    {% if application.second_parent_name %}
     <div class="card mb-6">
-      <h3 class="card-title mb-4">Documents</h3>
-      <div class="flex flex-wrap gap-3">
-        {% if application.birth_certificate %}
-        <a href="{{ application.birth_certificate.url }}" target="_blank" class="btn btn-secondary">
-          Birth Certificate
-        </a>
+      <h3 class="card-title mb-4">Second Parent</h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Name</div>
+          <div style="color: var(--ink-900); margin-top: 2px;">{{ application.second_parent_name }}</div>
+        </div>
+        <div>
+          <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Relationship</div>
+          <div style="color: var(--ink-900); margin-top: 2px;">{{ application.second_parent_relationship|default:"—" }}</div>
+        </div>
+        {% if application.second_parent_phone %}
+        <div>
+          <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Phone</div>
+          <div style="color: var(--ink-900); margin-top: 2px;">{{ application.second_parent_phone }}</div>
+        </div>
         {% endif %}
-        {% if application.report_card %}
-        <a href="{{ application.report_card.url }}" target="_blank" class="btn btn-secondary">
-          Report Card
-        </a>
-        {% endif %}
-        {% if application.other_document %}
-        <a href="{{ application.other_document.url }}" target="_blank" class="btn btn-secondary">
-          Other Document
-        </a>
+        {% if application.second_parent_occupation %}
+        <div>
+          <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Occupation</div>
+          <div style="color: var(--ink-900); margin-top: 2px;">{{ application.second_parent_occupation }}</div>
+        </div>
         {% endif %}
       </div>
     </div>
     {% endif %}
 
+    <!-- ---- DISABILITY & MEDICAL ---- -->
+    {% if application.has_disability or application.has_medical_condition or application.requires_medication %}
+    <div class="card mb-6" style="border-left: 4px solid var(--warning);">
+      <h3 class="card-title mb-4">Disability &amp; Medical</h3>
+
+      {% if application.has_disability %}
+      <div class="mb-4">
+        <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600; margin-bottom: var(--s-2);">
+          Disability
+        </div>
+        <p style="color: var(--ink-700); margin: 0;">{{ application.disability_details|default:"No details provided." }}</p>
+        {% if application.disability_support_document %}
+          <a href="{{ application.disability_support_document.url }}" target="_blank" class="btn btn-secondary" style="margin-top: var(--s-3);">
+            {% include 'partials/icons.html' with name="download" size=14 %}
+            Disability Support Document
+          </a>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      {% if application.has_medical_condition %}
+      <div class="mb-4">
+        <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600; margin-bottom: var(--s-2);">
+          Medical Condition
+        </div>
+        <p style="color: var(--ink-700); margin: 0;">{{ application.medical_condition_details|default:"No details provided." }}</p>
+        {% if application.medical_report %}
+          <a href="{{ application.medical_report.url }}" target="_blank" class="btn btn-secondary" style="margin-top: var(--s-3);">
+            {% include 'partials/icons.html' with name="download" size=14 %}
+            Medical Report
+          </a>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      {% if application.requires_medication %}
+      <div>
+        <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600; margin-bottom: var(--s-2);">
+          Medication
+        </div>
+        <p style="color: var(--ink-700); margin: 0;">{{ application.medication_notes|default:"Medication required but no notes provided." }}</p>
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- ---- IDENTITY DOCUMENTS ---- -->
+    {% if application.birth_certificate_file or application.parent_id_file or application.birth_certificate_number %}
+    <div class="card mb-6">
+      <h3 class="card-title mb-4">Identity Documents</h3>
+
+      {% if application.birth_certificate_number %}
+      <div class="mb-4">
+        <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Birth Certificate #</div>
+        <div style="color: var(--ink-900); font-family: var(--font-mono); margin-top: 2px;">{{ application.birth_certificate_number }}</div>
+      </div>
+      {% endif %}
+
+      <div class="flex flex-wrap gap-3">
+        {% if application.birth_certificate_file %}
+          <a href="{{ application.birth_certificate_file.url }}" target="_blank" class="btn btn-secondary">
+            {% include 'partials/icons.html' with name="download" size=14 %}
+            Birth Certificate (copy)
+          </a>
+        {% endif %}
+        {% if application.parent_id_file %}
+          <a href="{{ application.parent_id_file.url }}" target="_blank" class="btn btn-secondary">
+            {% include 'partials/icons.html' with name="download" size=14 %}
+            Parent ID (copy)
+          </a>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- ---- NOTES ---- -->
     {% if application.notes %}
     <div class="card">
       <h3 class="card-title mb-4">Notes</h3>
@@ -127,8 +327,12 @@
 
   </div>
 
+  <!-- ============================================================ -->
+  <!-- RIGHT COLUMN                                                 -->
+  <!-- ============================================================ -->
   <div class="lg:col-span-1">
 
+    <!-- ---- AUDIT ---- -->
     <div class="card mb-6">
       <h3 class="card-title mb-4">Audit</h3>
       <div style="font-size: var(--text-sm); line-height: 1.9;">
@@ -136,12 +340,14 @@
           <span style="color: var(--ink-500);">Received:</span>
           <span style="color: var(--ink-900);">{{ application.created_at|date:"d M Y, H:i" }}</span>
         </div>
+        {% if application.received_by %}
         <div class="flex justify-between mb-2">
           <span style="color: var(--ink-500);">By:</span>
           <span style="color: var(--ink-900);">
-            {{ application.received_by.get_full_name|default:application.received_by.email|default:"—" }}
+            {{ application.received_by.get_full_name|default:application.received_by.email }}
           </span>
         </div>
+        {% endif %}
         {% if application.reviewed_by %}
         <div class="flex justify-between mb-2">
           <span style="color: var(--ink-500);">Reviewed:</span>
@@ -151,20 +357,74 @@
         </div>
         {% endif %}
         {% if application.converted_at %}
-        <div class="flex justify-between">
+        <div class="flex justify-between mb-2">
           <span style="color: var(--ink-500);">Enrolled:</span>
           <span style="color: var(--ink-900);">{{ application.converted_at|date:"d M Y" }}</span>
+        </div>
+        {% endif %}
+        {% if application.converted_by %}
+        <div class="flex justify-between">
+          <span style="color: var(--ink-500);">By:</span>
+          <span style="color: var(--ink-900);">
+            {{ application.converted_by.get_full_name|default:application.converted_by.email }}
+          </span>
         </div>
         {% endif %}
       </div>
     </div>
 
+    <!-- ---- BOARDING STATUS ---- -->
+    {% if application.is_boarding %}
+    <div class="card mb-6" style="border-left: 4px solid var(--primary);">
+      <h3 class="card-title mb-2">Boarding</h3>
+      <p class="text-sm" style="margin: 0 0 var(--s-3); color: var(--ink-700);">
+        This is a boarding student.
+      </p>
+      {% if application.assigned_dormitory %}
+        <div style="font-size: var(--text-sm); line-height: 1.7;">
+          <div class="flex justify-between mb-2">
+            <span style="color: var(--ink-500);">Dormitory:</span>
+            <span style="color: var(--ink-900); font-weight: 600;">{{ application.assigned_dormitory.name }}</span>
+          </div>
+          <div class="flex justify-between">
+            <span style="color: var(--ink-500);">Bed:</span>
+            <span style="color: var(--ink-900); font-weight: 600;">
+              {% if application.assigned_bed %}{{ application.assigned_bed.bed_number }}{% else %}—{% endif %}
+            </span>
+          </div>
+        </div>
+      {% else %}
+        <p class="text-xs" style="margin: 0; color: var(--ink-500);">
+          No bed assigned yet. Will auto-assign when admitted.
+        </p>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- ---- ENROLLED ---- -->
     {% if application.converted_student %}
     <div class="card" style="background: var(--success-light); border-left: 4px solid var(--success);">
-      <h3 class="card-title mb-2">Enrolled</h3>
-      <p class="text-sm" style="margin: 0; color: var(--ink-700);">
+      <h3 class="card-title mb-2">
+        {% include 'partials/icons.html' with name="check-circle" size=18 %}
+        Enrolled
+      </h3>
+      <p class="text-sm" style="margin: 0 0 var(--s-3); color: var(--ink-700);">
         This applicant has been enrolled as a student.
       </p>
+      <div style="font-size: var(--text-sm); line-height: 1.7;">
+        <div class="flex justify-between mb-2">
+          <span style="color: var(--ink-500);">Name:</span>
+          <span style="color: var(--ink-900); font-weight: 600;">
+            {{ application.converted_student.first_name }} {{ application.converted_student.last_name }}
+          </span>
+        </div>
+        <div class="flex justify-between">
+          <span style="color: var(--ink-500);">Admission #:</span>
+          <span style="color: var(--ink-900); font-family: var(--font-mono); font-weight: 600;">
+            {{ application.converted_student.admission_number }}
+          </span>
+        </div>
+      </div>
     </div>
     {% endif %}
 

@@ -88,7 +88,40 @@ class Student(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     objects = TenantManager()
+    
+        # ============ LOCATION (Kenyan cascade) ============
+    county_fk = models.ForeignKey(
+        'locations.County', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='students',
+        db_column='county_fk_id'
+    )
+    constituency_fk = models.ForeignKey(
+        'locations.Constituency', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='students',
+        db_column='constituency_fk_id'
+    )
+    ward_fk = models.ForeignKey(
+        'locations.Ward', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='students',
+        db_column='ward_fk_id'
+    )
+    sub_county = models.CharField(max_length=50, blank=True, default='')
+    location = models.CharField(max_length=100, blank=True, default='')
+    village = models.CharField(max_length=100, blank=True, default='')
 
+    # ============ DISABILITY & MEDICAL ============
+    has_disability = models.BooleanField(default=False)
+    disability_details = models.TextField(blank=True, default='')
+    has_medical_condition = models.BooleanField(default=False)
+    medical_condition_details = models.TextField(blank=True, default='')
+    requires_medication = models.BooleanField(default=False)
+    medication_notes = models.TextField(blank=True, default='')
+
+    # ============ BOARDING ============
+    is_boarding = models.BooleanField(
+        default=False,
+        help_text="Whether this student is a boarding student"
+    )
     class Meta:
         ordering = ['first_name', 'last_name']
         unique_together = [('school', 'admission_number')]

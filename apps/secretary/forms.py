@@ -136,40 +136,163 @@ class NoticeForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['expires_at'].required = False
-
-
 class AdmissionApplicationForm(forms.ModelForm):
+    """Deep admission form with all details."""
+
     class Meta:
         model = AdmissionApplication
         fields = [
+            # --- Applicant Basics ---
             'first_name', 'middle_name', 'last_name',
             'gender', 'date_of_birth',
-            'applying_for_class', 'previous_school',
+            'applying_for_class',
+
+            # --- Previous School / Academic History ---
+            'previous_school', 'previous_class',
+            'previous_academic_results', 'leaving_certificate',
+
+            # --- Location (Kenyan cascade) ---
+            'county_fk', 'constituency_fk', 'ward_fk',
+            'sub_county', 'location', 'village',
+
+            # --- Identity Documents ---
+            'birth_certificate_number',
+            'birth_certificate_file', 'parent_id_file',
+
+            # --- Disability & Medical ---
+            'has_disability', 'disability_details',
+            'disability_support_document',
+            'has_medical_condition', 'medical_condition_details',
+            'medical_report',
+            'requires_medication', 'medication_notes',
+
+            # --- Parent / Guardian ---
             'guardian_name', 'guardian_phone', 'guardian_email',
-            'guardian_id_number', 'relationship',
-            'birth_certificate', 'report_card', 'other_document',
+            'parent_id_number', 'parent_occupation',
+            'parent_county_fk', 'parent_constituency_fk',
+            'parent_location', 'parent_village',
+            'relationship',
+
+            # --- Second Parent (optional) ---
+            'second_parent_name', 'second_parent_phone',
+            'second_parent_email', 'second_parent_id_number',
+            'second_parent_occupation', 'second_parent_relationship',
+
+            # --- Boarding ---
+            'is_boarding',
+
+            # --- Status & Notes ---
             'status', 'notes',
         ]
         widgets = {
-            'first_name':  forms.TextInput(attrs={'class': 'input'}),
-            'middle_name': forms.TextInput(attrs={'class': 'input'}),
-            'last_name':   forms.TextInput(attrs={'class': 'input'}),
+            'first_name':  forms.TextInput(attrs={'class': 'input', 'placeholder': 'First name'}),
+            'middle_name': forms.TextInput(attrs={'class': 'input', 'placeholder': 'Middle name (optional)'}),
+            'last_name':   forms.TextInput(attrs={'class': 'input', 'placeholder': 'Last name'}),
             'gender':      forms.Select(attrs={'class': 'select'}),
             'date_of_birth': forms.DateInput(attrs={'class': 'input', 'type': 'date'}),
             'applying_for_class': forms.TextInput(attrs={'class': 'input', 'placeholder': 'e.g. Grade 5 East'}),
+
             'previous_school': forms.TextInput(attrs={'class': 'input'}),
+            'previous_class':  forms.TextInput(attrs={'class': 'input', 'placeholder': 'e.g. Grade 4'}),
+            'previous_academic_results': forms.ClearableFileInput(attrs={'class': 'input'}),
+            'leaving_certificate': forms.ClearableFileInput(attrs={'class': 'input'}),
+
+            'county_fk':       forms.Select(attrs={'class': 'select', 'id': 'id_county_fk'}),
+            'constituency_fk': forms.Select(attrs={'class': 'select', 'id': 'id_constituency_fk'}),
+            'ward_fk':         forms.Select(attrs={'class': 'select', 'id': 'id_ward_fk'}),
+            'sub_county':      forms.TextInput(attrs={'class': 'input'}),
+            'location':        forms.TextInput(attrs={'class': 'input'}),
+            'village':         forms.TextInput(attrs={'class': 'input'}),
+
+            'birth_certificate_number': forms.TextInput(attrs={'class': 'input'}),
+            'birth_certificate_file':   forms.ClearableFileInput(attrs={'class': 'input'}),
+            'parent_id_file':           forms.ClearableFileInput(attrs={'class': 'input'}),
+
+            'has_disability': forms.CheckboxInput(attrs={'class': 'checkbox'}),
+            'disability_details': forms.Textarea(attrs={'class': 'textarea', 'rows': 2}),
+            'disability_support_document': forms.ClearableFileInput(attrs={'class': 'input'}),
+            'has_medical_condition': forms.CheckboxInput(attrs={'class': 'checkbox'}),
+            'medical_condition_details': forms.Textarea(attrs={'class': 'textarea', 'rows': 2}),
+            'medical_report': forms.ClearableFileInput(attrs={'class': 'input'}),
+            'requires_medication': forms.CheckboxInput(attrs={'class': 'checkbox'}),
+            'medication_notes': forms.Textarea(attrs={'class': 'textarea', 'rows': 2}),
+
             'guardian_name':   forms.TextInput(attrs={'class': 'input'}),
             'guardian_phone':  forms.TextInput(attrs={'class': 'input'}),
             'guardian_email':  forms.EmailInput(attrs={'class': 'input'}),
-            'guardian_id_number': forms.TextInput(attrs={'class': 'input'}),
-            'relationship':    forms.TextInput(attrs={'class': 'input', 'placeholder': 'Parent / Guardian'}),
-            'birth_certificate': forms.ClearableFileInput(attrs={'class': 'input'}),
-            'report_card':       forms.ClearableFileInput(attrs={'class': 'input'}),
-            'other_document':    forms.ClearableFileInput(attrs={'class': 'input'}),
-            'status':            forms.Select(attrs={'class': 'select'}),
-            'notes':             forms.Textarea(attrs={'class': 'textarea', 'rows': 2}),
+            'parent_id_number': forms.TextInput(attrs={'class': 'input'}),
+            'parent_occupation': forms.TextInput(attrs={'class': 'input'}),
+            'parent_county_fk': forms.Select(attrs={'class': 'select', 'id': 'id_parent_county_fk'}),
+            'parent_constituency_fk': forms.Select(attrs={'class': 'select', 'id': 'id_parent_constituency_fk'}),
+            'parent_location':  forms.TextInput(attrs={'class': 'input'}),
+            'parent_village':   forms.TextInput(attrs={'class': 'input'}),
+            'relationship':     forms.TextInput(attrs={'class': 'input', 'placeholder': 'Parent / Guardian'}),
+
+            'second_parent_name': forms.TextInput(attrs={'class': 'input'}),
+            'second_parent_phone': forms.TextInput(attrs={'class': 'input'}),
+            'second_parent_email': forms.EmailInput(attrs={'class': 'input'}),
+            'second_parent_id_number': forms.TextInput(attrs={'class': 'input'}),
+            'second_parent_occupation': forms.TextInput(attrs={'class': 'input'}),
+            'second_parent_relationship': forms.TextInput(attrs={'class': 'input'}),
+
+            'is_boarding': forms.CheckboxInput(attrs={'class': 'checkbox'}),
+
+            'status': forms.Select(attrs={'class': 'select'}),
+            'notes': forms.Textarea(attrs={'class': 'textarea', 'rows': 2}),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['date_of_birth'].required = False
+
+        # Populate county dropdowns
+        from apps.locations.models import County, Constituency, Ward
+        self.fields['county_fk'].queryset = County.objects.all().order_by('name')
+        self.fields['parent_county_fk'].queryset = County.objects.all().order_by('name')
+
+        # Constituency and Ward — empty initially, populated by cascading JS
+        # Or pre-populate if editing
+        if self.instance.pk:
+            if self.instance.county_fk_id:
+                self.fields['constituency_fk'].queryset = Constituency.objects.filter(
+                    county_id=self.instance.county_fk_id
+                ).order_by('name')
+            else:
+                self.fields['constituency_fk'].queryset = Constituency.objects.none()
+
+            if self.instance.constituency_fk_id:
+                self.fields['ward_fk'].queryset = Ward.objects.filter(
+                    constituency_id=self.instance.constituency_fk_id
+                ).order_by('name')
+            else:
+                self.fields['ward_fk'].queryset = Ward.objects.none()
+        else:
+            self.fields['constituency_fk'].queryset = Constituency.objects.none()
+            self.fields['ward_fk'].queryset = Ward.objects.none()
+
+        # All location fields are optional (not all schools require them)
+        self.fields['county_fk'].required = False
+        self.fields['constituency_fk'].required = False
+        self.fields['ward_fk'].required = False
+        self.fields['parent_county_fk'].required = False
+
+        # All file fields optional
+        self.fields['previous_academic_results'].required = False
+        self.fields['leaving_certificate'].required = False
+        self.fields['birth_certificate_file'].required = False
+        self.fields['parent_id_file'].required = False
+        self.fields['disability_support_document'].required = False
+        self.fields['medical_report'].required = False
+
+    def clean(self):
+        cleaned = super().clean()
+        # Require constituency if county is selected
+        if cleaned.get('county_fk') and not cleaned.get('constituency_fk'):
+            self.add_error('constituency_fk',
+                'Please select a constituency for this county.')
+
+        # Require ward if constituency is selected
+        if cleaned.get('constituency_fk') and not cleaned.get('ward_fk'):
+            self.add_error('ward_fk',
+                'Please select a ward for this constituency.')
+
+        return cleaned

@@ -36,6 +36,7 @@ from .students import (
     leaving_certificate_pdf,
     student_biodata_pdf,
     student_detail,
+    student_bio_page,
 )
 
 from .parents import (

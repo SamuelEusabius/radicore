@@ -21,7 +21,7 @@ from apps.core.pdf_utils import build_pdf_context
 @login_required
 def students_list(request):
     """List all students with filters, search, and pagination."""
-    if request.user.role != 'principal':
+    if request.user.role not in ('principal', 'super_admin', 'secretary', 'deputy_admin', 'deputy_academics', 'director_of_studies', 'class_teacher', 'teacher'):
         return redirect('dashboard_home')
 
     from apps.students.models import Student
@@ -143,100 +143,71 @@ def student_dash(request):
 
 @login_required
 def add_student(request):
-    if request.user.role != 'principal':
+    """
+    Redirect to the deep Admission Application form.
+    The Secretary/Principal fills the full form there, then converts to Student
+    via the Admit flow (which handles parent creation + boarding assignment).
+    """
+    if request.user.role not in ('principal', 'super_admin', 'secretary', 'deputy_admin'):
         return redirect('dashboard_home')
 
+    return redirect('secretary_application_create')
+
+
+def generate_next_admission_number(school):
+    """
+    Increment the highest admission number for this school.
+
+    Examples:
+      SCH0006-2026-0001  → SCH0006-2026-0002
+      SCH0006-2026-0009  → SCH0006-2026-0010
+      SCH0006-2026-0099  → SCH0006-2026-0100
+      001234             → 001235
+      ADM-045            → ADM-046
+
+    Preserves the prefix and zero-padding width.
+    """
     from apps.students.models import Student
+    import re
 
-    if request.method == 'POST':
-        first_name = request.POST.get('first_name', '').strip()
-        middle_name = request.POST.get('middle_name', '').strip()
-        last_name = request.POST.get('last_name', '').strip()
-        gender = request.POST.get('gender', '').strip()
-        date_of_birth = request.POST.get('date_of_birth') or None
-        upi = request.POST.get('upi', '').strip()
-        birth_certificate_number = request.POST.get('birth_certificate_number', '').strip()
-        cbc_level = request.POST.get('cbc_level', '').strip()
-        class_level = request.POST.get('class_level', '').strip()
-        admission_date = request.POST.get('admission_date') or None
-        guardian_name = request.POST.get('guardian_name', '').strip()
-        guardian_phone = request.POST.get('guardian_phone', '').strip()
-        guardian_relationship = request.POST.get('guardian_relationship', '').strip()
-        has_special_needs = request.POST.get('has_special_needs') == 'on'
-        special_needs_notes = request.POST.get('special_needs_notes', '').strip()
-        photo = request.FILES.get('photo')
+    numbers = (
+        Student.objects.filter(school=school)
+        .exclude(admission_number__isnull=True)
+        .exclude(admission_number='')
+        .values_list('admission_number', flat=True)
+    )
 
-        # Auto-generate admission number if requested
-        admission_number = request.POST.get('admission_number', '').strip()
-        auto_generate = request.POST.get('auto_generate_admission') == 'on'
-        start_from = request.POST.get('start_from', '1').strip()
+    if not numbers:
+        # Fallback — shouldn't happen because view checks has_existing_students
+        return 'ADM-0001'
+
+    best_prefix = None
+    best_digits = None
+    best_value = -1
+
+    for num in numbers:
+        num = str(num).strip()
+        if not num:
+            continue
+        match = re.match(r'^(.*?)(\d+)$', num)
+        if not match:
+            continue
+        prefix, digits = match.group(1), match.group(2)
         try:
-            start_from = int(start_from)
+            value = int(digits)
         except ValueError:
-            start_from = 1
+            continue
+        if value > best_value:
+            best_value = value
+            best_prefix = prefix
+            best_digits = digits
 
-        if auto_generate and not admission_number:
-            if not gender:
-                messages.error(request, 'Please select gender first to auto-generate admission number.')
-                return render(request, 'dashboard/add_student.html', {
-                    'cbc_levels': Student.CBCLevel.choices,
-                    'form_data': request.POST,
-                })
-            admission_number = Student.generate_admission_number(
-                school=request.user.school,
-                gender=gender,
-                start_from=start_from,
-            )
+    if best_prefix is None:
+        return 'ADM-0001'
 
-        errors = []
-        if not first_name:
-            errors.append('First name is required.')
-        if not last_name:
-            errors.append('Last name is required.')
-        if not gender:
-            errors.append('Gender is required.')
-        if not admission_number:
-            errors.append('Admission number is required.')
-        elif Student.objects.filter(school=request.user.school, admission_number=admission_number).exists():
-            errors.append(f'Admission number {admission_number} is already used.')
-
-        if errors:
-            for e in errors:
-                messages.error(request, e)
-            return render(request, 'dashboard/add_student.html', {
-                'cbc_levels': Student.CBCLevel.choices,
-                'form_data': request.POST,
-            })
-
-        student = Student.objects.create(
-            school=request.user.school,
-            first_name=first_name,
-            middle_name=middle_name,
-            last_name=last_name,
-            gender=gender,
-            date_of_birth=date_of_birth,
-            admission_number=admission_number,
-            upi=upi,
-            birth_certificate_number=birth_certificate_number,
-            cbc_level=cbc_level,
-            class_level=class_level,
-            admission_date=admission_date,
-            guardian_name=guardian_name,
-            guardian_phone=guardian_phone,
-            guardian_relationship=guardian_relationship,
-            has_special_needs=has_special_needs,
-            special_needs_notes=special_needs_notes,
-            photo=photo,
-        )
-
-        messages.success(request, f'Student "{student.full_name}" added (Adm: {student.admission_number}).')
-        # Redirect to the bio data PDF for immediate download
-        return redirect('student_biodata_pdf', student_id=student.id)
-
-    return render(request, 'dashboard/add_student.html', {
-        'cbc_levels': Student.CBCLevel.choices,
-    })
-
+    next_value = best_value + 1
+    width = len(best_digits)
+    return f"{best_prefix}{str(next_value).zfill(width)}"
 
 @login_required
 def delete_student(request, student_id):
@@ -536,4 +507,30 @@ def student_detail(request, student_id):
         'today': date.today(),
     })
 
+@login_required
+def student_bio_page(request, student_id):
+    """Full bio-data page (HTML, printable) for a single student."""
+    from apps.students.models import Student
+    from django.shortcuts import get_object_or_404
 
+    student = get_object_or_404(
+        Student.objects.select_related(
+            'school', 'county_fk', 'constituency_fk', 'ward_fk', 'user',
+        ),
+        id=student_id, school=request.user.school,
+    )
+
+    # Parents
+    parents = student.parents.select_related('user') if hasattr(student, 'parents') else []
+
+    # Boarding
+    boarding = student.boarding_assignments.filter(status='active').select_related(
+        'dormitory', 'bed'
+    ).first()
+
+    return render(request, 'dashboard/student_bio.html', {
+        'student': student,
+        'parents': parents,
+        'boarding': boarding,
+        'school': request.user.school,
+    })

@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Admission Dossier — {{ application.full_name }}</title>
+  <style>
+    * { box-sizing: border-box; }
+    @page { size: A4 portrait; margin: 16mm 18mm; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: 11px;
+      color: #111;
+      line-height: 1.5;
+      margin: 0;
+      padding: 24px;
+    }
+    {% include 'pdf/_shared_styles.html' %}
+
+    .dossier-title {
+      text-align: center;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      padding: 8px;
+      border-top: 2px solid #333;
+      border-bottom: 2px solid #333;
+      margin: 16px 0 20px;
+    }
+    .ref-line {
+      text-align: right;
+      font-size: 10px;
+      color: #4b5563;
+      margin-bottom: 12px;
+    }
+    .section {
+      margin-bottom: 18px;
+      page-break-inside: avoid;
+    }
+    .section-title {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: #1f2937;
+      padding: 5px 8px;
+      background: #f3f4f6;
+      border-left: 3px solid #0A8A5F;
+      margin-bottom: 8px;
+    }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .grid-3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+    }
+    .field {
+      padding: 4px 0;
+    }
+    .field-label {
+      font-size: 8.5px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #6b7280;
+    }
+    .field-value {
+      font-size: 11px;
+      color: #111;
+      font-weight: 500;
+    }
+    .field-value.mono { font-family: 'Courier New', monospace; }
+    .signature-area {
+      margin-top: 40px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+    }
+    .sig-line {
+      border-top: 1px solid #333;
+      padding-top: 6px;
+      text-align: center;
+      font-size: 10px;
+      color: #374151;
+    }
+    .sig-role {
+      font-size: 8px;
+      color: #6b7280;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 2px;
+    }
+    .footer {
+      margin-top: 40px;
+      padding-top: 10px;
+      border-top: 1px solid #e5e7eb;
+      font-size: 8.5px;
+      color: #6b7280;
+      text-align: center;
+    }
+    .no-print {
+      text-align: center;
+      margin-bottom: 20px;
+      padding: 10px;
+      background: #eff6ff;
+      border-radius: 4px;
+    }
+    .no-print button {
+      padding: 8px 16px;
+      background: #2563eb;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    @media print {
+      body { padding: 0; margin: 0; }
+      .no-print { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="no-print">
+    <button onclick="window.print()">Print Dossier</button>
+  </div>
+
+  {% include 'pdf/_report_header.html' %}
+
+  <div class="ref-line">
+    Ref: <strong style="font-family: monospace;">{{ application.reference_number }}</strong>
+    &middot; Received {{ application.created_at|date:"j F Y" }}
+  </div>
+
+  <div class="dossier-title">Admission Application Dossier</div>
+
+  <!-- APPLICANT -->
+  <div class="section">
+    <div class="section-title">1. Applicant Details</div>
+    <div class="grid-3">
+      <div class="field">
+        <div class="field-label">First Name</div>
+        <div class="field-value">{{ application.first_name }}</div>
+      </div>
+      <div class="field">
+        <div class="field-label">Middle Name</div>
+        <div class="field-value">{{ application.middle_name|default:"—" }}</div>
+      </div>
+      <div class="field">
+        <div class="field-label">Last Name</div>
+        <div class="field-value">{{ application.last_name }}</div>
+      </div>
+      <div class="field">
+        <div class="field-label">Gender</div>
+        <div class="field-value">{{ application.get_gender_display }}</div>
+      </div>
+      <div class="field">
+        <div class="field-label">Date of Birth</div>
+        <div class="field-value">
+          {% if application.date_of_birth %}{{ application.date_of_birth|date:"j F Y" }}{% else %}—{% endif %}
+        </div>
+      </div>
+      <div class="field">
+        <div class="field-label">Applying For</div>
+        <div class="field-value">{{ application.applying_for_class }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PREVIOUS SCHOOL -->
+  <div class="section">
+    <div class="section-title">2. Previous School / Academic History</div>
+    <div class="grid-2">
+      <div class="field">
+        <div class="field-label">Previous School</div>
+        <div class="field-value">{{ application.previous_school|default:"—" }}</div>
+      </div>
+      <div class="field">
+        <div class="field-label">Previous Class</div>
+        <div class="field-value">{{ application.previous_class|default:"—" }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOCATION -->
+  <div class="section">
+    <div class="section-title">3. Home Location</div>
+    <div class="grid-3">
+      <div class="field">
+        <div class="field-label">County</div>
+        <div class="field-value">{{ application.county_fk.name|default:"—" }}</div>
+      </div>
+      <div class="field">
+        <div class="field-label">Constituency</div>
+        <div class="field-value">{{ application.constituency_fk.name|default:"—" }}</div>
+      </div>
+      <div class="field">
+        <div class="field-label">Ward</div>
+        <div class="field-value">{{ application.ward_fk.name|default:"—" }}</div>
+      </div>
+      <div class="field">
+        <div class="field-label">Sub-County</div>
+        <div class="field-value">{{ application.sub_county|default:"—" }}</div>
+      </div>
+      <div class="field">
+        <div class="field-label">Location</div>
+        <div class="field-value">{{ application.location|default:"—" }}</div>
+      </div>
+      <div class="field">
+        <div class="field-label">Village</div>
+        <div class="field-value">{{ application.village|default:"—" }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PARENT -->
+  <div class="section">
+    <div class="section-title">4. Parent / Guardian</div>
+    <div class="grid-2">
+      <div class="field">
+        <div class="field-label">Name</div>
+        <div class="field-value">{{ application.guardian_name }}</div>
+      </div>
+      <div class="field">
+        <div class="field-label">Relationship</div>
+        <div class="field-value">{{ application.relationship|default:"—" }}</div>
+      </div>
+      <div class="field">
+        <div class="field-label">Phone</div>
+        <div class="field-value">{{ application.guardian_phone }}</div>
+      </div>
+      <div class="field">
+        <div class="field-label">Email</div>
+        <div class="field-value">{{ application.guardian_email|default:"—" }}</div>
+      </div>
+      <div class="field">
+        <div class="field-label">ID Number</div>
+        <div class="field-value mono">{{ application.parent_id_number|default:"—" }}</div>
+      </div>
+      <div class="field">
+        <div class="field-label">Occupation</div>
+        <div class="field-value">{{ application.parent_occupation|default:"—" }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECOND PARENT -->
+  {% if application.second_parent_name %}
+  <div class="section">
+    <div class="section-title">5. Second Parent</div>
+    <div class="grid-2">
+      <div class="field">
+        <div class="field-label">Name</div>
+        <div class="field-value">{{ application.second_parent_name }}</div>
+      </div>
+      <div class="field">
+        <div class="field-label">Relationship</div>
+        <div class="field-value">{{ application.second_parent_relationship|default:"—" }}</div>
+      </div>
+      <div class="field">
+        <div class="field-label">Phone</div>
+        <div class="field-value">{{ application.second_parent_phone|default:"—" }}</div>
+      </div>
+      <div class="field">
+        <div class="field-label">Occupation</div>
+        <div class="field-value">{{ application.second_parent_occupation|default:"—" }}</div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- MEDICAL -->
+  {% if application.has_disability or application.has_medical_condition or application.requires_medication %}
+  <div class="section">
+    <div class="section-title">6. Disability &amp; Medical</div>
+    {% if application.has_disability %}
+    <div class="field" style="margin-bottom: 6px;">
+      <div class="field-label">Disability</div>
+      <div class="field-value">{{ application.disability_details|default:"Yes" }}</div>
+    </div>
+    {% endif %}
+    {% if application.has_medical_condition %}
+    <div class="field" style="margin-bottom: 6px;">
+      <div class="field-label">Medical Condition</div>
+      <div class="field-value">{{ application.medical_condition_details|default:"Yes" }}</div>
+    </div>
+    {% endif %}
+    {% if application.requires_medication %}
+    <div class="field">
+      <div class="field-label">Medication Required</div>
+      <div class="field-value">{{ application.medication_notes|default:"Yes" }}</div>
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <!-- BOARDING -->
+  {% if application.is_boarding %}
+  <div class="section">
+    <div class="section-title">7. Boarding</div>
+    <div class="grid-2">
+      <div class="field">
+        <div class="field-label">Boarding Student</div>
+        <div class="field-value">Yes</div>
+      </div>
+      {% if application.assigned_dormitory %}
+      <div class="field">
+        <div class="field-label">Assigned Dormitory</div>
+        <div class="field-value">{{ application.assigned_dormitory.name }}</div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- SIGNATURES -->
+  <div class="signature-area">
+    <div class="sig-line">
+      <div style="font-weight: 600; color: #111;">Parent / Guardian Signature</div>
+      <div class="sig-role">Received By</div>
+    </div>
+    <div class="sig-line">
+      <div style="font-weight: 600; color: #111;">School Secretary / Principal</div>
+      <div class="sig-role">Issued By &amp; School Stamp</div>
+    </div>
+  </div>
+
+  <div class="footer">
+    Generated {{ generated_on|date:"j F Y, H:i" }}
+    {% if generated_by %} by {{ generated_by.get_full_name|default:generated_by.email }}{% endif %}
+    <br>
+    This is a system-generated admission dossier. Keep on file for physical records.
+  </div>
+
+  {% if auto_print %}
+  <script>
+    window.addEventListener('load', function () {
+      setTimeout(function () { window.print(); }, 500);
+    });
+  </script>
+  {% endif %}
+
+</body>
+</html>

@@ -7,7 +7,7 @@
 
 {% block content %}
 
-<form method="post" enctype="multipart/form-data" class="card" style="max-width: 1000px;">
+<form method="post" enctype="multipart/form-data" class="card" style="max-width: 1100px;">
   {% csrf_token %}
 
   {% if form.non_field_errors %}
@@ -18,7 +18,29 @@
   </div>
   {% endif %}
 
-  <h3 class="card-title mb-4">Applicant</h3>
+  <!-- ============================================================ -->
+  <!-- ADMISSION NUMBER (AUTO-GENERATED)                            -->
+  <!-- ============================================================ -->
+  {% if mode == 'create' and next_admission_number %}
+  <div class="card mb-6" style="background: var(--primary-soft); border-left: 4px solid var(--primary); padding: var(--s-4);">
+    <div class="flex items-center justify-between flex-wrap gap-3">
+      <div>
+        <h3 class="card-title" style="margin: 0; font-size: var(--text-md);">Admission Number</h3>
+        <p class="text-sm mt-1" style="color: var(--ink-600); margin: 0;">
+          This number will be assigned automatically when the student is admitted.
+        </p>
+      </div>
+      <div style="font-family: var(--font-mono); font-size: var(--text-lg); font-weight: 700; color: var(--primary); background: #fff; padding: 6px 16px; border-radius: var(--radius);">
+        {{ next_admission_number }}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- ============================================================ -->
+  <!-- SECTION 1 — APPLICANT                                        -->
+  <!-- ============================================================ -->
+  <h3 class="card-title mb-4">1. Applicant</h3>
 
   <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
     <div>
@@ -26,6 +48,7 @@
         First Name <span style="color: var(--danger);">*</span>
       </label>
       {{ form.first_name }}
+      {% if form.first_name.errors %}<p class="text-xs mt-1" style="color: var(--danger);">{{ form.first_name.errors.0 }}</p>{% endif %}
     </div>
     <div>
       <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Middle Name</label>
@@ -36,6 +59,7 @@
         Last Name <span style="color: var(--danger);">*</span>
       </label>
       {{ form.last_name }}
+      {% if form.last_name.errors %}<p class="text-xs mt-1" style="color: var(--danger);">{{ form.last_name.errors.0 }}</p>{% endif %}
     </div>
   </div>
 
@@ -53,17 +77,159 @@
         Applying For <span style="color: var(--danger);">*</span>
       </label>
       {{ form.applying_for_class }}
+      {% if form.applying_for_class.errors %}<p class="text-xs mt-1" style="color: var(--danger);">{{ form.applying_for_class.errors.0 }}</p>{% endif %}
     </div>
-  </div>
-
-  <div class="mb-6">
-    <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Previous School</label>
-    {{ form.previous_school }}
   </div>
 
   <hr style="border: none; border-top: 1px solid var(--border); margin: var(--s-5) 0;">
 
-  <h3 class="card-title mb-4">Parent / Guardian</h3>
+  <!-- ============================================================ -->
+  <!-- SECTION 2 — PREVIOUS SCHOOL                                  -->
+  <!-- ============================================================ -->
+  <h3 class="card-title mb-4">2. Previous School / Academic History</h3>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Previous School</label>
+      {{ form.previous_school }}
+    </div>
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Previous Class</label>
+      {{ form.previous_class }}
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Previous Academic Results</label>
+      {{ form.previous_academic_results }}
+      <p class="text-xs mt-1" style="color: var(--ink-500);">Report or exam slip (PDF/image)</p>
+    </div>
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Leaving Certificate</label>
+      {{ form.leaving_certificate }}
+      <p class="text-xs mt-1" style="color: var(--ink-500);">If transferring from another school</p>
+    </div>
+  </div>
+
+  <hr style="border: none; border-top: 1px solid var(--border); margin: var(--s-5) 0;">
+
+  <!-- ============================================================ -->
+  <!-- SECTION 3 — LOCATION                                         -->
+  <!-- ============================================================ -->
+  <h3 class="card-title mb-4">3. Home Location</h3>
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">County</label>
+      {{ form.county_fk }}
+    </div>
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Constituency</label>
+      {{ form.constituency_fk }}
+    </div>
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Ward</label>
+      {{ form.ward_fk }}
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Sub-County</label>
+      {{ form.sub_county }}
+    </div>
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Location</label>
+      {{ form.location }}
+    </div>
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Village</label>
+      {{ form.village }}
+    </div>
+  </div>
+
+  <hr style="border: none; border-top: 1px solid var(--border); margin: var(--s-5) 0;">
+
+  <!-- ============================================================ -->
+  <!-- SECTION 4 — IDENTITY DOCUMENTS                               -->
+  <!-- ============================================================ -->
+  <h3 class="card-title mb-4">4. Identity Documents</h3>
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Birth Certificate #</label>
+      {{ form.birth_certificate_number }}
+    </div>
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Birth Certificate (copy)</label>
+      {{ form.birth_certificate_file }}
+    </div>
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Parent ID Copy</label>
+      {{ form.parent_id_file }}
+    </div>
+  </div>
+
+  <hr style="border: none; border-top: 1px solid var(--border); margin: var(--s-5) 0;">
+
+  <!-- ============================================================ -->
+  <!-- SECTION 5 — DISABILITY & MEDICAL                             -->
+  <!-- ============================================================ -->
+  <h3 class="card-title mb-4">5. Disability &amp; Medical</h3>
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+    <div>
+      <label class="flex items-center gap-2 text-sm" style="color: var(--ink-700);">
+        {{ form.has_disability }}
+        <span>Has a disability</span>
+      </label>
+    </div>
+    <div class="md:col-span-2">
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Disability Details</label>
+      {{ form.disability_details }}
+    </div>
+  </div>
+
+  <div class="mb-4">
+    <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Disability Support Document</label>
+    {{ form.disability_support_document }}
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+    <div>
+      <label class="flex items-center gap-2 text-sm" style="color: var(--ink-700);">
+        {{ form.has_medical_condition }}
+        <span>Has medical condition</span>
+      </label>
+    </div>
+    <div class="md:col-span-2">
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Medical Condition Details</label>
+      {{ form.medical_condition_details }}
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Medical Report</label>
+      {{ form.medical_report }}
+    </div>
+    <div>
+      <label class="flex items-center gap-2 text-sm mb-2" style="color: var(--ink-700);">
+        {{ form.requires_medication }}
+        <span>Requires medication</span>
+      </label>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Medication Notes</label>
+      {{ form.medication_notes }}
+    </div>
+  </div>
+
+  <hr style="border: none; border-top: 1px solid var(--border); margin: var(--s-5) 0;">
+
+  <!-- ============================================================ -->
+  <!-- SECTION 6 — PARENT / GUARDIAN                                -->
+  <!-- ============================================================ -->
+  <h3 class="card-title mb-4">6. Parent / Guardian</h3>
 
   <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
     <div>
@@ -71,6 +237,7 @@
         Guardian Name <span style="color: var(--danger);">*</span>
       </label>
       {{ form.guardian_name }}
+      {% if form.guardian_name.errors %}<p class="text-xs mt-1" style="color: var(--danger);">{{ form.guardian_name.errors.0 }}</p>{% endif %}
     </div>
     <div>
       <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
@@ -81,13 +248,18 @@
     <div>
       <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Email</label>
       {{ form.guardian_email }}
+      <p class="text-xs mt-1" style="color: var(--ink-500);">Used to auto-create parent account</p>
     </div>
   </div>
 
-  <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
     <div>
-      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">ID Number</label>
-      {{ form.guardian_id_number }}
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Parent ID Number</label>
+      {{ form.parent_id_number }}
+    </div>
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Occupation</label>
+      {{ form.parent_occupation }}
     </div>
     <div>
       <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Relationship</label>
@@ -95,28 +267,101 @@
     </div>
   </div>
 
-  <hr style="border: none; border-top: 1px solid var(--border); margin: var(--s-5) 0;">
+  <h4 class="text-xs font-semibold uppercase tracking-wider mb-3" style="color: var(--ink-500);">Parent's Home Location</h4>
 
-  <h3 class="card-title mb-4">Documents</h3>
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Parent County</label>
+      {{ form.parent_county_fk }}
+    </div>
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Parent Constituency</label>
+      {{ form.parent_constituency_fk }}
+    </div>
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Parent Ward</label>
+      {{ form.parent_ward_fk }}
+    </div>
+  </div>
 
   <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
     <div>
-      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Birth Certificate</label>
-      {{ form.birth_certificate }}
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Parent Sub-County</label>
+      {{ form.parent_sub_county }}
     </div>
     <div>
-      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Report Card</label>
-      {{ form.report_card }}
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Parent Location</label>
+      {{ form.parent_location }}
     </div>
     <div>
-      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Other</label>
-      {{ form.other_document }}
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Parent Village</label>
+      {{ form.parent_village }}
     </div>
   </div>
 
   <hr style="border: none; border-top: 1px solid var(--border); margin: var(--s-5) 0;">
 
-  <h3 class="card-title mb-4">Status &amp; Notes</h3>
+  <!-- ============================================================ -->
+  <!-- SECTION 7 — SECOND PARENT (OPTIONAL)                         -->
+  <!-- ============================================================ -->
+  <h3 class="card-title mb-4">7. Second Parent (Optional)</h3>
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Name</label>
+      {{ form.second_parent_name }}
+    </div>
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Phone</label>
+      {{ form.second_parent_phone }}
+    </div>
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Email</label>
+      {{ form.second_parent_email }}
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">ID Number</label>
+      {{ form.second_parent_id_number }}
+    </div>
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Occupation</label>
+      {{ form.second_parent_occupation }}
+    </div>
+    <div>
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Relationship</label>
+      {{ form.second_parent_relationship }}
+    </div>
+  </div>
+
+  <hr style="border: none; border-top: 1px solid var(--border); margin: var(--s-5) 0;">
+
+  <!-- ============================================================ -->
+  <!-- SECTION 8 — BOARDING                                         -->
+  <!-- ============================================================ -->
+  <h3 class="card-title mb-4">8. Boarding</h3>
+
+  <div class="mb-4">
+    <label class="flex items-center gap-2 text-sm" style="color: var(--ink-700);">
+      {{ form.is_boarding }}
+      <span>This is a boarding (hostel) student — auto-assign a bed on admission</span>
+    </label>
+  </div>
+
+  <div id="boarding_info" class="card mb-6" style="background: var(--info-light); padding: var(--s-3); border-left: 4px solid var(--info); display: none;">
+    <p class="text-sm" style="margin: 0; color: var(--ink-700);">
+      <strong>Note:</strong> When this application is admitted, the system will auto-assign the first available bed matching this student's gender.
+    </p>
+  </div>
+
+  <hr style="border: none; border-top: 1px solid var(--border); margin: var(--s-5) 0;">
+
+  <!-- ============================================================ -->
+  <!-- SECTION 9 — STATUS & NOTES                                   -->
+  <!-- ============================================================ -->
+  <h3 class="card-title mb-4">9. Status &amp; Notes</h3>
 
   <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
     <div>
@@ -129,14 +374,145 @@
     </div>
   </div>
 
-  <div class="flex gap-3">
+  <!-- ============================================================ -->
+  <!-- SUBMIT                                                       -->
+  <!-- ============================================================ -->
+  <div class="flex flex-wrap gap-3">
     <button type="submit" class="btn btn-primary">
       {% include 'partials/icons.html' with name="check-circle" size=16 %}
-      {% if mode == 'edit' %}Save Changes{% else %}Record Application{% endif %}
+      {% if mode == 'edit' %}Save Changes{% else %}Save Application{% endif %}
     </button>
+    
+    {% if mode == 'edit' and application.status == 'accepted' and not application.converted_student %}
+      <a href="{% url 'secretary_application_admit' application.id %}" class="btn btn-primary" style="background: var(--success); border-color: var(--success);">
+        {% include 'partials/icons.html' with name="user-plus" size=16 %}
+        Admit Student Now
+      </a>
+    {% endif %}
+
     <a href="{% if mode == 'edit' %}{% url 'secretary_application_detail' application.id %}{% else %}{% url 'secretary_application_list' %}{% endif %}" class="btn btn-secondary">Cancel</a>
   </div>
 
 </form>
 
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+    // ============================================================
+    // CASCADING LOCATION — Student's home location
+    // County → Constituency → Ward
+    // ============================================================
+    function setupCascade(countyId, consId, wardId) {
+        var countySel = document.getElementById(countyId);
+        var consSel = document.getElementById(consId);
+        var wardSel = wardId ? document.getElementById(wardId) : null;
+
+        if (!countySel || !consSel) return;
+
+        countySel.addEventListener('change', function() {
+            var countyVal = this.value;
+            consSel.innerHTML = '<option value="">— Select Constituency —</option>';
+            if (wardSel) wardSel.innerHTML = '<option value="">— Select Ward —</option>';
+
+            if (!countyVal) return;
+
+            fetch('/api/locations/constituencies/?county=' + countyVal)
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    (data.results || []).forEach(function(c) {
+                        var opt = document.createElement('option');
+                        opt.value = c.id;
+                        opt.textContent = c.name;
+                        consSel.appendChild(opt);
+                    });
+                })
+                .catch(function(err) { console.error('Constituencies load failed:', err); });
+        });
+
+        if (wardSel) {
+            consSel.addEventListener('change', function() {
+                var consVal = this.value;
+                wardSel.innerHTML = '<option value="">— Select Ward —</option>';
+
+                if (!consVal) return;
+
+                fetch('/api/locations/wards/?constituency=' + consVal)
+                    .then(function(r) { return r.json(); })
+                    .then(function(data) {
+                        (data.results || []).forEach(function(w) {
+                            var opt = document.createElement('option');
+                            opt.value = w.id;
+                            opt.textContent = w.name;
+                            wardSel.appendChild(opt);
+                        });
+                    })
+                    .catch(function(err) { console.error('Wards load failed:', err); });
+            });
+        }
+    }
+
+    // Student location
+    setupCascade('id_county_fk', 'id_constituency_fk', 'id_ward_fk');
+    // Parent location
+    setupCascade('id_parent_county_fk', 'id_parent_constituency_fk', 'id_parent_ward_fk');
+
+    // ============================================================
+    // CONDITIONAL SECTIONS
+    // ============================================================
+    var hasDisability = document.querySelector('input[name="has_disability"]');
+    function toggleDisability() {
+        if (!hasDisability) return;
+        var show = hasDisability.checked;
+        var detail = document.getElementById('id_disability_details');
+        var doc = document.getElementById('id_disability_support_document');
+        if (detail && detail.parentElement) detail.parentElement.style.display = show ? '' : 'none';
+        if (doc && doc.parentElement) doc.parentElement.style.display = show ? '' : 'none';
+    }
+    if (hasDisability) {
+        hasDisability.addEventListener('change', toggleDisability);
+        toggleDisability();
+    }
+
+    var hasMedical = document.querySelector('input[name="has_medical_condition"]');
+    function toggleMedical() {
+        if (!hasMedical) return;
+        var show = hasMedical.checked;
+        var detail = document.getElementById('id_medical_condition_details');
+        var report = document.getElementById('id_medical_report');
+        if (detail && detail.parentElement) detail.parentElement.style.display = show ? '' : 'none';
+        if (report && report.parentElement) report.parentElement.style.display = show ? '' : 'none';
+    }
+    if (hasMedical) {
+        hasMedical.addEventListener('change', toggleMedical);
+        toggleMedical();
+    }
+
+    var requiresMed = document.querySelector('input[name="requires_medication"]');
+    function toggleMedication() {
+        if (!requiresMed) return;
+        var show = requiresMed.checked;
+        var notes = document.getElementById('id_medication_notes');
+        if (notes && notes.parentElement) notes.parentElement.style.display = show ? '' : 'none';
+    }
+    if (requiresMed) {
+        requiresMed.addEventListener('change', toggleMedication);
+        toggleMedication();
+    }
+
+    var isBoarding = document.querySelector('input[name="is_boarding"]');
+    function toggleBoarding() {
+        if (!isBoarding) return;
+        var info = document.getElementById('boarding_info');
+        if (info) info.style.display = isBoarding.checked ? 'block' : 'none';
+    }
+    if (isBoarding) {
+        isBoarding.addEventListener('change', toggleBoarding);
+        toggleBoarding();
+    }
+
+    console.log('[application_form] JS loaded — cascading dropdowns + conditional sections active');
+})();
+</script>
 {% endblock %}

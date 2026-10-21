@@ -1,5 +1,7 @@
 from django.urls import path, include
 from django.views.generic import RedirectView
+from apps.dashboard.views.students import student_bio_page as student_bio_view
+from django.shortcuts import render, redirect, get_object_or_404
 
 from . import views
 from apps.finance import store_views
@@ -8,7 +10,9 @@ urlpatterns = [
                    # Global search
     path('search/', views.global_search, name='global_search'),
     path('', include('apps.security.urls')),
-    path('', include('apps.secretary.urls')),        
+    path('', include('apps.secretary.urls')), 
+    path('students/<int:student_id>/bio/',
+         views.students.student_bio_page, name='student_bio_page'),     
     path('subscribe/', RedirectView.as_view(
      url='/dashboard/subscriptions/', permanent=False
     )),

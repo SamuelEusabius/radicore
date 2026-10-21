@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Admit Student{% endblock %}
+{% block header_title %}Admit Student{% endblock %}
+{% block header_sub %}{{ application.first_name }} {{ application.last_name }}{% endblock %}
+
+{% block content %}
+
+<div class="card" style="max-width: 700px; border-left: 4px solid var(--success);">
+  <h3 class="card-title mb-4">Confirm Admission</h3>
+
+  <p style="color: var(--ink-700); font-size: var(--text-sm); margin-bottom: var(--s-5);">
+    This action will:
+  </p>
+
+  <ul style="color: var(--ink-700); font-size: var(--text-sm); margin-bottom: var(--s-6); padding-left: var(--s-5); line-height: 1.8;">
+    <li>Create a <strong>Student record</strong> with a new admission number</li>
+    <li>Create a <strong>Parent record</strong> (parent will activate their account later)</li>
+    {% if application.is_boarding %}
+      <li>Auto-assign a <strong>boarding bed</strong> matching gender and class</li>
+    {% endif %}
+    <li>Mark this application as <strong>Enrolled</strong></li>
+  </ul>
+
+  <div class="card mb-6" style="background: var(--surface-1); padding: var(--s-4);">
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Applicant</div>
+        <div style="font-weight: 600; color: var(--ink-900); margin-top: 2px;">
+          {{ application.first_name }} {{ application.middle_name }} {{ application.last_name }}
+        </div>
+      </div>
+      <div>
+        <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Applying For</div>
+        <div style="color: var(--ink-900); margin-top: 2px;">{{ application.applying_for_class }}</div>
+      </div>
+      <div>
+        <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Guardian</div>
+        <div style="color: var(--ink-900); margin-top: 2px;">{{ application.guardian_name }}</div>
+        <div class="text-xs" style="color: var(--ink-500);">{{ application.guardian_phone }}</div>
+      </div>
+      <div>
+        <div class="text-xs uppercase tracking-wider" style="color: var(--ink-500); font-weight: 600;">Boarding?</div>
+        <div style="margin-top: 2px;">
+          {% if application.is_boarding %}
+            <span class="badge badge-primary">Yes — bed will be auto-assigned</span>
+          {% else %}
+            <span class="badge">Day Student</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <form method="post">
+    {% csrf_token %}
+    <div class="flex gap-3">
+      <button type="submit" class="btn btn-primary">
+        {% include 'partials/icons.html' with name="check-circle" size=16 %}
+        Confirm Admission
+      </button>
+      <a href="{% url 'secretary_application_detail' application.id %}" class="btn btn-secondary">Cancel</a>
+    </div>
+  </form>
+</div>
+
+{% endblock %}
