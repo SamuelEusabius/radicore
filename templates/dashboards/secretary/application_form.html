@@ -10,11 +10,24 @@
 <form method="post" enctype="multipart/form-data" class="card" style="max-width: 1100px;">
   {% csrf_token %}
 
-  {% if form.non_field_errors %}
-  <div class="card mb-4" style="border-left: 4px solid var(--danger); padding: var(--s-3); background: var(--danger-light);">
-    {% for err in form.non_field_errors %}
-      <p class="text-sm" style="margin: 0; color: var(--danger);">{{ err }}</p>
-    {% endfor %}
+  <!-- ============================================================ -->
+  <!-- ERROR DISPLAY (NEW)                                          -->
+  <!-- ============================================================ -->
+  {% if form.errors %}
+  <div class="card mb-6" style="border-left: 4px solid var(--danger); padding: var(--s-4); background: var(--danger-light);">
+    <h4 style="margin: 0 0 var(--s-2) 0; color: var(--danger); font-weight: 700; font-size: var(--text-md);">
+      Please fix the following errors before saving:
+    </h4>
+    <ul style="margin: 0; padding-left: var(--s-5); color: var(--danger); font-size: var(--text-sm); line-height: 1.6;">
+      {% for field in form %}
+        {% if field.errors %}
+          <li><strong>{{ field.label }}:</strong> {{ field.errors|join:", " }}</li>
+        {% endif %}
+      {% endfor %}
+      {% for err in form.non_field_errors %}
+        <li>{{ err }}</li>
+      {% endfor %}
+    </ul>
   </div>
   {% endif %}
 
@@ -123,14 +136,17 @@
     <div>
       <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">County</label>
       {{ form.county_fk }}
+      {% if form.county_fk.errors %}<p class="text-xs mt-1" style="color: var(--danger);">{{ form.county_fk.errors.0 }}</p>{% endif %}
     </div>
     <div>
       <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Constituency</label>
       {{ form.constituency_fk }}
+      {% if form.constituency_fk.errors %}<p class="text-xs mt-1" style="color: var(--danger);">{{ form.constituency_fk.errors.0 }}</p>{% endif %}
     </div>
     <div>
       <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Ward</label>
       {{ form.ward_fk }}
+      {% if form.ward_fk.errors %}<p class="text-xs mt-1" style="color: var(--danger);">{{ form.ward_fk.errors.0 }}</p>{% endif %}
     </div>
   </div>
 
@@ -244,6 +260,7 @@
         Phone <span style="color: var(--danger);">*</span>
       </label>
       {{ form.guardian_phone }}
+      {% if form.guardian_phone.errors %}<p class="text-xs mt-1" style="color: var(--danger);">{{ form.guardian_phone.errors.0 }}</p>{% endif %}
     </div>
     <div>
       <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Email</label>
@@ -400,10 +417,6 @@
 {% block extra_js %}
 <script>
 (function() {
-    // ============================================================
-    // CASCADING LOCATION — Student's home location
-    // County → Constituency → Ward
-    // ============================================================
     function setupCascade(countyId, consId, wardId) {
         var countySel = document.getElementById(countyId);
         var consSel = document.getElementById(consId);
@@ -453,14 +466,9 @@
         }
     }
 
-    // Student location
     setupCascade('id_county_fk', 'id_constituency_fk', 'id_ward_fk');
-    // Parent location
     setupCascade('id_parent_county_fk', 'id_parent_constituency_fk', 'id_parent_ward_fk');
 
-    // ============================================================
-    // CONDITIONAL SECTIONS
-    // ============================================================
     var hasDisability = document.querySelector('input[name="has_disability"]');
     function toggleDisability() {
         if (!hasDisability) return;
@@ -512,7 +520,6 @@
         toggleBoarding();
     }
 
-    console.log('[application_form] JS loaded — cascading dropdowns + conditional sections active');
 })();
 </script>
 {% endblock %}

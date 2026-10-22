@@ -1,84 +1,133 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 {% load static %}
+
 {% block title %}Link Children{% endblock %}
 {% block header_title %}Link Children{% endblock %}
 {% block header_sub %}{{ parent.user.get_full_name|default:parent.user.email }}{% endblock %}
 
 {% block content %}
 
-<div style="max-width: 720px; margin: 0 auto;">
+<div style="max-width: 900px; margin: 0 auto;">
 
-  <a href="{% url 'parents_list' %}" class="btn btn-ghost btn-sm" style="margin-bottom: var(--s-4);">
-    ← Back to Parents
-  </a>
-
-  <div class="card mb-6" style="border-left: 4px solid var(--primary); background: var(--primary-soft);">
-    <div style="display: flex; align-items: center; gap: var(--s-3);">
-      <div class="avatar" style="background: var(--primary);">
-        {{ parent.user.first_name|first|upper }}{{ parent.user.last_name|first|upper }}
-      </div>
+  <!-- Parent Info -->
+  <div class="card mb-6" style="background: var(--primary-soft); border-left: 4px solid var(--primary);">
+    <div class="flex justify-between items-center flex-wrap gap-3">
       <div>
-        <div style="font-weight: 700; color: var(--primary-dark); font-size: var(--text-md);">
-          {{ parent.user.get_full_name|default:parent.user.email }}
+        <div style="font-weight: 700; color: var(--ink-900); font-size: var(--text-lg);">
+          {{ parent.first_name|default:parent.user.first_name }} {{ parent.last_name|default:parent.user.last_name }}
         </div>
-        <div style="font-size: var(--text-xs); color: var(--primary-dark); opacity: 0.85;">
-          {{ parent.get_relationship_display }} · {{ parent.students.count }} child{{ parent.students.count|pluralize:"ren" }} currently linked
+        <div class="text-sm mt-1" style="color: var(--ink-600);">
+          {{ parent.user.email }}
+          {% if parent.phone %} · {{ parent.phone }}{% endif %}
+          {% if parent.id_number %} · ID: {{ parent.id_number }}{% endif %}
+        </div>
+        <div class="text-xs mt-1" style="color: var(--ink-500);">
+          Relationship: {{ parent.get_relationship_display }}
+          · Currently linked: <strong>{{ parent.students.count }}</strong> child{{ parent.students.count|pluralize }}
         </div>
       </div>
+      <a href="{% url 'parents_list' %}" class="btn btn-secondary">
+        {% include 'partials/icons.html' with name="arrow-left" size=16 %}
+        Back to Parents
+      </a>
     </div>
   </div>
 
-  <form method="post" class="card">
+  <!-- Student Search & Linking -->
+  <form method="post">
     {% csrf_token %}
 
-    <div class="card-title">
-      {% include 'partials/icons.html' with name="graduation-cap" size=18 %}
-      Select Children
+    <div class="card mb-6">
+      <h3 class="card-title mb-4">Search &amp; Link Students</h3>
+
+      <div class="mb-4">
+        <input type="text" id="studentSearch" class="input w-full"
+               placeholder="Type student name, admission number, or class...">
+        <p class="text-xs mt-1" style="color: var(--ink-500);">
+          Check the box next to each child that belongs to this parent. Uncheck to remove.
+        </p>
+      </div>
+
+      <div class="table-wrap" style="max-height: 500px; overflow-y: auto; border: 1px solid var(--border); border-radius: var(--radius);">
+        <table class="table">
+          <thead style="position: sticky; top: 0; background: var(--surface-1); z-index: 2;">
+            <tr>
+              <th style="width: 40px;"></th>
+              <th>Student</th>
+              <th>Adm #</th>
+              <th>Class</th>
+              <th>Gender</th>
+            </tr>
+          </thead>
+          <tbody id="studentTableBody">
+            {% for s in all_students %}
+            <tr data-search="{{ s.first_name|lower }} {{ s.last_name|lower }} {{ s.admission_number|lower }} {{ s.class_level|default:''|lower }}">
+              <td style="text-align: center;">
+                <input type="checkbox" name="students" value="{{ s.id }}"
+                       {% if s.id in linked_ids %}checked{% endif %}>
+              </td>
+              <td>
+                <div style="font-weight: 600; color: var(--ink-900);">
+                  {{ s.first_name }} {{ s.last_name }}
+                </div>
+              </td>
+              <td style="font-family: var(--font-mono); font-size: var(--text-sm);">
+                {{ s.admission_number }}
+              </td>
+              <td style="font-size: var(--text-sm); color: var(--ink-600);">
+                {{ s.class_level|default:"—" }}
+              </td>
+              <td style="font-size: var(--text-sm);">
+                {{ s.get_gender_display }}
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="5" style="text-align: center; padding: var(--s-6); color: var(--ink-500);">
+                No active students in this school.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="text-xs mt-2" style="color: var(--ink-500);">
+        Showing <span id="visibleCount">{{ all_students|length }}</span> of {{ all_students|length }} students
+      </div>
     </div>
 
-    <p class="form-hint" style="margin-top: calc(-1 * var(--s-3)); margin-bottom: var(--s-4);">
-      Tick all students this parent is responsible for.
-    </p>
-
-    <div style="max-height: 400px; overflow-y: auto; border: 1px solid var(--border); border-radius: var(--radius); padding: var(--s-2);">
-
-      {% regroup students by class_level as class_groups %}
-
-      {% for group in class_groups %}
-        <div style="padding: var(--s-2) var(--s-3) var(--s-1); font-size: 10px; font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: 0.08em; border-bottom: 1px solid var(--border); margin-bottom: var(--s-1);">
-          {{ group.grouper|default:"Unassigned" }}
-        </div>
-
-        {% for s in group.list %}
-          <label style="display: flex; align-items: center; gap: var(--s-3); padding: var(--s-2) var(--s-3); cursor: pointer; border-radius: var(--radius-sm);">
-            <input type="checkbox" name="students" value="{{ s.id }}"
-                   {% if s.id in linked_ids %}checked{% endif %}
-                   style="width: 16px; height: 16px; accent-color: var(--primary);">
-            <div class="avatar avatar-sm" style="{% if s.gender == 'F' %}background: #EC4899;{% else %}background: #2563EB;{% endif %} font-size: 10px;">
-              {{ s.initials }}
-            </div>
-            <div style="flex: 1; min-width: 0;">
-              <div style="font-size: var(--text-sm); font-weight: 600; color: var(--ink-900);">{{ s.full_name }}</div>
-              <div style="font-size: var(--text-xs); color: var(--ink-500);">
-                {{ s.admission_number }}{% if s.cbc_level %} · {{ s.get_cbc_level_display }}{% endif %}
-              </div>
-            </div>
-          </label>
-        {% endfor %}
-      {% endfor %}
-
-    </div>
-
-    <div style="display: flex; justify-content: flex-end; gap: var(--s-3); margin-top: var(--s-5); padding-top: var(--s-4); border-top: 1px solid var(--border);">
-      <a href="{% url 'parents_list' %}" class="btn btn-secondary">Cancel</a>
+    <div class="flex gap-3">
       <button type="submit" class="btn btn-primary">
-        {% include 'partials/icons.html' with name="save" size=15 %}
-        <span>Save Links</span>
+        {% include 'partials/icons.html' with name="check-circle" size=16 %}
+        Save Links
       </button>
+      <a href="{% url 'parents_list' %}" class="btn btn-secondary">Cancel</a>
     </div>
-
   </form>
 
 </div>
+
+<script>
+(function() {
+  var searchInput = document.getElementById('studentSearch');
+  var tbody = document.getElementById('studentTableBody');
+  var countEl = document.getElementById('visibleCount');
+  if (!searchInput || !tbody) return;
+
+  searchInput.addEventListener('input', function() {
+    var query = this.value.toLowerCase().trim();
+    var rows = tbody.querySelectorAll('tr[data-search]');
+    var visible = 0;
+    rows.forEach(function(row) {
+      var text = row.getAttribute('data-search') || '';
+      var match = !query || text.includes(query);
+      row.style.display = match ? '' : 'none';
+      if (match) visible++;
+    });
+    if (countEl) countEl.textContent = visible;
+  });
+})();
+</script>
 
 {% endblock %}

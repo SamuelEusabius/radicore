@@ -44,12 +44,16 @@ def parents_list(request):
 
     if search:
         qs = qs.filter(
+            Q(first_name__icontains=search) |
+            Q(last_name__icontains=search) |
             Q(user__first_name__icontains=search) |
             Q(user__last_name__icontains=search) |
             Q(user__email__icontains=search) |
+            Q(phone__icontains=search) |
             Q(id_number__icontains=search) |
-            Q(phone__icontains=search)
-        )
+            Q(students__first_name__icontains=search) |
+            Q(students__last_name__icontains=search)
+        ).distinct()
 
     if rel_filter:
         qs = qs.filter(relationship=rel_filter)

@@ -734,10 +734,13 @@ def application_list(request):
 @role_required(*SECRETARY_ROLES)
 def application_create(request):
     school = _school(request)
+    seed_default_templates(school)
 
     if request.method == 'POST':
         form = AdmissionApplicationForm(request.POST, request.FILES)
+        
         if form.is_valid():
+            print(f"[APP CREATE] VALID — saving")
             obj = form.save(commit=False)
             obj.school = school
             obj.received_by = request.user
@@ -745,15 +748,19 @@ def application_create(request):
 
             try:
                 notify_guardian_application_received(obj)
-            except Exception:
-                pass
+            except Exception as e:
+                print(f"[APP CREATE] SMS notify failed: {e}")
 
             messages.success(request, f"Application {obj.reference_number} recorded.")
             return redirect('secretary_application_detail', pk=obj.pk)
+        else:
+            print(f"[APP CREATE] INVALID — Form errors:")
+            for field, errs in form.errors.items():
+                print(f"  {field}: {errs}")
     else:
         form = AdmissionApplicationForm(initial={'status': 'new'})
 
-    # --- ADD THIS BLOCK ---
+    # Auto-generated admission number hint
     from apps.dashboard.views.students import generate_next_admission_number
     next_admission_number = generate_next_admission_number(school)
 
@@ -761,7 +768,7 @@ def application_create(request):
         'school': school,
         'form': form,
         'mode': 'create',
-        'next_admission_number': next_admission_number, # Pass to template
+        'next_admission_number': next_admission_number,
     })
 
 @role_required(*SECRETARY_ROLES)

@@ -1,8 +1,9 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 {% load static %}
+
 {% block title %}Parents{% endblock %}
-{% block header_title %}Parents & Guardians{% endblock %}
-{% block header_sub %}{{ stats.total }} parent{{ stats.total|pluralize }} · {{ stats.children }} children linked{% endblock %}
+{% block header_title %}Parents &amp; Guardians{% endblock %}
+{% block header_sub %}{{ stats.total }} parent{{ stats.total|pluralize }} &middot; {{ stats.children }} children linked{% endblock %}
 
 {% block content %}
 
@@ -67,14 +68,14 @@
       <label style="display: block; font-size: var(--text-xs); font-weight: 600; color: var(--ink-600); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: var(--s-1);">
         Search
       </label>
-      <input name="q" value="{{ search }}" placeholder="Name, email, ID number, phone..." class="input">
+      <input name="q" value="{{ search }}" placeholder="Name, email, ID number, phone, or child's name..." class="input w-full">
     </div>
 
     <div style="min-width: 160px;">
       <label style="display: block; font-size: var(--text-xs); font-weight: 600; color: var(--ink-600); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: var(--s-1);">
         Relationship
       </label>
-      <select name="relationship" class="select">
+      <select name="relationship" class="select w-full">
         <option value="">All</option>
         {% for value, label in relationships %}
           <option value="{{ value }}" {% if rel_filter == value %}selected{% endif %}>{{ label }}</option>
@@ -86,17 +87,17 @@
       <label style="display: block; font-size: var(--text-xs); font-weight: 600; color: var(--ink-600); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: var(--s-1);">
         Children
       </label>
-      <select name="linked" class="select">
+      <select name="linked" class="select w-full">
         <option value="">All Parents</option>
         <option value="linked" {% if link_filter == 'linked' %}selected{% endif %}>With Children</option>
         <option value="unlinked" {% if link_filter == 'unlinked' %}selected{% endif %}>Without Children</option>
       </select>
     </div>
 
-    <div style="display: flex; gap: var(--s-2); align-items: flex-end;">
+    <div>
       <button type="submit" class="btn btn-primary">
-        {% include 'partials/icons.html' with name="search" size=15 %}
-        <span>Filter</span>
+        {% include 'partials/icons.html' with name="search" size=16 %}
+        Filter
       </button>
       {% if search or rel_filter or link_filter %}
         <a href="{% url 'parents_list' %}" class="btn btn-secondary">Clear</a>
@@ -104,148 +105,111 @@
     </div>
 
   </form>
-
-  <div style="margin-top: var(--s-4); padding-top: var(--s-4); border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--s-3);">
-    <div style="font-size: var(--text-xs); color: var(--ink-500);">
-      {% if total_filtered %}{{ total_filtered }} parent{{ total_filtered|pluralize }} matched{% endif %}
-    </div>
-    <a href="{% url 'add_parent' %}" class="btn btn-primary">
-      {% include 'partials/icons.html' with name="plus" size=15 %}
-      <span>Add Parent</span>
-    </a>
-  </div>
 </div>
 
 <!-- ============================================ -->
 <!-- PARENTS TABLE                                -->
 <!-- ============================================ -->
+{% if parents %}
 <div class="card" style="padding: 0; overflow: hidden;">
-  {% if parents %}
-    <div style="overflow-x: auto;">
-      <table class="table">
-        <thead>
-          <tr>
-            <th>Parent / Guardian</th>
-            <th>ID Number</th>
-            <th>Relationship</th>
-            <th>Occupation</th>
-            <th>Children</th>
-            <th style="text-align: right;">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for p in parents %}
-          <tr>
-            <td>
-              <div style="display: flex; align-items: center; gap: var(--s-3);">
-                {% if p.photo %}
-                  <img src="{{ p.photo.url }}" alt="{{ p.user.get_full_name }}" class="avatar avatar-sm" style="object-fit: cover;">
-                {% else %}
-                  <div class="avatar avatar-sm" style="background: var(--primary);">
-                    {{ p.user.first_name|first|upper|default:"P" }}{{ p.user.last_name|first|upper }}
-                  </div>
-                {% endif %}
-                <div style="min-width: 0;">
-                  <div style="font-weight: 600; color: var(--ink-900);">
-                    {{ p.user.get_full_name|default:p.user.email }}
-                  </div>
-                  <div style="font-size: var(--text-xs); color: var(--ink-500); overflow: hidden; text-overflow: ellipsis;">
-                    {{ p.user.email }}{% if p.phone or p.user.phone %} · {{ p.phone|default:p.user.phone }}{% endif %}
-                  </div>
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Parent</th>
+          <th>Contact</th>
+          <th>Relationship</th>
+          <th>Children</th>
+          <th style="text-align: right;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in parents %}
+        <tr>
+          <td>
+            <div style="font-weight: 600; color: var(--ink-900);">
+              {{ p.first_name|default:p.user.first_name }} {{ p.last_name|default:p.user.last_name }}
+            </div>
+            {% if not p.first_name and not p.last_name %}
+              <div class="text-xs" style="color: var(--ink-500);">(Name not set)</div>
+            {% endif %}
+          </td>
+          <td>
+            {% if p.phone %}
+              <div class="text-sm" style="color: var(--ink-700);">{{ p.phone }}</div>
+            {% endif %}
+            <div class="text-xs" style="color: var(--ink-500);">{{ p.user.email }}</div>
+          </td>
+          <td>
+            <span class="badge">{{ p.get_relationship_display }}</span>
+          </td>
+          <td>
+            {% if p.students.all %}
+              {% for child in p.students.all %}
+                <div class="text-sm" style="color: var(--ink-700);">
+                  {{ child.first_name }} {{ child.last_name }}
+                  <span class="text-xs" style="color: var(--ink-500);">({{ child.admission_number }})</span>
                 </div>
-              </div>
-            </td>
-
-            <td>
-              <span class="font-mono" style="font-size: var(--text-xs); color: var(--ink-600);">
-                {{ p.id_number|default:"—" }}
-              </span>
-            </td>
-
-            <td>
-              <span class="badge badge-info">{{ p.get_relationship_display }}</span>
-            </td>
-
-            <td style="font-size: var(--text-sm); color: var(--ink-700);">
-              {{ p.occupation|default:"—" }}
-            </td>
-
-            <td>
-              <div style="display: flex; gap: 4px; flex-wrap: wrap;">
-                {% for s in p.students.all %}
-                  <a href="{% url 'student_detail' s.id %}"
-                     class="badge badge-primary" style="text-decoration: none;">
-                    {{ s.first_name }} {{ s.last_name|slice:":1" }}.
-                  </a>
-                {% empty %}
-                  <span style="color: var(--ink-400); font-size: var(--text-xs);">None linked</span>
-                {% endfor %}
-              </div>
-            </td>
-
-            <td>
-              <div class="table-actions" style="flex-wrap: wrap;">
-                <a href="{% url 'link_parent_children' p.id %}"
-                   class="btn btn-sm btn-secondary" title="Manage linked children">
-                  {% include 'partials/icons.html' with name="users" size=13 %}
-                  <span>Link</span>
-                </a>
-                <a href="{% url 'delete_parent' p.id %}"
-                   class="btn btn-sm btn-danger"
-                   onclick="return confirm('Delete {{ p.user.get_full_name|default:p.user.email|escapejs }}? This will remove their account.');">
-                  {% include 'partials/icons.html' with name="trash" size=13 %}
-                </a>
-              </div>
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-
-    {% if page_obj.has_other_pages %}
-    <div style="padding: var(--s-5) var(--s-6); border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--s-3);">
-      <div style="font-size: var(--text-sm); color: var(--ink-500);">
-        Showing <strong>{{ page_obj.start_index }}</strong> – <strong>{{ page_obj.end_index }}</strong> of <strong>{{ paginator.count }}</strong>
-      </div>
-      <div style="display: flex; gap: var(--s-1);">
-        {% if page_obj.has_previous %}
-          <a href="?{% if search %}q={{ search }}&{% endif %}{% if rel_filter %}relationship={{ rel_filter }}&{% endif %}{% if link_filter %}linked={{ link_filter }}&{% endif %}page={{ page_obj.previous_page_number }}" class="btn btn-sm btn-secondary">← Prev</a>
-        {% endif %}
-        {% for num in page_obj.paginator.page_range %}
-          {% if num == page_obj.number %}
-            <span class="btn btn-sm btn-primary" style="cursor: default;">{{ num }}</span>
-          {% elif num > page_obj.number|add:"-3" and num < page_obj.number|add:"3" %}
-            <a href="?{% if search %}q={{ search }}&{% endif %}{% if rel_filter %}relationship={{ rel_filter }}&{% endif %}{% if link_filter %}linked={{ link_filter }}&{% endif %}page={{ num }}" class="btn btn-sm btn-secondary">{{ num }}</a>
-          {% endif %}
+              {% endfor %}
+            {% else %}
+              <span class="badge badge-warning">None</span>
+            {% endif %}
+          </td>
+          <td style="text-align: right; white-space: nowrap;">
+            <a href="{% url 'link_parent_children' p.id %}" 
+               class="btn btn-secondary" 
+               style="padding: var(--s-2) var(--s-3); font-size: var(--text-xs);">
+              {% include 'partials/icons.html' with name="link" size=14 %}
+              Link Children
+            </a>
+          </td>
+        </tr>
         {% endfor %}
-        {% if page_obj.has_next %}
-          <a href="?{% if search %}q={{ search }}&{% endif %}{% if rel_filter %}relationship={{ rel_filter }}&{% endif %}{% if link_filter %}linked={{ link_filter }}&{% endif %}page={{ page_obj.next_page_number }}" class="btn btn-sm btn-secondary">Next →</a>
-        {% endif %}
-      </div>
-    </div>
-    {% endif %}
+      </tbody>
+    </table>
+  </div>
 
-  {% else %}
-    <div class="empty" style="border: none; border-radius: 0;">
-      {% include 'partials/icons.html' with name="users" size=56 %}
-      <h3>No parents {% if search or rel_filter or link_filter %}matched{% else %}yet{% endif %}</h3>
-      <p>
-        {% if search or rel_filter or link_filter %}
-          Try changing your filters or clear them.
-        {% else %}
-          Add parent and guardian accounts to manage your school's families.
-        {% endif %}
-      </p>
-      {% if search or rel_filter or link_filter %}
-        <a href="{% url 'parents_list' %}" class="btn btn-secondary" style="margin-right: var(--s-2);">Clear filters</a>
-      {% endif %}
-      <a href="{% url 'add_parent' %}" class="btn btn-primary">
-        {% include 'partials/icons.html' with name="plus" size=15 %}
-        <span>Add Parent</span>
-      </a>
+  <!-- PAGINATION -->
+  {% if page_obj.paginator.num_pages > 1 %}
+  <div style="padding: var(--s-4) var(--s-5); border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+    <div class="text-xs" style="color: var(--ink-500);">
+      Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }} &middot; {{ stats.total }} total
     </div>
+    <div class="flex gap-2">
+      {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}{% if search %}&q={{ search }}{% endif %}{% if rel_filter %}&relationship={{ rel_filter }}{% endif %}{% if link_filter %}&linked={{ link_filter }}{% endif %}" class="btn btn-secondary">&larr; Prev</a>
+      {% endif %}
+      {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}{% if search %}&q={{ search }}{% endif %}{% if rel_filter %}&relationship={{ rel_filter }}{% endif %}{% if link_filter %}&linked={{ link_filter }}{% endif %}" class="btn btn-secondary">Next &rarr;</a>
+      {% endif %}
+    </div>
+  </div>
   {% endif %}
 </div>
+
+{% else %}
+<div class="card" style="padding: var(--s-8); text-align: center;">
+  <div style="width: 64px; height: 64px; border-radius: 50%; background: var(--surface-muted); color: var(--ink-400); display: flex; align-items: center; justify-content: center; margin: 0 auto var(--s-4);">
+    {% include 'partials/icons.html' with name="users" size=28 %}
+  </div>
+  <h3 class="card-title mb-2" style="justify-content: center;">
+    {% if search or rel_filter or link_filter %}
+      No parents match your filters
+    {% else %}
+      No parents registered yet
+    {% endif %}
+  </h3>
+  <p class="text-sm" style="color: var(--ink-500); margin: 0;">
+    {% if search or rel_filter or link_filter %}
+      Try adjusting your search or clearing the filters.
+    {% else %}
+      Parents are created automatically when students are admitted with a guardian email.
+    {% endif %}
+  </p>
+  {% if search or rel_filter or link_filter %}
+  <a href="{% url 'parents_list' %}" class="btn btn-secondary mt-4">Clear Filters</a>
+  {% endif %}
+</div>
+{% endif %}
 
 {% endblock %}
