@@ -17,18 +17,24 @@
   <style>
     /* ============ PUBLIC NAV (GLOBAL) ============ */
     .pub-nav {
-      position: sticky;
-      top: 0;
+      position: absolute;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 95%;
+      max-width: 1400px;
       z-index: 100;
       background: rgba(255, 255, 255, 0.95);
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
-      border-bottom: 1px solid var(--border);
+      border-radius: 100px; /* Pill shape */
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.2);
     }
+    
     .pub-nav-inner {
-      max-width: 1280px;
       margin: 0 auto;
-      padding: 16px 32px;
+      padding: 12px 24px;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -44,8 +50,8 @@
       color: var(--ink-900);
     }
     .pub-logo-mark {
-      width: 65px; 
-      height: 65px;
+      width: 50px; 
+      height: 50px;
       display: flex; 
       align-items: center; 
       justify-content: center;
@@ -59,18 +65,18 @@
     .pub-logo-text {
       font-family: var(--font-heading);
       font-weight: 800;
-      font-size: 22px;
+      font-size: 18px;
       letter-spacing: -0.025em;
       line-height: 1.1;
     }
     .pub-logo-text small {
       display: block;
-      font-size: 11px;
+      font-size: 9px;
       font-weight: 600;
       color: var(--ink-500);
       letter-spacing: 0.10em;
       text-transform: uppercase;
-      margin-top: 2px;
+      margin-top: 1px;
     }
     .brand-gold { color: #D4A017; }
 
@@ -78,32 +84,50 @@
     .pub-menu {
       display: flex;
       align-items: center;
-      gap: 28px;
+      gap: 32px;
       flex: 1;
       justify-content: center;
     }
     .pub-menu-link {
-      font-size: 15px;
-      font-weight: 600;
-      color: var(--ink-700);
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--ink-800);
       text-decoration: none;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
       transition: color 150ms;
+      position: relative;
     }
     .pub-menu-link:hover, .pub-menu-link.active {
       color: var(--primary);
+    }
+    .pub-menu-link::after {
+      content: '';
+      position: absolute;
+      bottom: -4px;
+      left: 0;
+      width: 0;
+      height: 2px;
+      background: var(--primary);
+      transition: width 0.2s ease;
+    }
+    .pub-menu-link:hover::after, .pub-menu-link.active::after {
+      width: 100%;
     }
 
     /* CTA Buttons */
     .pub-cta {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 16px;
     }
     .pub-btn {
-      padding: 10px 20px;
-      border-radius: var(--radius);
-      font-size: 14px;
-      font-weight: 600;
+      padding: 8px 18px;
+      border-radius: 50px;
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
       text-decoration: none;
       transition: all 150ms;
     }
@@ -120,6 +144,37 @@
       background: var(--primary-hover);
       transform: translateY(-1px);
       box-shadow: 0 4px 12px rgba(10, 138, 95, 0.3);
+    }
+
+    /* Search Bar */
+    .pub-search-form {
+      position: relative; 
+      display: flex; 
+      align-items: center;
+    }
+    .pub-search-input {
+      padding: 8px 16px; 
+      padding-right: 40px; 
+      border-radius: 50px; 
+      border: 1px solid var(--border); 
+      font-size: 14px; 
+      width: 180px;
+      outline: none;
+      background: var(--surface-muted);
+    }
+    .pub-search-btn {
+      position: absolute; 
+      right: 4px; 
+      background: var(--primary); 
+      color: white; 
+      border: none; 
+      border-radius: 50px; 
+      width: 32px; 
+      height: 32px; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center;
+      cursor: pointer;
     }
 
     /* Hamburger */
@@ -159,6 +214,7 @@
     .pub-mobile-links a {
       padding: 14px 16px; font-size: 15px; font-weight: 600;
       color: var(--ink-800); text-decoration: none; border-radius: var(--radius);
+      text-transform: uppercase; letter-spacing: 0.05em;
     }
     .pub-mobile-links a:hover { background: var(--primary-soft); color: var(--primary); }
     
@@ -180,25 +236,41 @@
     /* Utility */
     .pub-main { min-height: calc(100vh - 400px); }
 
-    /* ============ PUBLIC FOOTER ============ */
+     /* ============ PUBLIC FOOTER ============ */
     .pub-footer {
-      background: #0B1220;
-      color: #94A3B8;
+      background: linear-gradient(135deg, #0A6E9F 0%, #1FA2D6 50%, #0A6E9F 100%);
+      color: #FFFFFF;
       padding: 64px 0 24px;
       margin-top: 80px;
+      position: relative;
+      overflow: hidden;
     }
+    
+    .pub-footer::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image: radial-gradient(circle at 20% 50%, rgba(255,255,255,0.1) 0%, transparent 50%),
+                        radial-gradient(circle at 80% 80%, rgba(255,255,255,0.05) 0%, transparent 40%);
+      pointer-events: none;
+    }
+
     .pub-footer-inner {
       max-width: 1280px;
       margin: 0 auto;
       padding: 0 32px;
+      position: relative;
+      z-index: 2;
     }
+
     .pub-footer-grid {
       display: grid;
       grid-template-columns: 2fr 1fr 1fr 1fr;
       gap: 48px;
       padding-bottom: 48px;
-      border-bottom: 1px solid rgba(148, 163, 184, 0.15);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.15);
     }
+
     .pub-footer-brand {
       display: flex;
       align-items: center;
@@ -218,92 +290,118 @@
       display: block;
       font-size: 10px;
       font-weight: 600;
-      color: #64748B;
+      color: rgba(255, 255, 255, 0.7);
       letter-spacing: 0.10em;
       text-transform: uppercase;
       margin-top: 2px;
     }
+    
     .pub-footer-desc {
       font-size: 14px;
-      color: #94A3B8;
+      color: rgba(255, 255, 255, 0.85);
       line-height: 1.7;
       margin: 0 0 20px;
       max-width: 380px;
     }
+
     .pub-footer-col-title {
       font-family: var(--font-heading);
       font-weight: 700;
-      font-size: 11px;
+      font-size: 13px;
       color: #FFFFFF;
       text-transform: uppercase;
       letter-spacing: 0.08em;
-      margin-bottom: 16px;
+      margin-bottom: 20px;
     }
+
     .pub-footer-links {
       display: flex;
       flex-direction: column;
       gap: 12px;
     }
+
     .pub-footer-link {
       font-size: 14px;
-      color: #94A3B8;
+      color: rgba(255, 255, 255, 0.85);
       text-decoration: none;
-      transition: color 150ms;
+      transition: opacity 150ms;
     }
-    .pub-footer-link:hover { color: var(--primary); }
+
+    .pub-footer-link:hover { 
+      opacity: 0.8; 
+      text-decoration: underline;
+    }
 
     .pub-footer-social {
       display: flex;
-      gap: 8px;
+      gap: 12px;
     }
+
     .pub-footer-social a {
-      width: 36px;
-      height: 36px;
+      width: 40px;
+      height: 40px;
       display: flex;
       align-items: center;
       justify-content: center;
-      background: rgba(148, 163, 184, 0.1);
-      border-radius: var(--radius);
-      color: #94A3B8;
-      transition: all 150ms;
+      background: #FFFFFF;
+      border-radius: 50%;
+      color: #0A6E9F;
+      transition: transform 150ms, box-shadow 150ms;
       text-decoration: none;
     }
+
     .pub-footer-social a:hover {
-      background: var(--primary);
-      color: #FFFFFF;
+      transform: translateY(-3px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
     }
+
     .pub-footer-social svg {
-      width: 18px;
-      height: 18px;
+      width: 20px;
+      height: 20px;
     }
+
     .pub-footer-bottom {
-      padding-top: 20px;
+      padding-top: 24px;
       display: flex;
       justify-content: space-between;
       align-items: center;
       flex-wrap: wrap;
       gap: 12px;
       font-size: 12px;
-      color: #64748B;
-    }
-    .pub-footer-bottom strong {
-      color: #94A3B8;
-      font-weight: 600;
+      color: rgba(255, 255, 255, 0.85);
     }
 
-    /* Responsive */
-    @media (max-width: 1024px) {
-      .pub-menu, .pub-cta { display: none; }
-      .pub-hamburger { display: flex; }
-      .pub-nav-inner { padding: 16px 24px; }
+    .pub-footer-bottom strong {
+      color: #FFFFFF;
+      font-weight: 700;
     }
-    @media (max-width: 900px) {
-      .pub-footer-grid { grid-template-columns: 1fr 1fr; gap: 32px; }
+    @media (max-width: 1024px) {
+      .pub-footer-grid { grid-template-columns: 1fr 1fr; }
     }
     @media (max-width: 560px) {
-      .pub-footer-grid { grid-template-columns: 1fr; gap: 24px; }
+      .pub-footer-grid { grid-template-columns: 1fr; gap: 32px; }
       .pub-footer-inner { padding: 0 16px; }
       .pub-footer-bottom { flex-direction: column; text-align: center; }
+    }
+        /* ============ RESPONSIVE ============ */
+    @media (max-width: 1200px) {
+      .pub-menu, 
+      .pub-cta { 
+        display: none !important; 
+      }
+      .pub-hamburger { 
+        display: flex !important; 
+      }
+      .pub-nav { 
+        top: 10px; 
+        width: 95%; 
+        border-radius: 20px; 
+      }
+      
+      .pub-nav-inner { 
+        padding: 12px 20px; 
+        justify-content: space-between;
+      }
     }
   </style>
 
@@ -335,6 +433,12 @@
       </div>
 
       <div class="pub-cta">
+        <form method="get" action="{% url 'global_search' %}" class="pub-search-form">
+          <input type="search" name="q" placeholder="Search..." class="pub-search-input">
+          <button type="submit" class="pub-search-btn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          </button>
+        </form>
         <a href="{% url 'account_login' %}" class="pub-btn pub-btn-ghost">Sign In</a>
         <a href="{% url 'school_signup' %}" class="pub-btn pub-btn-primary">Get Started</a>
       </div>
@@ -385,14 +489,13 @@
     {% block content %}{% endblock %}
   </main>
 
-  <!-- ============================================ -->
+    <!-- ============================================ -->
   <!-- GLOBAL FOOTER                                -->
   <!-- ============================================ -->
   <footer class="pub-footer">
     <div class="pub-footer-inner">
 
       <div class="pub-footer-grid">
-
         <div>
           <div class="pub-footer-brand">
             <div class="pub-logo-mark" style="width: 44px; height: 44px; background: #FFFFFF; border-radius: 50%; padding: 4px;">
@@ -422,6 +525,7 @@
           </div>
         </div>
 
+        <!-- COLUMN 2: Product -->
         <div>
           <div class="pub-footer-col-title">Product</div>
           <div class="pub-footer-links">
@@ -431,6 +535,7 @@
           </div>
         </div>
 
+        <!-- COLUMN 3: Company -->
         <div>
           <div class="pub-footer-col-title">Company</div>
           <div class="pub-footer-links">
@@ -440,11 +545,13 @@
           </div>
         </div>
 
+        <!-- COLUMN 4: Legal & Related Links -->
         <div>
           <div class="pub-footer-col-title">Legal</div>
           <div class="pub-footer-links">
             <a href="{% url 'privacy' %}" class="pub-footer-link">Privacy Policy</a>
             <a href="{% url 'terms' %}" class="pub-footer-link">Terms of Service</a>
+            <a href="#" class="pub-footer-link" target="_blank">Ministry of Education</a>
           </div>
         </div>
 
