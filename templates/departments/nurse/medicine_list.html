@@ -9,7 +9,7 @@
     <h1 class="page-title">Medicine Stock</h1>
     <p class="page-subtitle">{{ medicines|length }} items in inventory</p>
   </div>
-  <div style="display: flex; gap: 8px;">
+  <div style="display: flex; flex-wrap: wrap; gap: 8px;">
     <a href="{% url 'medicine_add' %}" class="btn btn-primary">+ Add Medicine</a>
     <a href="{% url 'medicine_logs' %}" class="btn btn-secondary">📋 Stock Logs</a>
   </div>
@@ -87,6 +87,12 @@
         <td style="text-align: right; white-space: nowrap;">
           <a href="{% url 'medicine_stock_in' m.id %}" class="btn btn-sm btn-primary">+ In</a>
           <a href="{% url 'medicine_stock_out' m.id %}" class="btn btn-sm btn-secondary">− Out</a>
+          
+          <!-- NEW: LOG PDF BUTTON -->
+          <a href="{% url 'nurse_medicine_log_pdf' m.id %}" target="_blank" class="btn btn-sm btn-secondary">
+            📄 Log
+          </a>
+
           <a href="{% url 'medicine_edit' m.id %}" class="btn btn-sm btn-secondary">Edit</a>
         </td>
       </tr>

@@ -1,9 +1,8 @@
 from rest_framework import generics, permissions
 from django.contrib.auth import get_user_model
 from django.contrib.auth import logout as auth_logout
-from django.shortcuts import render, redirect
-from django.contrib.auth.decorators import login_required
 from django.contrib.auth import update_session_auth_hash
+from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.shortcuts import render, redirect
 
@@ -56,6 +55,8 @@ def logout_view(request):
 def school_blocked(request):
     """Show a message when the user's school subscription is expired."""
     return render(request, 'account/school_blocked.html')
+
+
 # ==========================================================
 # PASSWORD CHANGE (all users)
 # ==========================================================
@@ -64,9 +65,9 @@ def school_blocked(request):
 def change_password(request):
     """Allow any logged-in user to change their own password."""
     if request.method == 'POST':
-        current_password = request.POST.get('current_password', '')
-        new_password = request.POST.get('new_password', '')
-        confirm_password = request.POST.get('confirm_password', '')
+        current_password = request.POST.get('old_password', '') or request.POST.get('current_password', '')
+        new_password = request.POST.get('new_password1', '') or request.POST.get('new_password', '')
+        confirm_password = request.POST.get('new_password2', '') or request.POST.get('confirm_password', '')
 
         errors = []
 
@@ -91,7 +92,7 @@ def change_password(request):
             request.user.set_password(new_password)
             request.user.save()
             update_session_auth_hash(request, request.user)  # keep user logged in
-            messages.success(request, '✅ Your password has been updated successfully.')
+            messages.success(request, 'Your password has been updated successfully.')
             return redirect('change_password')
 
     return render(request, 'account/change_password.html')
@@ -101,6 +102,8 @@ def change_password(request):
 def profile_view(request):
     """Simple profile page for all users."""
     return render(request, 'account/profile.html')
+
+
 # ==========================================================
 # SUPER ADMIN PROFILE
 # ==========================================================

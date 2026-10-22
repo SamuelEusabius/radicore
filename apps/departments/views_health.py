@@ -563,3 +563,134 @@ def health_report_pdf(request):
 
     pisa.CreatePDF(src=io.StringIO(html_string), dest=response, encoding='utf-8')
     return response
+
+# ==========================================================
+# REFERRAL TO FACILITY
+# ==========================================================
+
+@login_required
+def refer_to_facility(request, visit_id):
+    """Mark a visit as referred and generate a referral note."""
+    if not _nurse_only(request):
+        return redirect('dashboard_home')
+
+    visit = get_object_or_404(
+        HealthVisit, id=visit_id, school=request.user.school
+    )
+
+    if request.method == 'POST':
+        visit.outcome = 'referred'
+        visit.referred_to = request.POST.get('facility_name', '').strip()
+        visit.notes = request.POST.get('referral_reason', '').strip()
+        visit.guardian_notified = 'guardian_notified' in request.POST
+        visit.save()
+
+        messages.success(request, f"Visit marked as referred to {visit.referred_to}.")
+        return redirect('health_visit_detail', visit_id=visit.id)
+
+    return render(request, 'departments/nurse/refer_form.html', {
+        'visit': visit,
+    })
+
+
+@login_required
+def referral_note_pdf(request, visit_id):
+    """Printable referral note PDF for the parent to take to the hospital."""
+    if not _nurse_required(request):
+        return redirect('dashboard_home')
+
+    visit = get_object_or_404(HealthVisit, id=visit_id, school=request.user.school)
+
+    from apps.core.pdf_utils import html_to_pdf_response, build_pdf_context
+    from django.template.loader import render_to_string
+
+    context = build_pdf_context(
+        request.user.school, request.user,
+        visit=visit,
+        student=visit.student,
+    )
+    html_string = render_to_string('pdf/nurse_referral_note.html', context)
+    return html_to_pdf_response(
+        html_string,
+        f'referral_{visit.student.admission_number}_{visit.id}.pdf',
+    )
+
+
+# ==========================================================
+# MEDICAL REPORT PDF (per student, per period)
+# ==========================================================
+
+@login_required
+def student_medical_report_pdf(request, student_id):
+    """Medical report for one student over a period."""
+    if not _nurse_required(request):
+        return redirect('dashboard_home')
+
+    from apps.students.models import Student
+    from datetime import date, timedelta
+
+    student = get_object_or_404(Student, id=student_id, school=request.user.school)
+
+    period = request.GET.get('period', 'month').strip()
+    today = date.today()
+
+    if period == 'today':
+        start = today; label = 'Today'
+    elif period == 'week':
+        start = today - timedelta(days=7); label = 'Last 7 Days'
+    elif period == 'month':
+        start = today.replace(day=1); label = 'This Month'
+    elif period == 'term':
+        start = today - timedelta(days=90); label = 'Last 90 Days (Term)'
+    elif period == 'year':
+        start = today.replace(month=1, day=1); label = 'This Year'
+    else:
+        start = today.replace(day=1); label = 'This Month'
+
+    visits = HealthVisit.objects.filter(
+        school=request.user.school, student=student,
+        visit_date__gte=start, visit_date__lte=today,
+    ).order_by('-visit_date')
+
+    from apps.core.pdf_utils import html_to_pdf_response, build_pdf_context
+    from django.template.loader import render_to_string
+
+    context = build_pdf_context(
+        request.user.school, request.user,
+        student=student, visits=visits,
+        period_label=label, period_start=start, period_end=today,
+    )
+    html_string = render_to_string('pdf/nurse_medical_report.html', context)
+    return html_to_pdf_response(
+        html_string,
+        f'medical_report_{student.admission_number}_{period}.pdf',
+    )
+
+
+# ==========================================================
+# MEDICINE ISSUE LOG PDF
+# ==========================================================
+
+@login_required
+def medicine_log_pdf(request, medicine_id):
+    """Audit log of one medicine — every issue with date, student, quantity."""
+    if not _nurse_required(request):
+        return redirect('dashboard_home')
+
+    medicine = get_object_or_404(Medicine, id=medicine_id, school=request.user.school)
+
+    logs = MedicineLog.objects.filter(
+        school=request.user.school, medicine=medicine
+    ).select_related('related_visit__student', 'recorded_by').order_by('-created_at')
+    from apps.core.pdf_utils import html_to_pdf_response, build_pdf_context
+    from django.template.loader import render_to_string
+
+    context = build_pdf_context(
+        request.user.school, request.user,
+        medicine=medicine, logs=logs,
+    )
+    html_string = render_to_string('pdf/nurse_medicine_log.html', context)
+    return html_to_pdf_response(
+        html_string,
+        f'medicine_log_{medicine.id}.pdf',
+    )

@@ -16,18 +16,50 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: var(--font-sans); background: #F7F8FA; min-height: 100vh; display: flex; flex-direction: column; }
 
-    /* ============ NAV ============ */
-    .auth-nav { background: #FFFFFF; border-bottom: 1px solid var(--border); padding: 16px 32px; display: flex; align-items: center; justify-content: space-between; position: relative; z-index: 100; }
+    /* ============ NAV (Floating Pill) ============ */
+    .auth-nav { 
+      position: absolute;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 95%;
+      max-width: 1280px;
+      z-index: 100;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(12px);
+      border-radius: 100px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      padding: 12px 24px;
+      display: flex; 
+      align-items: center; 
+      justify-content: space-between; 
+    }
+    
     .auth-nav-logo { display: flex; align-items: center; gap: 12px; text-decoration: none; color: var(--ink-900); }
-    .auth-nav-mark { width: 40px; height: 40px; border-radius: var(--radius); background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-family: var(--font-heading); font-weight: 800; font-size: 15px; box-shadow: 0 4px 12px rgba(10, 138, 95, 0.25); }
+    .auth-nav-mark { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-family: var(--font-heading); font-weight: 800; font-size: 15px; box-shadow: 0 4px 12px rgba(10, 138, 95, 0.25); overflow: hidden; }
+    .auth-nav-mark img { width: 100%; height: 100%; object-fit: contain; }
+    
     .auth-nav-text { font-family: var(--font-heading); font-weight: 800; font-size: 17px; letter-spacing: -0.02em; }
     .auth-nav-text span { color: #D4A017; }
     .auth-nav-text small { display: block; font-size: 10px; font-weight: 600; color: var(--ink-500); letter-spacing: 0.10em; text-transform: uppercase; margin-top: 1px; }
     
-    /* Desktop Links */
-    .auth-nav-links { display: flex; gap: 24px; }
-    .auth-nav-links a { font-size: 14px; font-weight: 500; color: var(--ink-600); text-decoration: none; transition: color 150ms; }
+    /* Desktop Links - UPPERCASE */
+    .auth-nav-links { display: flex; gap: 28px; align-items: center; }
+    .auth-nav-links a { font-size: 15px; font-weight: 700; color: var(--ink-800); text-decoration: none; text-transform: uppercase; letter-spacing: 0.05em; transition: color 150ms; position: relative; }
     .auth-nav-links a:hover { color: var(--primary); }
+    
+    .auth-nav-links a::after {
+      content: '';
+      position: absolute;
+      bottom: -4px;
+      left: 0;
+      width: 0;
+      height: 2px;
+      background: var(--primary);
+      transition: width 0.2s ease;
+    }
+    .auth-nav-links a:hover::after { width: 100%; }
 
     /* Hamburger Button */
     .auth-hamburger {
@@ -57,7 +89,7 @@
     .auth-mobile-header { display: flex; justify-content: flex-end; margin-bottom: 24px; }
     .auth-mobile-close { background: var(--surface-muted); border: none; width: 36px; height: 36px; border-radius: var(--radius); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--ink-600); }
     .auth-mobile-links { display: flex; flex-direction: column; gap: 8px; }
-    .auth-mobile-links a { padding: 12px 16px; font-size: 15px; font-weight: 600; color: var(--ink-800); text-decoration: none; border-radius: var(--radius); transition: background 150ms; }
+    .auth-mobile-links a { padding: 12px 16px; font-size: 15px; font-weight: 700; color: var(--ink-800); text-decoration: none; border-radius: var(--radius); transition: background 150ms; text-transform: uppercase; letter-spacing: 0.05em; }
     .auth-mobile-links a:hover { background: var(--primary-soft); color: var(--primary); }
 
     /* Mobile Backdrop */
@@ -73,7 +105,13 @@
     .auth-backdrop.open { display: block; opacity: 1; }
 
     /* ============ LAYOUT ============ */
-    .auth-main { flex: 1; display: grid; grid-template-columns: 1fr 1fr; min-height: calc(100vh - 73px); }
+    .auth-main { 
+      flex: 1; 
+      display: grid; 
+      grid-template-columns: 1fr 1fr; 
+      min-height: 100vh; 
+      /* padding-top removed so the image touches the top */
+    }
 
     /* ============ LEFT PANEL ============ */
     .auth-left { 
@@ -82,7 +120,7 @@
       background-size: cover;
       background-position: center;
       overflow: hidden; 
-      padding: 64px 56px; 
+      padding: 120px 56px 64px; /* Added 120px top padding to clear the floating nav */
       display: flex; 
       flex-direction: column; 
       justify-content: space-between; 
@@ -99,13 +137,16 @@
     
     .auth-left > * { position: relative; z-index: 1; }
 
-    .auth-left-brand { display: flex; align-items: center; gap: 12px; margin-bottom: 48px; }
-    .auth-left-brand-mark { width: 44px; height: 44px; border-radius: 10px; background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-family: var(--font-heading); font-weight: 800; font-size: 16px; box-shadow: 0 6px 20px rgba(10, 138, 95, 0.4); }
-    .auth-left-brand-text { font-family: var(--font-heading); font-weight: 800; font-size: 18px; letter-spacing: -0.02em; color: #FFFFFF; }
-    .auth-left-brand-text span { color: #D4A017; }
-    .auth-left-brand-text small { display: block; font-size: 10px; font-weight: 600; color: #94A3B8; letter-spacing: 0.10em; text-transform: uppercase; margin-top: 2px; }
-
-    .auth-left-hero h1 { font-family: var(--font-heading); font-size: 42px; font-weight: 800; line-height: 1.1; letter-spacing: -0.03em; color: #FFFFFF; margin-bottom: 20px; }
+    /* Left Panel Text */
+    .auth-left-hero h1 { 
+      font-family: var(--font-heading); 
+      font-size: 42px; 
+      font-weight: 800; 
+      line-height: 1.1; 
+      letter-spacing: -0.03em; 
+      color: #FFFFFF; 
+      margin-bottom: 20px; 
+    }
     .auth-left-hero p { font-size: 15px; line-height: 1.7; color: rgba(255, 255, 255, 0.75); max-width: 420px; }
 
     .auth-left-features { margin-top: 40px; display: flex; flex-direction: column; gap: 16px; }
@@ -117,7 +158,13 @@
     .auth-left-footer { font-size: 11px; color: rgba(255, 255, 255, 0.4); margin-top: 48px; }
 
     /* ============ RIGHT PANEL ============ */
-    .auth-right { display: flex; align-items: center; justify-content: center; padding: 40px 32px; background: #FFFFFF; }
+    .auth-right { 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      padding: 120px 32px 40px; /* Added 120px top padding so the form doesn't hide behind nav */
+      background: #FFFFFF; 
+    }
     .auth-form-wrap { width: 100%; max-width: 400px; }
 
     .auth-form-header { text-align: center; margin-bottom: 32px; }
@@ -157,33 +204,32 @@
         grid-template-rows: auto 1fr; 
       }
       .auth-left { 
-        padding: 32px 24px; 
+        padding: 100px 24px 32px; /* Adjusted for mobile nav */
         min-height: auto; 
       }
-      .auth-left-brand { margin-bottom: 24px; }
       .auth-left-hero h1 { font-size: 28px; margin-bottom: 12px; }
       .auth-left-hero p { font-size: 14px; margin-bottom: 0; }
       .auth-left-features { display: none; }
       .auth-left-footer { display: none; }
       
       .auth-right { 
-        padding: 32px 24px; 
+        padding: 40px 24px; 
         align-items: flex-start; 
       }
       
       .auth-nav-links { display: none; }
       .auth-hamburger { display: flex; }
-      .auth-nav { padding: 16px 24px; }
     }
   </style>
 </head>
 <body>
 
+  <!-- FLOATING NAV -->
   <nav class="auth-nav">
     <a href="{% url 'landing' %}" class="auth-nav-logo">
-      <div class="auth-nav-mark" style="background: none; box-shadow: none;">
-  <img src="{% static 'images/graduation-cap-books.png' %}" alt="RacodCore" style="width: 100%; height: 100%; object-fit: contain;">
-</div>
+      <div class="auth-nav-mark">
+        <img src="{% static 'images/graduation-cap-books.png' %}" alt="RacodCore">
+      </div>
       <div class="auth-nav-text">
         Racod<span>Core</span>
         <small>Smart School Management</small>
@@ -206,6 +252,7 @@
     </button>
   </nav>
 
+  <!-- MOBILE MENU DRAWER -->
   <div class="auth-backdrop" id="auth-backdrop"></div>
   <div class="auth-mobile-menu" id="auth-mobile-menu">
     <div class="auth-mobile-header">
@@ -221,22 +268,12 @@
     </div>
   </div>
 
+  <!-- MAIN CONTENT -->
   <main class="auth-main">
 
-    <!-- LEFT: Branding -->
-    <!-- THE BLOCK IS ADDED HERE -->
+    <!-- LEFT: Branding (Logo Removed) -->
     <div class="auth-left" {% block left_panel_style %}{% endblock %}>
       <div>
-        <div class="auth-left-brand">
-          <div class="auth-left-brand-mark" style="background: none; box-shadow: none;">
-  <img src="{% static 'images/graduation-cap-books.png' %}" alt="RacodCore" style="width: 100%; height: 100%; object-fit: contain;">
-</div>
-          <div class="auth-left-brand-text">
-            Racod<span>Core</span>
-            <small>{% block brand_tagline %}Smart School Management{% endblock %}</small>
-          </div>
-        </div>
-
         <div class="auth-left-hero">
           <h1>{% block hero_title %}Building the digital foundation for every Kenyan school.{% endblock %}</h1>
           <p>{% block hero_sub %}Our vision is to become the most trusted digital partner for schools across East Africa — empowering administrators, teachers, parents, and students with technology built for our local reality.{% endblock %}</p>

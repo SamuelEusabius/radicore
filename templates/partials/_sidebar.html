@@ -436,7 +436,14 @@
           {% include 'partials/icons.html' with name="award" size=18 %}
           <span class="sidebar-link-text">My Class</span>
         </a>
+        
+        <!-- ADD THIS NEW LINK -->
+        <a href="{% url 'class_teacher_merged_reports_page' %}" class="sidebar-link">
+          {% include 'partials/icons.html' with name="file-text" size=18 %}
+          <span class="sidebar-link-text">Class Reports</span>
+        </a>
       {% endif %}
+      
             {% if user.teacher_profile.is_class_teacher %}
         <div class="sidebar-section-label">Class Wallet</div>
         <a href="{% url 'teacher_wallets' %}" class="sidebar-link">

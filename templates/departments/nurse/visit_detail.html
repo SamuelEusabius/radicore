@@ -8,13 +8,28 @@
     <h1 class="page-title">{{ visit.student.full_name }}</h1>
     <p class="page-subtitle">{{ visit.visit_date|date:"l, j F Y" }}{% if visit.visit_time %} · {{ visit.visit_time|time:"H:i" }}{% endif %}</p>
   </div>
-  <div style="display: flex; gap: 8px;">
+  <div style="display: flex; flex-wrap: wrap; gap: 8px;">
     {% if user.role == 'nurse' %}
+      <a href="{% url 'nurse_medical_report_pdf' visit.student.id %}?period=month" target="_blank" class="btn btn-secondary">
+        {% include 'partials/icons.html' with name="file-text" size=16 %}
+        Medical Report
+      </a>
+      <a href="{% url 'nurse_referral_note_pdf' visit.id %}" target="_blank" class="btn btn-secondary">
+        {% include 'partials/icons.html' with name="download" size=16 %}
+        Referral PDF
+      </a>
+      {% if visit.outcome != 'referred' %}
+        <a href="{% url 'nurse_refer_visit' visit.id %}" class="btn btn-secondary" style="color: var(--warning); border-color: var(--warning);">
+          {% include 'partials/icons.html' with name="alert-triangle" size=16 %}
+          Refer
+        </a>
+      {% endif %}
       <a href="{% url 'health_visit_edit' visit.id %}" class="btn btn-primary">Edit</a>
     {% endif %}
     <a href="{% url 'health_visit_list' %}" class="btn btn-secondary">← Back</a>
   </div>
 </div>
+
 
 <div class="card mb-6">
   <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">

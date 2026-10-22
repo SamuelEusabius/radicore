@@ -1,127 +1,242 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
+{% load static %}
+
 {% block title %}{% if visit %}Edit Visit{% else %}Log Visit{% endif %}{% endblock %}
-{% block header_title %}{% if visit %}Edit Visit{% else %}Log Visit{% endif %}{% endblock %}
+{% block header_title %}{% if visit %}Edit Visit{% else %}Log a Health Visit{% endif %}{% endblock %}
+{% block header_sub %}{% if visit %}{{ visit.student.full_name }}{% else %}Search for a student to log a visit{% endif %}{% endblock %}
 
 {% block content %}
-<div class="card" style="max-width: 840px; margin: 0 auto;">
-  <form method="post">
-    {% csrf_token %}
 
-    <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+<form method="post" class="card" style="max-width: 900px; margin: 0 auto;">
+  {% csrf_token %}
+
+  <!-- ============================================================ -->
+  <!-- STUDENT SEARCH -->
+  <!-- ============================================================ -->
+  <div class="card mb-6" style="background: var(--surface-1);">
+    <h3 class="card-title mb-3">1. Select Student</h3>
+
+    {% if visit %}
+      <!-- Editing: student is fixed -->
+      <div style="font-weight: 600; color: var(--ink-900); font-size: var(--text-lg);">
+        {{ visit.student.first_name }} {{ visit.student.last_name }}
+      </div>
+      <div class="text-xs mt-1" style="color: var(--ink-500);">
+        Adm: {{ visit.student.admission_number }} · Class: {{ visit.student.class_level }}
+      </div>
+      <input type="hidden" name="student" value="{{ visit.student.id }}">
+    {% else %}
+      <!-- New visit: searchable table -->
+      <div class="mb-3">
+        <input type="text" id="studentSearch" class="input w-full"
+               placeholder="Type student name, admission number, or class...">
+      </div>
+
+      <div class="table-wrap" style="max-height: 280px; overflow-y: auto; border: 1px solid var(--border); border-radius: var(--radius);">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Student</th>
+              <th>Adm #</th>
+              <th>Class</th>
+              <th style="text-align: right;">Action</th>
+            </tr>
+          </thead>
+          <tbody id="studentTable">
+            {% for s in students %}
+            <tr data-search="{{ s.first_name|lower }} {{ s.last_name|lower }} {{ s.admission_number|lower }} {{ s.class_level|default:''|lower }}">
+              <td>
+                <div style="font-weight: 600; color: var(--ink-900);">
+                  {{ s.first_name }} {{ s.last_name }}
+                </div>
+                {% if s.has_medical_condition %}
+                <span class="badge badge-danger" style="font-size: 9px;">Medical Condition</span>
+                {% endif %}
+              </td>
+              <td style="font-family: var(--font-mono); font-size: var(--text-sm);">
+                {{ s.admission_number }}
+              </td>
+              <td style="font-size: var(--text-sm); color: var(--ink-600);">
+                {{ s.class_level|default:"—" }}
+              </td>
+              <td style="text-align: right;">
+                <button type="button" class="btn btn-primary" 
+                        style="padding: var(--s-2) var(--s-3); font-size: var(--text-xs);"
+                        onclick="selectStudent({{ s.id }}, '{{ s.first_name|escapejs }} {{ s.last_name|escapejs }}', '{{ s.admission_number|escapejs }}', '{{ s.class_level|default:''|escapejs }}')">
+                  Select
+                </button>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Selected student display -->
+      <div id="selectedStudent" class="card mt-3" style="display: none; background: var(--primary-soft); border-left: 4px solid var(--primary); padding: var(--s-3);">
+        <div class="text-xs" style="color: var(--ink-500); font-weight: 600;">SELECTED STUDENT</div>
+        <div style="font-weight: 700; color: var(--ink-900); font-size: var(--text-lg);" id="selectedName"></div>
+        <div class="text-xs mt-1" style="color: var(--ink-600);" id="selectedMeta"></div>
+        <button type="button" class="btn btn-secondary mt-2" 
+                style="padding: var(--s-2) var(--s-3); font-size: var(--text-xs);"
+                onclick="clearSelection()">
+          Change Student
+        </button>
+      </div>
+
+      <input type="hidden" name="student" id="studentIdInput" required>
+    {% endif %}
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- VISIT DETAILS -->
+  <!-- ============================================================ -->
+  <div class="card mb-6">
+    <h3 class="card-title mb-3">2. Visit Details</h3>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
       <div>
-        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Student *</label>
-        <select name="student" required style="width: 100%; padding: 10px; border: 1px solid var(--border);">
-          <option value="">— Select student —</option>
-          {% for s in students %}
-            <option value="{{ s.id }}"
-              {% if form_data.student == s.id|stringformat:"s" %}selected{% elif visit and visit.student.id == s.id %}selected{% endif %}>
-              {{ s.first_name }} {{ s.last_name }} ({{ s.admission_number }})
-            </option>
+        <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Date *</label>
+        <input type="date" name="visit_date" required class="input w-full"
+               value="{% if form_data.visit_date %}{{ form_data.visit_date }}{% elif visit %}{{ visit.visit_date|date:'Y-m-d' }}{% else %}{{ today|date:'Y-m-d' }}{% endif %}">
+      </div>
+      <div>
+        <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Time</label>
+        <input type="time" name="visit_time" class="input w-full"
+               value="{% if form_data.visit_time %}{{ form_data.visit_time }}{% elif visit and visit.visit_time %}{{ visit.visit_time|time:'H:i' }}{% endif %}">
+      </div>
+      <div>
+        <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Visit Type</label>
+        <select name="visit_type" class="select w-full">
+          {% for value, label in visit_types %}
+            <option value="{{ value }}" {% if visit and visit.visit_type == value %}selected{% elif form_data.visit_type == value %}selected{% endif %}>{{ label }}</option>
           {% endfor %}
         </select>
       </div>
-      <div>
-        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Date *</label>
-        <input type="date" name="visit_date" required
-               value="{% if form_data.visit_date %}{{ form_data.visit_date }}{% elif visit %}{{ visit.visit_date|date:'Y-m-d' }}{% else %}{{ today|date:'Y-m-d' }}{% endif %}"
-               style="width: 100%; padding: 10px; border: 1px solid var(--border);">
-      </div>
-      <div>
-        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Time</label>
-        <input type="time" name="visit_time"
-               value="{% if form_data.visit_time %}{{ form_data.visit_time }}{% elif visit and visit.visit_time %}{{ visit.visit_time|time:'H:i' }}{% endif %}"
-               style="width: 100%; padding: 10px; border: 1px solid var(--border);">
-      </div>
     </div>
 
-    <div style="margin-bottom: 20px;">
-      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Visit Type *</label>
-      <select name="visit_type" required style="width: 100%; padding: 10px; border: 1px solid var(--border);">
-        <option value="illness">Illness</option>
-        <option value="injury">Injury</option>
-        <option value="emergency">Emergency</option>
-        <option value="routine">Routine Check</option>
-        <option value="followup">Follow-up</option>
-      </select>
+    <div class="mb-4">
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Symptoms / Complaint *</label>
+      <textarea name="symptoms" required rows="3" class="textarea w-full"
+                placeholder="What did the student report? What did you observe?">{% if form_data.symptoms %}{{ form_data.symptoms }}{% elif visit %}{{ visit.symptoms }}{% endif %}</textarea>
     </div>
 
-    <div style="margin-bottom: 20px;">
-      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Symptoms / Complaint *</label>
-      <textarea name="symptoms" required rows="3"
-                placeholder="What did the student report? What did you observe?"
-                style="width: 100%; padding: 10px; border: 1px solid var(--border);">{% if form_data.symptoms %}{{ form_data.symptoms }}{% elif visit %}{{ visit.symptoms }}{% endif %}</textarea>
-    </div>
-
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
       <div>
-        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Diagnosis</label>
-        <input type="text" name="diagnosis"
-               value="{% if form_data.diagnosis %}{{ form_data.diagnosis }}{% elif visit %}{{ visit.diagnosis }}{% endif %}"
-               style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+        <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Diagnosis</label>
+        <input type="text" name="diagnosis" class="input w-full"
+               value="{% if form_data.diagnosis %}{{ form_data.diagnosis }}{% elif visit %}{{ visit.diagnosis }}{% endif %}">
       </div>
       <div>
-        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Outcome</label>
-        <select name="outcome" style="width: 100%; padding: 10px; border: 1px solid var(--border);">
-          <option value="treated">Treated & Returned to Class</option>
-          <option value="resting">Resting in Sick Bay</option>
-          <option value="sent_home">Sent Home</option>
-          <option value="referred">Referred to Hospital</option>
-          <option value="observation">Under Observation</option>
+        <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Outcome</label>
+        <select name="outcome" class="select w-full">
+          {% for value, label in outcome_choices %}
+            <option value="{{ value }}" {% if visit and visit.outcome == value %}selected{% elif form_data.outcome == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
         </select>
       </div>
     </div>
 
-    <div style="margin-bottom: 20px;">
-      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Treatment Administered</label>
-      <textarea name="treatment" rows="3"
-                style="width: 100%; padding: 10px; border: 1px solid var(--border);">{% if form_data.treatment %}{{ form_data.treatment }}{% elif visit %}{{ visit.treatment }}{% endif %}</textarea>
+    <div class="mb-4">
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Treatment Administered</label>
+      <textarea name="treatment" rows="3" class="textarea w-full">{% if form_data.treatment %}{{ form_data.treatment }}{% elif visit %}{{ visit.treatment }}{% endif %}</textarea>
     </div>
 
-    <!-- Medicine dispensation -->
-    <div class="card" style="background: var(--surface-muted); margin-bottom: 20px; padding: 16px;">
-      <h3 style="margin: 0 0 12px 0; font-family: var(--font-heading); font-size: var(--text-sm);">💊 Dispense Medicine (Optional)</h3>
-      <div style="max-height: 200px; overflow-y: auto;">
-        {% for m in medicines %}
-        <div style="display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--border);">
-          <div style="flex: 1;">
-            <strong>{{ m.name }}</strong>
-            <span style="font-size: var(--text-xs); color: var(--ink-500);">
-              — {{ m.quantity }} {{ m.unit }} available
-            </span>
-          </div>
-          <input type="number" name="dispense_{{ m.id }}" min="0" max="{{ m.quantity }}"
-                 placeholder="0"
-                 style="width: 80px; padding: 6px; border: 1px solid var(--border);">
-          <span style="font-size: var(--text-xs); color: var(--ink-500);">{{ m.unit }}</span>
-        </div>
-        {% endfor %}
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+      <div>
+        <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Referred To (if any)</label>
+        <input type="text" name="referred_to" class="input w-full"
+               placeholder="e.g. Kenyatta National Hospital"
+               value="{% if form_data.referred_to %}{{ form_data.referred_to }}{% elif visit %}{{ visit.referred_to }}{% endif %}">
+      </div>
+      <div>
+        <label class="flex items-center gap-2 text-sm mt-6" style="color: var(--ink-700);">
+          <input type="checkbox" name="guardian_notified" {% if visit and visit.guardian_notified %}checked{% endif %}>
+          <span>Guardian Notified</span>
+        </label>
       </div>
     </div>
 
-    <div style="margin-bottom: 20px;">
-      <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-        <input type="checkbox" name="guardian_notified" {% if visit and visit.guardian_notified %}checked{% endif %} style="width: 18px; height: 18px;">
-        <span>Guardian has been notified</span>
-      </label>
+    <div class="mb-4">
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Notes</label>
+      <textarea name="notes" rows="2" class="textarea w-full">{% if form_data.notes %}{{ form_data.notes }}{% elif visit %}{{ visit.notes }}{% endif %}</textarea>
     </div>
+  </div>
 
-    <div style="margin-bottom: 20px;">
-      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Referred To (if applicable)</label>
-      <input type="text" name="referred_to"
-             value="{% if form_data.referred_to %}{{ form_data.referred_to }}{% elif visit %}{{ visit.referred_to }}{% endif %}"
-             placeholder="Hospital / clinic name"
-             style="width: 100%; padding: 10px; border: 1px solid var(--border);">
-    </div>
+  <!-- ============================================================ -->
+  <!-- MEDICINE DISPENSED -->
+  <!-- ============================================================ -->
+  <div class="card mb-6">
+    <h3 class="card-title mb-3">3. Medicine Dispensed (Optional)</h3>
+    <p class="text-xs mb-3" style="color: var(--ink-500);">Enter quantities to dispense. Stock will be deducted automatically.</p>
 
-    <div style="margin-bottom: 24px;">
-      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Notes</label>
-      <textarea name="notes" rows="2" style="width: 100%; padding: 10px; border: 1px solid var(--border);">{% if form_data.notes %}{{ form_data.notes }}{% elif visit %}{{ visit.notes }}{% endif %}</textarea>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+      {% for med in medicines %}
+      <div class="card" style="padding: var(--s-3); background: var(--surface-1);">
+        <div style="font-weight: 600; color: var(--ink-900); font-size: var(--text-sm);">{{ med.name }}</div>
+        <div class="text-xs mt-1" style="color: var(--ink-500);">
+          Stock: {{ med.quantity }} {{ med.unit }} · {{ med.get_category_display }}
+        </div>
+        <div class="mt-2">
+          <input type="number" name="dispense_{{ med.id }}" 
+                 class="input w-full" style="padding: var(--s-2); font-size: var(--text-sm);"
+                 min="0" max="{{ med.quantity }}"
+                 placeholder="Qty" 
+                 {% if med.quantity <= 0 %}disabled{% endif %}>
+        </div>
+      </div>
+      {% empty %}
+      <p class="text-sm" style="color: var(--ink-500);">No medicines in stock.</p>
+      {% endfor %}
     </div>
+  </div>
 
-    <div style="display: flex; gap: 12px; justify-content: flex-end;">
-      <a href="{% url 'health_visit_list' %}" class="btn btn-secondary">Cancel</a>
-      <button type="submit" class="btn btn-primary">{% if visit %}Save Changes{% else %}Record Visit{% endif %}</button>
-    </div>
-  </form>
-</div>
+  <!-- ============================================================ -->
+  <!-- SUBMIT -->
+  <!-- ============================================================ -->
+  <div class="flex gap-3">
+    <button type="submit" class="btn btn-primary">
+      {% include 'partials/icons.html' with name="check-circle" size=16 %}
+      {% if visit %}Save Changes{% else %}Log Visit{% endif %}
+    </button>
+    <a href="{% url 'health_visit_list' %}" class="btn btn-secondary">Cancel</a>
+  </div>
+
+</form>
+
+<script>
+(function() {
+  // Live search filter
+  var searchInput = document.getElementById('studentSearch');
+  if (searchInput) {
+    searchInput.addEventListener('input', function() {
+      var query = this.value.toLowerCase().trim();
+      var rows = document.querySelectorAll('#studentTable tr');
+      rows.forEach(function(row) {
+        var text = row.getAttribute('data-search') || '';
+        row.style.display = (!query || text.includes(query)) ? '' : 'none';
+      });
+    });
+  }
+})();
+
+function selectStudent(id, name, adm, cls) {
+  document.getElementById('studentIdInput').value = id;
+  document.getElementById('selectedName').textContent = name;
+  document.getElementById('selectedMeta').textContent = 'Adm: ' + adm + ' · Class: ' + (cls || '—');
+  document.getElementById('selectedStudent').style.display = 'block';
+  document.querySelector('#studentTable').closest('.table-wrap').style.display = 'none';
+  document.getElementById('studentSearch').style.display = 'none';
+}
+
+function clearSelection() {
+  document.getElementById('studentIdInput').value = '';
+  document.getElementById('selectedStudent').style.display = 'none';
+  document.querySelector('#studentTable').closest('.table-wrap').style.display = '';
+  document.getElementById('studentSearch').style.display = '';
+  document.getElementById('studentSearch').value = '';
+  document.querySelectorAll('#studentTable tr').forEach(function(r) { r.style.display = ''; });
+}
+</script>
+
 {% endblock %}

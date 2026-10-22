@@ -155,3 +155,7 @@ apps_backup_before_user_role_fix/
 db.sqlite3
 .env
 .env.*
+
+db.sqlite3
+.env
+.env.*

@@ -26,7 +26,15 @@ urlpatterns = [
     # ============================================================
     path('nurse/', views_health.nurse_dashboard, name='nurse_dashboard'),
 
-    # Health visits
+        # Nurse — Referral & PDFs
+    path('nurse/visits/<int:visit_id>/refer/',
+         views_health.refer_to_facility, name='nurse_refer_visit'),
+    path('nurse/visits/<int:visit_id>/referral-pdf/',
+         views_health.referral_note_pdf, name='nurse_referral_note_pdf'),
+    path('nurse/students/<int:student_id>/medical-report/',
+         views_health.student_medical_report_pdf, name='nurse_medical_report_pdf'),
+    path('nurse/medicines/<int:medicine_id>/log-pdf/',
+         views_health.medicine_log_pdf, name='nurse_medicine_log_pdf'),
     path('nurse/visits/', views_health.health_visit_list, name='health_visit_list'),
     path('nurse/visits/add/', views_health.health_visit_form, name='health_visit_add'),
     path('nurse/visits/<int:visit_id>/', views_health.health_visit_detail, name='health_visit_detail'),

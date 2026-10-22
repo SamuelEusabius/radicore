@@ -16,6 +16,16 @@
     <a href="{% url 'medicine_add' %}" class="btn btn-secondary">+ Add Medicine</a>
   </div>
 </div>
+<div class="card mb-6">
+  <h3 class="card-title mb-4">Medical Reports</h3>
+  <div class="flex flex-wrap gap-2">
+    <a href="{% url 'health_visit_list' %}" class="btn btn-secondary">All Visits</a>
+    <a href="{% url 'medicine_list' %}" class="btn btn-secondary">Medicine Stock</a>
+  </div>
+  <p class="text-xs mt-3" style="color: var(--ink-500);">
+    To generate a per-student medical report or medicine audit log, open the visit or medicine and click "Download PDF".
+  </p>
+</div>
 
 <!-- KPI Row -->
 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">

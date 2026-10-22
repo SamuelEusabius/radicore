@@ -240,7 +240,7 @@
 
 <!-- FOOTER -->
 <div class="footer">
-  <p>Generated {{ payment.paid_at|date:"d M Y H:i" }} · Served by {{ user.get_full_name|default:user.email }}</p>
+  <p>Generated {{ payment.paid_at|date:"d M Y H:i" }} · Served by {{ generated_by.get_full_name|default:generated_by.email }}</p>
   <p>This is a computer-generated receipt. No signature required.</p>
 </div>
 

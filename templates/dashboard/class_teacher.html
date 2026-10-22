@@ -117,16 +117,14 @@
     <div class="text-sm font-semibold text-gray-900">Results Sheet</div>
     <div class="text-xs text-gray-500 mt-0.5">Class PDF</div>
   </a>
-
-  <a href="{% url 'class_teacher_all_report_cards_merged' %}"
-     target="_blank"
-     class="group bg-white p-4 rounded-xl border border-gray-100 shadow-sm hover:border-teal-500 hover:shadow-md transition">
-    <div class="w-10 h-10 rounded-lg bg-pink-50 flex items-center justify-center mb-3 group-hover:bg-pink-100 transition">
-      {% include 'partials/icons.html' with name="file-text" size=18 %}
-    </div>
-    <div class="text-sm font-semibold text-gray-900">All Reports</div>
-    <div class="text-xs text-gray-500 mt-0.5">Merged PDF</div>
-  </a>
+{% if latest_exam %}
+<a href="{% url 'class_teacher_all_report_cards_merged' %}?exam={{ latest_exam.id }}" target="_blank" class="btn btn-primary">
+    {% include 'partials/icons.html' with name="download" size=16 %}
+    All Reports (PDF)
+</a>
+{% else %}
+<span class="btn btn-secondary" disabled>No exams found</span>
+{% endif %}
 
   <a href="{% url 'class_teacher_parents' %}"
      class="group bg-white p-4 rounded-xl border border-gray-100 shadow-sm hover:border-teal-500 hover:shadow-md transition">

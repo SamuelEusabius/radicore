@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Medical Report — {{ student.full_name }}</title>
+  <style>
+    * { box-sizing: border-box; }
+    @page { size: A4 portrait; margin: 16mm 18mm; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 11px; color: #111; line-height: 1.5; margin: 0; padding: 24px; }
+    {% include 'pdf/_shared_styles.html' %}
+    .title { text-align: center; font-size: 14px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; padding: 8px; border-top: 2px solid #333; border-bottom: 2px solid #333; margin: 16px 0 20px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { padding: 6px 8px; text-align: left; border-bottom: 1px solid #e5e7eb; font-size: 10px; }
+    th { background: #f9fafb; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; font-size: 9px; color: #4b5563; }
+    .sig-block { margin-top: 40px; display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
+    .sig-line { border-top: 1px solid #333; padding-top: 6px; text-align: center; font-size: 10px; }
+    .sig-role { font-size: 8px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+    .footer { margin-top: 32px; padding-top: 10px; border-top: 1px solid #e5e7eb; font-size: 9px; color: #6b7280; text-align: center; }
+  </style>
+</head>
+<body>
+
+  {% include 'pdf/_report_header.html' %}
+
+  <div class="title">Student Medical Report</div>
+
+  <div style="margin-bottom: 16px;">
+    <strong>Student:</strong> {{ student.first_name }} {{ student.last_name }}
+    &middot; <strong>Adm:</strong> {{ student.admission_number }}
+    &middot; <strong>Class:</strong> {{ student.class_level|default:"—" }}
+    <br>
+    <strong>Period:</strong> {{ period_label }} ({{ period_start|date:"j M Y" }} – {{ period_end|date:"j M Y" }})
+  </div>
+
+  {% if visits %}
+  <table>
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Type</th>
+        <th>Symptoms</th>
+        <th>Diagnosis</th>
+        <th>Treatment</th>
+        <th>Outcome</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for v in visits %}
+      <tr>
+        <td>{{ v.visit_date|date:"d M Y" }}</td>
+        <td>{{ v.get_visit_type_display }}</td>
+        <td>{{ v.symptoms|truncatechars:60 }}</td>
+        <td>{{ v.diagnosis|default:"—"|truncatechars:40 }}</td>
+        <td>{{ v.treatment|default:"—"|truncatechars:60 }}</td>
+        <td>{{ v.get_outcome_display }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p style="text-align:center; padding: 30px; color: #6b7280;">No visits recorded in this period.</p>
+  {% endif %}
+
+  <div class="sig-block">
+    <div class="sig-line">
+      <div style="font-weight: 600;">{{ generated_by.get_full_name|default:generated_by.email }}</div>
+      <div class="sig-role">Nurse Signature</div>
+    </div>
+    <div class="sig-line">
+      <div style="font-weight: 600;">Official School Stamp</div>
+      <div class="sig-role">&amp; Date</div>
+    </div>
+  </div>
+
+  <div class="footer">
+    Generated {{ generated_on|date:"j F Y, H:i" }} · {{ school.name }}
+  </div>
+
+</body>
+</html>

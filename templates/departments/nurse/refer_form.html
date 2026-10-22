@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Refer Visit — {{ visit.student.full_name }}{% endblock %}
+{% block header_title %}Refer to Facility{% endblock %}
+{% block header_sub %}{{ visit.student.full_name }} &middot; {{ visit.visit_date|date:"d M Y" }}{% endblock %}
+
+{% block content %}
+
+<div class="card" style="max-width: 640px; border-left: 4px solid var(--warning);">
+  <h3 class="card-title mb-4" style="color: var(--warning);">
+    {% include 'partials/icons.html' with name="alert-triangle" size=20 %}
+    Refer Student to Facility
+  </h3>
+
+  <p class="text-sm mb-4" style="color: var(--ink-700);">
+    This will mark the visit as <strong>Referred</strong> and allow you to print a referral note
+    for the parent/guardian to present at the hospital.
+  </p>
+
+  <form method="post">
+    {% csrf_token %}
+
+    <div class="mb-4">
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
+        Facility Name <span style="color: var(--danger);">*</span>
+      </label>
+      <input type="text" name="facility_name" class="input w-full" required
+             placeholder="e.g. Kenyatta National Hospital">
+    </div>
+
+    <div class="mb-4">
+      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
+        Reason for Referral
+      </label>
+      <textarea name="referral_reason" rows="3" class="textarea w-full"
+                placeholder="Why is the student being referred?">{{ visit.notes }}</textarea>
+    </div>
+
+    <div class="mb-6">
+      <label class="flex items-center gap-2 text-sm" style="color: var(--ink-700);">
+        <input type="checkbox" name="guardian_notified" checked>
+        <span>Guardian has been notified</span>
+      </label>
+    </div>
+
+    <div class="flex gap-3">
+      <button type="submit" class="btn btn-primary" style="background: var(--warning); border-color: var(--warning);">
+        {% include 'partials/icons.html' with name="check-circle" size=16 %}
+        Confirm Referral
+      </button>
+      <a href="{% url 'health_visit_detail' visit.id %}" class="btn btn-secondary">Cancel</a>
+    </div>
+  </form>
+</div>
+
+{% endblock %}

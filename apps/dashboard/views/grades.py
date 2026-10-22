@@ -362,6 +362,42 @@ def class_results_pdf(request):
     except Exception as e:
         print(f"[QR CARD ERROR] {e}")
         qr_data_uri = None 
+        
+        
+    # ==========================================================
+    # AUTO-GENERATE REMARKS & TREND
+    # ==========================================================
+    
+    # 1. Auto Trend (based on average)
+    if avg_pct >= 80:
+        auto_trend = f"An outstanding overall average of {avg_pct}% places this student among the top performers. Maintain this exceptional standard."
+    elif avg_pct >= 60:
+        auto_trend = f"A solid overall average of {avg_pct}%. With continued focus and dedication, the student is well on their way to achieving top grades."
+    elif avg_pct >= 40:
+        auto_trend = f"A fair average of {avg_pct}%. The student is encouraged to revise thoroughly and seek extra support to push their grades higher."
+    else:
+        auto_trend = f"An average of {avg_pct}% is below expectations. Urgent intervention, extra lessons, and a structured study plan are highly recommended."
+
+    # 2. Class Teacher Remarks (Detailed based on rank & average)
+    rank = class_rank_info['rank']
+    if avg_pct >= 80:
+        teacher_remarks = f"The student demonstrates exemplary academic ability, ranking {rank} out of {class_size}. They display a positive attitude towards learning and consistently submit quality assignments. Keep up this excellent trajectory."
+    elif avg_pct >= 60:
+        teacher_remarks = f"The student shows a commendable grasp of the material, currently positioned at rank {rank}. They are usually attentive and should now focus on refining their exam techniques to close the gap on the top performers."
+    elif avg_pct >= 40:
+        teacher_remarks = f"While the student shows potential, their current average of {avg_pct}% is not a true reflection of their capability. They need to participate more actively in class and seek help when struggling. Consistency is key."
+    else:
+        teacher_remarks = f"The results indicate that the student is struggling with the academic demands of this term. I advise setting a strict revision timetable and attending remedial classes. A meeting with the parents is suggested."
+
+    # 3. Principal Remarks (Institutional & Encouraging)
+    if avg_pct >= 80:
+        principal_remarks = "A truly remarkable performance. Your hard work has paid off, and you serve as an inspiration to your peers. We are very proud of you."
+    elif avg_pct >= 60:
+        principal_remarks = "You have achieved a respectable result. Continue to strive for excellence and utilize the resources available to improve your grades further."
+    elif avg_pct >= 40:
+        principal_remarks = "There is room for significant improvement. We believe in your potential, but success requires greater commitment and focus. Take your studies seriously."
+    else:
+        principal_remarks = "This is a disappointing result. It is imperative that you reflect on your study habits. The school administration is ready to support you if you show a willingness to work harder."
     html_string = render_to_string('pdf/report_card.html',
         build_pdf_context(
             school=student.school,
@@ -376,8 +412,10 @@ def class_results_pdf(request):
             class_size=class_size,
             total_marks=total_marks,
             total_out_of=total_out_of,
-            chart_data_uri=chart_path,
-            teacher_remarks='',
+            hart_data_uri=chart_path,
+            teacher_remarks=teacher_remarks,
+            principal_remarks=principal_remarks,
+            auto_trend=auto_trend,
             fee_balance=fee_balance,
             term_close_date=term_close_date,
             next_term_open_date=next_term_open_date,
@@ -921,6 +959,19 @@ def _render_report_card_pdf(request, student, exam, rankings, positions, class_s
     for g in current_grades:
         pct = round((float(g.marks) / float(g.out_of or 100)) * 100, 1)
         pos = positions.get(g.subject_id, {}).get(student.id, '—')
+        
+        # --- Calculate Trend ---
+        trend = '—'
+        prev_pct = previous_grades_map.get(g.subject.name)
+        if prev_pct is not None:
+            diff = pct - prev_pct
+            if diff > 2:
+                trend = 'Improving ↑'
+            elif diff < -2:
+                trend = 'Dropping ↓'
+            else:
+                trend = 'Stable →'
+
         grade_rows.append({
             'subject': g.subject.name,
             'marks': g.marks,
@@ -928,6 +979,7 @@ def _render_report_card_pdf(request, student, exam, rankings, positions, class_s
             'pct': pct,
             'grade': cbc_grade(pct),
             'position': pos,
+            'trend': trend,
         })
 
     overall_grade = cbc_grade(avg_pct)
@@ -1163,10 +1215,14 @@ def class_teacher_merged_reports_page(request):
         class_level=cls.name,
         is_active=True,
     ).count()
+    
+    from apps.grades.models import Exam
+    latest_exam = Exam.objects.filter(school=request.user.school).order_by('-year', '-id').first()
 
     return render(request, 'dashboard/class_teacher_merged_reports.html', {
         'teacher': teacher,
         'cls': cls,
+        'latest_exam': latest_exam,
         'exams': exams,
         'exam': exam,
         'student_count': student_count,

@@ -351,7 +351,7 @@ def class_teacher_dashboard(request):
     from apps.teachers.models import Teacher
     from apps.students.models import Student
     from apps.attendance.models import Attendance
-    from apps.grades.models import Grade
+    from apps.grades.models import Grade, Exam
     from apps.finance.models import Invoice
     from apps.parents.models import Parent
     from django.db.models import Sum, Count, Avg, F
@@ -370,8 +370,9 @@ def class_teacher_dashboard(request):
             request,
             'You are not currently assigned as a class teacher. Contact the school admin.'
         )
+        latest_exam = Exam.objects.filter(school=user.school).order_by('-year', '-id').first()
         return render(request, 'dashboard/class_teacher.html', {
-            'teacher': teacher, 'no_class': True,
+            'teacher': teacher, 'no_class': True, 'latest_exam': latest_exam,
         })
 
     cls = teacher.current_class

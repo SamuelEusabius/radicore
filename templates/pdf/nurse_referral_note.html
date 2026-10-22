@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Referral Note — {{ student.full_name }}</title>
+  <style>
+    * { box-sizing: border-box; }
+    @page { size: A4 portrait; margin: 16mm 18mm; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 11px; color: #111; line-height: 1.5; margin: 0; padding: 24px; }
+    {% include 'pdf/_shared_styles.html' %}
+    .title { text-align: center; font-size: 14px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; padding: 8px; border-top: 2px solid #333; border-bottom: 2px solid #333; margin: 16px 0 20px; }
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
+    .info-box { padding: 8px 10px; border: 1px solid #e5e7eb; border-radius: 3px; }
+    .info-box .lbl { font-size: 8px; text-transform: uppercase; letter-spacing: 0.5px; color: #6b7280; font-weight: 600; }
+    .info-box .val { font-size: 12px; font-weight: 600; color: #111; margin-top: 2px; }
+    .note-box { padding: 12px; background: #fef3c7; border-left: 3px solid #d97706; margin-bottom: 20px; font-size: 11px; }
+    .sig-block { margin-top: 40px; display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
+    .sig-line { border-top: 1px solid #333; padding-top: 6px; text-align: center; font-size: 10px; }
+    .sig-role { font-size: 8px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+    .footer { margin-top: 32px; padding-top: 10px; border-top: 1px solid #e5e7eb; font-size: 9px; color: #6b7280; text-align: center; }
+  </style>
+</head>
+<body>
+
+  {% include 'pdf/_report_header.html' %}
+
+  <div class="title">Referral Note</div>
+
+  <div class="info-grid">
+    <div class="info-box">
+      <div class="lbl">Student Name</div>
+      <div class="val">{{ student.first_name }} {{ student.last_name }}</div>
+    </div>
+    <div class="info-box">
+      <div class="lbl">Admission Number</div>
+      <div class="val" style="font-family: monospace;">{{ student.admission_number }}</div>
+    </div>
+    <div class="info-box">
+      <div class="lbl">Class</div>
+      <div class="val">{{ student.class_level|default:"—" }}</div>
+    </div>
+    <div class="info-box">
+      <div class="lbl">Date of Visit</div>
+      <div class="val">{{ visit.visit_date|date:"d M Y" }}</div>
+    </div>
+    <div class="info-box">
+      <div class="lbl">Referred To</div>
+      <div class="val">{{ visit.referred_to|default:"—" }}</div>
+    </div>
+    <div class="info-box">
+      <div class="lbl">Visit Type</div>
+      <div class="val">{{ visit.get_visit_type_display }}</div>
+    </div>
+  </div>
+
+  <div class="note-box">
+    <strong>Reason for Referral:</strong><br>
+    {{ visit.notes|default:"—" }}
+  </div>
+
+  {% if visit.symptoms %}
+  <p><strong>Symptoms Observed:</strong> {{ visit.symptoms }}</p>
+  {% endif %}
+  {% if visit.diagnosis %}
+  <p><strong>Provisional Diagnosis:</strong> {{ visit.diagnosis }}</p>
+  {% endif %}
+  {% if visit.treatment %}
+  <p><strong>First Aid / Treatment Given:</strong> {{ visit.treatment }}</p>
+  {% endif %}
+
+  <div class="sig-block">
+    <div class="sig-line">
+      <div style="font-weight: 600;">{{ generated_by.get_full_name|default:generated_by.email|default:"School Nurse" }}</div>
+      <div class="sig-role">Nurse Signature</div>
+    </div>
+    <div class="sig-line">
+      <div style="font-weight: 600;">Official School Stamp</div>
+      <div class="sig-role">&amp; Date</div>
+    </div>
+  </div>
+
+  <div class="footer">
+    Generated {{ generated_on|date:"j F Y, H:i" }} · {{ school.name }} · This is an official document.
+  </div>
+
+</body>
+</html>

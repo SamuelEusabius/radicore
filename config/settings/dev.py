@@ -54,3 +54,17 @@ if config('DEBUG_SQL', default=False, cast=bool):
             },
         },
     }
+    # ==========================================================
+# CLOUDFLARE TUNNEL / CSRF FIX
+# ==========================================================
+CSRF_TRUSTED_ORIGINS = [
+    'https://*.trycloudflare.com',
+    'http://localhost:8000',
+    'http://127.0.0.1:8000',
+]
+
+# ==========================================================
+# SILENCE XHTML2PDF CSS WARNINGS
+# ==========================================================
+import logging
+logging.getLogger("xhtml2pdf").setLevel(logging.ERROR)
