@@ -167,3 +167,16 @@ db.sqlite3
 media/
 venv/
 .venv/
+
+# Local secrets and data (added for public release)
+.env
+.env.*
+!.env.example
+db.sqlite3
+media/
+venv/
+.venv/
+runserver.log
+debug_page.html
+_diag_models.py
+_diag_db.py
