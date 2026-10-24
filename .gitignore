@@ -180,3 +180,11 @@ runserver.log
 debug_page.html
 _diag_models.py
 _diag_db.py
+
+.env
+.env.*
+!.env.example
+db.sqlite3
+media/
+venv/
+.venv/
