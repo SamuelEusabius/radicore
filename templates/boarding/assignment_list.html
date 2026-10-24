@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+{% block title %}Assignments{% endblock %}
+{% block header_title %}Assignments{% endblock %}
+{% block header_sub %}Student-to-bed allocations{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-info">
+    <h1 class="page-title">Assignments</h1>
+    <p class="page-subtitle">
+      {% if status == 'active' %}Active assignments
+      {% elif status == 'checked_out' %}Checked-out history
+      {% elif status == 'transferred' %}Transfer history
+      {% elif status == 'all' %}All assignments
+      {% else %}{{ status|capfirst }} assignments{% endif %}
+    </p>
+  </div>
+  <div style="display: flex; gap: 8px;">
+    <a href="{% url 'boarding:assignment_create' %}" class="btn btn-primary">+ New Assignment</a>
+    <a href="{% url 'boarding:boarding_index' %}" class="btn btn-secondary">← Back</a>
+  </div>
+</div>
+
+{% if messages %}
+  {% for m in messages %}
+    <div class="card mb-4" style="border-left: 4px solid {% if m.tags == 'error' %}var(--danger){% else %}var(--success){% endif %};">
+      <p style="margin: 0;">{{ m }}</p>
+    </div>
+  {% endfor %}
+{% endif %}
+
+<!-- Status filter -->
+<div class="card mb-6">
+  <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+    <a href="?status=active" class="btn btn-sm {% if status == 'active' %}btn-primary{% else %}btn-secondary{% endif %}">Active</a>
+    <a href="?status=checked_out" class="btn btn-sm {% if status == 'checked_out' %}btn-primary{% else %}btn-secondary{% endif %}">Checked Out</a>
+    <a href="?status=transferred" class="btn btn-sm {% if status == 'transferred' %}btn-primary{% else %}btn-secondary{% endif %}">Transferred</a>
+    <a href="?status=suspended" class="btn btn-sm {% if status == 'suspended' %}btn-primary{% else %}btn-secondary{% endif %}">Suspended</a>
+    <a href="?status=all" class="btn btn-sm {% if status == 'all' %}btn-primary{% else %}btn-secondary{% endif %}">All</a>
+  </div>
+</div>
+
+{% if assignments %}
+<div class="card">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Student</th>
+        <th>Admission No.</th>
+        <th>Dormitory</th>
+        <th>Bed</th>
+        <th>Assigned</th>
+        <th>Status</th>
+        <th style="text-align: right;">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for a in assignments %}
+      <tr>
+        <td><strong>{{ a.student.first_name }} {{ a.student.last_name }}</strong></td>
+        <td>{{ a.student.admission_number }}</td>
+        <td>{{ a.dormitory.name }}</td>
+        <td>{{ a.bed.bed_number }}</td>
+        <td>{{ a.assigned_at|date:"j M Y" }}</td>
+        <td>
+          {% if a.status == 'active' %}
+            <span class="badge badge-success">Active</span>
+          {% elif a.status == 'checked_out' %}
+            <span class="badge badge-warning">Checked Out</span>
+          {% elif a.status == 'transferred' %}
+            <span class="badge badge-info">Transferred</span>
+          {% else %}
+            <span class="badge badge-danger">{{ a.get_status_display }}</span>
+          {% endif %}
+        </td>
+        <td style="text-align: right; white-space: nowrap;">
+          {% if a.status == 'active' %}
+            <details style="display: inline-block; text-align: left;">
+              <summary class="btn btn-sm btn-secondary" style="cursor: pointer; list-style: none;">Transfer</summary>
+              <div class="card" style="position: absolute; z-index: 10; padding: 12px; min-width: 320px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-top: 4px;">
+                <form method="post" action="{% url 'boarding:assignment_transfer' a.id %}">
+                  {% csrf_token %}
+                  <label style="display: block; font-weight: 600; font-size: var(--text-sm); margin-bottom: 6px;">Transfer to bed:</label>
+                  <select name="new_bed" required style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px; margin-bottom: 8px;">
+                    <option value="">— Select bed —</option>
+                    {% for bed in transfer_beds %}
+                      <option value="{{ bed.id }}">{{ bed.dormitory.name }} · {{ bed.bed_number }}</option>
+                    {% endfor %}
+                  </select>
+                  <button type="submit" class="btn btn-sm btn-primary" style="width: 100%;">Confirm Transfer</button>
+                </form>
+              </div>
+            </details>
+            <a href="{% url 'boarding:assignment_checkout' a.id %}" class="btn btn-sm" style="background: var(--warning); color: white;">Check Out</a>
+          {% else %}
+            <span style="color: var(--ink-500); font-size: var(--text-sm);">
+              {% if a.checked_out_at %}{{ a.checked_out_at|date:"j M Y" }}{% else %}—{% endif %}
+            </span>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="card">
+  <div class="pro-empty" style="border: none; padding: 40px; text-align: center;">
+    <p style="color: var(--ink-500);">No assignments in this category.</p>
+    {% if status == 'active' %}
+      <a href="{% url 'boarding:assignment_create' %}" class="btn btn-primary" style="margin-top: 12px;">+ Create first assignment</a>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

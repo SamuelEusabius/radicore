@@ -128,7 +128,7 @@ ROLE_DASHBOARD_MAP = {
 
     # operations
     'store_keeper':          'store_keeper_dashboard',
-    'boarding_master':       'dashboard_placeholder',
+    'boarding_master':       'boarding_index',
     'chief_chef':            'dashboard_placeholder',
     'security_officer': 'cso_dashboard',
     'driver':                'dashboard_placeholder',
@@ -198,9 +198,9 @@ def store_keeper_dashboard_placeholder(request):
 
 @login_required
 def boarding_dashboard_placeholder(request):
-    """Temporary — shows a 'coming soon' page for Boarding Masters."""
-    if request.user.role not in ('boarding_master', 'principal'):
-        return redirect('dashboard_home')
+    """Legacy placeholder — redirects to the real boarding module."""
+    from django.shortcuts import redirect as _redirect
+    return _redirect('boarding:boarding_index')
     messages.info(
         request,
         'Boarding module is being built. Check back soon!'

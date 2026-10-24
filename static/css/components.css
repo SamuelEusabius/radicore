@@ -543,3 +543,37 @@ tr.gender-boy:hover { background: rgba(59, 130, 246, 0.1); }
 .flash-error   { background: var(--danger-light);  color: #991B1B; border-left-color: var(--danger); }
 .flash-warning { background: var(--warning-light); color: #92400E; border-left-color: var(--warning); }
 .flash-info    { background: var(--info-light);    color: #1E40AF; border-left-color: var(--info); }
+
+@media (max-width: 1024px) {
+  .sidebar {
+    width: 210px !important;
+    min-width: 210px !important;
+    max-width: 210px !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    width: 208px !important;
+    min-width: 208px !important;
+    max-width: 208px !important;
+  }
+  .page-content,
+  .page-content .card {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .page-content table,
+  .page-content .table {
+    min-width: 640px;
+    width: max-content;
+  }
+}
+
+@media (max-width: 480px) {
+  .sidebar {
+    width: 200px !important;
+    min-width: 200px !important;
+    max-width: 200px !important;
+  }
+}

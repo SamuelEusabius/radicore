@@ -15,8 +15,12 @@ from django.http import HttpResponse, JsonResponse
 from django.db.models import Q, Count, Sum
 from django.utils import timezone
 from django.contrib.auth import get_user_model
-from apps.accounts.roles import Role
 
+from apps.accounts.roles import (
+    Role,
+    can_create_role,
+    creatable_roles_for,
+)
 from apps.accounts.decorators import (
     role_required, super_admin_only,
 )
@@ -96,16 +100,8 @@ def manage_users(request):
     paginator = Paginator(qs, 25)
     page_obj = paginator.get_page(request.GET.get('page', 1))
 
-    # ---------- Role choices ----------
-    from apps.accounts.roles import Role
-    role_choices = list(Role.choices)
-    if request.user.role != 'super_admin':
-        ALLOWED_FOR_SUPER_ADMIN = ('principal', 'director_of_studies', 'store_keeper', 'boarding_master')
-        ALLOWED_FOR_SCHOOL_ADMIN = (
-           'teacher', 'accountant', 'parent', 'student',
-           'driver', 'librarian', 'lab_technician', 'nurse', 'chief_chef', 'director_of_studies', 'store_keeper', 'boarding_master',
-)
-        role_choices = [(v, l) for v, l in role_choices if v in ALLOWED_FOR_SCHOOL_ADMIN]
+    # ---------- Role choices from the central policy ----------
+    role_choices = creatable_roles_for(request.user.role)
 
     return render(request, 'dashboard/manage_users.html', {
         'users': page_obj,
@@ -123,7 +119,7 @@ def manage_users(request):
 
 @login_required
 def create_user(request):
-    """Create a new user. School Admin creates staff; Super Admin creates School Admins."""
+    """Create a new user. School Admin creates staff; Super Admin creates Principals."""
     if not request.user.is_authenticated:
         return redirect('/accounts/login/')
 
@@ -132,22 +128,8 @@ def create_user(request):
 
     from apps.accounts.models import User
 
-    # ---------- Role lists ----------
-    ALLOWED_FOR_SCHOOL_ADMIN = (
-        'teacher', 'accountant', 'parent', 'student',
-        'driver', 'librarian', 'lab_technician', 'nurse', 'chief_chef', 'director_of_studies', 'store_keeper', 'boarding_master',
-    )
-    ALLOWED_FOR_SUPER_ADMIN = ('principal', 'director_of_studies', 'store_keeper', 'boarding_master')
-
-    # ---------- Build role_choices ALWAYS (no matter what) ----------
-    all_role_choices = list(Role.choices)
-    
-    if request.user.role == 'principal':
-        role_choices = [(v, l) for v, l in all_role_choices if v in ALLOWED_FOR_SCHOOL_ADMIN]
-    elif request.user.role == 'super_admin':
-        role_choices = [(v, l) for v, l in all_role_choices if v in ALLOWED_FOR_SUPER_ADMIN]
-    else:
-        role_choices = []
+    # ---------- Role choices from the central policy ----------
+    role_choices = creatable_roles_for(request.user.role)
 
     # ---------- POST ----------
     if request.method == 'POST':
@@ -170,8 +152,8 @@ def create_user(request):
 
         if not role:
             errors.append('Role is required.')
-        elif role not in [v for v, _ in role_choices]:
-            errors.append('Invalid role for your permission level.')
+        elif not can_create_role(request.user.role, role):
+            errors.append('You are not allowed to create that role.')
 
         # Determine school
         assigned_school = None
@@ -472,7 +454,7 @@ def school_edit(request, school_id):
             school.logo = None
 
         school.save()
-        messages.success(request, f'✅ School "{school.name}" updated successfully.')
+        messages.success(request, f'School "{school.name}" updated successfully.')
         return redirect('schools_manage')
 
     # GET — show form
@@ -576,23 +558,14 @@ def super_admin_performance(request):
     total_staff = NonTeachingStaff.objects.filter(is_active=True).count()
 
     # ---------- 3-MONTH METRICS ----------
-    # Schools registered in last 3 months
     schools_3m = School.objects.filter(created_at__gte=three_months_ago).count()
-
-    # Users registered in last 3 months
     users_3m = User.objects.filter(date_joined__gte=three_months_ago).count()
-
-    # Payments (fees collected) in last 3 months
     payments_3m = Payment.objects.filter(
         paid_at__gte=three_months_ago
     ).aggregate(total=Sum('amount_kes'))['total'] or 0
-
-    # Invoices created in last 3 months
     invoices_3m = Invoice.objects.filter(
         created_at__gte=three_months_ago
     ).aggregate(total=Sum('amount_due'))['total'] or 0
-
-    # Alerts in last 3 months
     alerts_3m = Alert.objects.filter(created_at__gte=three_months_ago).count()
     critical_alerts = Alert.objects.filter(
         created_at__gte=three_months_ago,
@@ -600,65 +573,24 @@ def super_admin_performance(request):
         status='new'
     ).count()
 
-    # ---------- MONTHLY BREAKDOWN ----------
-    monthly_schools = (
-        School.objects.filter(created_at__gte=three_months_ago)
-        .annotate(month=TruncMonth('created_at'))
-        .values('month')
-        .annotate(count=Count('id'))
-        .order_by('month')
-    )
-
-    monthly_users = (
-        User.objects.filter(date_joined__gte=three_months_ago)
-        .annotate(month=TruncMonth('date_joined'))
-        .values('month')
-        .annotate(count=Count('id'))
-        .order_by('month')
-    )
-
-    monthly_payments = (
-        Payment.objects.filter(paid_at__gte=three_months_ago)
-        .annotate(month=TruncMonth('paid_at'))
-        .values('month')
-        .annotate(total=Sum('amount_kes'))
-        .order_by('month')
-    )
-
     # ---------- PERFORMANCE SCORES ----------
-    # 4 service performance indicators (0-100%)
-
-    # 1. School activation rate (active / total)
     activation_rate = round((active_schools / total_schools * 100), 1) if total_schools else 0
-
-    # 2. Data richness (avg students per active school)
     avg_students_per_school = round(total_students / active_schools, 1) if active_schools else 0
-    # Score: students per school relative to target of 200
     student_score = min(round((avg_students_per_school / 200) * 100, 1), 100)
-
-    # 3. Financial activity (collections / expected invoices)
     financial_score = round((float(payments_3m) / float(invoices_3m) * 100), 1) if invoices_3m else 0
     financial_score = min(financial_score, 100)
-
-    # 4. System health (low alerts = high score)
-    # 100 - (alerts per school) * 5, floor at 0
     if active_schools:
         alert_ratio = (alerts_3m / active_schools) * 5
         health_score = max(round(100 - alert_ratio, 1), 0)
     else:
         health_score = 100
-
-    # 5. User engagement (active users / total)
     engagement_score = round((users_3m / total_users * 100), 1) if total_users else 0
     engagement_score = min(engagement_score, 100)
-
-    # Overall score
     overall_score = round(
         (activation_rate + student_score + financial_score + health_score + engagement_score) / 5, 1
     )
 
     # ---------- PREPARE CHART DATA ----------
-    # Last 3 months labels (e.g., ["Jul 2026", "Aug 2026", "Sep 2026"])
     month_labels = []
     month_schools_data = []
     month_users_data = []
@@ -669,7 +601,6 @@ def super_admin_performance(request):
         label = m.strftime('%b %Y')
         month_labels.append(label)
 
-        # Count schools that month
         month_start = m
         if i > 0:
             month_end = (now - timedelta(days=30 * (i - 1))).replace(day=1)
@@ -701,16 +632,12 @@ def super_admin_performance(request):
         'invoices_3m': invoices_3m,
         'alerts_3m': alerts_3m,
         'critical_alerts': critical_alerts,
-
-        # Scores
         'activation_rate': activation_rate,
         'student_score': student_score,
         'financial_score': financial_score,
         'health_score': health_score,
         'engagement_score': engagement_score,
         'overall_score': overall_score,
-
-        # Chart data (JSON-safe)
         'month_labels': month_labels,
         'month_schools_data': month_schools_data,
         'month_users_data': month_users_data,
@@ -741,7 +668,6 @@ def school_modules_manage(request, school_id):
 
     school = get_object_or_404(School, id=school_id)
 
-    # Ensure all modules exist as rows (auto-create missing)
     existing = {m.module: m for m in SchoolModule.objects.filter(school=school)}
     for code, label in SchoolModule.Module.choices:
         if code not in existing:
@@ -762,14 +688,12 @@ def school_modules_manage(request, school_id):
             row = existing[code]
 
             if submitted and not row.is_enabled:
-                # Turning ON
                 row.is_enabled = True
                 row.enabled_at = now
                 row.enabled_by = request.user
                 row.save()
                 enabled_count += 1
             elif not submitted and row.is_enabled:
-                # Turning OFF
                 row.is_enabled = False
                 row.disabled_at = now
                 row.disabled_by = request.user
@@ -783,7 +707,6 @@ def school_modules_manage(request, school_id):
         )
         return redirect('school_modules_manage', school_id=school.id)
 
-    # Build template context
     modules = []
     for code, label in SchoolModule.Module.choices:
         row = existing[code]
@@ -796,7 +719,6 @@ def school_modules_manage(request, school_id):
             'enabled_by': row.enabled_by,
         })
 
-    # Sort: enabled first, then alphabetical
     modules.sort(key=lambda m: (not m['is_enabled'], m['label']))
 
     return render(request, 'dashboard/school_modules.html', {
@@ -805,5 +727,3 @@ def school_modules_manage(request, school_id):
         'enabled_count': sum(1 for m in modules if m['is_enabled']),
         'total_count': len(modules),
     })
-
-

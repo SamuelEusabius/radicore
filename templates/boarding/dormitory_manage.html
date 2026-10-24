@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+{% block title %}Dormitories{% endblock %}
+{% block header_title %}Dormitories{% endblock %}
+{% block header_sub %}{{ dorms|length }} dormitor{{ dorms|length|pluralize:"y,ies" }}{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-info">
+    <h1 class="page-title">Dormitories</h1>
+    <p class="page-subtitle">Manage houses, capacity, and house masters</p>
+  </div>
+  <div style="display: flex; gap: 8px;">
+    <a href="{% url 'boarding:dormitory_create' %}" class="btn btn-primary">+ Add Dormitory</a>
+    <a href="{% url 'boarding:boarding_index' %}" class="btn btn-secondary">← Back</a>
+  </div>
+</div>
+
+{% if messages %}
+  {% for m in messages %}
+    <div class="card mb-4" style="border-left: 4px solid {% if m.tags == 'error' %}var(--danger){% else %}var(--success){% endif %};">
+      <p style="margin: 0;">{{ m }}</p>
+    </div>
+  {% endfor %}
+{% endif %}
+
+{% if dorms %}
+<div class="card">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Dormitory</th>
+        <th>Gender</th>
+        <th>House Master</th>
+        <th>Beds</th>
+        <th>Occupied</th>
+        <th>Status</th>
+        <th style="text-align: right;">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for d in dorms %}
+      <tr>
+        <td>
+          <strong>{{ d.name }}</strong>
+          {% if d.code %}<br><span style="color: var(--ink-500); font-size: var(--text-sm);">Code: {{ d.code }}</span>{% endif %}
+        </td>
+        <td><span class="badge badge-info">{{ d.get_gender_display }}</span></td>
+        <td>{{ d.house_master.get_full_name|default:"—" }}</td>
+        <td>{{ d.bed_total }}</td>
+        <td>{{ d.bed_occupied }}</td>
+        <td>
+          {% if not d.is_active %}
+            <span class="badge badge-warning">Inactive</span>
+          {% elif d.bed_total == 0 %}
+            <span class="badge badge-warning">No beds</span>
+          {% elif d.bed_occupied == d.bed_total %}
+            <span class="badge badge-danger">Full</span>
+          {% else %}
+            <span class="badge badge-success">Active</span>
+          {% endif %}
+        </td>
+        <td style="text-align: right; white-space: nowrap;">
+          <a href="{% url 'boarding:boarders_by_house_pdf' d.id %}" class="btn btn-sm btn-secondary" target="_blank">Roster PDF</a>
+          <a href="{% url 'boarding:boarders_by_house_csv' d.id %}" class="btn btn-sm btn-secondary">Roster CSV</a>
+          <a href="{% url 'boarding:bed_manage' %}?dormitory={{ d.id }}" class="btn btn-sm btn-secondary">Beds</a>
+          <a href="{% url 'boarding:bed_bulk_create' %}?dormitory={{ d.id }}" class="btn btn-sm btn-secondary">+ Beds</a>
+          <a href="{% url 'boarding:dormitory_edit' d.id %}" class="btn btn-sm btn-primary">Edit</a>
+          <form method="post" action="{% url 'boarding:dormitory_delete' d.id %}" style="display: inline;" onsubmit="return confirm('Delete dormitory {{ d.name|escapejs }}? This cannot be undone.');">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-sm" style="background: var(--danger); color: white;">Delete</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="card">
+  <div class="pro-empty" style="border: none; padding: 40px; text-align: center;">
+    <p style="color: var(--ink-500);">No dormitories yet.</p>
+    <a href="{% url 'boarding:dormitory_create' %}" class="btn btn-primary" style="margin-top: 12px;">+ Create first dormitory</a>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

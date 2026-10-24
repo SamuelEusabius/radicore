@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% block title %}Bulk Add Beds{% endblock %}
+{% block header_title %}Bulk Add Beds{% endblock %}
+{% block header_sub %}Generate many beds in one step{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 720px; margin: 0 auto;">
+  <form method="post">
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+      <div style="margin-bottom: 16px; padding: 12px; border-left: 4px solid var(--danger); background: #fef2f2;">
+        {% for err in form.non_field_errors %}<p style="margin: 0; color: var(--danger);">{{ err }}</p>{% endfor %}
+      </div>
+    {% endif %}
+
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Dormitory *</label>
+      {{ form.dormitory }}
+      {% for e in form.dormitory.errors %}<p style="color: var(--danger); font-size: var(--text-sm); margin: 4px 0 0;">{{ e }}</p>{% endfor %}
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px; margin-bottom: 20px;">
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Prefix</label>
+        {{ form.prefix }}
+        {% for e in form.prefix.errors %}<p style="color: var(--danger); font-size: var(--text-sm); margin: 4px 0 0;">{{ e }}</p>{% endfor %}
+      </div>
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Start</label>
+        {{ form.start }}
+        {% for e in form.start.errors %}<p style="color: var(--danger); font-size: var(--text-sm); margin: 4px 0 0;">{{ e }}</p>{% endfor %}
+      </div>
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Count</label>
+        {{ form.count }}
+        {% for e in form.count.errors %}<p style="color: var(--danger); font-size: var(--text-sm); margin: 4px 0 0;">{{ e }}</p>{% endfor %}
+      </div>
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Padding</label>
+        {{ form.width }}
+        {% for e in form.width.errors %}<p style="color: var(--danger); font-size: var(--text-sm); margin: 4px 0 0;">{{ e }}</p>{% endfor %}
+      </div>
+    </div>
+
+    <div style="margin-bottom: 24px; padding: 12px; background: var(--ink-50, #f8f9fa); border-left: 4px solid var(--primary);">
+      <p style="margin: 0; font-size: var(--text-sm);">
+        <strong>Preview:</strong> With prefix <code>A-</code>, start <code>1</code>, count <code>30</code>, padding <code>2</code> — you will create <code>A-01, A-02, …, A-30</code>.
+        Existing bed numbers are skipped automatically.
+      </p>
+    </div>
+
+    <div style="display: flex; gap: 12px; justify-content: flex-end;">
+      <a href="{% url 'boarding:bed_manage' %}" class="btn btn-secondary">Cancel</a>
+      <button type="submit" class="btn btn-primary">Generate Beds</button>
+    </div>
+  </form>
+</div>
+
+<style>
+  input.form-input, select.form-input {
+    width: 100%; padding: 10px; border: 1px solid var(--border);
+    border-radius: 4px; font-size: var(--text-md); font-family: inherit;
+  }
+</style>
+{% endblock %}

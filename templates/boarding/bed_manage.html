@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+{% block title %}Beds{% endblock %}
+{% block header_title %}Beds{% endblock %}
+{% block header_sub %}{% if selected_dorm %}{{ selected_dorm.name }}{% else %}All dormitories{% endif %}{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-info">
+    <h1 class="page-title">Beds{% if selected_dorm %} · {{ selected_dorm.name }}{% endif %}</h1>
+    <p class="page-subtitle">
+      {% if selected_dorm %}
+        {{ beds|length }} bed{{ beds|length|pluralize }} in this dormitory
+      {% else %}
+        {{ beds|length }} bed{{ beds|length|pluralize }} across all dormitories
+      {% endif %}
+    </p>
+  </div>
+  <div style="display: flex; gap: 8px;">
+    <a href="{% url 'boarding:bed_create' %}{% if selected_dorm %}?dormitory={{ selected_dorm.id }}{% endif %}" class="btn btn-primary">+ Add Bed</a>
+    <a href="{% url 'boarding:bed_bulk_create' %}{% if selected_dorm %}?dormitory={{ selected_dorm.id }}{% endif %}" class="btn btn-secondary">Bulk Add</a>
+    <a href="{% url 'boarding:boarding_index' %}" class="btn btn-secondary">← Back</a>
+  </div>
+</div>
+
+{% if messages %}
+  {% for m in messages %}
+    <div class="card mb-4" style="border-left: 4px solid {% if m.tags == 'error' %}var(--danger){% else %}var(--success){% endif %};">
+      <p style="margin: 0;">{{ m }}</p>
+    </div>
+  {% endfor %}
+{% endif %}
+
+<!-- Dormitory filter -->
+<div class="card mb-6">
+  <h3 style="margin-bottom: 12px; font-family: var(--font-heading);">Filter by Dormitory</h3>
+  <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+    <a href="{% url 'boarding:bed_manage' %}" class="btn btn-sm {% if not selected_dorm %}btn-primary{% else %}btn-secondary{% endif %}">All ({{ dorms|length }})</a>
+    {% for d in dorms %}
+      <a href="{% url 'boarding:bed_manage' %}?dormitory={{ d.id }}"
+         class="btn btn-sm {% if selected_dorm and selected_dorm.id == d.id %}btn-primary{% else %}btn-secondary{% endif %}">
+        {{ d.name }} ({{ d.bed_total }})
+      </a>
+    {% endfor %}
+  </div>
+</div>
+
+{% if beds %}
+<div class="card">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Bed</th>
+        <th>Dormitory</th>
+        <th>Occupant</th>
+        <th>Status</th>
+        <th>Notes</th>
+        <th style="text-align: right;">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for bed in beds %}
+      <tr>
+        <td><strong>{{ bed.bed_number }}</strong></td>
+        <td>{{ bed.dormitory.name }}</td>
+        <td>
+          {% with occ=bed.current_occupant %}
+            {% if occ %}{{ occ.first_name }} {{ occ.last_name }} <br><span style="color: var(--ink-500); font-size: var(--text-sm);">{{ occ.admission_number }}</span>{% else %}—{% endif %}
+          {% endwith %}
+        </td>
+        <td>
+          {% if bed.is_occupied %}
+            <span class="badge badge-info">Occupied</span>
+          {% else %}
+            <span class="badge badge-success">Free</span>
+          {% endif %}
+        </td>
+        <td>{{ bed.notes|default:"—" }}</td>
+        <td style="text-align: right; white-space: nowrap;">
+          <a href="{% url 'boarding:bed_edit' bed.id %}" class="btn btn-sm btn-primary">Edit</a>
+          {% if not bed.is_occupied %}
+            <form method="post" action="{% url 'boarding:bed_delete' bed.id %}" style="display: inline;" onsubmit="return confirm('Delete bed {{ bed.bed_number|escapejs }}?');">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-sm" style="background: var(--danger); color: white;">Delete</button>
+            </form>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="card">
+  <div class="pro-empty" style="border: none; padding: 40px; text-align: center;">
+    <p style="color: var(--ink-500);">No beds yet{% if selected_dorm %} in {{ selected_dorm.name }}{% endif %}.</p>
+    <a href="{% url 'boarding:bed_bulk_create' %}{% if selected_dorm %}?dormitory={{ selected_dorm.id }}{% endif %}" class="btn btn-primary" style="margin-top: 12px;">Bulk add beds</a>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

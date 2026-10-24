@@ -1222,3 +1222,95 @@
     top: 64px;
   }
 }
+
+/* ============================================================
+   MOBILE / TABLET REFINEMENTS (appended)
+   - 20% narrower sidebar on tablet and phone
+   - horizontal scroll for data tables that overflow
+   ============================================================ */
+
+@media (max-width: 1024px) {
+  :root {
+    --sidebar-width: 210px;
+  }
+}
+
+@media (max-width: 768px) {
+  :root {
+    --sidebar-width: 208px;
+  }
+  .sidebar .sidebar-link {
+    padding: 10px 16px;
+    gap: 10px;
+  }
+  .sidebar .sidebar-link svg {
+    width: 16px;
+    height: 16px;
+    min-width: 16px;
+  }
+  .sidebar .sidebar-brand {
+    padding: 12px 12px;
+  }
+  .card {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .card > .table,
+  .card > table.table {
+    min-width: 640px;
+  }
+}
+
+@media (max-width: 480px) {
+  :root {
+    --sidebar-width: 200px;
+  }
+}
+
+
+/* ============================================================
+   MOBILE / TABLET REFINEMENTS — TAKE 3
+   - Sidebar width override (belt and braces)
+   - Horizontal scroll for ALL data tables at any nesting depth
+   ============================================================ */
+
+@media (max-width: 1024px) {
+  :root { --sidebar-width: 210px !important; }
+  .sidebar {
+    width: 210px !important;
+    min-width: 210px !important;
+    max-width: 210px !important;
+  }
+}
+
+@media (max-width: 768px) {
+  :root { --sidebar-width: 208px !important; }
+  .sidebar {
+    width: 208px !important;
+    min-width: 208px !important;
+    max-width: 208px !important;
+  }
+
+  /* Any table inside the page content area gets horizontal scroll. */
+  .page-content,
+  .page-content .card,
+  .page-content .table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .page-content table,
+  .page-content .table {
+    min-width: 640px;
+    width: max-content;
+  }
+}
+
+@media (max-width: 480px) {
+  :root { --sidebar-width: 200px !important; }
+  .sidebar {
+    width: 200px !important;
+    min-width: 200px !important;
+    max-width: 200px !important;
+  }
+}

@@ -3,21 +3,19 @@ User & Staff views:
 - Non-teaching staff list/add/delete
 - User management (deactivate, delete, change role)
 """
-
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from apps.accounts.roles import Role
 from django.contrib.auth import get_user_model
-from django.http import HttpResponse, JsonResponse
-from django.db.models import Q, Count, Sum
-from django.utils import timezone
 from django.core.paginator import Paginator
+from django.db.models import Q
 
-from apps.accounts.decorators import (
-    role_required, school_staff_only, super_admin_only,
-    
+from apps.accounts.roles import (
+    Role,
+    can_create_role,
+    creatable_roles_for,
 )
+
 
 User = get_user_model()
 
@@ -45,10 +43,10 @@ def staff_list(request):
 
     if search:
         qs = qs.filter(
-            Q(full_name__icontains=search) |
-            Q(id_number__icontains=search) |
-            Q(phone__icontains=search) |
-            Q(email__icontains=search)
+            Q(full_name__icontains=search)
+            | Q(id_number__icontains=search)
+            | Q(phone__icontains=search)
+            | Q(email__icontains=search)
         )
 
     if role_filter:
@@ -136,7 +134,7 @@ def add_staff(request):
             photo=photo,
         )
 
-        messages.success(request, f'✅ Staff "{staff.full_name}" added successfully.')
+        messages.success(request, f'Staff "{staff.full_name}" added successfully.')
         return redirect('staff_list')
 
     return render(request, 'dashboard/add_staff.html', {
@@ -155,7 +153,7 @@ def delete_staff(request, staff_id):
     if request.method == 'POST':
         name = staff.full_name
         staff.delete()
-        messages.success(request, f'🗑️ Staff "{name}" deleted.')
+        messages.success(request, f'Staff "{name}" deleted.')
         return redirect('staff_list')
 
     return render(request, 'dashboard/delete_staff.html', {'staff': staff})
@@ -170,8 +168,6 @@ def user_deactivate(request, user_id):
     """Toggle user is_active (deactivate or reactivate)."""
     if request.user.role not in ('principal', 'super_admin'):
         return redirect('dashboard_home')
-
-    from apps.accounts.models import User
 
     if request.method != 'POST':
         return redirect('manage_users')
@@ -214,8 +210,6 @@ def user_delete(request, user_id):
     if request.user.role not in ('principal', 'super_admin'):
         return redirect('dashboard_home')
 
-    from apps.accounts.models import User
-
     if request.user.role == 'super_admin':
         target = get_object_or_404(User, id=user_id)
     else:
@@ -247,11 +241,9 @@ def user_delete(request, user_id):
 
 @login_required
 def user_change_role(request, user_id):
-    """Change a user's role."""
+    """Change a user's role, governed by the central role policy."""
     if request.user.role not in ('principal', 'super_admin'):
         return redirect('dashboard_home')
-
-    from apps.accounts.models import User
 
     if request.user.role == 'super_admin':
         target = get_object_or_404(User, id=user_id)
@@ -262,26 +254,18 @@ def user_change_role(request, user_id):
         messages.error(request, 'You cannot change your own role.')
         return redirect('manage_users')
 
-    # Role lists
-    ALLOWED_FOR_SCHOOL_ADMIN = (
-        'teacher', 'accountant', 'parent', 'student',
-        'driver', 'librarian', 'lab_technician', 'nurse', 'chief_chef', 'director_of_studies', 'store_keeper', 'boarding_master',
-    )
-    ALLOWED_FOR_SUPER_ADMIN = ('principal', 'director_of_studies', 'store_keeper', 'boarding_master')
+    # Roles this actor may assign — single source of truth.
+    role_choices = creatable_roles_for(request.user.role)
 
     if request.method == 'POST':
         new_role = request.POST.get('role', '').strip()
 
-        if request.user.role == 'principal' and new_role not in ALLOWED_FOR_SCHOOL_ADMIN:
-            messages.error(request, 'You are not allowed to assign that role.')
-            return redirect('manage_users')
-
-        if request.user.role == 'super_admin' and new_role not in ALLOWED_FOR_SUPER_ADMIN:
-            messages.error(request, 'Super Admin can only assign School Admin role.')
-            return redirect('manage_users')
-
         if new_role not in dict(Role.choices):
             messages.error(request, 'Invalid role.')
+            return redirect('manage_users')
+
+        if not can_create_role(request.user.role, new_role):
+            messages.error(request, 'You are not allowed to assign that role.')
             return redirect('manage_users')
 
         old_role = target.get_role_display()
@@ -290,24 +274,15 @@ def user_change_role(request, user_id):
 
         messages.success(
             request,
-            f'{target.email} role changed from {old_role} to {target.get_role_display()}.'
+            f'{target.email} role changed from {old_role} to {target.get_role_display()}.',
         )
         return redirect('manage_users')
-
-    # GET — render role selection
-        role_choices = list(Role.choices)
-
-    if request.user.role == 'principal':
-        role_choices = [(v, l) for v, l in role_choices if v in ALLOWED_FOR_SCHOOL_ADMIN]
-    elif request.user.role == 'super_admin':
-        role_choices = [(v, l) for v, l in role_choices if v in ALLOWED_FOR_SUPER_ADMIN]
 
     return render(request, 'dashboard/user_change_role.html', {
         'target': target,
         'role_choices': role_choices,
     })
-    
-    
+
 
 # ============================================================
 # SCHOOL ADMIN — CHANGE USER PASSWORD
@@ -318,46 +293,32 @@ def user_change_password(request, user_id):
     """School Admin changes password for a user in their school."""
     if request.user.role not in ('principal', 'super_admin'):
         messages.error(request, 'Access denied.')
-        return redirect('dashboard_home')
-
-    from apps.accounts.models import User
+        return redirect('manage_users')
 
     if request.user.role == 'super_admin':
         target = get_object_or_404(User, id=user_id)
     else:
         target = get_object_or_404(User, id=user_id, school=request.user.school)
 
-    # Prevent changing super_admin passwords (unless you are one)
     if target.role == 'super_admin' and request.user.role != 'super_admin':
-        messages.error(request, 'You cannot change a Super Admin password.')
+        messages.error(request, 'You do not have permission to modify a Super Admin.')
         return redirect('manage_users')
 
     if request.method == 'POST':
-        new_password = request.POST.get('new_password', '').strip()
-        confirm_password = request.POST.get('confirm_password', '').strip()
+        new_password = request.POST.get('new_password', '')
+        confirm_password = request.POST.get('confirm_password', '')
 
-        errors = []
-        if not new_password:
-            errors.append('Password is required.')
-        elif len(new_password) < 8:
-            errors.append('Password must be at least 8 characters.')
-        elif new_password != confirm_password:
-            errors.append('Passwords do not match.')
+        if not new_password or len(new_password) < 8:
+            messages.error(request, 'Password must be at least 8 characters.')
+            return redirect('user_change_password', user_id=target.id)
 
-        if errors:
-            for e in errors:
-                messages.error(request, e)
-            return render(request, 'dashboard/user_change_password.html', {
-                'target': target,
-            })
+        if new_password != confirm_password:
+            messages.error(request, 'Passwords do not match.')
+            return redirect('user_change_password', user_id=target.id)
 
         target.set_password(new_password)
-        target.save()
-
-        messages.success(
-            request,
-            f'Password changed for {target.get_full_name() or target.email}.'
-        )
+        target.save(update_fields=['password'])
+        messages.success(request, f'Password updated for {target.email}.')
         return redirect('manage_users')
 
     return render(request, 'dashboard/user_change_password.html', {

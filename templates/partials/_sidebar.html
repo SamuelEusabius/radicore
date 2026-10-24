@@ -598,6 +598,49 @@
     {% endif %}
 
     <!-- ============================================ -->
+<!-- BOARDING MASTER                               -->
+<!-- ============================================ -->
+{% if user.role == 'boarding_master' %}
+  <div class="sidebar-section-label">Boarding</div>
+  <a href="{% url 'boarding:boarding_index' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="home" size=18 %}
+    <span class="sidebar-link-text">Dashboard</span>
+  </a>
+  <a href="{% url 'boarding:dormitory_manage' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="home" size=18 %}
+    <span class="sidebar-link-text">Dormitories</span>
+  </a>
+  <a href="{% url 'boarding:bed_manage' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="grid" size=18 %}
+    <span class="sidebar-link-text">Beds</span>
+  </a>
+  <a href="{% url 'boarding:assignment_list' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="users" size=18 %}
+    <span class="sidebar-link-text">Assignments</span>
+  </a>
+  <a href="{% url 'boarding:assignment_create' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="user-plus" size=18 %}
+    <span class="sidebar-link-text">Assign Student</span>
+  </a>
+
+  <div class="sidebar-section-label">My HR</div>
+  <a href="{% url 'my_leave_requests' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="calendar" size=18 %}
+    <span class="sidebar-link-text">My Leave</span>
+  </a>
+  <a href="{% url 'my_professionalism' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="award" size=18 %}
+    <span class="sidebar-link-text">My Professionalism</span>
+  </a>
+
+  <div class="sidebar-section-label">Communication</div>
+  <a href="{% url 'messages_inbox' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="mail" size=18 %}
+    <span class="sidebar-link-text">Inbox</span>
+  </a>
+{% endif %}
+
+    <!-- ============================================ -->
     <!-- DRIVER                                        -->
     <!-- ============================================ -->
     {% if user.role == 'driver' %}

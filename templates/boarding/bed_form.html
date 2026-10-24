@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% block title %}{% if mode == 'edit' %}Edit Bed{% else %}Add Bed{% endif %}{% endblock %}
+{% block header_title %}{% if mode == 'edit' %}Edit Bed{% else %}Add Bed{% endif %}{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 640px; margin: 0 auto;">
+  <form method="post">
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+      <div style="margin-bottom: 16px; padding: 12px; border-left: 4px solid var(--danger); background: #fef2f2;">
+        {% for err in form.non_field_errors %}<p style="margin: 0; color: var(--danger);">{{ err }}</p>{% endfor %}
+      </div>
+    {% endif %}
+
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Dormitory *</label>
+      {{ form.dormitory }}
+      {% for e in form.dormitory.errors %}<p style="color: var(--danger); font-size: var(--text-sm); margin: 4px 0 0;">{{ e }}</p>{% endfor %}
+    </div>
+
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Bed Number *</label>
+      {{ form.bed_number }}
+      {% for e in form.bed_number.errors %}<p style="color: var(--danger); font-size: var(--text-sm); margin: 4px 0 0;">{{ e }}</p>{% endfor %}
+      <p style="color: var(--ink-500); font-size: var(--text-sm); margin: 4px 0 0;">e.g. A-01, B-12, T-05</p>
+    </div>
+
+    <div style="margin-bottom: 24px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Notes</label>
+      {{ form.notes }}
+      {% for e in form.notes.errors %}<p style="color: var(--danger); font-size: var(--text-sm); margin: 4px 0 0;">{{ e }}</p>{% endfor %}
+    </div>
+
+    <div style="display: flex; gap: 12px; justify-content: flex-end;">
+      <a href="{% url 'boarding:bed_manage' %}" class="btn btn-secondary">Cancel</a>
+      <button type="submit" class="btn btn-primary">{% if mode == 'edit' %}Save Changes{% else %}Add Bed{% endif %}</button>
+    </div>
+  </form>
+</div>
+
+<style>
+  input.form-input, select.form-input, textarea.form-input {
+    width: 100%; padding: 10px; border: 1px solid var(--border);
+    border-radius: 4px; font-size: var(--text-md); font-family: inherit;
+  }
+</style>
+{% endblock %}

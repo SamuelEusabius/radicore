@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% block title %}Check Out Student{% endblock %}
+{% block header_title %}Check Out Student{% endblock %}
+
+{% block content %}
+<div style="max-width: 640px; margin: 0 auto;">
+
+  <div class="card mb-6">
+    <h3 style="margin-bottom: 12px; font-family: var(--font-heading);">Current Assignment</h3>
+    <table class="table">
+      <tbody>
+        <tr><td style="font-weight: 600; width: 160px;">Student</td><td>{{ assignment.student.first_name }} {{ assignment.student.last_name }}</td></tr>
+        <tr><td style="font-weight: 600;">Admission No.</td><td>{{ assignment.student.admission_number }}</td></tr>
+        <tr><td style="font-weight: 600;">Dormitory</td><td>{{ assignment.dormitory.name }}</td></tr>
+        <tr><td style="font-weight: 600;">Bed</td><td>{{ assignment.bed.bed_number }}</td></tr>
+        <tr><td style="font-weight: 600;">Assigned</td><td>{{ assignment.assigned_at|date:"j M Y" }}</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <form method="post">
+      {% csrf_token %}
+
+      {% if form.non_field_errors %}
+        <div style="margin-bottom: 16px; padding: 12px; border-left: 4px solid var(--danger); background: #fef2f2;">
+          {% for err in form.non_field_errors %}<p style="margin: 0; color: var(--danger);">{{ err }}</p>{% endfor %}
+        </div>
+      {% endif %}
+
+      <div style="margin-bottom: 24px;">
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Check-out Reason *</label>
+        {{ form.reason }}
+        {% for e in form.reason.errors %}<p style="color: var(--danger); font-size: var(--text-sm); margin: 4px 0 0;">{{ e }}</p>{% endfor %}
+        <p style="color: var(--ink-500); font-size: var(--text-sm); margin: 4px 0 0;">The bed will be freed and this record kept for audit.</p>
+      </div>
+
+      <div style="display: flex; gap: 12px; justify-content: flex-end;">
+        <a href="{% url 'boarding:assignment_list' %}" class="btn btn-secondary">Cancel</a>
+        <button type="submit" class="btn" style="background: var(--warning); color: white;">Confirm Check Out</button>
+      </div>
+    </form>
+  </div>
+
+</div>
+
+<style>
+  textarea.form-input {
+    width: 100%; padding: 10px; border: 1px solid var(--border);
+    border-radius: 4px; font-size: var(--text-md); font-family: inherit;
+  }
+</style>
+{% endblock %}

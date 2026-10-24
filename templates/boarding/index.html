@@ -1,0 +1,145 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Boarding Dashboard{% endblock %}
+{% block header_title %}Boarding Dashboard{% endblock %}
+{% block header_sub %}{{ current_school.name }}{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-info">
+    <h1 class="page-title">Boarding</h1>
+    <p class="page-subtitle">{{ dorm_count }} dormitor{{ dorm_count|pluralize:"y,ies" }} · {{ total_beds }} bed{{ total_beds|pluralize }} · {{ occupancy_pct }}% occupancy</p>
+  </div>
+  <div style="display: flex; gap: 8px;">
+    <a href="{% url 'boarding:dormitory_create' %}" class="btn btn-primary">+ Add Dormitory</a>
+    <a href="{% url 'boarding:assignment_create' %}" class="btn btn-secondary">+ Assign Student</a>
+  </div>
+</div>
+
+{% if messages %}
+  {% for m in messages %}
+    <div class="card mb-4" style="border-left: 4px solid {% if m.tags == 'error' %}var(--danger){% else %}var(--success){% endif %};">
+      <p style="margin: 0;">{{ m }}</p>
+    </div>
+  {% endfor %}
+{% endif %}
+
+<!-- KPI Row -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+  <div class="card">
+    <div class="stat-label">Dormitories</div>
+    <div class="stat-value">{{ dorm_count }}</div>
+    <div class="stat-meta">Active houses</div>
+  </div>
+  <div class="card">
+    <div class="stat-label">Total Beds</div>
+    <div class="stat-value">{{ total_beds }}</div>
+    <div class="stat-meta">Across all dorms</div>
+  </div>
+  <div class="card">
+    <div class="stat-label">Occupied</div>
+    <div class="stat-value" style="color: var(--primary);">{{ total_occupied }}</div>
+    <div class="stat-meta">{{ occupancy_pct }}% full</div>
+  </div>
+  <div class="card">
+    <div class="stat-label">Available</div>
+    <div class="stat-value" style="color: var(--success);">{{ total_available }}</div>
+    <div class="stat-meta">Empty beds</div>
+  </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="card mb-6">
+  <h3 style="margin-bottom: 16px; font-family: var(--font-heading);">Quick Actions</h3>
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+    <a href="{% url 'boarding:boarders_pdf' %}" class="btn btn-secondary" target="_blank">All Boarders PDF</a>
+    <a href="{% url 'boarding:boarders_csv' %}" class="btn btn-secondary">All Boarders CSV</a>
+    <a href="{% url 'boarding:dormitory_manage' %}" class="btn btn-secondary">Dormitories</a>
+    <a href="{% url 'boarding:bed_manage' %}" class="btn btn-secondary">Beds</a>
+    <a href="{% url 'boarding:bed_bulk_create' %}" class="btn btn-secondary">Bulk Add Beds</a>
+    <a href="{% url 'boarding:assignment_list' %}" class="btn btn-secondary">All Assignments</a>
+  </div>
+</div>
+
+<!-- Dormitory Occupancy -->
+<div class="card mb-6">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+    <h3 style="margin: 0; font-family: var(--font-heading);">Dormitory Occupancy</h3>
+    <a href="{% url 'boarding:dormitory_manage' %}" style="color: var(--primary); font-size: var(--text-sm);">Manage →</a>
+  </div>
+  {% if dorms %}
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Dormitory</th>
+        <th>Gender</th>
+        <th>House Master</th>
+        <th>Occupied</th>
+        <th>Available</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for d in dorms %}
+      <tr>
+        <td>
+          <strong>{{ d.name }}</strong>
+          {% if d.code %}<span style="color: var(--ink-500); font-size: var(--text-sm);">({{ d.code }})</span>{% endif %}
+        </td>
+        <td><span class="badge badge-info">{{ d.get_gender_display }}</span></td>
+        <td>{{ d.house_master.get_full_name|default:"—" }}</td>
+        <td>{{ d.bed_occupied }} / {{ d.bed_total }}</td>
+        <td>{{ d.bed_total|add:"0"|add:d.bed_occupied|stringformat:"s"|slice:"0:0" }}{{ d.bed_total|add:"-"|add:d.bed_occupied }}</td>
+        <td>
+          {% if d.bed_total == 0 %}
+            <span class="badge badge-warning">No beds</span>
+          {% elif d.bed_occupied == d.bed_total %}
+            <span class="badge badge-danger">Full</span>
+          {% elif d.bed_occupied >= d.bed_total|add:"-5" %}
+            <span class="badge badge-warning">Nearly full</span>
+          {% else %}
+            <span class="badge badge-success">Available</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="pro-empty" style="border: none; padding: 40px; text-align: center;">
+    <p style="color: var(--ink-500);">No dormitories yet.</p>
+    <a href="{% url 'boarding:dormitory_create' %}" class="btn btn-primary" style="margin-top: 12px;">+ Create first dormitory</a>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Recent Active Assignments -->
+<div class="card">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+    <h3 style="margin: 0; font-family: var(--font-heading);">Recent Assignments</h3>
+    <a href="{% url 'boarding:assignment_list' %}" style="color: var(--primary); font-size: var(--text-sm);">View all →</a>
+  </div>
+  {% if recent_assignments %}
+  <table class="table">
+    <thead>
+      <tr><th>Student</th><th>Admission No.</th><th>Dormitory</th><th>Bed</th><th>Assigned</th></tr>
+    </thead>
+    <tbody>
+      {% for a in recent_assignments %}
+      <tr>
+        <td><strong>{{ a.student.first_name }} {{ a.student.last_name }}</strong></td>
+        <td>{{ a.student.admission_number }}</td>
+        <td>{{ a.dormitory.name }}</td>
+        <td>{{ a.bed.bed_number }}</td>
+        <td>{{ a.assigned_at|date:"j M Y" }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p style="text-align: center; color: var(--ink-500); padding: 30px;">No active assignments.</p>
+  {% endif %}
+</div>
+
+{% endblock %}

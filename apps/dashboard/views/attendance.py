@@ -1,15 +1,9 @@
-"""
-Attendance views:
-- Teacher attendance (marking)
-- Class teacher attendance (marking, sheet, PDF)
-- Admin attendance overview (school-wide)
-"""
-
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import HttpResponse
 from django.db.models import Q, Count, Sum
+from django.urls import reverse
 
 from apps.accounts.decorators import (
     role_required, school_staff_only, teacher_only,
@@ -22,7 +16,6 @@ from apps.core.pdf_utils import build_pdf_context
 @login_required
 @role_required('teacher', 'principal')
 def teacher_attendance(request):
-    """Mark attendance for a class — modern responsive layout."""
     from apps.students.models import Student
     from apps.attendance.models import Attendance
     from apps.academics.models import ClassLevel
@@ -30,18 +23,15 @@ def teacher_attendance(request):
 
     school = request.user.school
 
-    # ---------- Date ----------
     date_str = request.GET.get('date') or request.POST.get('date')
     try:
         selected_date = datetime.strptime(date_str, '%Y-%m-%d').date() if date_str else date.today()
     except ValueError:
         selected_date = date.today()
 
-    # Prevent future dates
     if selected_date > date.today():
         selected_date = date.today()
 
-    # ---------- Class ----------
     classes = ClassLevel.objects.filter(school=school).order_by('order', 'name')
     class_id = request.GET.get('class') or request.POST.get('class')
 
@@ -58,7 +48,7 @@ def teacher_attendance(request):
                 selected_class = ClassLevel.objects.get(id=int(class_id), school=school)
             else:
                 selected_class = ClassLevel.objects.get(name=class_id, school=school)
-            class_id = selected_class.id  
+            class_id = selected_class.id
             students = Student.objects.filter(
                 school=school,
                 class_level=selected_class.name,
@@ -67,20 +57,28 @@ def teacher_attendance(request):
         except ClassLevel.DoesNotExist:
             pass
 
-    # ---------- Save (POST) ----------
     if request.method == 'POST' and students:
         saved = 0
         for s in students:
             status = request.POST.get(f'status_{s.id}')
             if status in ('P', 'A', 'L', 'E'):
-                Attendance.objects.update_or_create(
-                    student=s,
-                    date=selected_date,
-                    defaults={
-                        'status': status,
-                        'recorded_by': request.user,
-                    }
+                existing_row = (
+                    Attendance.objects
+                    .filter(student=s, date=selected_date)
+                    .order_by('-id')
+                    .first()
                 )
+                if existing_row:
+                    existing_row.status = status
+                    existing_row.recorded_by = request.user
+                    existing_row.save(update_fields=['status', 'recorded_by'])
+                else:
+                    Attendance.objects.create(
+                        student=s,
+                        date=selected_date,
+                        status=status,
+                        recorded_by=request.user,
+                    )
                 saved += 1
 
         messages.success(
@@ -89,7 +87,6 @@ def teacher_attendance(request):
         )
         return redirect(f'/dashboard/teacher/attendance/?class={class_id}&date={selected_date.strftime("%Y-%m-%d")}')
 
-    # ---------- Build rows ----------
     if students:
         existing = Attendance.objects.filter(
             student__in=students,
@@ -103,7 +100,6 @@ def teacher_attendance(request):
                 'status': status_map.get(s.id, ''),
             })
 
-    # ---------- Summary ----------
     summary = {
         'total': len(students),
         'marked': len([r for r in rows if r['status']]),
@@ -130,7 +126,6 @@ def teacher_attendance(request):
 @login_required
 @class_teacher_only
 def class_teacher_attendance(request):
-    """Mark attendance for the class teacher's class."""
     from apps.teachers.models import Teacher
     from apps.students.models import Student
     from apps.attendance.models import Attendance
@@ -151,14 +146,12 @@ def class_teacher_attendance(request):
     cls = teacher.current_class
     today = date.today()
 
-    # Get selected date (default today)
     date_str = request.GET.get('date') or request.POST.get('date') or today.strftime('%Y-%m-%d')
     try:
         selected_date = datetime.strptime(date_str, '%Y-%m-%d').date()
     except ValueError:
         selected_date = today
 
-    # Prevent future dates
     if selected_date > today:
         selected_date = today
 
@@ -169,29 +162,42 @@ def class_teacher_attendance(request):
     ).order_by('first_name', 'last_name')
     student_ids = list(students.values_list('id', flat=True))
 
-    # ---------- POST: Save attendance ----------
     if request.method == 'POST':
         saved = 0
+        skipped = 0
         for sid in student_ids:
             status_val = request.POST.get(f'status_{sid}')
             if status_val not in ('P', 'A', 'L', 'E'):
+                skipped += 1
                 continue
-            Attendance.objects.update_or_create(
-                student_id=sid,
-                date=selected_date,
-                defaults={
-                    'status': status_val,
-                    'recorded_by': user,
-                }
+            existing_row = (
+                Attendance.objects
+                .filter(student_id=sid, date=selected_date)
+                .order_by('-id')
+                .first()
             )
+            if existing_row:
+                existing_row.status = status_val
+                existing_row.recorded_by = user
+                existing_row.save(update_fields=['status', 'recorded_by'])
+            else:
+                Attendance.objects.create(
+                    student_id=sid,
+                    date=selected_date,
+                    status=status_val,
+                    recorded_by=user,
+                )
             saved += 1
-        messages.success(request, f'✅ Attendance saved for {saved} students.')
+        msg = f'Attendance saved for {saved} students.'
+        if skipped:
+            msg += f' {skipped} skipped (no status).'
+        messages.success(request, msg)
         return redirect(f"{reverse('class_teacher_attendance')}?date={selected_date.strftime('%Y-%m-%d')}")
 
-    # ---------- GET: Load existing ----------
     existing = Attendance.objects.filter(
         student_id__in=student_ids,
         date=selected_date,
+        student__school=user.school,
     ).values_list('student_id', 'status')
 
     existing_status_map = {str(sid): status for sid, status in existing}
@@ -214,98 +220,13 @@ def class_teacher_attendance(request):
         'late_count': late_count,
     })
 
-    from apps.teachers.models import Teacher
-    from apps.students.models import Student
-    from apps.attendance.models import Attendance
-    from django.http import HttpResponse
-    from datetime import date, timedelta
-    import csv
 
-    user = request.user
-    try:
-        teacher = Teacher.objects.select_related('current_class').get(user=user)
-    except Teacher.DoesNotExist:
-        return redirect('dashboard_home')
-
-    if not teacher.current_class:
-        return redirect('class_teacher_dashboard')
-
-    cls = teacher.current_class
-
-    # Date range (default: last 30 days)
-    end_date = date.today()
-    start_date = end_date - timedelta(days=30)
-
-    # Optional filters
-    start_str = request.GET.get('start')
-    end_str = request.GET.get('end')
-    if start_str:
-        try: start_date = date.fromisoformat(start_str)
-        except ValueError: pass
-    if end_str:
-        try: end_date = date.fromisoformat(end_str)
-        except ValueError: pass
-
-    students = Student.objects.filter(
-        school=user.school,
-        class_level=cls.name,
-        is_active=True,
-    ).order_by('first_name', 'last_name')
-
-    student_ids = list(students.values_list('id', flat=True))
-
-    attendance = Attendance.objects.filter(
-        student_id__in=student_ids,
-        date__gte=start_date,
-        date__lte=end_date,
-    ).values_list('student_id', 'date', 'status')
-
-    att_map = {}
-    for sid, dt, st in attendance:
-        att_map.setdefault(sid, {})[dt] = st
-
-    # Build CSV
-    response = HttpResponse(content_type='text/csv')
-    response['Content-Disposition'] = (
-        f'attachment; filename="attendance_{cls.name.replace(" ", "_")}_'
-        f'{start_date.isoformat()}_to_{end_date.isoformat()}.csv"'
-    )
-
-    writer = csv.writer(response)
-    writer.writerow([
-        'Admission No', 'Student Name', 'Class',
-        'Present', 'Absent', 'Late', 'Excused',
-        'Attendance %', 'Period'
-    ])
-
-    for s in students:
-        s_att = att_map.get(s.id, {})
-        p = sum(1 for v in s_att.values() if v == 'P')
-        a = sum(1 for v in s_att.values() if v == 'A')
-        l = sum(1 for v in s_att.values() if v == 'L')
-        e = sum(1 for v in s_att.values() if v == 'E')
-        total = p + a + l + e
-        pct = round((p / total) * 100, 1) if total else 0
-
-        writer.writerow([
-            s.admission_number,
-            s.full_name,
-            cls.name,
-            p, a, l, e,
-            f'{pct}%',
-            f'{start_date.isoformat()} to {end_date.isoformat()}',
-        ])
-
-    return response
-
-
+@login_required
 @class_teacher_only
 def class_teacher_attendance_sheet(request):
-    """Download attendance sheet as CSV for the class."""
     from apps.teachers.models import Teacher
     from apps.students.models import Student
     from apps.attendance.models import Attendance
-    from django.http import HttpResponse
     from datetime import date, timedelta
     import csv
 
@@ -320,7 +241,6 @@ def class_teacher_attendance_sheet(request):
 
     cls = teacher.current_class
 
-    # Date range (default: last 30 days)
     end_date = date.today()
     start_date = end_date - timedelta(days=30)
 
@@ -388,7 +308,6 @@ def class_teacher_attendance_sheet(request):
 @login_required
 @class_teacher_only
 def class_teacher_attendance_pdf(request):
-    """Printable A4 attendance sheet PDF."""
     from apps.teachers.models import Teacher
     from apps.students.models import Student
     from apps.attendance.models import Attendance
@@ -414,7 +333,6 @@ def class_teacher_attendance_pdf(request):
     except ValueError:
         selected_date = today
 
-    # Girls first, then boys
     students = Student.objects.filter(
         school=user.school,
         class_level=cls.name,
@@ -465,7 +383,6 @@ def class_teacher_attendance_pdf(request):
 
 @login_required
 def admin_attendance_overview(request):
-    """School-wide attendance overview for admins."""
     if request.user.role != 'principal':
         return redirect('dashboard_home')
 
@@ -477,7 +394,6 @@ def admin_attendance_overview(request):
     school = request.user.school
     today = date.today()
 
-    # Selected date (default today)
     date_str = request.GET.get('date') or today.strftime('%Y-%m-%d')
     try:
         selected_date = datetime.strptime(date_str, '%Y-%m-%d').date()
@@ -487,14 +403,11 @@ def admin_attendance_overview(request):
     if selected_date > today:
         selected_date = today
 
-    # All classes in school
     classes = ClassLevel.objects.filter(school=school).order_by('order', 'name')
 
-    # All students
     all_students = Student.objects.filter(school=school, is_active=True)
     total_students = all_students.count()
 
-    # Today's attendance
     attendance_qs = Attendance.objects.filter(
         student__school=school,
         date=selected_date,
@@ -509,7 +422,6 @@ def admin_attendance_overview(request):
 
     attendance_pct = round((present_count / total_students) * 100, 1) if total_students else 0
 
-    # Per-class breakdown
     class_rows = []
     for c in classes:
         class_students = all_students.filter(class_level=c.name)
@@ -539,12 +451,10 @@ def admin_attendance_overview(request):
             'pct': pct,
         })
 
-    # Absent students today
     absent_today = attendance_qs.filter(status='A').select_related(
         'student'
     ).order_by('student__class_level', 'student__first_name')
 
-    # Sort class rows: marked first, then by order
     class_rows.sort(key=lambda r: (r['pct'] is None, r['class'].order, r['class'].name))
 
     return render(request, 'dashboard/admin_attendance_overview.html', {
@@ -567,7 +477,6 @@ def admin_attendance_overview(request):
 
 @login_required
 def admin_class_attendance(request, class_id):
-    """View detailed attendance for one specific class."""
     if request.user.role != 'principal':
         return redirect('dashboard_home')
 
@@ -580,7 +489,6 @@ def admin_class_attendance(request, class_id):
     cls = get_object_or_404(ClassLevel, id=class_id, school=school)
     today = date.today()
 
-    # Date selection
     date_str = request.GET.get('date') or today.strftime('%Y-%m-%d')
     try:
         selected_date = datetime.strptime(date_str, '%Y-%m-%d').date()
@@ -589,12 +497,10 @@ def admin_class_attendance(request, class_id):
     if selected_date > today:
         selected_date = today
 
-    # Students in class
     students = Student.objects.filter(
         school=school, class_level=cls.name, is_active=True
     ).order_by('first_name', 'last_name')
 
-    # Attendance for the day
     attendance_map = {
         a.student_id: a
         for a in Attendance.objects.filter(
@@ -602,7 +508,6 @@ def admin_class_attendance(request, class_id):
         )
     }
 
-    # Stats
     present = sum(1 for a in attendance_map.values() if a.status == 'P')
     absent = sum(1 for a in attendance_map.values() if a.status == 'A')
     late = sum(1 for a in attendance_map.values() if a.status == 'L')
@@ -611,7 +516,6 @@ def admin_class_attendance(request, class_id):
     total = students.count()
     not_marked = total - marked
 
-    # Build rows
     rows = []
     for s in students:
         att = attendance_map.get(s.id)
@@ -622,7 +526,6 @@ def admin_class_attendance(request, class_id):
             'notes': att.notes if att else '',
         })
 
-    # Last 7 days trend
     trend = []
     for i in range(6, -1, -1):
         d = today - timedelta(days=i)
@@ -654,14 +557,13 @@ def admin_class_attendance(request, class_id):
         'trend': trend,
     })
 
+
 @login_required
 def admin_attendance_export(request):
-    """Export school-wide attendance as CSV."""
     if request.user.role != 'principal':
         return redirect('dashboard_home')
 
     from apps.attendance.models import Attendance
-    from django.http import HttpResponse
     from datetime import date, datetime
     import csv
 
@@ -695,5 +597,3 @@ def admin_attendance_export(request):
         ])
 
     return response
-
-

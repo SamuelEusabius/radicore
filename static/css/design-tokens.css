@@ -143,3 +143,40 @@
   --primary-light: rgba(10, 138, 95, 0.15);
   --primary-soft:  rgba(10, 138, 95, 0.08);
 }
+
+
+/* ============================================================
+   Sidebar width overrides — MUST be in this file because
+   design-tokens.css is loaded after layout.css. Placing these
+   in layout.css was being overridden by --sidebar-width here.
+   ============================================================ */
+
+@media (max-width: 1024px) {
+  :root {
+    --sidebar-width: 210px !important;
+  }
+  .sidebar {
+    width: 210px !important;
+    min-width: 210px !important;
+  }
+}
+
+@media (max-width: 768px) {
+  :root {
+    --sidebar-width: 208px !important;
+  }
+  .sidebar {
+    width: 208px !important;
+    min-width: 208px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  :root {
+    --sidebar-width: 200px !important;
+  }
+  .sidebar {
+    width: 200px !important;
+    min-width: 200px !important;
+  }
+}

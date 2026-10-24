@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+{% block title %}{% if mode == 'edit' %}Edit Dormitory{% else %}Add Dormitory{% endif %}{% endblock %}
+{% block header_title %}{% if mode == 'edit' %}Edit Dormitory{% else %}Add Dormitory{% endif %}{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 720px; margin: 0 auto;">
+  <form method="post">
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+      <div style="margin-bottom: 16px; padding: 12px; border-left: 4px solid var(--danger); background: #fef2f2;">
+        {% for err in form.non_field_errors %}<p style="margin: 0; color: var(--danger);">{{ err }}</p>{% endfor %}
+      </div>
+    {% endif %}
+
+    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 20px;">
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Dormitory Name *</label>
+        {{ form.name }}
+        {% for e in form.name.errors %}<p style="color: var(--danger); font-size: var(--text-sm); margin: 4px 0 0;">{{ e }}</p>{% endfor %}
+      </div>
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Code</label>
+        {{ form.code }}
+        {% for e in form.code.errors %}<p style="color: var(--danger); font-size: var(--text-sm); margin: 4px 0 0;">{{ e }}</p>{% endfor %}
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Gender *</label>
+        {{ form.gender }}
+        {% for e in form.gender.errors %}<p style="color: var(--danger); font-size: var(--text-sm); margin: 4px 0 0;">{{ e }}</p>{% endfor %}
+      </div>
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Capacity</label>
+        {{ form.capacity }}
+        {% for e in form.capacity.errors %}<p style="color: var(--danger); font-size: var(--text-sm); margin: 4px 0 0;">{{ e }}</p>{% endfor %}
+        <p style="color: var(--ink-500); font-size: var(--text-sm); margin: 4px 0 0;">Leave 0 to auto-calculate from beds.</p>
+      </div>
+    </div>
+
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">House Master</label>
+      {{ form.house_master }}
+      {% for e in form.house_master.errors %}<p style="color: var(--danger); font-size: var(--text-sm); margin: 4px 0 0;">{{ e }}</p>{% endfor %}
+    </div>
+
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Notes</label>
+      {{ form.notes }}
+      {% for e in form.notes.errors %}<p style="color: var(--danger); font-size: var(--text-sm); margin: 4px 0 0;">{{ e }}</p>{% endfor %}
+    </div>
+
+    <div style="margin-bottom: 24px;">
+      <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+        {{ form.is_active }}
+        <span>Active</span>
+      </label>
+    </div>
+
+    <div style="display: flex; gap: 12px; justify-content: flex-end;">
+      <a href="{% url 'boarding:dormitory_manage' %}" class="btn btn-secondary">Cancel</a>
+      <button type="submit" class="btn btn-primary">{% if mode == 'edit' %}Save Changes{% else %}Create Dormitory{% endif %}</button>
+    </div>
+  </form>
+</div>
+
+<style>
+  /* Match the plain-input look from your chef forms without inventing a class */
+  input.form-input, select.form-input, textarea.form-input {
+    width: 100%; padding: 10px; border: 1px solid var(--border);
+    border-radius: 4px; font-size: var(--text-md); font-family: inherit;
+  }
+  input.form-checkbox { width: 18px; height: 18px; }
+</style>
+{% endblock %}
