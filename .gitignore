@@ -159,3 +159,11 @@ db.sqlite3
 db.sqlite3
 .env
 .env.*
+
+.env
+.env.*
+!.env.example
+db.sqlite3
+media/
+venv/
+.venv/
