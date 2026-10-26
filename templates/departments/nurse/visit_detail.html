@@ -20,6 +20,12 @@
         {% elif visit.status == 'referred_hosp' %}<span class="badge badge-danger">Referred to {{ visit.referred_to }}</span>
         {% else %}<span class="badge badge-success">{{ visit.get_status_display }}</span>{% endif %}
       </p>
+      
+      <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border);">
+        <a href="{% url 'student_medical_report_pdf' visit.student.id %}" target="_blank" class="btn btn-sm btn-secondary" style="width: 100%;">
+          Download Medical History (PDF)
+        </a>
+      </div>
     </div>
 
     <div class="card">

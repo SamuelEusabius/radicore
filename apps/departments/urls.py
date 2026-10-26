@@ -38,6 +38,8 @@ urlpatterns = [
     path('nurse/visits/', views_health.health_visit_list, name='health_visit_list'),
     path('nurse/visits/add/', views_health.health_visit_form, name='health_visit_add'),
     path('nurse/visits/<int:visit_id>/', views_health.health_visit_detail, name='health_visit_detail'),
+        # Student Medical Report PDF
+    path('nurse/students/<int:student_id>/medical-report/', views_health.student_medical_report_pdf, name='student_medical_report_pdf'),
     path('nurse/visits/<int:visit_id>/edit/', views_health.health_visit_form, name='health_visit_edit'),
 
     # Medicine

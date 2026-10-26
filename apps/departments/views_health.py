@@ -129,13 +129,8 @@ def health_visit_form(request, visit_id=None):
 
     school = request.user.school
     visit = get_object_or_404(HealthVisit, id=visit_id, school=school) if visit_id else None
-    students = Student.objects.filter(school=school, is_active=True).only(
-        'id', 'first_name', 'last_name', 'admission_number', 'class_level'
-    ).order_by('first_name', 'last_name')
-    
-    medicines = Medicine.objects.filter(school=school, is_active=True).only(
-        'id', 'name', 'quantity', 'unit'
-    ).order_by('name')
+    students = Student.objects.filter(school=school, is_active=True).order_by('first_name', 'last_name')
+    medicines = Medicine.objects.filter(school=school, is_active=True).order_by('name')
 
     if request.method == 'POST':
         student_id = request.POST.get('student')
@@ -155,16 +150,24 @@ def health_visit_form(request, visit_id=None):
         visit.treatment = request.POST.get('treatment')
         visit.notes = request.POST.get('notes')
         
-        # Status
-        new_status = request.POST.get('status', 'waiting')
-        visit.status = new_status
-        if new_status == 'discharged':
+        # --- STATUS LOGIC ---
+        action = request.POST.get('action')
+        
+        if action == 'save_waiting':
+            # Just checking them in
+            visit.status = HealthVisit.Status.WAITING
+        elif action == 'save_treatment':
+            # Nurse is actively treating them
+            visit.status = HealthVisit.Status.IN_TREATMENT
+        elif action == 'discharge':
+            # Nurse is done with them
+            visit.status = HealthVisit.Status.DISCHARGED
             visit.outcome = 'Treated and discharged'
 
         visit.save()
-        messages.success(request, f"Clinic record for {student.first_name} updated.")
+        messages.success(request, f"Clinic record for {student.first_name} updated to {visit.get_status_display()}.")
         
-        if new_status == 'discharged':
+        if visit.status == HealthVisit.Status.DISCHARGED:
             return redirect('nurse_dashboard')
         return redirect('health_visit_detail', visit_id=visit.id)
 
@@ -173,7 +176,6 @@ def health_visit_form(request, visit_id=None):
         'students': students,
         'medicines': medicines,
     })
-
 @login_required
 def health_visit_detail(request, visit_id):
     """View full medical record, dispense medicine, and handle referrals."""
@@ -590,6 +592,8 @@ def student_medical_report_pdf(request, student_id):
 
     from apps.students.models import Student
     from datetime import date, timedelta
+    from django.template.loader import render_to_string
+    from apps.core.pdf_utils import html_to_pdf_response, build_pdf_context
 
     student = get_object_or_404(Student, id=student_id, school=request.user.school)
 
@@ -600,8 +604,6 @@ def student_medical_report_pdf(request, student_id):
         start = today; label = 'Today'
     elif period == 'week':
         start = today - timedelta(days=7); label = 'Last 7 Days'
-    elif period == 'month':
-        start = today.replace(day=1); label = 'This Month'
     elif period == 'term':
         start = today - timedelta(days=90); label = 'Last 90 Days (Term)'
     elif period == 'year':
@@ -614,20 +616,18 @@ def student_medical_report_pdf(request, student_id):
         visit_date__gte=start, visit_date__lte=today,
     ).order_by('-visit_date')
 
-    from apps.core.pdf_utils import html_to_pdf_response, build_pdf_context
-    from django.template.loader import render_to_string
-
     context = build_pdf_context(
         request.user.school, request.user,
         student=student, visits=visits,
         period_label=label, period_start=start, period_end=today,
     )
+    
     html_string = render_to_string('pdf/nurse_medical_report.html', context)
+    
     return html_to_pdf_response(
         html_string,
         f'medical_report_{student.admission_number}_{period}.pdf',
     )
-
 
 # ==========================================================
 # MEDICINE ISSUE LOG PDF

@@ -17,7 +17,7 @@
 <!-- Alerts -->
 {% if low_stock %}
 <div class="card mb-6" style="border-left: 4px solid var(--danger);">
-  <h3 style="margin-bottom: 8px; color: var(--danger);">⚠️ Low Stock Alert</h3>
+  <h3 style="margin-bottom: 8px; color: var(--danger);">Low Stock Alert</h3>
   <p style="margin: 0; font-size: 14px;">
     {% for med in low_stock %}
       <span class="badge badge-danger">{{ med.name }} ({{ med.quantity }} left)</span>
@@ -30,7 +30,9 @@
   <!-- Waiting Room -->
   <div class="card">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-      <h3 style="margin: 0;">Waiting Room ({{ waiting_visits|length }})</h3>
+      <h3 style="margin: 0; display: flex; align-items: center; gap: 8px;">
+        Waiting Room <span class="badge badge-warning">{{ waiting_visits|length }}</span>
+      </h3>
     </div>
     
     {% if waiting_visits %}
@@ -51,7 +53,11 @@
             {% else %}<span class="badge badge-info">In Treatment</span>{% endif %}
           </td>
           <td style="text-align: right;">
-            <a href="{% url 'health_visit_detail' visit.id %}" class="btn btn-sm btn-primary">Attend</a>
+            {% if visit.status == 'waiting' %}
+              <a href="{% url 'health_visit_edit' visit.id %}" class="btn btn-sm btn-primary">Triage & Treat</a>
+            {% else %}
+              <a href="{% url 'health_visit_detail' visit.id %}" class="btn btn-sm btn-primary">Attend</a>
+            {% endif %}
           </td>
         </tr>
         {% endfor %}
@@ -64,7 +70,9 @@
 
   <!-- Today's Discharged -->
   <div class="card">
-    <h3 style="margin-bottom: 16px;">Discharged Today ({{ discharged_today|length }})</h3>
+    <h3 style="margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+      Discharged Today <span class="badge badge-success">{{ discharged_today|length }}</span>
+    </h3>
     {% if discharged_today %}
     <table class="table">
       <thead>

@@ -3,11 +3,16 @@
 {% block header_title %}Clinic Check-in{% endblock %}
 
 {% block content %}
-<!-- Tom Select CSS -->
 <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
 
 <div class="card" style="max-width: 800px; margin: 0 auto;">
-  <h3 class="mb-4">{% if visit %}Update Record: {{ visit.student.first_name }}{% else %}Check-in Student{% endif %}</h3>
+  <h3 class="mb-4">
+    {% if visit %}
+      Update Record: {{ visit.student.first_name }} ({{ visit.get_status_display }})
+    {% else %}
+      Check-in Student
+    {% endif %}
+  </h3>
   
   <form method="post">
     {% csrf_token %}
@@ -24,49 +29,56 @@
     </div>
     {% endif %}
 
-    <h4 style="margin: 20px 0 10px; color: var(--primary);">Triage & Vitals</h4>
+    <h4 style="margin: 20px 0 10px; color: var(--primary); border-bottom: 1px solid var(--border); padding-bottom: 8px;">Triage & Vitals</h4>
+    
     <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px; margin-bottom: 20px;">
       <div>
         <label style="display: block; font-weight: 600; margin-bottom: 6px; font-size: 13px;">Temp (°C)</label>
-        <input type="number" step="0.1" name="temperature" value="{{ visit.temperature|default:'' }}" style="width: 100%; padding: 8px; border: 1px solid var(--border);">
+        <input type="number" step="0.1" name="temperature" value="{{ visit.temperature|default:'' }}" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
       </div>
       <div>
         <label style="display: block; font-weight: 600; margin-bottom: 6px; font-size: 13px;">BP (mmHg)</label>
-        <input type="text" name="blood_pressure" value="{{ visit.blood_pressure|default:'' }}" placeholder="120/80" style="width: 100%; padding: 8px; border: 1px solid var(--border);">
+        <input type="text" name="blood_pressure" value="{{ visit.blood_pressure|default:'' }}" placeholder="120/80" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
       </div>
       <div>
         <label style="display: block; font-weight: 600; margin-bottom: 6px; font-size: 13px;">Weight (kg)</label>
-        <input type="number" step="0.1" name="weight_kg" value="{{ visit.weight_kg|default:'' }}" style="width: 100%; padding: 8px; border: 1px solid var(--border);">
+        <input type="number" step="0.1" name="weight_kg" value="{{ visit.weight_kg|default:'' }}" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
       </div>
       <div>
         <label style="display: block; font-weight: 600; margin-bottom: 6px; font-size: 13px;">Pulse (bpm)</label>
-        <input type="number" name="pulse_rate" value="{{ visit.pulse_rate|default:'' }}" style="width: 100%; padding: 8px; border: 1px solid var(--border);">
+        <input type="number" name="pulse_rate" value="{{ visit.pulse_rate|default:'' }}" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px;">
       </div>
     </div>
 
-    <h4 style="margin: 20px 0 10px; color: var(--primary);">Medical Notes</h4>
+    <h4 style="margin: 20px 0 10px; color: var(--primary); border-bottom: 1px solid var(--border); padding-bottom: 8px;">Medical Notes</h4>
+    
     <div style="margin-bottom: 16px;">
       <label style="display: block; font-weight: 600; margin-bottom: 6px;">Symptoms *</label>
-      <textarea name="symptoms" required rows="2" style="width: 100%; padding: 10px; border: 1px solid var(--border);">{{ visit.symptoms|default:'' }}</textarea>
+      <textarea name="symptoms" required rows="2" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 4px;">{{ visit.symptoms|default:'' }}</textarea>
     </div>
     <div style="margin-bottom: 16px;">
       <label style="display: block; font-weight: 600; margin-bottom: 6px;">Diagnosis</label>
-      <textarea name="diagnosis" rows="2" style="width: 100%; padding: 10px; border: 1px solid var(--border);">{{ visit.diagnosis|default:'' }}</textarea>
+      <textarea name="diagnosis" rows="2" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 4px;">{{ visit.diagnosis|default:'' }}</textarea>
     </div>
     <div style="margin-bottom: 16px;">
       <label style="display: block; font-weight: 600; margin-bottom: 6px;">Treatment Plan</label>
-      <textarea name="treatment" rows="2" style="width: 100%; padding: 10px; border: 1px solid var(--border);">{{ visit.treatment|default:'' }}</textarea>
+      <textarea name="treatment" rows="2" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 4px;">{{ visit.treatment|default:'' }}</textarea>
     </div>
 
-    <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px;">
+    <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 32px; border-top: 1px solid var(--border); padding-top: 20px;">
       <a href="{% url 'nurse_dashboard' %}" class="btn btn-secondary">Cancel</a>
-      <button type="submit" name="status" value="waiting" class="btn btn-secondary">Save as Waiting</button>
-      <button type="submit" name="status" value="discharged" class="btn btn-primary">Discharge Patient</button>
+      
+      {% if not visit or visit.status == 'waiting' %}
+        <button type="submit" name="action" value="save_waiting" class="btn btn-secondary">Save to Waiting Room</button>
+        <button type="submit" name="action" value="save_treatment" class="btn btn-primary">Start Treatment</button>
+      {% elif visit.status == 'in_treatment' %}
+        <button type="submit" name="action" value="save_treatment" class="btn btn-secondary">Update Notes</button>
+        <button type="submit" name="action" value="discharge" class="btn btn-primary" style="background: var(--success); border-color: var(--success);">Discharge Patient</button>
+      {% endif %}
     </div>
   </form>
 </div>
 
-<!-- Tom Select JS -->
 <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
 <script>
   document.addEventListener('DOMContentLoaded', function() {
