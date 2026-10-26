@@ -93,6 +93,7 @@ from .grades import (
 )
 
 from .finance import (
+    parent_mpesa_payment,
     accountant_dash,
     accountant_invoices,
     accountant_transactions,

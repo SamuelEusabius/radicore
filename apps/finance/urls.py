@@ -37,4 +37,5 @@ urlpatterns = router.urls + [
     
     # We alias the legacy callback URL to the new one so existing configurations don't break.
     path('mpesa/callback/', mpesa_views.mpesa_c2b_confirmation, name='mpesa_callback'),
+    path('mpesa/platform-callback/', mpesa_views.platform_c2b_confirmation, name='platform_c2b_confirmation'),
 ]

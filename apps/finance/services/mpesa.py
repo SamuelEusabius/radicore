@@ -92,85 +92,93 @@ def _password(timestamp: str) -> str:
 # STK PUSH
 # ==========================================================
 
-def stk_push(phone: str, amount: float, account_reference: str,
-             description: str = "School Fees") -> dict:
+def stk_push(phone, amount, account_reference=None, description="Payment", **kwargs):
     """
-    Initiate STK Push (Lipa Na M-Pesa Online).
-
-    Args:
-        phone: any common format (0712345678, +254712..., 254712...)
-        amount: KES amount (int)
-        account_reference: identifier shown on phone (e.g. "INV123")
-        description: short description
-
-    Returns:
-        Safaricom response dict:
-        {
-          "MerchantRequestID": "...",
-          "CheckoutRequestID": "...",
-          "ResponseCode": "0",
-          "ResponseDescription": "Success. Request accepted for processing",
-          "CustomerMessage": "Success. Request accepted for processing"
-        }
-
-    Raises:
-        requests.HTTPError on network/API errors
+    Universal STK Push.
+    Accepts dynamic shortcodes and keys for multi-tenant SaaS routing.
     """
-    phone = normalize_phone(phone)
-    if not phone:
-        raise ValueError("Invalid phone number")
+    import requests
+    import base64
+    from datetime import datetime
+    from django.conf import settings
+    
+    # 1. Get Credentials securely (strip hidden spaces that cause 400 errors)
+    consumer_key = (kwargs.get('consumer_key') or settings.MPESA_CONSUMER_KEY or '').strip()
+    consumer_secret = (kwargs.get('consumer_secret') or settings.MPESA_CONSUMER_SECRET or '').strip()
+    shortcode = (kwargs.get('shortcode') or settings.MPESA_SHORTCODE or '').strip()
+    passkey = (kwargs.get('passkey') or settings.MPESA_PASSKEY or '').strip()
+    callback_url = kwargs.get('callback_url') or settings.MPESA_CALLBACK_URL
+    
+    # Support both `account_ref` and `account_reference`
+    account_ref = kwargs.get('account_ref') or account_reference or "Payment"
 
-    token = get_access_token()
-    ts = _timestamp()
+    if not consumer_key or not consumer_secret:
+        return {"error": "Consumer Key or Secret is completely empty. Check settings."}
+
+    # 2. Determine Environment (Sandbox vs Production)
+    # Defaults to sandbox unless explicitly set to production in .env
+    env = getattr(settings, 'MPESA_ENV', 'sandbox').lower()
+    api_url = "https://sandbox.safaricom.co.ke" if env == 'sandbox' else "https://api.safaricom.co.ke"
+    
+    # 3. Get OAuth Token
+    auth_url = f"{api_url}/oauth/v1/generate?grant_type=client_credentials"
+    try:
+        auth_res = requests.get(auth_url, auth=(consumer_key, consumer_secret))
+        
+        if auth_res.status_code != 200:
+            return {"error": f"Safaricom Auth Error (Code {auth_res.status_code}): {auth_res.text}"}
+            
+        access_token = auth_res.json().get('access_token')
+    except Exception as e:
+        return {"error": f"Auth failed: {str(e)}"}
+
+    if not access_token:
+        return {"error": "Failed to get access token. Check Daraja credentials."}
+
+    # 4. Prepare STK Push Payload
+    timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+    password_str = f"{shortcode}{passkey}{timestamp}"
+    password = base64.b64encode(password_str.encode()).decode()
+
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/json"
+    }
+
+    # Format phone (254...)
+    phone_str = str(phone).strip()
+    if phone_str.startswith('0'):
+        phone_str = '254' + phone_str[1:]
+    elif phone_str.startswith('+'):
+        phone_str = phone_str[1:]
+
+    # Determine Transaction Type (Paybill vs Till)
+    tx_type = "CustomerPayBillOnline"
+    if kwargs.get('account_type') == 'till':
+        tx_type = "CustomerBuyGoodsOnline"
 
     payload = {
-        "BusinessShortCode": settings.MPESA_SHORTCODE,
-        "Password": _password(ts),
-        "Timestamp": ts,
-        "TransactionType": "CustomerPayBillOnline",
+        "BusinessShortCode": shortcode,
+        "Password": password,
+        "Timestamp": timestamp,
+        "TransactionType": tx_type,
         "Amount": int(float(amount)),
-        "PartyA": phone,
-        "PartyB": settings.MPESA_SHORTCODE,
-        "PhoneNumber": phone,
-        "CallBackURL": settings.MPESA_CALLBACK_URL,
-        "AccountReference": account_reference[:12],
-        "TransactionDesc": description[:100],
+        "PartyA": phone_str,
+        "PartyB": shortcode,
+        "PhoneNumber": phone_str,
+        "CallBackURL": callback_url,
+        "AccountReference": account_ref,
+        "TransactionDesc": description
     }
 
-    url = f"{BASE_URL}/mpesa/stkpush/v1/processrequest"
-    headers = {"Authorization": f"Bearer {token}"}
-
-    logger.info(f"STK Push → {phone} KES {amount} ref={account_reference}")
-    r = requests.post(url, json=payload, headers=headers, timeout=30)
-    r.raise_for_status()
-    result = r.json()
-    logger.info(f"STK Push response: {result}")
-    return result
-
-
-def stk_query(checkout_request_id: str) -> dict:
-    """
-    Query the status of an STK Push request.
-
-    Returns Safaricom response with ResultCode and details.
-    """
-    token = get_access_token()
-    ts = _timestamp()
-
-    payload = {
-        "BusinessShortCode": settings.MPESA_SHORTCODE,
-        "Password": _password(ts),
-        "Timestamp": ts,
-        "CheckoutRequestID": checkout_request_id,
-    }
-
-    url = f"{BASE_URL}/mpesa/stkpushquery/v1/query"
-    headers = {"Authorization": f"Bearer {token}"}
-
-    r = requests.post(url, json=payload, headers=headers, timeout=30)
-    r.raise_for_status()
-    return r.json()
-
+    # 5. Send Request
+    stk_url = f"{api_url}/mpesa/stkpush/v1/processrequest"
+    try:
+        res = requests.post(stk_url, json=payload, headers=headers)
+        # Return the JSON response from Safaricom
+        return res.json()
+    except Exception as e:
+        return {"error": f"STK Push failed: {str(e)}"}
 
 # ==========================================================
 # C2B

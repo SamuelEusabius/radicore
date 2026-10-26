@@ -234,3 +234,63 @@ def mpesa_c2b_confirmation(request):
             return JsonResponse({"ResultCode": 1, "ResultDesc": str(e)})
             
     return JsonResponse({"ResultCode": 1, "ResultDesc": "Invalid Method"})
+
+from apps.schools.models import School, SchoolSubscription
+from django.utils import timezone
+from datetime import timedelta
+
+@csrf_exempt
+def platform_c2b_confirmation(request):
+    """Safaricom hits this when a SCHOOL pays for their SaaS subscription."""
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            
+            paybill = data.get('BusinessShortCode')
+            account_ref = data.get('BillRefNumber', '').strip().upper() # e.g., NAIROBI01
+            amount = Decimal(str(data.get('TransAmount', 0)))
+            receipt = data.get('TransID')
+            phone = data.get('MSISDN')
+            
+            # 1. Find the School via the Account Reference (School Code)
+            school = School.objects.filter(code=account_ref).first()
+            
+            if not school:
+                # Money received, but school code is invalid
+                logger.error(f"SaaS Payment received but School Code '{account_ref}' not found.")
+                return JsonResponse({"ResultCode": 0, "ResultDesc": "Accepted but School not found"})
+
+            # 2. Process the Subscription
+            with transaction.atomic():
+                sub, created = SchoolSubscription.objects.get_or_create(school=school)
+                
+                # Log the payment
+                sub.status = 'active'
+                sub.total_paid_kes += amount
+                sub.last_payment_date = timezone.now()
+                sub.last_payment_method = 'M-Pesa'
+                sub.last_payment_reference = receipt
+                sub.payment_notes = f"Platform Paybill Payment via {phone}"
+                
+                # 3. Extend their subscription (Default: add 30 days for now. 
+                # You can make this dynamic based on the plan later)
+                if not sub.paid_until or sub.paid_until < timezone.now().date():
+                    sub.paid_until = timezone.now().date() + timedelta(days=30)
+                else:
+                    sub.paid_until += timedelta(days=30)
+                
+                sub.save()
+                
+                # 4. Unblock the School if it was blocked
+                if not school.is_active:
+                    school.is_active = True
+                    school.blocked_message = None
+                    school.save()
+
+            return JsonResponse({"ResultCode": 0, "ResultDesc": "Success"})
+            
+        except Exception as e:
+            logger.error(f"Platform Callback Error: {str(e)}")
+            return JsonResponse({"ResultCode": 1, "ResultDesc": str(e)})
+            
+    return JsonResponse({"ResultCode": 1, "ResultDesc": "Invalid Method"})

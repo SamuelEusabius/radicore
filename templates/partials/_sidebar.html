@@ -37,7 +37,11 @@
 
   <a href="{% url 'super_admin_mpesa_settings' %}" class="sidebar-link">
     {% include 'partials/icons.html' with name="settings" size=18 %}
-    <span class="sidebar-link-text">SaaS M-Pesa Settings</span>
+    <span class="sidebar-link-text">M-Pesa Settings</span>
+  </a>
+    <a href="{% url 'super_admin_ledger' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="credit-card" size=18 %}
+    <span class="sidebar-link-text">School Ledger</span>
   </a>
 
       <div class="sidebar-section-label">Users</div>
@@ -1201,6 +1205,10 @@
             <a href="{% url 'parent_wallets' %}" class="sidebar-link">
         {% include 'partials/icons.html' with name="credit-card" size=18 %}
         <span class="sidebar-link-text">Wallet</span>
+          <a href="{% url 'parent_mpesa_payment' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="credit-card" size=18 %}
+    <span class="sidebar-link-text">Pay via M-Pesa</span>
+  </a>
       </a>
     {% endif %}
 

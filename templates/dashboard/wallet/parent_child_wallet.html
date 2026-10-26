@@ -1,63 +1,77 @@
 {% extends 'base.html' %}
-{% block title %}{{ wallet.student.full_name }} — Wallet{% endblock %}
-{% block header_title %}Wallet Details{% endblock %}
+{% block title %}Student Wallet{% endblock %}
+{% block header_title %}Wallet{% endblock %}
 
 {% block content %}
+<div style="max-width: 800px; margin: 0 auto;">
 
-<div class="page-header">
-  <div class="page-header-info">
-    <h1 class="page-title">{{ wallet.student.full_name }}</h1>
-    <p class="page-subtitle">{{ wallet.student.admission_number }} · {{ wallet.student.class_level }}</p>
-  </div>
-    <div style="display: flex; gap: 8px;">
-    <a href="{% url 'parent_wallet_topup' wallet.id %}" class="btn btn-primary"> Load Money</a>
-    <a href="{% url 'parent_wallets' %}" class="btn btn-secondary">← All Children</a>
-  </div>
-</div>
-
-<div class="card mb-6" style="background: linear-gradient(135deg, #00695c 0%, #004d40 100%); border: none;">
-  <div style="color: white;">
-    <div style="font-size: var(--text-xs); opacity: 0.85; text-transform: uppercase; letter-spacing: 0.1em;">
-      Current Balance
-    </div>
-    <div style="font-size: 36px; font-weight: 800; font-family: var(--font-heading); margin-top: 6px;">
-      KES {{ wallet.balance|floatformat:0 }}
-    </div>
-  </div>
-</div>
-
-<div class="card">
-  <h3 style="margin-bottom: 16px; font-family: var(--font-heading);">Recent Transactions</h3>
-  {% if transactions %}
-  <table class="table">
-    <thead>
-      <tr><th>Date</th><th>Type</th><th>Amount</th><th>Balance After</th><th>Purpose/Notes</th></tr>
-    </thead>
-    <tbody>
-      {% for tx in transactions %}
-      <tr>
-        <td>{{ tx.created_at|date:"j M Y H:i" }}</td>
-        <td>
-          <span class="badge badge-{% if tx.tx_type == 'deposit' %}success{% else %}warning{% endif %}">
-            {{ tx.get_tx_type_display }}
-          </span>
-        </td>
-        <td>
-          {% if tx.tx_type == 'deposit' %}<span style="color: var(--success);">+{% else %}<span style="color: var(--warning);">-{% endif %}
-            KES {{ tx.amount|floatformat:0 }}
-          </span>
-        </td>
-        <td><strong>KES {{ tx.balance_after|floatformat:0 }}</strong></td>
-        <td>{{ tx.purpose|default:tx.notes|default:"—" }}</td>
-      </tr>
+  <!-- Child Selector -->
+  {% if children|length > 1 %}
+  <div class="card mb-6" style="padding: 12px;">
+    <p style="font-size: 12px; font-weight: bold; color: var(--ink-500); text-transform: uppercase; margin-bottom: 8px;">Select Child</p>
+    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+      {% for child in children %}
+        <a href="?child_id={{ child.id }}" class="btn {% if student.id == child.id %}btn-primary{% else %}btn-secondary{% endif %}" style="font-size: 14px; padding: 8px 16px;">
+          {{ child.first_name }}
+        </a>
       {% endfor %}
-    </tbody>
-  </table>
-  {% else %}
-  <div class="pro-empty" style="border: none; padding: 40px;">
-    <p style="color: var(--ink-500);">No transactions yet.</p>
+    </div>
   </div>
   {% endif %}
-</div>
 
+  <!-- Student Info & Action Bar -->
+  <div class="card mb-6" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px;">
+    <div>
+      <h2 style="margin: 0; font-size: 20px; color: var(--ink-900);">{{ student.first_name }} {{ student.last_name }}</h2>
+      <p style="margin: 4px 0 0; color: var(--ink-500); font-size: 14px;">{{ student.admission_number }} - {{ student.class_level }}</p>
+    </div>
+    <div style="display: flex; gap: 12px;">
+      <a href="{% url 'parent_mpesa_payment' %}?child_id={{ student.id }}" class="btn btn-primary">Load Money</a>
+      <a href="{% url 'parent_children' %}" class="btn btn-secondary">← All Children</a>
+    </div>
+  </div>
+
+  <!-- Wallet Balance Card -->
+  <div class="card mb-6" style="background: var(--primary); color: white; border: none;">
+    <p style="margin: 0; font-size: 14px; text-transform: uppercase; font-weight: bold; opacity: 0.8;">Current Balance</p>
+    <h1 style="margin: 8px 0 0; font-size: 40px; font-weight: bold;">KES {{ wallet.balance|default:"0" }}</h1>
+  </div>
+
+  <!-- Recent Transactions -->
+  <div class="card">
+    <h3 style="margin-top: 0; margin-bottom: 16px; color: var(--ink-900);">Recent Transactions</h3>
+    
+    {% if transactions %}
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Description</th>
+            <th>Amount</th>
+            <th>Balance</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for tx in transactions %}
+          <tr>
+            <td>{{ tx.created_at|date:"d M Y, H:i" }}</td>
+            <td>
+              {{ tx.get_tx_type_display|default:tx.tx_type }}
+              {% if tx.notes %}<br><span style="font-size: 12px; color: var(--ink-500);">{{ tx.notes }}</span>{% endif %}
+            </td>
+            <td style="color: {% if tx.tx_type == 'topup' or tx.tx_type == 'deposit' %}var(--success){% else %}var(--danger){% endif %}; font-weight: bold;">
+              {% if tx.tx_type == 'topup' or tx.tx_type == 'deposit' %}+{% else %}-{% endif %}KES {{ tx.amount|floatformat:2 }}
+            </td>
+            <td>KES {{ tx.balance_after|floatformat:2 }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <div style="text-align: center; padding: 40px; color: var(--ink-500);">
+        <p>No transactions yet.</p>
+      </div>
+    {% endif %}
+  </div>
+</div>
 {% endblock %}

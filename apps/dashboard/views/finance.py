@@ -15,7 +15,7 @@ from django.http import HttpResponse, JsonResponse
 from django.db.models import Q, Count, Sum, Avg, F
 from django.utils import timezone
 from datetime import date, datetime, timedelta
-
+from apps.finance.mpesa_models import MpesaTransaction
 from apps.accounts.decorators import (
     role_required, school_staff_only, accountant_only,
 )
@@ -33,6 +33,7 @@ def accountant_dash(request):
     from datetime import timedelta
     from apps.finance.models import Invoice, Payment
     from apps.students.models import Student
+    from django.urls import reverse
 
     school = request.user.school
 
@@ -2085,3 +2086,94 @@ def add_expenditure(request):
     })
 
 
+
+import json
+from decimal import Decimal
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.utils import timezone
+from apps.students.models import Student
+from apps.finance.mpesa_models import MpesaTransaction
+from apps.finance.services.mpesa import stk_push
+
+@login_required
+def parent_mpesa_payment(request):
+    """Allows a parent to trigger an STK push for fees or wallet."""
+    if request.user.role not in ('parent', 'super_admin'):
+        return redirect('dashboard_home')
+
+    from apps.parents.models import Parent
+    parent_profile = get_object_or_404(Parent, user=request.user)
+    children = parent_profile.students.all()
+
+    if not children.exists():
+        messages.warning(request, "No students are linked to your account. Please contact the school.")
+        return redirect('dashboard_home')
+
+    # Get the preselected child ID from URL (e.g., from the wallet page)
+    preselected_child_id = request.GET.get('child_id')
+    
+    # Default to the first child if none is selected
+    selected_child = children.first()
+    if preselected_child_id and str(preselected_child_id).isdigit():
+        selected_child = children.filter(id=preselected_child_id).first() or selected_child
+    if request.method == 'POST':
+        student_id = request.POST.get('student_id')
+        if not student_id or not str(student_id).isdigit():
+            messages.error(request, "Invalid student selected.")
+            return redirect('parent_mpesa_payment')
+        amount = request.POST.get('amount')
+        phone = request.POST.get('phone')
+        purpose = request.POST.get('purpose') # 'fees' or 'wallet'
+
+        student = get_object_or_404(Student, id=student_id, parents=parent_profile)
+        
+        # Format phone to 254...
+        if phone.startswith('0'):
+            phone = '254' + phone[1:]
+        elif phone.startswith('+'):
+            phone = phone[1:]
+
+        school = request.user.school
+        
+        if not hasattr(school, 'mpesa_config') or not school.mpesa_config.paybill_number:
+            messages.error(request, "School M-Pesa Paybill is not configured. Please contact the accountant.")
+            return redirect('parent_mpesa_payment')
+
+        # Generate Account Reference
+        account_ref = student.admission_number
+        if purpose == 'wallet':
+            account_ref += '-WAL'
+            
+        if not school.mpesa_config.consumer_key or not school.mpesa_config.consumer_secret:
+            messages.error(request, "The school has not configured their M-Pesa Daraja API keys yet. Please contact the school accountant.")
+            return redirect('parent_mpesa_payment')
+
+        try:
+            response = stk_push(
+                phone=phone,
+                amount=Decimal(amount),
+                account_ref=account_ref,
+                description=f"{purpose.title()} Payment - {student.first_name}",
+                shortcode=school.mpesa_config.paybill_number,
+                passkey=school.mpesa_config.passkey,
+                consumer_key=school.mpesa_config.consumer_key,
+                consumer_secret=school.mpesa_config.consumer_secret,
+                callback_url=school.mpesa_config.callback_url,
+            )
+            
+            if response and response.get('CheckoutRequestID'):
+                messages.success(request, f"STK Push sent for {student.first_name}. Please enter your M-Pesa PIN.")
+            else:
+                messages.error(request, f"Failed to initiate: {response}")
+                
+        except Exception as e:
+            messages.error(request, f"Error: {str(e)}")
+
+        return redirect(f"/dashboard/parent/pay/?child_id={student.id}")
+
+    return render(request, 'dashboard/parent_mpesa_payment.html', {
+        'children': children,
+        'selected_child': selected_child,
+        'school': request.user.school,
+    })

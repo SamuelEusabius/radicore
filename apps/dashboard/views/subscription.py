@@ -8,14 +8,19 @@ Subscription views:
 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
+from django.template.loader import render_to_string
 from django.contrib import messages
-from apps.finance.mpesa_models import PlatformMpesaConfig
-from apps.finance.services.mpesa import stk_push 
 from django.utils import timezone
 from django.http import HttpResponse
+from django.db.models import Q
+from django.core.paginator import Paginator
+from django.templatetags.static import static
 from datetime import timedelta
 
 from apps.schools.models import SubscriptionPlan, SchoolSubscription, School
+from apps.finance.mpesa_models import PlatformMpesaConfig
+from apps.finance.services.mpesa import stk_push
+from apps.core.pdf_utils import html_to_pdf_response
 
 
 @login_required
@@ -26,10 +31,6 @@ def subscription_view(request):
     if user.role not in ('super_admin', 'principal'):
         messages.error(request, 'Access denied.')
         return redirect('dashboard_home')
-
-    from apps.schools.models import School, SubscriptionPlan, SchoolSubscription
-    from django.utils import timezone
-    from datetime import timedelta
 
     all_schools = School.objects.all().order_by('name') if user.role == 'super_admin' else School.objects.none()
     school = user.school if user.role == 'principal' else None
@@ -48,12 +49,12 @@ def subscription_view(request):
     subscription = None
     if school:
         subscription, created = SchoolSubscription.objects.get_or_create(
-    school=school,
-    defaults={
-        'status': SchoolSubscription.Status.TRIAL,
-        'trial_ends_at': timezone.now() + timedelta(days=14),
-    }
-)
+            school=school,
+            defaults={
+                'status': SchoolSubscription.Status.TRIAL,
+                'trial_ends_at': timezone.now() + timedelta(days=14),
+            }
+        )
 
     # Compute pricing previews for each plan × cycle
     pricing_matrix = {}
@@ -100,12 +101,10 @@ def subscription_view(request):
                 subscription.max_teachers = plan.max_teachers
                 subscription.last_payment_method = payment_method
                 subscription.total_paid_kes = total
-                # Do NOT set paid_until yet — waiting for Super Admin confirmation
-                # Do NOT set status to ACTIVE yet
                 subscription.status = SchoolSubscription.Status.PENDING_PAYMENT
                 subscription.save()
-                
-                                # === Notify Super Admin about pending payment ===
+
+                # === Notify Super Admin about pending payment ===
                 try:
                     from apps.notifications.services.admin_notify import (
                         notify_super_admins, new_subscription_email
@@ -127,35 +126,6 @@ def subscription_view(request):
                 # Redirect to payment instructions page
                 return redirect('subscription_payment_pending', school_id=school.id)
 
-                # === Notify Super Admin ===
-                try:
-                    from apps.notifications.services.admin_notify import (
-                        notify_super_admins, new_subscription_email
-                    )
-                    title, plain, html = new_subscription_email(
-                        school=school,
-                        plan=plan,
-                        payment_method=payment_method,
-                    )
-                    notify_super_admins(title, plain, send_email=True, email_html=html)
-                except Exception as e:
-                    print(f"Super Admin notification failed: {e}")
-
-                if payment_method == 'mpesa':
-                    messages.success(
-                        request,
-                        f'Plan selected: {plan.name} ({subscription.billing_cycle_display}). '
-                        f'Total: KES {total:,.0f}. You will receive an M-Pesa prompt shortly.'
-                    )
-                else:
-                    messages.success(
-                        request,
-                        f'Plan selected: {plan.name} ({subscription.billing_cycle_display}). '
-                        f'Total: KES {total:,.0f}. Please transfer the amount to our bank account.'
-                    )
-
-                return redirect('subscription_view')
-
             except SubscriptionPlan.DoesNotExist:
                 messages.error(request, 'Invalid plan selected.')
 
@@ -176,14 +146,8 @@ def subscription_edit_admin(request, school_id):
         messages.error(request, 'Access denied.')
         return redirect('dashboard_home')
 
-    from apps.schools.models import School, SubscriptionPlan, SchoolSubscription
-    from django.utils import timezone
-    from datetime import timedelta
-
-
     school = get_object_or_404(School, id=school_id)
 
-    # Get or create subscription
     subscription, _ = SchoolSubscription.objects.get_or_create(
         school=school,
         defaults={
@@ -193,10 +157,10 @@ def subscription_edit_admin(request, school_id):
     )
 
     plans = SubscriptionPlan.objects.all().order_by('order', 'min_students')
+    
     if request.method == 'POST':
         action = request.POST.get('action', 'save')
 
-        # ---------- RESET TRIAL ----------
         if action == 'reset_trial':
             subscription.status = SchoolSubscription.Status.TRIAL
             subscription.trial_started_at = timezone.now()
@@ -204,21 +168,20 @@ def subscription_edit_admin(request, school_id):
             subscription.paid_until = None
             subscription.save()
             messages.success(request, f'14-day trial reset for {school.name}.')
-        # ---------- CANCEL ----------
+        
         if action == 'cancel':
             subscription.status = SchoolSubscription.Status.CANCELLED
             subscription.save()
             messages.warning(request, f'Subscription cancelled for {school.name}.')
             return redirect('subscription_edit_admin', school_id=school.id)
 
-        # ---------- ACTIVATE ----------
         if action == 'activate':
             subscription.status = SchoolSubscription.Status.ACTIVE
             subscription.save()
             messages.success(request, f'Subscription activated for {school.name}.')
             return redirect('subscription_edit_admin', school_id=school.id)
 
-        # ---------- SAVE (main update) ----------
+        # SAVE
         plan_id = request.POST.get('plan')
         billing_cycle = request.POST.get('billing_cycle', 'term')
         contract_years = request.POST.get('contract_years', '0')
@@ -230,10 +193,8 @@ def subscription_edit_admin(request, school_id):
         payment_reference = request.POST.get('last_payment_reference', '')
         total_paid = request.POST.get('total_paid_kes', '0')
 
-        try:
-            contract_years = int(contract_years) if contract_years else 0
-        except ValueError:
-            contract_years = 0
+        try: contract_years = int(contract_years) if contract_years else 0
+        except ValueError: contract_years = 0
 
         if plan_id:
             subscription.plan = SubscriptionPlan.objects.filter(id=plan_id).first()
@@ -244,22 +205,16 @@ def subscription_edit_admin(request, school_id):
         subscription.last_payment_method = payment_method
         subscription.last_payment_reference = payment_reference
 
-        try:
-            subscription.total_paid_kes = float(total_paid or 0)
-        except ValueError:
-            subscription.total_paid_kes = 0
+        try: subscription.total_paid_kes = float(total_paid or 0)
+        except ValueError: subscription.total_paid_kes = 0
 
         if max_students:
-            try:
-                subscription.max_students = int(max_students)
-            except ValueError:
-                pass
+            try: subscription.max_students = int(max_students)
+            except ValueError: pass
 
         if max_teachers:
-            try:
-                subscription.max_teachers = int(max_teachers)
-            except ValueError:
-                pass
+            try: subscription.max_teachers = int(max_teachers)
+            except ValueError: pass
 
         if paid_until_str:
             try:
@@ -267,21 +222,14 @@ def subscription_edit_admin(request, school_id):
                 subscription.paid_until = timezone.make_aware(
                     datetime.strptime(paid_until_str, '%Y-%m-%d')
                 )
-            except (ValueError, TypeError):
-                pass
+            except (ValueError, TypeError): pass
 
         subscription.save()
         messages.success(request, f'Subscription updated for {school.name}.')
         return redirect('subscription_edit_admin', school_id=school.id)
 
-    # ---- Compute trial-end / paid-until as ISO date for the form ----
-    paid_until_iso = ''
-    if subscription.paid_until:
-        paid_until_iso = subscription.paid_until.strftime('%Y-%m-%d')
-
-    trial_ends_iso = ''
-    if subscription.trial_ends_at:
-        trial_ends_iso = subscription.trial_ends_at.strftime('%Y-%m-%d')
+    paid_until_iso = subscription.paid_until.strftime('%Y-%m-%d') if subscription.paid_until else ''
+    trial_ends_iso = subscription.trial_ends_at.strftime('%Y-%m-%d') if subscription.trial_ends_at else ''
 
     return render(request, 'dashboard/subscription_edit_admin.html', {
         'school': school,
@@ -302,11 +250,7 @@ def subscription_admin_picker(request):
         messages.error(request, 'Access denied.')
         return redirect('dashboard_home')
 
-    from apps.schools.models import School, SchoolSubscription
-
     schools = School.objects.all().order_by('name')
-
-    # Attach current subscription info to each school
     school_rows = []
     for s in schools:
         sub = SchoolSubscription.objects.filter(school=s).select_related('plan').first()
@@ -326,14 +270,11 @@ def subscription_admin_picker(request):
 @login_required
 def subscription_payment_pending(request, school_id):
     """Show payment instructions after school admin selects method."""
-    from apps.schools.models import School, SchoolSubscription
-
     if request.user.role not in ('principal', 'super_admin'):
         return redirect('dashboard_home')
 
     school = get_object_or_404(School, id=school_id)
 
-    # Security — school admins only see their own school
     if request.user.role == 'principal' and request.user.school != school:
         return redirect('dashboard_home')
 
@@ -343,12 +284,8 @@ def subscription_payment_pending(request, school_id):
         messages.error(request, 'No subscription found for this school.')
         return redirect('subscription_view')
 
-    # Generate a reference number for this payment
-    import random
-    import string
+    import random, string
     reference = f"SUB-{school.code or school.id}-{''.join(random.choices(string.digits, k=6))}"
-
-    # Save the reference
     subscription.last_payment_reference = reference
     subscription.save(update_fields=['last_payment_reference'])
 
@@ -362,8 +299,6 @@ def subscription_payment_pending(request, school_id):
 @login_required
 def subscription_payment_status(request, school_id):
     """Check the current status of the subscription payment."""
-    from apps.schools.models import School, SchoolSubscription
-
     if request.user.role not in ('principal', 'super_admin'):
         return redirect('dashboard_home')
 
@@ -389,9 +324,6 @@ def confirm_subscription_payment(request, school_id):
     if request.user.role != 'super_admin':
         return redirect('dashboard_home')
 
-    from apps.schools.models import School, SchoolSubscription
-    from django.utils import timezone
-    from datetime import timedelta
     from apps.notifications.models import Notification
     from django.core.mail import send_mail
     from django.conf import settings
@@ -405,15 +337,10 @@ def confirm_subscription_payment(request, school_id):
         return redirect('schools_manage')
 
     if request.method == 'POST':
-        # Compute duration based on billing cycle
-        if subscription.billing_cycle == 'monthly':
-            duration_days = 30
-        elif subscription.billing_cycle == 'term':
-            duration_days = 90
-        elif subscription.billing_cycle == 'contract':
-            duration_days = 365 * max(subscription.contract_years, 1)
-        else:
-            duration_days = 90
+        if subscription.billing_cycle == 'monthly': duration_days = 30
+        elif subscription.billing_cycle == 'term': duration_days = 90
+        elif subscription.billing_cycle == 'contract': duration_days = 365 * max(subscription.contract_years, 1)
+        else: duration_days = 90
 
         subscription.status = SchoolSubscription.Status.ACTIVE
         subscription.paid_until = timezone.now() + timedelta(days=duration_days)
@@ -423,41 +350,23 @@ def confirm_subscription_payment(request, school_id):
         subscription.payment_notes = request.POST.get('payment_notes', '').strip()
         subscription.save()
 
-        # Notify school admin
         try:
             school_admins = school.users.filter(role='principal')
             for admin in school_admins:
                 Notification.objects.create(
-                    recipient=admin,
-                    channel='in_app',
-                    title='Payment Confirmed',
+                    recipient=admin, channel='in_app', title='Payment Confirmed',
                     message=f'Your subscription for {school.name} is now ACTIVE until {subscription.paid_until.strftime("%d %b %Y")}.',
                 )
                 if admin.email:
                     send_mail(
                         subject='Subscription Activated — School MS',
-                        message=f"""
-Hello {admin.get_full_name() or admin.email},
-
-Your subscription for {school.name} has been confirmed.
-
-Plan: {subscription.plan.name if subscription.plan else 'N/A'}
-Billing: {subscription.billing_cycle_display}
-Paid Until: {subscription.paid_until.strftime('%d %b %Y')}
-Reference: {subscription.last_payment_reference or '—'}
-
-Thank you for using School MS.
-
-— The School MS Team
-""".strip(),
-                        from_email=settings.DEFAULT_FROM_EMAIL,
-                        recipient_list=[admin.email],
-                        fail_silently=True,
+                        message=f"Hello {admin.get_full_name() or admin.email},\n\nYour subscription for {school.name} has been confirmed.\nPlan: {subscription.plan.name if subscription.plan else 'N/A'}\nPaid Until: {subscription.paid_until.strftime('%d %b %Y')}\nReference: {subscription.last_payment_reference or '—'}\n\n— The School MS Team",
+                        from_email=settings.DEFAULT_FROM_EMAIL, recipient_list=[admin.email], fail_silently=True,
                     )
         except Exception as e:
             print(f"Failed to notify admin: {e}")
 
-        messages.success(request, f'✅ Payment confirmed. Subscription for {school.name} is now ACTIVE until {subscription.paid_until.strftime("%d %b %Y")}.')
+        messages.success(request, f'Payment confirmed. Subscription for {school.name} is now ACTIVE.')
         return redirect('schools_manage')
 
     return render(request, 'dashboard/confirm_subscription_payment.html', {
@@ -472,32 +381,23 @@ def subscription_plans(request):
     if request.user.role not in ('principal', 'super_admin'):
         return redirect('dashboard_home')
 
-    from apps.schools.models import SubscriptionPlan, SchoolSubscription, School
     from apps.students.models import Student
-    from django.utils import timezone
-
+    
     school = request.user.school
     if not school:
         messages.error(request, 'No school linked to your account.')
         return redirect('dashboard_home')
 
-    # Current subscription
     subscription = SchoolSubscription.objects.filter(school=school).select_related('plan').first()
-
-    # Student count → determines the tier
     student_count = Student.objects.filter(school=school, is_active=True).count()
-
-    # All active plans
     plans = SubscriptionPlan.objects.filter(is_active=True).order_by('order', 'min_students')
 
-    # Highlight the plan matching this school's student count
     matched_plan_id = None
     for plan in plans:
         if plan.matches_student_count(student_count):
             matched_plan_id = plan.id
             break
 
-    # Trial status
     is_trial = False
     days_left = 0
     trial_end = None
@@ -506,7 +406,6 @@ def subscription_plans(request):
         days_left = max(0, (subscription.trial_ends_at - timezone.now()).days)
         trial_end = subscription.trial_ends_at
 
-    # Current plan
     current_plan = subscription.plan if subscription else None
 
     return render(request, 'dashboard/subscription_plans.html', {
@@ -531,10 +430,6 @@ def subscription_confirm(request):
     if request.method != 'POST':
         return redirect('subscription_plans')
 
-    from apps.schools.models import SubscriptionPlan, SchoolSubscription
-    from django.utils import timezone
-    from datetime import timedelta
-
     school = request.user.school
     plan_id = request.POST.get('plan_id')
     cycle = request.POST.get('cycle', 'term')
@@ -550,18 +445,9 @@ def subscription_confirm(request):
         messages.error(request, 'Invalid plan selected.')
         return redirect('subscription_plans')
 
-    # Determine duration in days
-    duration_days = {
-        'monthly': 30,
-        'term': 90,
-        'contract_1y': 365,
-        'contract_2y': 730,
-    }.get(cycle, 90)
-
-    # Price
+    duration_days = {'monthly': 30, 'term': 90, 'contract_1y': 365, 'contract_2y': 730}.get(cycle, 90)
     price = plan.price_for_cycle(cycle)
 
-    # Update or create subscription
     subscription, created = SchoolSubscription.objects.get_or_create(
         school=school,
         defaults={
@@ -575,12 +461,9 @@ def subscription_confirm(request):
         subscription.plan = plan
         subscription.status = 'pending_payment'
         subscription.total_paid_kes = price
-        subscription.billing_cycle = (
-            'term' if cycle in ('term', 'contract_1y', 'contract_2y') else 'monthly'
-        )
+        subscription.billing_cycle = ('term' if cycle in ('term', 'contract_1y', 'contract_2y') else 'monthly')
         subscription.save()
 
-    # Store intent for the payment page
     request.session['pending_subscription'] = {
         'plan_id': plan.id,
         'plan_name': plan.name,
@@ -589,11 +472,7 @@ def subscription_confirm(request):
         'duration_days': duration_days,
     }
 
-    messages.success(
-        request,
-        f'Plan "{plan.name}" selected for {cycle.replace("_", " ")}. '
-        f'Please complete payment.'
-    )
+    messages.success(request, f'Plan "{plan.name}" selected. Please complete payment.')
     return redirect('subscription_payment')
 
 
@@ -608,12 +487,16 @@ def subscription_payment(request):
         messages.error(request, 'No pending subscription. Please choose a plan.')
         return redirect('subscription_plans')
 
+    # Fetch the SaaS Owner's Paybill details
+    platform_config = PlatformMpesaConfig.objects.first()
+
     return render(request, 'dashboard/subscription_payment.html', {
         'pending': pending,
+        'platform_config': platform_config,
+        'school': request.user.school,
     })
 
 
-
 @login_required
 def super_admin_mpesa_settings(request):
     """Super Admin enters their SaaS Paybill/Till details."""
@@ -628,72 +511,107 @@ def super_admin_mpesa_settings(request):
         config.consumer_key = request.POST.get('consumer_key')
         config.consumer_secret = request.POST.get('consumer_secret')
         config.passkey = request.POST.get('passkey')
-        
-        # The URL Safaricom will hit when a school pays you
         config.callback_url = request.build_absolute_uri('/api/finance/mpesa/platform-callback/')
-        
-        config.save()
-        messages.success(request, 'SaaS M-Pesa Settings saved successfully!')
-        return redirect('super_admin_mpesa_settings')
-
-    return render(request, 'dashboard/admin/platform_mpesa_settings.html', {'config': config})
-
-@login_required
-def initiate_subscription_payment(request, school_id):
-    """Triggers STK push to the SaaS Owner's Paybill."""
-    # ... (existing logic to find the amount and plan) ...
-    
-    config = PlatformMpesaConfig.objects.filter(is_active=True).first()
-    if not config:
-        messages.error(request, "Platform M-Pesa is not configured yet. Contact support.")
-        return redirect('dashboard_home')
-
-    # Call Safaricom Daraja API
-    # (You will need to adjust your stk_push function to accept custom credentials)
-    phone = request.POST.get('phone')
-    amount = plan.monthly_price # or whatever the amount is
-    
-    success, response = stk_push(
-        phone=phone,
-        amount=amount,
-        account_ref=school.code, # e.g., NAIROBI01 so you know who paid
-        description="SaaS Subscription",
-        shortcode=config.paybill_number,
-        passkey=config.passkey,
-        consumer_key=config.consumer_key,
-        consumer_secret=config.consumer_secret,
-        callback_url=config.callback_url,
-        account_type=config.account_type
-    )
-    
-    if success:
-        messages.success(request, "STK Push sent. Please enter your M-Pesa PIN.")
-        # save the checkout_request_id to a SubscriptionTransaction model
-        return redirect('subscription_payment_pending', school_id=school_id)
-    else:
-        messages.error(request, f"Failed: {response}")
-        return redirect('subscription_plans')
-    
-@login_required
-def super_admin_mpesa_settings(request):
-    """Super Admin enters their SaaS Paybill/Till details."""
-    if request.user.role != 'super_admin':
-        return redirect('dashboard_home')
-
-    config, created = PlatformMpesaConfig.objects.get_or_create(pk=1)
-
-    if request.method == 'POST':
-        config.paybill_number = request.POST.get('paybill_number')
-        config.account_type = request.POST.get('account_type')
-        config.consumer_key = request.POST.get('consumer_key')
-        config.consumer_secret = request.POST.get('consumer_secret')
-        config.passkey = request.POST.get('passkey')
-        
-        # The URL Safaricom will hit when a school pays you
-        config.callback_url = request.build_absolute_uri('/api/finance/mpesa/platform-callback/')
-        
         config.save()
         messages.success(request, 'SaaS M-Pesa Settings saved successfully!')
         return redirect('super_admin_mpesa_settings')
 
     return render(request, 'dashboard/platform_mpesa_settings.html', {'config': config})
+
+
+@login_required
+def initiate_subscription_payment(request, school_id):
+    """Triggers STK push to the SaaS Owner's Paybill."""
+    if request.user.role not in ('principal', 'super_admin'):
+        return redirect('dashboard_home')
+
+    config = PlatformMpesaConfig.objects.filter(is_active=True).first()
+    if not config or not config.consumer_key:
+        messages.error(request, "Platform M-Pesa is not configured yet. Contact support.")
+        return redirect('dashboard_home')
+
+    school = get_object_or_404(School, id=school_id)
+    
+    if request.method == 'POST':
+        phone = request.POST.get('phone')
+        plan_id = request.POST.get('plan_id')
+        
+        if not plan_id:
+            messages.error(request, "Please select a plan first.")
+            return redirect('subscription_plans')
+
+        plan = get_object_or_404(SubscriptionPlan, id=plan_id)
+        amount = plan.monthly_price # Or calculate based on cycle
+        
+        response = stk_push(
+            phone=phone,
+            amount=amount,
+            account_ref=school.code,
+            description=f"SaaS Subscription - {plan.name}",
+            shortcode=config.paybill_number,
+            passkey=config.passkey,
+            consumer_key=config.consumer_key,
+            consumer_secret=config.consumer_secret,
+            callback_url=config.callback_url,
+            account_type=config.account_type
+        )
+        
+        if isinstance(response, dict) and response.get('CheckoutRequestID'):
+            messages.success(request, f"STK Push sent for KES {amount}. Please enter your M-Pesa PIN.")
+            return redirect('subscription_payment_pending', school_id=school_id)
+        else:
+            error_msg = response.get('error', 'Unknown error') if isinstance(response, dict) else str(response)
+            messages.error(request, f"Failed: {error_msg}")
+            return redirect('subscription_plans')
+
+    return redirect('subscription_plans')
+
+
+@login_required
+def super_admin_ledger(request):
+    """SaaS Owner's view to see all school subscriptions and payments."""
+    if request.user.role != 'super_admin':
+        return redirect('dashboard_home')
+
+    query = request.GET.get('q', '')
+    schools = School.objects.select_related('subscription').all().order_by('name')
+    
+    if query:
+        schools = schools.filter(
+            Q(name__icontains=query) | 
+            Q(code__icontains=query)
+        )
+
+    paginator = Paginator(schools, 20)
+    page_obj = paginator.get_page(request.GET.get('page', 1))
+
+    return render(request, 'dashboard/platform_ledger.html', {
+        'page_obj': page_obj,
+        'query': query,
+    })
+
+
+@login_required
+def download_subscription_statement(request, school_id):
+    """Generates a PDF statement for a specific school."""
+    if request.user.role != 'super_admin':
+        return redirect('dashboard_home')
+
+    school = get_object_or_404(School, id=school_id)
+    sub = getattr(school, 'subscription', None)
+
+    logo_url = request.build_absolute_uri(static('images/logo.png'))
+
+    context = {
+        'school': school,
+        'sub': sub,
+        'today': timezone.now().date(),
+        'logo_url': logo_url,
+    }
+    
+    html_string = render_to_string('pdf/saas_statement.html', context)
+    
+    return html_to_pdf_response(
+        html_string,
+        f'SaaS_Statement_{school.code}_{timezone.now().date()}.pdf'
+    )

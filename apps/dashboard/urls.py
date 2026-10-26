@@ -2,11 +2,14 @@ from django.urls import path, include
 from django.views.generic import RedirectView
 from apps.dashboard.views.students import student_bio_page as student_bio_view
 from django.shortcuts import render, redirect, get_object_or_404
+from apps.dashboard.views import subscription
 
 from . import views
 from apps.finance import store_views
 
 urlpatterns = [ 
+               
+    path('parent/pay/', views.parent_mpesa_payment, name='parent_mpesa_payment'),
                    # Global search
     path('search/', views.global_search, name='global_search'),
     path('', include('apps.security.urls')),
@@ -161,6 +164,8 @@ urlpatterns = [
          name='class_teacher_all_report_cards_zip'),
     
     path('super-admin/mpesa/', views.subscription.super_admin_mpesa_settings, name='super_admin_mpesa_settings'),
+    path('super-admin/ledger/', views.subscription.super_admin_ledger, name='super_admin_ledger'),
+    path('super-admin/ledger/<int:school_id>/statement/', views.subscription.download_subscription_statement, name='download_subscription_statement'),
 
     path('teacher/my-class/report-cards/merged/',
          views.class_teacher_merged_reports_page,
@@ -177,6 +182,7 @@ urlpatterns = [
          name='parent_child_statement_pdf'),
      
      path('accountant/generate-invoices/', views.generate_invoices, name='generate_invoices'),
+     path('subscriptions/initiate-payment/<int:school_id>/', views.subscription.initiate_subscription_payment, name='initiate_subscription_payment'),
 
     path('teacher/my-class/rankings/download/',
          views.class_teacher_rankings_download,

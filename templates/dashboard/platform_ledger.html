@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+{% block title %}SaaS Ledger{% endblock %}
+{% block header_title %}SaaS Payment Ledger{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-info">
+    <h1 class="page-title">School Subscriptions</h1>
+    <p class="page-subtitle">Monitor and search school subscription payments</p>
+  </div>
+</div>
+
+<div class="card mb-6">
+  <form method="get" class="flex gap-3">
+    <input type="text" name="q" value="{{ query }}" placeholder="Search by school name or code (e.g. NAIROBI01)..." class="form-input" style="flex: 1; padding: 10px; border-radius: 6px; border: 1px solid var(--border);">
+    <button type="submit" class="btn btn-primary">Search</button>
+    {% if query %}
+      <a href="{% url 'super_admin_ledger' %}" class="btn btn-secondary">Clear</a>
+    {% endif %}
+  </form>
+</div>
+
+<div class="card">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>School Name</th>
+        <th>Code</th>
+        <th>Status</th>
+        <th>Paid Until</th>
+        <th>Total Paid</th>
+        <th style="text-align: right;">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for school in page_obj %}
+      <tr>
+        <td><strong>{{ school.name }}</strong></td>
+        <td><span class="badge badge-info">{{ school.code }}</span></td>
+        <td>
+          {% if school.is_active %}
+            <span class="badge badge-success">Active</span>
+          {% else %}
+            <span class="badge badge-danger">Blocked</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if school.subscription.paid_until %}
+            {{ school.subscription.paid_until|date:"d M Y" }}
+          {% else %}
+            <span style="color: var(--danger);">Not Subscribed</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if school.subscription %}
+            KES {{ school.subscription.total_paid_kes|floatformat:2 }}
+          {% else %}
+            KES 0.00
+          {% endif %}
+        </td>
+        <td style="text-align: right;">
+          <a href="{% url 'download_subscription_statement' school.id %}" class="btn btn-sm btn-secondary" target="_blank">Statement PDF</a>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="6" style="text-align: center; padding: 20px;">No schools found.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

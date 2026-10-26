@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        @page { size: A4; margin: 2cm; }
+        body { font-family: Helvetica, Arial, sans-serif; font-size: 11pt; color: #333; }
+        .header { text-align: center; border-bottom: 2px solid #1e293b; padding-bottom: 15px; margin-bottom: 30px; }
+        .title { font-size: 22pt; font-weight: bold; color: #1e293b; text-transform: uppercase; margin-bottom: 5px; }
+        .subtitle { font-size: 12pt; color: #475569; }
+        
+        .details-table { width: 100%; margin-bottom: 30px; }
+        .details-table td { vertical-align: top; }
+        .details-title { font-size: 10pt; font-weight: bold; color: #64748b; text-transform: uppercase; margin-bottom: 5px; }
+        .details-text { font-size: 11pt; line-height: 1.5; }
+        
+        .data-table { width: 100%; border-collapse: collapse; margin-top: 20px; margin-bottom: 30px; }
+        .data-table th { background-color: #f1f5f9; border: 1px solid #cbd5e1; padding: 10px; text-align: left; font-size: 10pt; color: #334155; text-transform: uppercase; }
+        .data-table td { border: 1px solid #cbd5e1; padding: 10px; font-size: 11pt; }
+        
+        .totals-table { width: 100%; margin-top: 20px; }
+        .totals-table td { padding: 5px 10px; }
+        .totals-label { text-align: right; font-weight: bold; color: #475569; }
+        .totals-value { text-align: right; font-weight: bold; font-size: 14pt; color: #0f172a; }
+        
+        .signature-area { margin-top: 60px; width: 100%; }
+        .signature-table { width: 100%; }
+        .signature-table td { vertical-align: bottom; width: 50%; }
+        
+        .footer { margin-top: 50px; text-align: center; font-size: 9pt; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: 10px; }
+    </style>
+</head>
+<body>
+
+        <!-- HEADER -->
+    <div class="header">
+        {% if logo_url %}
+            <img src="{{ logo_url }}" style="max-height: 70px; max-width: 200px; margin-bottom: 10px;" alt="ElimuCore Logo">
+        {% endif %}
+        <div class="title">ElimuCore School MS</div>
+        <div class="subtitle">Official Subscription Statement</div>
+        <div class="subtitle" style="font-size: 10pt; margin-top: 5px;">Date Issued: {% now "d F Y" %}</div>
+    </div>
+    <!-- BILLING DETAILS -->
+    <table class="details-table">
+        <tr>
+            <td style="width: 50%;">
+                <div class="details-title">Billed To</div>
+                <div class="details-text">
+                    <strong>{{ school.name }}</strong><br>
+                    School Code: {{ school.code }}<br>
+                    Email: {{ school.email }}<br>
+                    Phone: {{ school.phone|default:"—" }}
+                </div>
+            </td>
+            <td style="width: 50%; text-align: right;">
+                <div class="details-title">Subscription Status</div>
+                <div class="details-text">
+                    Status: 
+                    {% if sub.status == 'active' %}
+                        <span style="color: #059669; font-weight: bold;">ACTIVE</span>
+                    {% else %}
+                        <span style="color: #dc2626; font-weight: bold;">INACTIVE / EXPIRED</span>
+                    {% endif %}
+                    <br>
+                    Valid Until: <strong>{{ sub.paid_until|date:"d F Y"|default:"N/A" }}</strong>
+                </div>
+            </td>
+        </tr>
+    </table>
+
+    <!-- TRANSACTION DATA -->
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Date Paid</th>
+                <th>Method</th>
+                <th>Reference / Receipt</th>
+                <th>Notes</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if sub.last_payment_date %}
+            <tr>
+                <td>{{ sub.last_payment_date|date:"d M Y" }}</td>
+                <td>{{ sub.last_payment_method|default:"M-Pesa" }}</td>
+                <td>{{ sub.last_payment_reference|default:"—" }}</td>
+                <td>{{ sub.payment_notes|default:"Subscription Payment" }}</td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="4" style="text-align: center; color: #64748b;">No payment history found on this account.</td>
+            </tr>
+            {% endif %}
+        </tbody>
+    </table>
+
+    <!-- TOTALS -->
+    <table class="totals-table">
+        <tr>
+            <td style="width: 70%;"></td>
+            <td class="totals-label" style="width: 15%;">Total Paid To Date:</td>
+            <td class="totals-value" style="width: 15%;">KES {{ sub.total_paid_kes|floatformat:2|default:"0.00" }}</td>
+        </tr>
+    </table>
+
+    <!-- SIGNATURES & RUBBERSTAMP -->
+    <div class="signature-area">
+        <table class="signature-table">
+            <tr>
+                <!-- CEO Signature -->
+                <td style="padding-right: 20px;">
+                    <div style="border-bottom: 1px solid #333; width: 80%; margin-bottom: 5px;"></div>
+                    <div style="font-size: 10pt;"><strong>Authorized Signature</strong></div>
+                    <div style="font-size: 11pt; margin-top: 5px;">Chief Executive Officer (CEO)</div>
+                </td>
+                
+                <!-- Official Rubberstamp Box -->
+                <td style="padding-left: 20px; text-align: right;">
+                    <div style="border: 2px dashed #94a3b8; padding: 25px 15px; text-align: center; color: #94a3b8; font-size: 10pt; width: 200px; float: right; border-radius: 8px;">
+                        <strong>ELIMUCORE SAAS</strong><br>
+                        OFFICIAL COMPANY STAMP<br><br>
+                        (Stamp Here)
+                    </div>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- FOOTER -->
+    <div class="footer">
+        Thank you for partnering with ElimuCore SaaS.<br>
+        This document is an official computer-generated statement. For any billing inquiries, please contact support.
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,128 @@
+{% extends 'base.html' %}
+{% block title %}Pay via M-Pesa{% endblock %}
+{% block header_title %}Make a Payment{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6" style="max-width: 900px; margin: 0 auto;">
+    
+    <!-- Left Column: Instructions & Child Selection -->
+    <div class="space-y-6">
+        
+        <!-- Child Tabs -->
+        {% if children|length > 1 %}
+        <div class="card" style="padding: 12px;">
+            <p style="font-size: 12px; font-weight: bold; color: var(--ink-500); text-transform: uppercase; margin-bottom: 8px;">Select Child</p>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                {% for child in children %}
+                    <a href="?child_id={{ child.id }}" 
+                       class="btn {% if selected_child.id == child.id %}btn-primary{% else %}btn-secondary{% endif %}"
+                       style="font-size: 14px; padding: 8px 16px;">
+                        {{ child.first_name }}
+                    </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Payment Instructions -->
+        <div class="card" style="border-top: 4px solid var(--primary);">
+            <h3 style="margin-bottom: 16px; color: var(--primary);">Payment Details</h3>
+            
+            <div style="background: #f8fafc; padding: 16px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 20px;">
+                
+                <div style="margin-bottom: 16px;">
+                    <span style="font-size: 12px; font-weight: bold; color: var(--ink-500); text-transform: uppercase;">Child Details</span>
+                    <div style="font-size: 16px; font-weight: bold; color: var(--ink-900); margin-top: 4px;">
+                        {{ selected_child.first_name }} {{ selected_child.last_name }}
+                    </div>
+                    <div style="font-size: 13px; color: var(--ink-500);">
+                        Adm No: {{ selected_child.admission_number }} | Class: {{ selected_child.class_level }}
+                    </div>
+                </div>
+                
+                <div style="padding-top: 16px; border-top: 1px dashed var(--border);">
+                    <span style="font-size: 12px; font-weight: bold; color: var(--ink-500); text-transform: uppercase;">School Paybill / Till</span>
+                    <div style="font-size: 22px; font-weight: bold; font-family: monospace; color: var(--ink-900);">
+                        {{ school.mpesa_config.paybill_number|default:"Not Configured" }}
+                    </div>
+                </div>
+
+                <div style="margin-top: 12px;">
+                    <span style="font-size: 12px; font-weight: bold; color: var(--ink-500); text-transform: uppercase;">Account Number</span>
+                    <div style="font-size: 22px; font-weight: bold; font-family: monospace; color: var(--success);" id="display-account">
+                        {{ selected_child.admission_number }}
+                    </div>
+                </div>
+            </div>
+            <p style="font-size: 12px; color: var(--ink-500); line-height: 1.4;">
+                * If paying manually, use the Account Number above.<br>
+                * For Wallet Top-up, append <strong>-WAL</strong> to the Account Number.
+            </p>
+        </div>
+    </div>
+
+    <!-- Right Column: Instant STK Push Form -->
+    <div class="card">
+        <h3 style="margin-bottom: 16px;">Instant STK Push</h3>
+        <p style="margin-bottom: 20px; color: var(--ink-500); font-size: 14px;">Enter the amount and your phone number below, and we will send a secure M-Pesa prompt to your phone.</p>
+        
+        <form method="post">
+            {% csrf_token %}
+            <!-- Hidden input for the selected child -->
+            <input type="hidden" name="student_id" value="{{ selected_child.id }}">
+            
+            <div style="margin-bottom: 16px;">
+                <label style="display: block; font-weight: 600; margin-bottom: 6px;">Payment Purpose</label>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <label style="border: 1px solid var(--border); padding: 12px; border-radius: 6px; cursor: pointer; text-align: center;">
+                        <input type="radio" name="purpose" value="fees" checked onchange="updateAccountRef('fees')" style="margin-right: 6px;">
+                        School Fees
+                    </label>
+                    <label style="border: 1px solid var(--border); padding: 12px; border-radius: 6px; cursor: pointer; text-align: center;">
+                        <input type="radio" name="purpose" value="wallet" {% if request.GET.child_id %}checked{% endif %} onchange="updateAccountRef('wallet')" style="margin-right: 6px;">
+                        Wallet Top-up
+                    </label>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 16px;">
+                <label style="display: block; font-weight: 600; margin-bottom: 6px;">Amount (KES)</label>
+                <input type="number" name="amount" min="10" required placeholder="e.g. 5000" style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 18px; font-weight: bold;">
+            </div>
+
+            <div style="margin-bottom: 24px;">
+                <label style="display: block; font-weight: 600; margin-bottom: 6px;">M-Pesa Phone Number</label>
+                <input type="text" name="phone" required placeholder="e.g. 0712345678" style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 16px;">
+            </div>
+            
+            <button type="submit" class="btn btn-primary" style="width: 100%; padding: 14px; font-size: 16px;">
+                Pay with M-Pesa
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+    function updateAccountRef(purpose) {
+        const display = document.getElementById('display-account');
+        // Safely get the admission number from Django context
+        const adm = "{{ selected_child.admission_number|default:'' }}";
+        
+        if (!adm) return; // Prevent errors if ID is missing
+
+        if (purpose === 'wallet') {
+            display.innerText = adm + '-WAL';
+        } else {
+            display.innerText = adm;
+        }
+    }
+
+    // On page load, check if we should default to Wallet
+    document.addEventListener('DOMContentLoaded', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('child_id')) {
+            updateAccountRef('wallet');
+        }
+    });
+</script>
+{% endblock %}
