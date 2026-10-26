@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+{% block title %}Manual M-Pesa Entry{% endblock %}
+{% block header_title %}Manual M-Pesa Entry{% endblock %}
+
+{% block content %}
+<!-- Tom Select CSS -->
+<link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
+
+<div class="card" style="max-width: 700px; margin: 0 auto;">
+  <h3 class="mb-4">Log Missed Transaction</h3>
+  <p class="mb-4" style="color: var(--ink-500);">Use this form if a parent paid via Paybill but the system did not automatically update their account.</p>
+  
+  <form method="post">
+    {% csrf_token %}
+    
+    <div style="margin-bottom: 16px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Student *</label>
+      <!-- Added id="student-select" for Tom Select -->
+      <select id="student-select" name="student" required class="form-input" style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+        <option value="">— Type a name or admission number to search —</option>
+        {% for s in students %}
+          <option value="{{ s.id }}">
+            {{ s.admission_number }} - {{ s.first_name }} {{ s.last_name }} ({{ s.class_level }})
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+    
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">M-Pesa Receipt *</label>
+        <input type="text" name="receipt" required placeholder="e.g. QK47XXXXX" style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+      </div>
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Amount (KES) *</label>
+        <input type="number" name="amount" required step="0.01" style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+      </div>
+    </div>
+    
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;">
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Phone Number</label>
+        <input type="text" name="phone" placeholder="2547XXXXXXXX" style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+      </div>
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Payment Purpose *</label>
+        <select name="purpose" required style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+          <option value="fees">School Fees</option>
+          <option value="wallet">Student Wallet Top-up</option>
+        </select>
+      </div>
+    </div>
+    
+    <div style="display: flex; justify-content: flex-end; gap: 12px;">
+      <a href="{% url 'accountant_mpesa_ledger' %}" class="btn btn-secondary">Cancel</a>
+      <button type="submit" class="btn btn-primary">Save & Update Account</button>
+    </div>
+  </form>
+</div>
+
+<!-- Tom Select JS -->
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    new TomSelect("#student-select", {
+      create: false,
+      sortField: {
+        field: "text",
+        direction: "asc"
+      },
+      placeholder: "Search by name or admission number..."
+    });
+  });
+</script>
+{% endblock %}

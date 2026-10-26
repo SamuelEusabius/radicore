@@ -30,12 +30,11 @@ class BookIssueAdmin(admin.ModelAdmin):
 # ============================================================
 # HEALTH / NURSE
 # ============================================================
-
 @admin.register(HealthVisit)
 class HealthVisitAdmin(admin.ModelAdmin):
-    list_display = ('student', 'visit_date', 'visit_type', 'outcome', 'school', 'attended_by')
-    list_filter = ('visit_type', 'outcome', 'school', 'visit_date')
-    search_fields = ('student__first_name', 'student__last_name', 'symptoms', 'diagnosis')
+    list_display = ('student', 'visit_date', 'visit_type', 'status', 'outcome', 'school')
+    list_filter = ('visit_type', 'status', 'outcome', 'school')
+    search_fields = ('student__first_name', 'student__last_name', 'student__admission_number', 'symptoms', 'diagnosis')
     date_hierarchy = 'visit_date'
 
 

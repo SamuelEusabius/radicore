@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% block title %}M-Pesa Settings{% endblock %}
+{% block header_title %}M-Pesa Configuration{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 700px; margin: 0 auto;">
+  <h3 class="mb-4">School Paybill Settings</h3>
+  <p class="mb-4 text-gray-500">Configure your school's Safaricom Daraja API. Parents will use the Paybill number below to pay fees or top up wallets.</p>
+  
+  <form method="post">
+    {% csrf_token %}
+    <div style="margin-bottom: 16px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Paybill / Shortcode *</label>
+      <input type="text" name="paybill_number" value="{{ config.paybill_number|default:'' }}" required style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+    </div>
+    
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Consumer Key</label>
+        <input type="text" name="consumer_key" value="{{ config.consumer_key|default:'' }}" style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+      </div>
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Consumer Secret</label>
+        <input type="password" name="consumer_secret" value="{{ config.consumer_secret|default:'' }}" style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+      </div>
+    </div>
+    
+    <div style="margin-bottom: 16px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Lipa na M-Pesa Passkey</label>
+      <input type="password" name="passkey" value="{{ config.passkey|default:'' }}" style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+    </div>
+
+    {% if config.callback_url %}
+    <div style="margin-bottom: 24px; padding: 12px; background: #f0fdf4; border-left: 4px solid var(--success);">
+      <p style="margin: 0; font-size: 13px;"><strong>Your Safaricom Callback URL:</strong><br>
+      <code>{{ config.callback_url }}</code></p>
+      <p style="margin: 4px 0 0; font-size: 12px; color: #166534;">Copy this URL and paste it into your Safaricom Daraja Portal under C2B Confirmation URL.</p>
+    </div>
+    {% endif %}
+    
+    <div style="display: flex; justify-content: flex-end; gap: 12px;">
+      <a href="{% url 'accountant_mpesa_ledger' %}" class="btn btn-secondary">Cancel</a>
+      <button type="submit" class="btn btn-primary">Save Settings</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

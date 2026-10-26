@@ -1,110 +1,135 @@
 {% extends 'base.html' %}
-{% block title %}Visit Details{% endblock %}
-{% block header_title %}Visit Details{% endblock %}
+{% block title %}Patient Record{% endblock %}
+{% block header_title %}Patient Record{% endblock %}
 
 {% block content %}
-<div class="page-header">
-  <div class="page-header-info">
-    <h1 class="page-title">{{ visit.student.full_name }}</h1>
-    <p class="page-subtitle">{{ visit.visit_date|date:"l, j F Y" }}{% if visit.visit_time %} · {{ visit.visit_time|time:"H:i" }}{% endif %}</p>
-  </div>
-  <div style="display: flex; flex-wrap: wrap; gap: 8px;">
-    {% if user.role == 'nurse' %}
-      <a href="{% url 'nurse_medical_report_pdf' visit.student.id %}?period=month" target="_blank" class="btn btn-secondary">
-        {% include 'partials/icons.html' with name="file-text" size=16 %}
-        Medical Report
-      </a>
-      <a href="{% url 'nurse_referral_note_pdf' visit.id %}" target="_blank" class="btn btn-secondary">
-        {% include 'partials/icons.html' with name="download" size=16 %}
-        Referral PDF
-      </a>
-      {% if visit.outcome != 'referred' %}
-        <a href="{% url 'nurse_refer_visit' visit.id %}" class="btn btn-secondary" style="color: var(--warning); border-color: var(--warning);">
-          {% include 'partials/icons.html' with name="alert-triangle" size=16 %}
-          Refer
-        </a>
-      {% endif %}
-      <a href="{% url 'health_visit_edit' visit.id %}" class="btn btn-primary">Edit</a>
-    {% endif %}
-    <a href="{% url 'health_visit_list' %}" class="btn btn-secondary">← Back</a>
-  </div>
-</div>
+<link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
 
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+  
+  <!-- Left Column: Student Info & Vitals -->
+  <div class="space-y-6">
+    <div class="card">
+      <h3 style="margin-bottom: 12px; color: var(--primary);">Student Info</h3>
+      <p style="margin: 4px 0;"><strong>Name:</strong> {{ visit.student.first_name }} {{ visit.student.last_name }}</p>
+      <p style="margin: 4px 0;"><strong>Adm No:</strong> {{ visit.student.admission_number }}</p>
+      <p style="margin: 4px 0;"><strong>Class:</strong> {{ visit.student.class_level }}</p>
+      <p style="margin: 4px 0;"><strong>Status:</strong> 
+        {% if visit.status == 'waiting' %}<span class="badge badge-warning">Waiting</span>
+        {% elif visit.status == 'in_treatment' %}<span class="badge badge-info">In Treatment</span>
+        {% elif visit.status == 'referred_hosp' %}<span class="badge badge-danger">Referred to {{ visit.referred_to }}</span>
+        {% else %}<span class="badge badge-success">{{ visit.get_status_display }}</span>{% endif %}
+      </p>
+    </div>
 
-<div class="card mb-6">
-  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
-    <div>
-      <div style="font-size: var(--text-xs); color: var(--ink-500); text-transform: uppercase;">Visit Type</div>
-      <div style="font-weight: 700; margin-top: 4px;">{{ visit.get_visit_type_display }}</div>
+    <div class="card">
+      <h3 style="margin-bottom: 12px; color: var(--primary);">Vitals</h3>
+      <p style="margin: 4px 0;"><strong>Temp:</strong> {{ visit.temperature|default:"—" }} °C</p>
+      <p style="margin: 4px 0;"><strong>BP:</strong> {{ visit.blood_pressure|default:"—" }}</p>
+      <p style="margin: 4px 0;"><strong>Weight:</strong> {{ visit.weight_kg|default:"—" }} kg</p>
+      <p style="margin: 4px 0;"><strong>Pulse:</strong> {{ visit.pulse_rate|default:"—" }} bpm</p>
     </div>
-    <div>
-      <div style="font-size: var(--text-xs); color: var(--ink-500); text-transform: uppercase;">Outcome</div>
-      <div style="font-weight: 700; margin-top: 4px;">{{ visit.get_outcome_display }}</div>
+  </div>
+
+  <!-- Middle Column: Medical Notes -->
+  <div class="card" style="grid-column: span 1;">
+    <h3 style="margin-bottom: 12px; color: var(--primary);">Medical Notes</h3>
+    <p style="margin: 12px 0;"><strong>Symptoms:</strong><br>{{ visit.symptoms }}</p>
+    <p style="margin: 12px 0;"><strong>Diagnosis:</strong><br>{{ visit.diagnosis|default:"Pending" }}</p>
+    <p style="margin: 12px 0;"><strong>Treatment Plan:</strong><br>{{ visit.treatment|default:"Pending" }}</p>
+    
+    <div style="margin-top: 20px; display: flex; gap: 8px;">
+      <a href="{% url 'health_visit_edit' visit.id %}" class="btn btn-sm btn-secondary">Update Notes/Vitals</a>
     </div>
-    <div>
-      <div style="font-size: var(--text-xs); color: var(--ink-500); text-transform: uppercase;">Attended By</div>
-      <div style="font-weight: 700; margin-top: 4px;">{{ visit.attended_by.get_full_name|default:visit.attended_by.email|default:"—" }}</div>
-    </div>
-    <div>
-      <div style="font-size: var(--text-xs); color: var(--ink-500); text-transform: uppercase;">Guardian Notified</div>
-      <div style="font-weight: 700; margin-top: 4px;">
-        {% if visit.guardian_notified %}✅ Yes ({{ visit.guardian_notified_at|date:"j M H:i" }}){% else %}❌ No{% endif %}
+  </div>
+
+  <!-- Right Column: Prescriptions & Actions -->
+  <div class="card">
+    <h3 style="margin-bottom: 12px; color: var(--primary);">Dispense Medicine</h3>
+    
+    {% if visit.status != 'referred_hosp' %}
+    <form method="post" style="margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid var(--border);">
+      {% csrf_token %}
+      <div style="margin-bottom: 10px;">
+        <label style="display: block; font-weight: 600; margin-bottom: 4px; font-size: 13px;">Search Medicine</label>
+        <select id="medicine-search" name="medicine" required style="width: 100%; padding: 8px; border: 1px solid var(--border);">
+          <option value="">— Type to search stock —</option>
+          {% for med in medicines %}
+            <option value="{{ med.id }}">{{ med.name }} ({{ med.quantity }} {{ med.unit }} left)</option>
+          {% endfor %}
+        </select>
       </div>
+      <div style="margin-bottom: 10px;">
+        <label style="display: block; font-weight: 600; margin-bottom: 4px; font-size: 13px;">Quantity to Dispense</label>
+        <input type="number" name="quantity" value="1" min="1" required style="width: 100%; padding: 8px; border: 1px solid var(--border);">
+      </div>
+      <button type="submit" name="dispense_medicine" class="btn btn-sm btn-primary" style="width: 100%;">Dispense</button>
+    </form>
+    {% endif %}
+
+    <h4 style="margin-bottom: 10px;">Dispensed:</h4>
+    {% if dispensed_logs %}
+      <ul style="padding-left: 20px; margin: 0;">
+      {% for log in dispensed_logs %}
+        <li style="margin-bottom: 6px;">{{ log.medicine.name }} (x{{ log.quantity }}) <br><span style="font-size: 11px; color: var(--ink-500);">{{ log.created_at|date:"H:i" }}</span></li>
+      {% endfor %}
+      </ul>
+    {% else %}
+      <p style="color: var(--ink-500); font-size: 13px;">No medicine dispensed yet.</p>
+    {% endif %}
+
+    {% if visit.status != 'referred_hosp' and visit.status != 'discharged' %}
+    <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border);">
+      <button type="button" class="btn btn-secondary" style="width: 100%; border-color: var(--danger); color: var(--danger);" onclick="document.getElementById('referralModal').style.display='block'">
+        Refer to Hospital
+      </button>
     </div>
+    {% endif %}
+    
+    {% if visit.status == 'referred_hosp' %}
+    <div style="margin-top: 20px; padding: 12px; background: #fef2f2; border-left: 4px solid var(--danger);">
+      <p style="margin: 0; font-size: 13px; color: var(--danger);"><strong>Referred To:</strong> {{ visit.referred_to }}</p>
+      <a href="{% url 'nurse_referral_note_pdf' visit.id %}" target="_blank" class="btn btn-sm btn-secondary" style="margin-top: 12px; width: 100%;">
+        Print Referral Letter
+      </a>
+    </div>
+    {% endif %}
   </div>
 </div>
 
-<div class="card mb-6">
-  <h3 style="margin-bottom: 12px; font-family: var(--font-heading);">Symptoms</h3>
-  <p style="white-space: pre-wrap; line-height: 1.7;">{{ visit.symptoms }}</p>
+<!-- The Referral Modal -->
+<div id="referralModal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5);">
+  <div class="card" style="max-width: 500px; margin: 10% auto; padding: 24px;">
+    <h3 style="margin-bottom: 16px; color: var(--danger);">Refer to Facility</h3>
+    <form method="post">
+      {% csrf_token %}
+      <div style="margin-bottom: 16px;">
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Facility Name *</label>
+        <input type="text" name="facility_name" required placeholder="e.g. Nairobi County Hospital" style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+      </div>
+      <div style="margin-bottom: 16px;">
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Reason for Referral *</label>
+        <textarea name="referral_reason" required rows="3" style="width: 100%; padding: 10px; border: 1px solid var(--border);" placeholder="Explain why the student needs further medical attention..."></textarea>
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 12px;">
+        <button type="button" class="btn btn-secondary" onclick="document.getElementById('referralModal').style.display='none'">Cancel</button>
+        <button type="submit" name="refer_facility" class="btn btn-primary" style="background: var(--danger); border-color: var(--danger);">Confirm Referral</button>
+      </div>
+    </form>
+  </div>
 </div>
 
-{% if visit.diagnosis %}
-<div class="card mb-6">
-  <h3 style="margin-bottom: 12px; font-family: var(--font-heading);">Diagnosis</h3>
-  <p>{{ visit.diagnosis }}</p>
-</div>
-{% endif %}
-
-{% if visit.treatment %}
-<div class="card mb-6">
-  <h3 style="margin-bottom: 12px; font-family: var(--font-heading);">Treatment</h3>
-  <p style="white-space: pre-wrap;">{{ visit.treatment }}</p>
-</div>
-{% endif %}
-
-{% if visit.referred_to %}
-<div class="card mb-6" style="border-left: 4px solid var(--warning);">
-  <h3 style="margin-bottom: 12px; font-family: var(--font-heading);">Referred To</h3>
-  <p>{{ visit.referred_to }}</p>
-</div>
-{% endif %}
-
-{% if medicine_logs %}
-<div class="card mb-6">
-  <h3 style="margin-bottom: 16px; font-family: var(--font-heading);">Medicine Dispensed</h3>
-  <table class="table">
-    <thead>
-      <tr><th>Medicine</th><th>Quantity</th><th>Time</th></tr>
-    </thead>
-    <tbody>
-      {% for log in medicine_logs %}
-      <tr>
-        <td>{{ log.medicine.name }}</td>
-        <td>{{ log.quantity }} {{ log.medicine.unit }}</td>
-        <td>{{ log.created_at|date:"j M H:i" }}</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</div>
-{% endif %}
-
-{% if visit.notes %}
-<div class="card">
-  <h3 style="margin-bottom: 12px; font-family: var(--font-heading);">Notes</h3>
-  <p style="white-space: pre-wrap;">{{ visit.notes }}</p>
-</div>
-{% endif %}
-
+<!-- Tom Select JS -->
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    if(document.getElementById("medicine-search")) {
+        new TomSelect("#medicine-search", {
+          create: false,
+          sortField: { field: "text", direction: "asc" },
+          placeholder: "Search by medicine name..."
+        });
+    }
+  });
+</script>
 {% endblock %}

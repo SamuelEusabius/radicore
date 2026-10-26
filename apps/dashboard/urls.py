@@ -159,6 +159,8 @@ urlpatterns = [
     path('teacher/my-class/report-cards/zip/',
          views.class_teacher_all_report_cards_zip,
          name='class_teacher_all_report_cards_zip'),
+    
+    path('super-admin/mpesa/', views.subscription.super_admin_mpesa_settings, name='super_admin_mpesa_settings'),
 
     path('teacher/my-class/report-cards/merged/',
          views.class_teacher_merged_reports_page,

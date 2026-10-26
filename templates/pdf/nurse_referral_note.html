@@ -1,87 +1,160 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <title>Referral Note — {{ student.full_name }}</title>
-  <style>
-    * { box-sizing: border-box; }
-    @page { size: A4 portrait; margin: 16mm 18mm; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 11px; color: #111; line-height: 1.5; margin: 0; padding: 24px; }
-    {% include 'pdf/_shared_styles.html' %}
-    .title { text-align: center; font-size: 14px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; padding: 8px; border-top: 2px solid #333; border-bottom: 2px solid #333; margin: 16px 0 20px; }
-    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
-    .info-box { padding: 8px 10px; border: 1px solid #e5e7eb; border-radius: 3px; }
-    .info-box .lbl { font-size: 8px; text-transform: uppercase; letter-spacing: 0.5px; color: #6b7280; font-weight: 600; }
-    .info-box .val { font-size: 12px; font-weight: 600; color: #111; margin-top: 2px; }
-    .note-box { padding: 12px; background: #fef3c7; border-left: 3px solid #d97706; margin-bottom: 20px; font-size: 11px; }
-    .sig-block { margin-top: 40px; display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
-    .sig-line { border-top: 1px solid #333; padding-top: 6px; text-align: center; font-size: 10px; }
-    .sig-role { font-size: 8px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
-    .footer { margin-top: 32px; padding-top: 10px; border-top: 1px solid #e5e7eb; font-size: 9px; color: #6b7280; text-align: center; }
-  </style>
+    <style>
+        @page {
+            size: A4;
+            margin: 2cm;
+        }
+        body {
+            font-family: Helvetica, Arial, sans-serif;
+            font-size: 12pt;
+            color: #333;
+            line-height: 1.5;
+        }
+        .header-table {
+            width: 100%;
+            text-align: center;
+            border-bottom: 2px solid #333;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .school-name {
+            font-size: 22pt;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin: 0;
+            color: #1e293b;
+        }
+        .school-sub {
+            font-size: 11pt;
+            margin: 4px 0;
+            color: #475569;
+        }
+        .school-address {
+            font-size: 10pt;
+            color: #64748b;
+        }
+        .meta-table {
+            width: 100%;
+            margin-bottom: 30px;
+            font-size: 11pt;
+        }
+        .meta-left { text-align: left; }
+        .meta-right { text-align: right; }
+        
+        .content p {
+            margin-bottom: 12px;
+        }
+        .vitals-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        .vitals-table th, .vitals-table td {
+            border: 1px solid #cbd5e1;
+            padding: 8px;
+            text-align: center;
+            font-size: 11pt;
+        }
+        .vitals-table th {
+            background-color: #f1f5f9;
+            font-weight: bold;
+        }
+        .signature-area {
+            margin-top: 50px;
+        }
+    </style>
 </head>
 <body>
+    <!-- HOSPITAL/SCHOOL LETTERHEAD -->
+    <div class="header-table">
+        {% if school_logo_url %}
+            <img src="{{ school_logo_url }}" style="max-height: 80px; max-width: 250px; margin-bottom: 10px;" alt="Logo">
+        {% else %}
+            <div style="height: 60px; width: 60px; background: #e2e8f0; margin: 0 auto 10px; border-radius: 50%;"></div>
+        {% endif %}
+        
+        <div class="school-name">{{ school.name }}</div>
+        <div class="school-sub">Health and Human Services</div>
+        <div class="school-sub"><strong>MEDICAL REFERRAL NOTE</strong></div>
+        <div class="school-address">
+            P.O. Box {{ school.postal_address|default:"—" }}, {{ school.physical_address|default:"Kenya" }} <br>
+            Phone: {{ school.phone|default:"—" }} | Email: {{ school.email|default:"—" }}
+        </div>
+    </div>
+    <!-- META DETAILS -->
+    <table class="meta-table">
+        <tr>
+            <td class="meta-left">
+                <strong>Student Name:</strong> {{ student.first_name }} {{ student.last_name }}<br>
+                <strong>Admission No:</strong> {{ student.admission_number }}<br>
+                <strong>Class:</strong> {{ student.class_level }}
+            </td>
+            <td class="meta-right">
+                <strong>Date:</strong> {% now "d F Y" %}<br>
+                <strong>Referred To:</strong> {{ visit.referred_to }}<br>
+                <strong>Ref No:</strong> REF-{{ visit.id }}-{{ student.id }}
+            </td>
+        </tr>
+    </table>
 
-  {% include 'pdf/_report_header.html' %}
+    <!-- MEDICAL CONTENT -->
+    <div class="content">
+        <p><strong>RE: MEDICAL REFERRAL FOR {{ student.first_name|upper }} {{ student.last_name|upper }}</strong></p>
+        
+        <p>This is to refer the above-named student for further medical evaluation and management at your facility. The student was seen at the school clinic on {{ visit.visit_date|date:"d F Y" }}.</p>
+        
+        <p><strong>Presenting Symptoms:</strong><br>
+        {{ visit.symptoms }}</p>
+        
+        <p><strong>Provisional Diagnosis:</strong><br>
+        {{ visit.diagnosis|default:"To be confirmed at facility" }}</p>
 
-  <div class="title">Referral Note</div>
+        <p><strong>Vitals on Referral:</strong></p>
+        <table class="vitals-table">
+            <tr>
+                <th>Temperature</th>
+                <th>Blood Pressure</th>
+                <th>Weight</th>
+                <th>Pulse Rate</th>
+            </tr>
+            <tr>
+                <td>{{ visit.temperature|default:"—" }} °C</td>
+                <td>{{ visit.blood_pressure|default:"—" }}</td>
+                <td>{{ visit.weight_kg|default:"—" }} kg</td>
+                <td>{{ visit.pulse_rate|default:"—" }} bpm</td>
+            </tr>
+        </table>
+        
+        <p><strong>Reason for Referral / Notes:</strong><br>
+        {{ visit.notes }}</p>
+        
+        <p style="margin-top: 30px;">Your kind attention and management of this student will be highly appreciated.</p>
+    </div>
 
-  <div class="info-grid">
-    <div class="info-box">
-      <div class="lbl">Student Name</div>
-      <div class="val">{{ student.first_name }} {{ student.last_name }}</div>
+    <!-- SIGNATURES & RUBBERSTAMP -->
+    <div class="signature-area">
+        <table style="width: 100%; margin-top: 20px;">
+            <tr>
+                <!-- Nurse Signature -->
+                <td style="width: 50%; vertical-align: bottom;">
+                    _______________________<br>
+                    <strong>{{ user.get_full_name }}</strong><br>
+                    School Nurse / Medical Officer
+                </td>
+                
+                <!-- Official Rubberstamp Box -->
+                <td style="width: 50%; text-align: right; vertical-align: bottom;">
+                    <div style="border: 1px dashed #94a3b8; padding: 20px; text-align: center; color: #94a3b8; font-size: 10pt; width: 180px; float: right; border-radius: 4px;">
+                        OFFICIAL SCHOOL<br>
+                        NURSE STAMP<br>
+                        (Sign & Stamp Here)
+                    </div>
+                </td>
+            </tr>
+        </table>
     </div>
-    <div class="info-box">
-      <div class="lbl">Admission Number</div>
-      <div class="val" style="font-family: monospace;">{{ student.admission_number }}</div>
-    </div>
-    <div class="info-box">
-      <div class="lbl">Class</div>
-      <div class="val">{{ student.class_level|default:"—" }}</div>
-    </div>
-    <div class="info-box">
-      <div class="lbl">Date of Visit</div>
-      <div class="val">{{ visit.visit_date|date:"d M Y" }}</div>
-    </div>
-    <div class="info-box">
-      <div class="lbl">Referred To</div>
-      <div class="val">{{ visit.referred_to|default:"—" }}</div>
-    </div>
-    <div class="info-box">
-      <div class="lbl">Visit Type</div>
-      <div class="val">{{ visit.get_visit_type_display }}</div>
-    </div>
-  </div>
-
-  <div class="note-box">
-    <strong>Reason for Referral:</strong><br>
-    {{ visit.notes|default:"—" }}
-  </div>
-
-  {% if visit.symptoms %}
-  <p><strong>Symptoms Observed:</strong> {{ visit.symptoms }}</p>
-  {% endif %}
-  {% if visit.diagnosis %}
-  <p><strong>Provisional Diagnosis:</strong> {{ visit.diagnosis }}</p>
-  {% endif %}
-  {% if visit.treatment %}
-  <p><strong>First Aid / Treatment Given:</strong> {{ visit.treatment }}</p>
-  {% endif %}
-
-  <div class="sig-block">
-    <div class="sig-line">
-      <div style="font-weight: 600;">{{ generated_by.get_full_name|default:generated_by.email|default:"School Nurse" }}</div>
-      <div class="sig-role">Nurse Signature</div>
-    </div>
-    <div class="sig-line">
-      <div style="font-weight: 600;">Official School Stamp</div>
-      <div class="sig-role">&amp; Date</div>
-    </div>
-  </div>
-
-  <div class="footer">
-    Generated {{ generated_on|date:"j F Y, H:i" }} · {{ school.name }} · This is an official document.
-  </div>
 
 </body>
 </html>

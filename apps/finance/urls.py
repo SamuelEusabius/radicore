@@ -4,7 +4,6 @@ from rest_framework.routers import DefaultRouter
 from .views import (
     FeeStructureViewSet,
     InvoiceViewSet,
-    mpesa_callback,
     receipt_pdf,
     fee_statement_pdf,
 )
@@ -20,38 +19,22 @@ urlpatterns = router.urls + [
     # ==========================================================
     # PDFs
     # ==========================================================
-    path('receipt/<int:payment_id>/pdf/',
-         receipt_pdf,
-         name='receipt_pdf'),
-
-    path('statement/<int:student_id>/pdf/',
-         fee_statement_pdf,
-         name='fee_statement_pdf'),
+    path('receipt/<int:payment_id>/pdf/', receipt_pdf, name='receipt_pdf'),
+    path('statement/<int:student_id>/pdf/', fee_statement_pdf, name='fee_statement_pdf'),
 
     # ==========================================================
-    # M-PESA — Legacy callback (kept for compatibility)
+    # M-PESA — Accountant Dashboard Views
     # ==========================================================
-    path('mpesa/callback/',
-         mpesa_callback,
-         name='mpesa_callback'),
+    path('mpesa/ledger/', mpesa_views.accountant_mpesa_ledger, name='accountant_mpesa_ledger'),
+    path('mpesa/manual/', mpesa_views.accountant_manual_mpesa, name='accountant_manual_mpesa'),
+    path('mpesa/settings/', mpesa_views.accountant_mpesa_settings, name='accountant_mpesa_settings'),
 
     # ==========================================================
-    # M-PESA — New endpoints (from mpesa_views)
+    # M-PESA — Safaricom Callbacks
     # ==========================================================
-    path('mpesa/stk-push/<int:invoice_id>/',
-         mpesa_views.mpesa_stk_push,
-         name='mpesa_stk_push'),
-
-    path('mpesa/status/<str:checkout_request_id>/',
-         mpesa_views.mpesa_status,
-         name='mpesa_status'),
-
-    path('mpesa/c2b/validation/',
-         mpesa_views.mpesa_c2b_validation,
-         name='mpesa_c2b_validation'),
-
-    path('mpesa/c2b/confirmation/',
-         mpesa_views.mpesa_c2b_confirmation,
-         name='mpesa_c2b_confirmation'),
+    # This is the URL the accountant copies into the Safaricom Daraja Portal.
+    path('mpesa/c2b/confirmation/', mpesa_views.mpesa_c2b_confirmation, name='mpesa_c2b_confirmation'),
     
+    # We alias the legacy callback URL to the new one so existing configurations don't break.
+    path('mpesa/callback/', mpesa_views.mpesa_c2b_confirmation, name='mpesa_callback'),
 ]

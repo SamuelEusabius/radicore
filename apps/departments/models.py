@@ -349,100 +349,123 @@ class BookIssue(models.Model):
 # ============================================================
 
 class HealthVisit(models.Model):
-    """A student's visit to the school nurse."""
-    VISIT_TYPES = [
-        ('routine', 'Routine Check'),
-        ('illness', 'Illness'),
-        ('injury', 'Injury'),
-        ('emergency', 'Emergency'),
-        ('followup', 'Follow-up'),
-    ]
+    """Student visit to the school clinic."""
 
-    OUTCOME_CHOICES = [
-        ('treated', 'Treated & Returned to Class'),
-        ('resting', 'Resting in Sick Bay'),
-        ('sent_home', 'Sent Home'),
-        ('referred', 'Referred to Hospital'),
-        ('observation', 'Under Observation'),
-    ]
+    class VisitType(models.TextChoices):
+        ILLNESS = 'illness', 'Illness'
+        INJURY = 'injury', 'Injury'
+        ROUTINE = 'routine', 'Routine Check'
+        OTHER = 'other', 'Other'
 
-    school = models.ForeignKey(
-        'schools.School', on_delete=models.CASCADE,
-        related_name='health_visits'
-    )
-    student = models.ForeignKey(
-        'students.Student', on_delete=models.CASCADE,
-        related_name='health_visits'
-    )
+    class Outcome(models.TextChoices):
+        TREATED = 'treated', 'Treated and Discharged'
+        REFERRED = 'referred', 'Referred to Hospital'
+        OBSERVATION = 'observation', 'Kept for Observation'
+        SENT_HOME = 'sent_home', 'Sent Home'
 
-    visit_date = models.DateField()
-    visit_time = models.TimeField(null=True, blank=True)
-    visit_type = models.CharField(max_length=20, choices=VISIT_TYPES, default='illness')
+    class Status(models.TextChoices):
+        WAITING = 'waiting', 'Waiting for Triage'
+        IN_TREATMENT = 'in_treatment', 'In Treatment'
+        DISCHARGED = 'discharged', 'Discharged'
+        REFERRED_HOSP = 'referred_hosp', 'Referred to Hospital'
 
-    symptoms = models.TextField(help_text="What the student reported / what the nurse observed")
-    diagnosis = models.CharField(max_length=200, blank=True)
-    treatment = models.TextField(blank=True, help_text="What was administered")
+    school = models.ForeignKey('schools.School', on_delete=models.CASCADE)
+    student = models.ForeignKey('students.Student', on_delete=models.CASCADE, related_name='health_visits')
+    
+    # Core Details
+    visit_date = models.DateField(auto_now_add=True)
+    visit_time = models.TimeField(auto_now_add=True)
+    visit_type = models.CharField(max_length=20, choices=VisitType.choices, default=VisitType.ILLNESS)
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.WAITING)
+    
+    # Triage / Vitals
+    temperature = models.DecimalField(max_digits=4, decimal_places=1, null=True, blank=True, help_text="°C")
+    blood_pressure = models.CharField(max_length=20, blank=True, null=True, help_text="e.g. 120/80")
+    weight_kg = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    pulse_rate = models.IntegerField(null=True, blank=True, help_text="BPM")
 
-    outcome = models.CharField(
-        max_length=20, choices=OUTCOME_CHOICES, default='treated'
-    )
-    referred_to = models.CharField(
-        max_length=200, blank=True,
-        help_text="Hospital / clinic name if referred"
-    )
+    # Medical Notes
+    symptoms = models.TextField()
+    diagnosis = models.TextField(blank=True, null=True)
+    treatment = models.TextField(blank=True, null=True)
+    outcome = models.CharField(max_length=20, choices=Outcome.choices, default=Outcome.TREATED)
+    
+    # Referral
+    referred_to = models.CharField(max_length=150, blank=True, null=True)
     guardian_notified = models.BooleanField(default=False)
     guardian_notified_at = models.DateTimeField(null=True, blank=True)
+    
+    # Staff & Audit
+    attended_by = models.ForeignKey('accounts.User', on_delete=models.SET_NULL, null=True)
+    notes = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
-    attended_by = models.ForeignKey(
-        'accounts.User', on_delete=models.SET_NULL, null=True,
-        related_name='health_visits_attended'
+    class Meta:
+        ordering = ['-visit_date', '-visit_time']
+
+    def __str__(self):
+        return f"{self.student.first_name} - {self.visit_date} ({self.get_status_display()})"
+
+
+class Medicine(models.Model):
+    """Medicine inventory item."""
+
+    CATEGORY_CHOICES = (
+        ('tablet', 'Tablet'),
+        ('syrup', 'Syrup'),
+        ('injection', 'Injection'),
+        ('ointment', 'Ointment'),
+        ('drops', 'Drops'),
+        ('first_aid', 'First Aid'),
+        ('other', 'Other'),
     )
-    notes = models.TextField(blank=True)
+
+    UNIT_CHOICES = (
+        ('pcs', 'Pieces'),
+        ('bottle', 'Bottles'),
+        ('box', 'Boxes'),
+        ('tube', 'Tubes'),
+        ('pack', 'Packs'),
+    )
+
+    school = models.ForeignKey('schools.School', on_delete=models.CASCADE)
+    name = models.CharField(max_length=200)
+    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default='other')
+    unit = models.CharField(max_length=20, choices=UNIT_CHOICES, default='pcs')
+    quantity = models.IntegerField(default=0)
+    reorder_level = models.IntegerField(default=10)
+    expiry_date = models.DateField(null=True, blank=True)
+    supplier = models.CharField(max_length=200, blank=True, null=True)
+    notes = models.TextField(blank=True, null=True)
+    is_active = models.BooleanField(default=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ['-visit_date', '-created_at']
+        ordering = ['name']
 
     def __str__(self):
-        return f"{self.student.full_name} — {self.visit_date}"
+        return f"{self.name} ({self.quantity} {self.get_unit_display()})"
 
+    @property
+    def is_low_stock(self):
+        return self.quantity <= self.reorder_level
 
-class Medicine(models.Model):
-    """Medicine stock in the school clinic."""
-    CATEGORY_CHOICES = [
-        ('painkiller', 'Painkiller / Analgesic'),
-        ('antibiotic', 'Antibiotic'),
-        ('antimalarial', 'Antimalarial'),
-        ('antihistamine', 'Antihistamine / Allergy'),
-        ('firstaid', 'First Aid Supply'),
-        ('vitamin', 'Vitamin / Supplement'),
-        ('other', 'Other'),
-    ]
+    @property
+    def is_expired(self):
+        if self.expiry_date:
+            from datetime import date
+            return self.expiry_date < date.today()
+        return False
 
-    school = models.ForeignKey(
-        'schools.School', on_delete=models.CASCADE,
-        related_name='medicines'
-    )
-    name = models.CharField(max_length=150)
-    category = models.CharField(
-        max_length=20, choices=CATEGORY_CHOICES, default='other'
-    )
-    unit = models.CharField(
-        max_length=20, blank=True, default='tablets',
-        help_text="e.g. tablets, ml, sachets, tubes"
-    )
-    quantity = models.PositiveIntegerField(default=0)
-    reorder_level = models.PositiveIntegerField(
-        default=10, help_text="Alert when quantity drops below this"
-    )
-    expiry_date = models.DateField(null=True, blank=True)
-    supplier = models.CharField(max_length=150, blank=True)
-    notes = models.TextField(blank=True)
-    is_active = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-
+    @property
+    def is_expiring_soon(self):
+        if self.expiry_date:
+            from datetime import date, timedelta
+            return self.expiry_date <= date.today() + timedelta(days=30)
+        return False
     class Meta:
         ordering = ['name']
 

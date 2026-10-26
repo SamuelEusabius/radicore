@@ -1,153 +1,88 @@
 {% extends 'base.html' %}
-{% load static %}
-{% block title %}Nurse Dashboard{% endblock %}
-{% block header_title %}Nurse Dashboard{% endblock %}
-{% block header_sub %}{{ current_school.name }}{% endblock %}
+{% block title %}Clinic Dashboard{% endblock %}
+{% block header_title %}School Clinic{% endblock %}
 
 {% block content %}
-
 <div class="page-header">
   <div class="page-header-info">
-    <h1 class="page-title">Good day, {{ user.get_full_name|default:user.email|truncatechars:22 }}</h1>
-    <p class="page-subtitle">Today is {{ today|date:"l, j F Y" }}</p>
+    <h1 class="page-title">Clinic Dashboard</h1>
+    <p class="page-subtitle">Waiting room and daily medical log</p>
   </div>
   <div style="display: flex; gap: 8px;">
-    <a href="{% url 'health_visit_add' %}" class="btn btn-primary">+ Log Visit</a>
-    <a href="{% url 'medicine_add' %}" class="btn btn-secondary">+ Add Medicine</a>
-  </div>
-</div>
-<div class="card mb-6">
-  <h3 class="card-title mb-4">Medical Reports</h3>
-  <div class="flex flex-wrap gap-2">
-    <a href="{% url 'health_visit_list' %}" class="btn btn-secondary">All Visits</a>
+    <a href="{% url 'health_visit_add' %}" class="btn btn-primary">+ Check-in Student</a>
     <a href="{% url 'medicine_list' %}" class="btn btn-secondary">Medicine Stock</a>
-  </div>
-  <p class="text-xs mt-3" style="color: var(--ink-500);">
-    To generate a per-student medical report or medicine audit log, open the visit or medicine and click "Download PDF".
-  </p>
-</div>
-
-<!-- KPI Row -->
-<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-  <div class="card">
-    <div class="stat-label">Today's Visits</div>
-    <div class="stat-value">{{ today_visits }}</div>
-    <div class="stat-meta">Students seen</div>
-  </div>
-  <div class="card">
-    <div class="stat-label">This Week</div>
-    <div class="stat-value">{{ this_week }}</div>
-    <div class="stat-meta">Last 7 days</div>
-  </div>
-  <div class="card">
-    <div class="stat-label">Low Stock</div>
-    <div class="stat-value" style="color: var(--warning);">{{ low_stock|length }}</div>
-    <div class="stat-meta">Needs reorder</div>
-  </div>
-  <div class="card">
-    <div class="stat-label">Expired</div>
-    <div class="stat-value" style="color: var(--danger);">{{ expired|length }}</div>
-    <div class="stat-meta">Remove from stock</div>
   </div>
 </div>
 
 <!-- Alerts -->
-{% if low_stock or expired or expiring %}
+{% if low_stock %}
 <div class="card mb-6" style="border-left: 4px solid var(--danger);">
-  <h3 style="margin-bottom: 12px; font-family: var(--font-heading); color: var(--danger);">⚠️ Medicine Alerts</h3>
-
-  {% if expired %}
-    <p style="margin-bottom: 8px;">
-      <strong>Expired:</strong>
-      {% for m in expired %}
-        <span class="badge badge-danger">{{ m.name }} ({{ m.expiry_date|date:"j M" }})</span>
-      {% endfor %}
-    </p>
-  {% endif %}
-
-  {% if low_stock %}
-    <p style="margin-bottom: 8px;">
-      <strong>Low stock:</strong>
-      {% for m in low_stock %}
-        <span class="badge badge-warning">{{ m.name }} — {{ m.quantity }} left</span>
-      {% endfor %}
-    </p>
-  {% endif %}
-
-  {% if expiring %}
-    <p>
-      <strong>Expiring soon:</strong>
-      {% for m in expiring %}
-        <span class="badge badge-warning">{{ m.name }} ({{ m.expiry_date|date:"j M" }})</span>
-      {% endfor %}
-    </p>
-  {% endif %}
+  <h3 style="margin-bottom: 8px; color: var(--danger);">⚠️ Low Stock Alert</h3>
+  <p style="margin: 0; font-size: 14px;">
+    {% for med in low_stock %}
+      <span class="badge badge-danger">{{ med.name }} ({{ med.quantity }} left)</span>
+    {% endfor %}
+  </p>
 </div>
 {% endif %}
 
-<!-- Quick Actions -->
-<div class="card mb-6">
-  <h3 style="margin-bottom: 16px; font-family: var(--font-heading);">Quick Actions</h3>
-  <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-    <a href="{% url 'health_visit_add' %}" class="btn btn-primary">🩺 Log Visit</a>
-    <a href="{% url 'health_visit_list' %}" class="btn btn-secondary">📋 All Visits</a>
-    <a href="{% url 'medicine_list' %}" class="btn btn-secondary">💊 Medicine Stock</a>
-    <a href="{% url 'health_report_pdf' %}" class="btn btn-secondary">📄 Export PDF</a>
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+  <!-- Waiting Room -->
+  <div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+      <h3 style="margin: 0;">Waiting Room ({{ waiting_visits|length }})</h3>
+    </div>
+    
+    {% if waiting_visits %}
+    <table class="table">
+      <thead>
+        <tr><th>Student</th><th>Time In</th><th>Status</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for visit in waiting_visits %}
+        <tr>
+          <td>
+            <strong>{{ visit.student.first_name }} {{ visit.student.last_name }}</strong><br>
+            <span style="font-size: 12px; color: var(--ink-500);">{{ visit.student.admission_number }} ({{ visit.student.class_level }})</span>
+          </td>
+          <td>{{ visit.visit_time|time:"H:i" }}</td>
+          <td>
+            {% if visit.status == 'waiting' %}<span class="badge badge-warning">Waiting</span>
+            {% else %}<span class="badge badge-info">In Treatment</span>{% endif %}
+          </td>
+          <td style="text-align: right;">
+            <a href="{% url 'health_visit_detail' visit.id %}" class="btn btn-sm btn-primary">Attend</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p style="text-align: center; color: var(--ink-500); padding: 20px;">No students waiting.</p>
+    {% endif %}
+  </div>
+
+  <!-- Today's Discharged -->
+  <div class="card">
+    <h3 style="margin-bottom: 16px;">Discharged Today ({{ discharged_today|length }})</h3>
+    {% if discharged_today %}
+    <table class="table">
+      <thead>
+        <tr><th>Student</th><th>Diagnosis</th><th>Outcome</th></tr>
+      </thead>
+      <tbody>
+        {% for visit in discharged_today %}
+        <tr>
+          <td>{{ visit.student.first_name }} {{ visit.student.last_name }}</td>
+          <td>{{ visit.diagnosis|truncatechars:30 }}</td>
+          <td><span class="badge badge-success">{{ visit.outcome|default:"Discharged" }}</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p style="text-align: center; color: var(--ink-500); padding: 20px;">No discharges yet today.</p>
+    {% endif %}
   </div>
 </div>
-
-<!-- Referrals -->
-{% if referrals %}
-<div class="card mb-6" style="border-left: 4px solid var(--warning);">
-  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-    <h3 style="margin: 0; font-family: var(--font-heading);">Recent Referrals (30 days)</h3>
-  </div>
-  <table class="table">
-    <thead>
-      <tr><th>Date</th><th>Student</th><th>Referred To</th><th>Diagnosis</th></tr>
-    </thead>
-    <tbody>
-      {% for r in referrals %}
-      <tr>
-        <td>{{ r.visit_date|date:"j M" }}</td>
-        <td>{{ r.student.full_name }}</td>
-        <td>{{ r.referred_to|default:"—" }}</td>
-        <td>{{ r.diagnosis|default:"—" }}</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</div>
-{% endif %}
-
-<!-- Recent Visits -->
-<div class="card">
-  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-    <h3 style="margin: 0; font-family: var(--font-heading);">Recent Visits</h3>
-    <a href="{% url 'health_visit_list' %}" style="color: var(--primary); font-size: var(--text-sm);">View all →</a>
-  </div>
-  {% if recent_visits %}
-  <table class="table">
-    <thead>
-      <tr><th>Date</th><th>Student</th><th>Type</th><th>Outcome</th><th></th></tr>
-    </thead>
-    <tbody>
-      {% for v in recent_visits %}
-      <tr>
-        <td>{{ v.visit_date|date:"j M" }}</td>
-        <td>{{ v.student.full_name }}</td>
-        <td><span class="badge badge-info">{{ v.get_visit_type_display }}</span></td>
-        <td>{{ v.get_outcome_display }}</td>
-        <td><a href="{% url 'health_visit_detail' v.id %}" class="btn btn-sm btn-secondary">View</a></td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-  {% else %}
-  <div class="pro-empty" style="border: none; padding: 40px;">
-    <p style="color: var(--ink-500);">No visits recorded yet.</p>
-  </div>
-  {% endif %}
-</div>
-
 {% endblock %}

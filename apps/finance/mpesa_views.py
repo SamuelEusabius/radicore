@@ -1,386 +1,236 @@
-"""
-M-Pesa payment views.
-
-Public endpoints (called by Safaricom):
-  - mpesa_callback
-  - mpesa_c2b_validation
-  - mpesa_c2b_confirmation
-
-Private endpoints (called by our frontend):
-  - mpesa_stk_push (parent clicks "Pay Now")
-  - mpesa_status (poll for result)
-"""
+import json
 import logging
 from decimal import Decimal
-
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
 from django.http import JsonResponse
-from django.shortcuts import get_object_or_404
-from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_POST
+from django.db import transaction
+from django.core.paginator import Paginator
+from django.db.models import Q
+from django.utils import timezone
+from django.urls import reverse
 
-from apps.finance.models import Invoice, Payment
-from apps.finance.mpesa_models import MpesaTransaction
-from apps.finance.services import mpesa as mpesa_service
+from .mpesa_models import MpesaTransaction, SchoolMpesaConfig
+from .models import Payment, Invoice
+from .wallet_models import StudentWallet, WalletTransaction
+from apps.students.models import Student
 
 logger = logging.getLogger(__name__)
 
 
 # ==========================================================
-# STK PUSH — INITIATE (Parent clicks "Pay Now")
+# ACCOUNTANT VIEWS (Ledger & Settings)
 # ==========================================================
 
 @login_required
-@require_POST
-def mpesa_stk_push(request, invoice_id):
-    """
-    Initiate an STK Push for a given invoice.
+def accountant_mpesa_ledger(request):
+    """Accountant view to see ALL M-Pesa transactions."""
+    if request.user.role not in ('accountant', 'principal', 'super_admin'):
+        return redirect('dashboard_home')
 
-    POST params:
-        phone (optional) — defaults to parent's phone
-        amount (optional) — defaults to invoice balance
-
-    Returns JSON with checkout_request_id for status polling.
-    """
-    invoice = get_object_or_404(
-        Invoice,
-        id=invoice_id,
-        student__school=request.user.school,
-    )
-
-    # Authorization: parent can only pay own children
-    if request.user.role == 'parent':
-        try:
-            request.user.parent_profile.students.get(id=invoice.student_id)
-        except Exception:
-            return JsonResponse(
-                {'success': False, 'error': 'Not authorized'}, status=403
-            )
-
-    # Amount
-    amount = request.POST.get('amount', '').strip()
-    if amount:
-        try:
-            amount = Decimal(amount)
-        except Exception:
-            return JsonResponse(
-                {'success': False, 'error': 'Invalid amount'}, status=400
-            )
-    else:
-        amount = invoice.balance
-
-    if amount <= 0:
-        return JsonResponse(
-            {'success': False, 'error': 'Invoice already paid'}, status=400
+    school = request.user.school
+    query = request.GET.get('q', '')
+    status_filter = request.GET.get('status', '')
+    
+    transactions = MpesaTransaction.objects.filter(school=school).order_by('-created_at')
+    
+    if query:
+        transactions = transactions.filter(
+            Q(phone__icontains=query) | 
+            Q(mpesa_receipt_number__icontains=query) |
+            Q(student__first_name__icontains=query) |
+            Q(student__last_name__icontains=query)
         )
+    if status_filter:
+        transactions = transactions.filter(status=status_filter)
 
-    # Phone
-    phone = request.POST.get('phone', '').strip()
-    if not phone:
-        try:
-            phone = request.user.parent_profile.phone
-        except Exception:
-            phone = ''
+    paginator = Paginator(transactions, 50)
+    page_obj = paginator.get_page(request.GET.get('page', 1))
 
-    if not phone:
-        return JsonResponse(
-            {'success': False, 'error': 'Phone number required'}, status=400
-        )
+    success_txns = transactions.filter(status='success')
+    total_fees = sum(t.amount for t in success_txns if t.purpose == 'fees')
+    total_wallet = sum(t.amount for t in success_txns if t.purpose == 'wallet')
 
-    # Create transaction record
-    txn = MpesaTransaction.objects.create(
-        school=invoice.student.school,
-        invoice=invoice,
-        transaction_type=MpesaTransaction.Type.STK_PUSH,
-        phone=mpesa_service.normalize_phone(phone),
-        amount=amount,
-        initiated_by=request.user,
-        raw_request={
-            'invoice_id': invoice.id,
-            'amount': str(amount),
-            'phone': phone,
-        },
-    )
-
-    # Call Safaricom
-    try:
-        result = mpesa_service.stk_push(
-            phone=phone,
-            amount=float(amount),
-            account_reference=f"INV{invoice.id}",
-            description=f"Fees - {invoice.student.full_name}",
-        )
-    except Exception as e:
-        logger.exception("STK Push failed")
-        txn.status = MpesaTransaction.Status.FAILED
-        txn.result_description = str(e)
-        txn.save(update_fields=['status', 'result_description'])
-        return JsonResponse({'success': False, 'error': str(e)}, status=500)
-
-    # Save Safaricom IDs
-    txn.merchant_request_id = result.get('MerchantRequestID', '')
-    txn.checkout_request_id = result.get('CheckoutRequestID', '')
-    txn.raw_callback = result
-    txn.save(update_fields=[
-        'merchant_request_id', 'checkout_request_id', 'raw_callback'
-    ])
-
-    if result.get('ResponseCode') != '0':
-        txn.status = MpesaTransaction.Status.FAILED
-        txn.result_description = result.get('ResponseDescription', 'Failed')
-        txn.save(update_fields=['status', 'result_description'])
-
-    return JsonResponse({
-        'success': True,
-        'checkout_request_id': txn.checkout_request_id,
-        'message': result.get(
-            'CustomerMessage', 'Check your phone to complete payment'
-        ),
+    return render(request, 'dashboard/finance/mpesa_ledger.html', {
+        'page_obj': page_obj,
+        'query': query,
+        'status_filter': status_filter,
+        'total_fees': total_fees,
+        'total_wallet': total_wallet,
     })
 
 
-# ==========================================================
-# CALLBACK — SAFARICOM NOTIFIES US (public)
-# ==========================================================
+@login_required
+def accountant_manual_mpesa(request):
+    """Manual entry for when Safaricom sends money but callback fails."""
+    if request.user.role not in ('accountant', 'principal', 'super_admin'):
+        return redirect('dashboard_home')
 
-@csrf_exempt
-@require_POST
-def mpesa_callback(request):
-    """
-    Safaricom calls this URL when an STK Push completes or fails.
-    """
-    import json
-
-    try:
-        data = json.loads(request.body.decode('utf-8'))
-    except Exception:
-        logger.exception("Invalid M-Pesa callback body")
-        return JsonResponse({'ResultCode': 0, 'ResultDesc': 'Accepted'})
-
-    logger.info(f"M-Pesa callback: {data}")
-
-    try:
-        stk = data['Body']['stkCallback']
-        checkout_id = stk.get('CheckoutRequestID')
-        result_code = stk.get('ResultCode')
-        result_desc = stk.get('ResultDesc', '')
-
-        txn = MpesaTransaction.objects.filter(
-            checkout_request_id=checkout_id
-        ).first()
-
-        if not txn:
-            logger.warning(f"Callback for unknown checkout_id: {checkout_id}")
-            return JsonResponse({'ResultCode': 0, 'ResultDesc': 'Accepted'})
-
-        txn.raw_callback = data
-        txn.result_code = result_code
-        txn.result_description = result_desc
-        txn.completed_at = timezone.now()
-
-        if result_code == 0:
-            # Success — extract metadata
-            meta = {
-                item['Name']: item.get('Value')
-                for item in stk['CallbackMetadata']['Item']
-            }
-
-            receipt = meta.get('MpesaReceiptNumber', '')
-            amount = meta.get('Amount', 0)
-
-            # Guard against duplicates
-            if MpesaTransaction.objects.filter(
-                mpesa_receipt_number=receipt
-            ).exclude(id=txn.id).exists():
-                logger.warning(f"Duplicate receipt: {receipt}")
-                txn.status = MpesaTransaction.Status.SUCCESS
-                txn.mpesa_receipt_number = receipt
-                txn.save()
-                return JsonResponse(
-                    {'ResultCode': 0, 'ResultDesc': 'Accepted'}
-                )
-
-            txn.mpesa_receipt_number = receipt
-            txn.status = MpesaTransaction.Status.SUCCESS
-
-            # Create Payment record (this triggers invoice update)
-            if txn.invoice:
-                payment = Payment.objects.create(
-                    invoice=txn.invoice,
-                    amount_kes=Decimal(str(amount)),
-                    method=Payment.Method.MPESA,
-                    external_reference=receipt,
-                    notes=f"M-Pesa STK Push. Receipt: {receipt}",
-                )
-                txn.payment = payment
-                # Update invoice status
-                txn.invoice.amount_paid += Decimal(str(amount))
-                txn.invoice.save()
-                txn.invoice.update_status()
-
-        elif result_code in (1032,):
-            txn.status = MpesaTransaction.Status.CANCELLED
-        elif result_code in (1037,):
-            txn.status = MpesaTransaction.Status.TIMEOUT
-        else:
-            txn.status = MpesaTransaction.Status.FAILED
-
-        txn.save()
-
-    except Exception as e:
-        logger.exception(f"Error processing M-Pesa callback: {e}")
-
-    # Always respond 200 to Safaricom
-    return JsonResponse({'ResultCode': 0, 'ResultDesc': 'Accepted'})
-
-
-# ==========================================================
-# C2B — Validation + Confirmation (public)
-# ==========================================================
-
-@csrf_exempt
-@require_POST
-def mpesa_c2b_validation(request):
-    """
-    Safaricom calls this to validate a C2B payment BEFORE processing.
-    Return "Accepted" to proceed, "Rejected" to stop.
-    """
-    return JsonResponse({'ResultCode': 0, 'ResultDesc': 'Accepted'})
-
-
-@csrf_exempt
-@require_POST
-def mpesa_c2b_confirmation(request):
-    """
-    Safaricom calls this AFTER a successful C2B payment.
-    We record the payment — auto-matched or unallocated.
-    """
-    import json
-
-    try:
-        data = json.loads(request.body.decode('utf-8'))
-    except Exception:
-        logger.exception("Invalid C2B body")
-        return JsonResponse({'ResultCode': 0, 'ResultDesc': 'Accepted'})
-
-    logger.info(f"C2B confirmation: {data}")
-
-    try:
-        receipt = data.get('TransID', '')
-        amount = Decimal(str(data.get('TransAmount', 0)))
-        bill_ref = data.get('BillRefNumber', '')
-        phone = data.get('MSISDN', '')
-
-        # Parse invoice_id from reference (format: "INV123")
-        invoice_id = None
-        if bill_ref.upper().startswith('INV'):
-            try:
-                invoice_id = int(bill_ref[3:])
-            except (ValueError, TypeError):
-                pass
-
-        # Guard against duplicates
-        if receipt and MpesaTransaction.objects.filter(
-            mpesa_receipt_number=receipt
-        ).exists():
-            logger.info(f"Duplicate C2B receipt: {receipt}")
-            return JsonResponse(
-                {'ResultCode': 0, 'ResultDesc': 'Accepted'}
-            )
-
-        invoice = None
-        school = None
-        if invoice_id:
-            invoice = Invoice.objects.filter(id=invoice_id).first()
-            if invoice:
-                school = invoice.student.school
-
+    school = request.user.school
+    
+    if request.method == 'POST':
+        student_id = request.POST.get('student')
+        phone = request.POST.get('phone')
+        amount = request.POST.get('amount')
+        receipt = request.POST.get('receipt')
+        purpose = request.POST.get('purpose')
+        
+        student = get_object_or_404(Student, id=student_id, school=school)
+        
         txn = MpesaTransaction.objects.create(
             school=school,
-            invoice=invoice,
-            transaction_type=MpesaTransaction.Type.C2B,
-            phone=mpesa_service.normalize_phone(phone),
+            student=student,
+            phone=phone,
             amount=amount,
             mpesa_receipt_number=receipt,
-            result_code=0,
-            result_description='C2B Payment',
-            status=MpesaTransaction.Status.SUCCESS,
-            raw_callback=data,
-            completed_at=timezone.now(),
+            status='success',
+            purpose=purpose,
+            transaction_type='manual',
+            result_description='Manually logged by accountant',
+            initiated_by=request.user
         )
-
-        # Auto-create payment if invoice matched
-        if invoice:
-            payment = Payment.objects.create(
-                invoice=invoice,
-                amount_kes=amount,
-                method=Payment.Method.MPESA,
-                external_reference=receipt,
-                notes=f"M-Pesa C2B. Receipt: {receipt}",
+        
+        if purpose == 'fees':
+            invoice = Invoice.objects.filter(student=student).exclude(status='paid').order_by('due_date').first()
+            if invoice:
+                invoice.amount_paid += Decimal(amount)
+                if invoice.amount_paid >= invoice.amount_due:
+                    invoice.status = 'paid'
+                invoice.save()
+                
+                Payment.objects.create(
+                    invoice=invoice,
+                    amount_kes=amount,
+                    method='mpesa',
+                    reference=receipt,
+                    paid_at=timezone.now(),
+                    recorded_by=request.user,
+                    mpesa_transaction=txn
+                )
+        elif purpose == 'wallet':
+            wallet, _ = StudentWallet.objects.get_or_create(student=student, school=school)
+            wallet.balance += Decimal(amount)
+            wallet.save()
+            
+            WalletTransaction.objects.create(
+                wallet=wallet,
+                tx_type='topup',
+                source='mpesa',
+                status='success',
+                amount=amount,
+                balance_after=wallet.balance,
+                reference=receipt,
+                notes='Manual M-Pesa top-up by accountant'
             )
-            txn.payment = payment
-            txn.save(update_fields=['payment'])
 
-            # Update invoice status
-            invoice.amount_paid += amount
-            invoice.save()
-            invoice.update_status()
+        messages.success(request, f'Transaction {receipt} logged successfully and student account updated.')
+        return redirect('accountant_mpesa_ledger')
 
-        else:
-            # No invoice matched — try auto-match or queue as unallocated
-            from .unallocated_services import try_auto_match
-            try:
-                from apps.schools.models import School
-                # If only one school exists, use it
-                target_school = School.objects.first()
-                if target_school:
-                    try_auto_match(txn, target_school)
-            except Exception as e:
-                logger.exception(f"Auto-match failed: {e}")
+    students = Student.objects.filter(school=school, is_active=True).only(
+    'id', 'first_name', 'last_name', 'admission_number', 'class_level'
+).order_by('first_name')
+    return render(request, 'dashboard/finance/manual_mpesa.html', {'students': students})
 
-    except Exception as e:
-        logger.exception(f"C2B processing error: {e}")
-
-    return JsonResponse({'ResultCode': 0, 'ResultDesc': 'Accepted'})
-
-
-# ==========================================================
-# STATUS — Parent polls for result (private)
-# ==========================================================
 
 @login_required
-def mpesa_status(request, checkout_request_id):
-    """
-    Return current status of an STK Push transaction.
-    Parent portal polls this every 3 seconds.
-    """
-    txn = MpesaTransaction.objects.filter(
-        checkout_request_id=checkout_request_id,
-    ).first()
+def accountant_mpesa_settings(request):
+    """Accountant enters their school's Paybill details."""
+    if request.user.role not in ('accountant', 'principal'):
+        return redirect('dashboard_home')
+        
+    config, created = SchoolMpesaConfig.objects.get_or_create(school=request.user.school)
+    
+    if request.method == 'POST':
+        config.paybill_number = request.POST.get('paybill_number')
+        config.consumer_key = request.POST.get('consumer_key')
+        config.consumer_secret = request.POST.get('consumer_secret')
+        config.passkey = request.POST.get('passkey')
+        
+        config.callback_url = request.build_absolute_uri(reverse('mpesa_c2b_confirmation'))
+        config.save()
+        messages.success(request, 'M-Pesa Settings saved successfully!')
+        return redirect('accountant_mpesa_settings')
+        
+    return render(request, 'dashboard/finance/mpesa_settings.html', {'config': config})
 
-    if not txn:
-        return JsonResponse(
-            {'success': False, 'error': 'Unknown transaction'}, status=404
-        )
 
-    # Authorization: parent can only see own
-    if request.user.role == 'parent' and txn.invoice:
+# ==========================================================
+# SAFARICOM CALLBACKS (The "Brain")
+# ==========================================================
+
+@csrf_exempt
+def mpesa_c2b_confirmation(request):
+    """Safaricom hits this when a parent pays via Paybill."""
+    if request.method == 'POST':
         try:
-            request.user.parent_profile.students.get(
-                id=txn.invoice.student_id
-            )
-        except Exception:
-            return JsonResponse(
-                {'success': False, 'error': 'Not authorized'}, status=403
-            )
+            data = json.loads(request.body)
+            
+            paybill = data.get('BusinessShortCode')
+            account_ref = data.get('BillRefNumber', '').strip().upper()
+            amount = Decimal(str(data.get('TransAmount', 0)))
+            receipt = data.get('TransID')
+            phone = data.get('MSISDN')
+            
+            config = SchoolMpesaConfig.objects.filter(paybill_number=paybill, is_active=True).first()
+            if not config:
+                return JsonResponse({"ResultCode": 1, "ResultDesc": "Paybill not recognized"})
+            
+            school = config.school
+            
+            purpose = 'fees'
+            if account_ref.endswith('-WAL'):
+                purpose = 'wallet'
+                admission_number = account_ref.replace('-WAL', '')
+            else:
+                admission_number = account_ref
+                
+            student = Student.objects.filter(school=school, admission_number=admission_number).first()
+            if not student:
+                MpesaTransaction.objects.create(
+                    school=school, phone=phone, amount=amount, mpesa_receipt_number=receipt,
+                    status='success', purpose='other', bill_ref_number=account_ref,
+                    transaction_type='c2b', result_description="Student admission number not found"
+                )
+                return JsonResponse({"ResultCode": 0, "ResultDesc": "Accepted but student not found"})
 
-    return JsonResponse({
-        'success': True,
-        'status': txn.status,
-        'status_label': txn.get_status_display(),
-        'is_successful': txn.is_successful,
-        'is_pending': txn.is_pending,
-        'receipt': txn.mpesa_receipt_number,
-        'result_description': txn.result_description,
-    })
+            with transaction.atomic():
+                txn = MpesaTransaction.objects.create(
+                    school=school, student=student, phone=phone, amount=amount,
+                    mpesa_receipt_number=receipt, status='success', purpose=purpose,
+                    bill_ref_number=account_ref, transaction_type='c2b',
+                    result_description="Auto-processed via Paybill"
+                )
+                
+                if purpose == 'fees':
+                    invoice = Invoice.objects.filter(student=student).exclude(status='paid').order_by('due_date').first()
+                    if invoice:
+                        invoice.amount_paid += amount
+                        if invoice.amount_paid >= invoice.amount_due:
+                            invoice.status = 'paid'
+                        invoice.save()
+                        
+                        Payment.objects.create(
+                            invoice=invoice, amount_kes=amount, method='mpesa',
+                            reference=receipt, paid_at=timezone.now()
+                        )
+                
+                elif purpose == 'wallet':
+                    wallet, _ = StudentWallet.objects.get_or_create(student=student, school=school)
+                    wallet.balance += amount
+                    wallet.save()
+                    
+                    WalletTransaction.objects.create(
+                        wallet=wallet, tx_type='topup', source='mpesa', status='success',
+                        amount=amount, balance_after=wallet.balance, reference=receipt,
+                        notes='Auto top-up via Paybill'
+                    )
+            
+            return JsonResponse({"ResultCode": 0, "ResultDesc": "Success"})
+            
+        except Exception as e:
+            logger.error(f"M-Pesa Callback Error: {str(e)}")
+            return JsonResponse({"ResultCode": 1, "ResultDesc": str(e)})
+            
+    return JsonResponse({"ResultCode": 1, "ResultDesc": "Invalid Method"})

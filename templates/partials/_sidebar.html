@@ -35,6 +35,11 @@
         <span class="sidebar-link-text">Add School</span>
       </a>
 
+  <a href="{% url 'super_admin_mpesa_settings' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="settings" size=18 %}
+    <span class="sidebar-link-text">SaaS M-Pesa Settings</span>
+  </a>
+
       <div class="sidebar-section-label">Users</div>
       <a href="{% url 'manage_users' %}" class="sidebar-link">
         {% include 'partials/icons.html' with name="users" size=18 %}
@@ -532,7 +537,16 @@
       <a href="{% url 'add_expenditure' %}" class="sidebar-link">
         {% include 'partials/icons.html' with name="trending-down" size=18 %}
         <span class="sidebar-link-text">Add Expenditure</span>
-              <div class="sidebar-section-label">My HR</div>
+
+  <a href="{% url 'accountant_mpesa_ledger' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="credit-card" size=18 %}
+    <span class="sidebar-link-text">M-Pesa Ledger</span>
+  </a>
+  <a href="{% url 'accountant_mpesa_settings' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="settings" size=18 %}
+    <span class="sidebar-link-text">M-Pesa Settings</span>
+  </a>
+    <div class="sidebar-section-label">My HR</div>
       <a href="{% url 'my_leave_requests' %}" class="sidebar-link">
         {% include 'partials/icons.html' with name="calendar" size=18 %}
         <span class="sidebar-link-text">My Leave</span>

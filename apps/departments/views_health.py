@@ -28,55 +28,46 @@ def _nurse_only(request):
 
 @login_required
 def nurse_dashboard(request):
-    """Nurse's main dashboard."""
+    """Nurse's main dashboard with Waiting Room."""
     if not _nurse_required(request):
         return redirect('dashboard_home')
 
     school = request.user.school
     today = date.today()
 
-    # Stats
-    today_visits = HealthVisit.objects.filter(school=school, visit_date=today).count()
-    total_visits = HealthVisit.objects.filter(school=school).count()
-    this_week = HealthVisit.objects.filter(
-        school=school, visit_date__gte=today - timedelta(days=7)
-    ).count()
+    # 1. Waiting Room (Students currently in the clinic)
+    waiting_visits = HealthVisit.objects.filter(
+        school=school, 
+        status__in=['waiting', 'in_treatment']
+    ).select_related('student').order_by('visit_date', 'visit_time')
 
-    # Medicine alerts
-    low_stock = Medicine.objects.filter(
-        school=school, is_active=True
-    ).filter(quantity__lte=models.F('reorder_level')) if False else []
+    # 2. Discharged Today
+    discharged_today = HealthVisit.objects.filter(
+        school=school, 
+        status='discharged',
+        visit_date=today
+    ).select_related('student')
 
+    # 3. Medicine alerts
     medicines = Medicine.objects.filter(school=school, is_active=True)
     low_stock = [m for m in medicines if m.is_low_stock]
     expiring = [m for m in medicines if m.is_expiring_soon and not m.is_expired]
     expired = [m for m in medicines if m.is_expired]
 
-    # Recent visits
+    # 4. Recent visits (History)
     recent_visits = HealthVisit.objects.filter(
         school=school
     ).select_related('student').order_by('-visit_date', '-created_at')[:10]
 
-    # Referrals (last 30 days)
-    referrals = HealthVisit.objects.filter(
-        school=school,
-        outcome='referred',
-        visit_date__gte=today - timedelta(days=30),
-    ).select_related('student').order_by('-visit_date')[:10]
-
     return render(request, 'departments/nurse/dashboard.html', {
-        'today_visits': today_visits,
-        'total_visits': total_visits,
-        'this_week': this_week,
+        'waiting_visits': waiting_visits,
+        'discharged_today': discharged_today,
         'low_stock': low_stock,
         'expiring': expiring,
         'expired': expired,
         'recent_visits': recent_visits,
-        'referrals': referrals,
         'today': today,
     })
-
-
 # ============================================================
 # HEALTH VISITS
 # ============================================================
@@ -130,153 +121,118 @@ def health_visit_list(request):
 
 @login_required
 def health_visit_form(request, visit_id=None):
-    """Log a new health visit (or edit)."""
+    """Log a new student into the clinic, or update an existing one."""
     if not _nurse_only(request):
         return redirect('dashboard_home')
 
     from apps.students.models import Student
-    from datetime import datetime
 
     school = request.user.school
-
-    visit = None
-    if visit_id:
-        visit = get_object_or_404(HealthVisit, id=visit_id, school=school)
-
-    students = Student.objects.filter(
-        school=school, is_active=True
+    visit = get_object_or_404(HealthVisit, id=visit_id, school=school) if visit_id else None
+    students = Student.objects.filter(school=school, is_active=True).only(
+        'id', 'first_name', 'last_name', 'admission_number', 'class_level'
     ).order_by('first_name', 'last_name')
-
-    medicines = Medicine.objects.filter(
-        school=school, is_active=True
+    
+    medicines = Medicine.objects.filter(school=school, is_active=True).only(
+        'id', 'name', 'quantity', 'unit'
     ).order_by('name')
 
     if request.method == 'POST':
-        student_id = request.POST.get('student', '').strip()
-        visit_date = request.POST.get('visit_date', '').strip()
-        visit_time = request.POST.get('visit_time') or None
-        visit_type = request.POST.get('visit_type', 'illness').strip()
-        symptoms = request.POST.get('symptoms', '').strip()
-        diagnosis = request.POST.get('diagnosis', '').strip()
-        treatment = request.POST.get('treatment', '').strip()
-        outcome = request.POST.get('outcome', 'treated').strip()
-        referred_to = request.POST.get('referred_to', '').strip()
-        guardian_notified = 'guardian_notified' in request.POST
-        notes = request.POST.get('notes', '').strip()
+        student_id = request.POST.get('student')
+        student = get_object_or_404(Student, id=student_id, school=school)
 
-        # Medicine dispensed (list of (medicine_id, quantity))
-        dispensed = []
-        for key in request.POST:
-            if key.startswith('dispense_') and request.POST[key]:
-                med_id = key.replace('dispense_', '')
-                qty = request.POST[key].strip()
-                if qty.isdigit() and int(qty) > 0:
-                    dispensed.append((int(med_id), int(qty)))
+        if not visit:
+            visit = HealthVisit(school=school, student=student, attended_by=request.user)
+        
+        # Triage Data
+        visit.temperature = request.POST.get('temperature') or None
+        visit.blood_pressure = request.POST.get('blood_pressure')
+        visit.weight_kg = request.POST.get('weight_kg') or None
+        visit.pulse_rate = request.POST.get('pulse_rate') or None
+        
+        visit.symptoms = request.POST.get('symptoms')
+        visit.diagnosis = request.POST.get('diagnosis')
+        visit.treatment = request.POST.get('treatment')
+        visit.notes = request.POST.get('notes')
+        
+        # Status
+        new_status = request.POST.get('status', 'waiting')
+        visit.status = new_status
+        if new_status == 'discharged':
+            visit.outcome = 'Treated and discharged'
 
-        errors = []
-        if not student_id:
-            errors.append('Student is required.')
-        if not visit_date:
-            errors.append('Visit date is required.')
-        if not symptoms:
-            errors.append('Symptoms are required.')
-
-        if errors:
-            for e in errors:
-                messages.error(request, e)
-            return render(request, 'departments/nurse/visit_form.html', {
-                'visit': visit,
-                'students': students,
-                'medicines': medicines,
-                'today': date.today(),
-                'form_data': request.POST,
-            })
-
-        if visit:
-            visit.student_id = student_id
-            visit.visit_date = visit_date
-            visit.visit_time = visit_time
-            visit.visit_type = visit_type
-            visit.symptoms = symptoms
-            visit.diagnosis = diagnosis
-            visit.treatment = treatment
-            visit.outcome = outcome
-            visit.referred_to = referred_to
-            visit.guardian_notified = guardian_notified
-            if guardian_notified and not visit.guardian_notified_at:
-                visit.guardian_notified_at = timezone.now()
-            visit.notes = notes
-            visit.save()
-            messages.success(request, 'Visit updated.')
-        else:
-            visit = HealthVisit.objects.create(
-                school=school,
-                student_id=student_id,
-                visit_date=visit_date,
-                visit_time=visit_time,
-                visit_type=visit_type,
-                symptoms=symptoms,
-                diagnosis=diagnosis,
-                treatment=treatment,
-                outcome=outcome,
-                referred_to=referred_to,
-                guardian_notified=guardian_notified,
-                guardian_notified_at=timezone.now() if guardian_notified else None,
-                attended_by=request.user,
-                notes=notes,
-            )
-            messages.success(request, 'Visit recorded.')
-
-            # Process medicine dispensation
-            for med_id, qty in dispensed:
-                try:
-                    med = Medicine.objects.get(id=med_id, school=school)
-                    if med.quantity >= qty:
-                        med.quantity -= qty
-                        med.save()
-                        MedicineLog.objects.create(
-                            school=school,
-                            medicine=med,
-                            action='out',
-                            quantity=qty,
-                            balance_after=med.quantity,
-                            related_visit=visit,
-                            reason=f'Dispensed for {visit.student.full_name}',
-                            recorded_by=request.user,
-                        )
-                    else:
-                        messages.warning(
-                            request,
-                            f'Insufficient {med.name}: {med.quantity} left, tried to dispense {qty}'
-                        )
-                except Medicine.DoesNotExist:
-                    continue
-
-        return redirect('health_visit_list')
+        visit.save()
+        messages.success(request, f"Clinic record for {student.first_name} updated.")
+        
+        if new_status == 'discharged':
+            return redirect('nurse_dashboard')
+        return redirect('health_visit_detail', visit_id=visit.id)
 
     return render(request, 'departments/nurse/visit_form.html', {
         'visit': visit,
         'students': students,
         'medicines': medicines,
-        'today': date.today(),
     })
-
 
 @login_required
 def health_visit_detail(request, visit_id):
-    """View a single visit."""
+    """View full medical record, dispense medicine, and handle referrals."""
     if not _nurse_required(request):
         return redirect('dashboard_home')
+        
+    school = request.user.school
+    visit = get_object_or_404(HealthVisit, id=visit_id, school=school)
+    medicines = Medicine.objects.filter(school=school, quantity__gt=0)
+    
+    if request.method == 'POST':
+        # Handle dispensing medicine
+        if 'dispense_medicine' in request.POST:
+            med_id = request.POST.get('medicine')
+            qty = int(request.POST.get('quantity', 1))
+            
+            medicine = get_object_or_404(Medicine, id=med_id, school=school)
+            if medicine.quantity >= qty:
+                medicine.quantity -= qty
+                medicine.save()
+                
+                MedicineLog.objects.create(
+                    school=school,
+                    medicine=medicine,
+                    action='out',
+                    quantity=qty,
+                    balance_after=medicine.quantity,
+                    related_visit=visit,
+                    reason=f"Dispensed for visit #{visit.id}",
+                    recorded_by=request.user
+                )
+                messages.success(request, f"Dispensed {qty} {medicine.unit} of {medicine.name}.")
+            else:
+                messages.error(request, "Not enough stock available.")
+                
+            return redirect('health_visit_detail', visit_id=visit.id)
 
-    visit = get_object_or_404(HealthVisit, id=visit_id, school=request.user.school)
-    logs = visit.medicine_logs.select_related('medicine').order_by('-created_at')
+        # Handle Referral to Facility
+        elif 'refer_facility' in request.POST:
+            facility_name = request.POST.get('facility_name')
+            reason = request.POST.get('referral_reason')
+            
+            visit.status = 'referred_hosp'
+            visit.outcome = 'referred'
+            visit.referred_to = facility_name
+            visit.notes = f"REFFERAL: {reason}\n\n{visit.notes or ''}"
+            visit.save()
+            
+            messages.success(request, f"{visit.student.first_name} referred to {facility_name}.")
+            return redirect('nurse_dashboard')
+
+    # Get logs for this specific visit
+    dispensed_logs = MedicineLog.objects.filter(related_visit=visit).select_related('medicine')
 
     return render(request, 'departments/nurse/visit_detail.html', {
         'visit': visit,
-        'medicine_logs': logs,
+        'medicines': medicines,
+        'dispensed_logs': dispensed_logs,
     })
-
-
 # ============================================================
 # MEDICINE STOCK
 # ============================================================
@@ -609,13 +565,19 @@ def referral_note_pdf(request, visit_id):
         visit=visit,
         student=visit.student,
     )
+    school = request.user.school
+    if school.logo:
+        context['school_logo_url'] = request.build_absolute_uri(school.logo.url)
+    else:
+        context['school_logo_url'] = None
+
     html_string = render_to_string('pdf/nurse_referral_note.html', context)
+    
     return html_to_pdf_response(
         html_string,
         f'referral_{visit.student.admission_number}_{visit.id}.pdf',
     )
-
-
+    
 # ==========================================================
 # MEDICAL REPORT PDF (per student, per period)
 # ==========================================================

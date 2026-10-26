@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% block title %}SaaS M-Pesa Settings{% endblock %}
+{% block header_title %}Platform M-Pesa Settings{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 700px; margin: 0 auto;">
+  <h3 class="mb-4">SaaS Collection Settings</h3>
+  <p class="mb-4" style="color: var(--ink-500);">Configure the Paybill or Till number where schools will send their subscription payments.</p>
+  
+  <form method="post">
+    {% csrf_token %}
+    
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Account Type *</label>
+        <select name="account_type" required style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+          <option value="paybill" {% if config.account_type == 'paybill' %}selected{% endif %}>Paybill</option>
+          <option value="till" {% if config.account_type == 'till' %}selected{% endif %}>Buy Goods (Till)</option>
+        </select>
+      </div>
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Paybill / Till Number *</label>
+        <input type="text" name="paybill_number" value="{{ config.paybill_number|default:'' }}" required style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+      </div>
+    </div>
+    
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Consumer Key</label>
+        <input type="text" name="consumer_key" value="{{ config.consumer_key|default:'' }}" style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+      </div>
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Consumer Secret</label>
+        <input type="password" name="consumer_secret" value="{{ config.consumer_secret|default:'' }}" style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+      </div>
+    </div>
+    
+    <div style="margin-bottom: 16px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Lipa na M-Pesa Passkey</label>
+      <input type="password" name="passkey" value="{{ config.passkey|default:'' }}" style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+    </div>
+
+    {% if config.callback_url %}
+    <div style="margin-bottom: 24px; padding: 16px; background: #f0fdf4; border-left: 4px solid var(--success); border-radius: 4px;">
+      <p style="margin: 0; font-size: 14px; font-weight: 600; color: #166534;">Your Safaricom Callback URL:</p>
+      <code style="display: block; margin-top: 8px; padding: 8px; background: #fff; border: 1px solid #dcfce7; font-size: 13px; word-break: break-all;">{{ config.callback_url }}</code>
+      <p style="margin: 8px 0 0; font-size: 12px; color: #166534;">Copy this URL and paste it into your Safaricom Daraja Portal.</p>
+    </div>
+    {% endif %}
+    
+    <div style="display: flex; justify-content: flex-end; gap: 12px;">
+      <button type="submit" class="btn btn-primary">Save Settings</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

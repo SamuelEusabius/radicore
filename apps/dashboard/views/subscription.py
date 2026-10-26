@@ -9,6 +9,8 @@ Subscription views:
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from apps.finance.mpesa_models import PlatformMpesaConfig
+from apps.finance.services.mpesa import stk_push 
 from django.utils import timezone
 from django.http import HttpResponse
 from datetime import timedelta
@@ -611,3 +613,87 @@ def subscription_payment(request):
     })
 
 
+
+@login_required
+def super_admin_mpesa_settings(request):
+    """Super Admin enters their SaaS Paybill/Till details."""
+    if request.user.role != 'super_admin':
+        return redirect('dashboard_home')
+
+    config, created = PlatformMpesaConfig.objects.get_or_create(pk=1)
+
+    if request.method == 'POST':
+        config.paybill_number = request.POST.get('paybill_number')
+        config.account_type = request.POST.get('account_type')
+        config.consumer_key = request.POST.get('consumer_key')
+        config.consumer_secret = request.POST.get('consumer_secret')
+        config.passkey = request.POST.get('passkey')
+        
+        # The URL Safaricom will hit when a school pays you
+        config.callback_url = request.build_absolute_uri('/api/finance/mpesa/platform-callback/')
+        
+        config.save()
+        messages.success(request, 'SaaS M-Pesa Settings saved successfully!')
+        return redirect('super_admin_mpesa_settings')
+
+    return render(request, 'dashboard/admin/platform_mpesa_settings.html', {'config': config})
+
+@login_required
+def initiate_subscription_payment(request, school_id):
+    """Triggers STK push to the SaaS Owner's Paybill."""
+    # ... (existing logic to find the amount and plan) ...
+    
+    config = PlatformMpesaConfig.objects.filter(is_active=True).first()
+    if not config:
+        messages.error(request, "Platform M-Pesa is not configured yet. Contact support.")
+        return redirect('dashboard_home')
+
+    # Call Safaricom Daraja API
+    # (You will need to adjust your stk_push function to accept custom credentials)
+    phone = request.POST.get('phone')
+    amount = plan.monthly_price # or whatever the amount is
+    
+    success, response = stk_push(
+        phone=phone,
+        amount=amount,
+        account_ref=school.code, # e.g., NAIROBI01 so you know who paid
+        description="SaaS Subscription",
+        shortcode=config.paybill_number,
+        passkey=config.passkey,
+        consumer_key=config.consumer_key,
+        consumer_secret=config.consumer_secret,
+        callback_url=config.callback_url,
+        account_type=config.account_type
+    )
+    
+    if success:
+        messages.success(request, "STK Push sent. Please enter your M-Pesa PIN.")
+        # save the checkout_request_id to a SubscriptionTransaction model
+        return redirect('subscription_payment_pending', school_id=school_id)
+    else:
+        messages.error(request, f"Failed: {response}")
+        return redirect('subscription_plans')
+    
+@login_required
+def super_admin_mpesa_settings(request):
+    """Super Admin enters their SaaS Paybill/Till details."""
+    if request.user.role != 'super_admin':
+        return redirect('dashboard_home')
+
+    config, created = PlatformMpesaConfig.objects.get_or_create(pk=1)
+
+    if request.method == 'POST':
+        config.paybill_number = request.POST.get('paybill_number')
+        config.account_type = request.POST.get('account_type')
+        config.consumer_key = request.POST.get('consumer_key')
+        config.consumer_secret = request.POST.get('consumer_secret')
+        config.passkey = request.POST.get('passkey')
+        
+        # The URL Safaricom will hit when a school pays you
+        config.callback_url = request.build_absolute_uri('/api/finance/mpesa/platform-callback/')
+        
+        config.save()
+        messages.success(request, 'SaaS M-Pesa Settings saved successfully!')
+        return redirect('super_admin_mpesa_settings')
+
+    return render(request, 'dashboard/platform_mpesa_settings.html', {'config': config})
