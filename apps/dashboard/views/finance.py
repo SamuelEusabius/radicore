@@ -9,6 +9,9 @@ Finance views:
 """
 
 from django.shortcuts import render, redirect, get_object_or_404
+from apps.academics.models import ClassLevel
+from apps.finance.models import FeeStructure
+from django.shortcuts import render, redirect, reverse
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import HttpResponse, JsonResponse
@@ -1326,77 +1329,36 @@ def class_fee_statement_pdf(request, class_id):
 
 
 @login_required
-@role_required('accountant', 'principal')
 def fee_structure_list(request):
-    """List all fee structures with filters and summary."""
-    from apps.finance.models import FeeStructure
-    from apps.academics.models import ClassLevel
-    from django.db.models import Sum
-    from collections import defaultdict
+    """Grouped view of fee structures by Class Level."""
+    if request.user.role not in ('accountant', 'principal', 'super_admin'):
+        return redirect('dashboard_home')
 
     school = request.user.school
-    qs = FeeStructure.objects.filter(school=school).order_by('-created_at')
+    
+    # Get all fee structures for this school
+    fees = FeeStructure.objects.filter(school=school).select_related('class_level')
 
-    # ---------- Filters ----------
-    class_filter = request.GET.get('class', '').strip()
-    term_filter = request.GET.get('term', '').strip()
-    search = request.GET.get('q', '').strip()
-
-    if class_filter:
-        qs = qs.filter(class_level=class_filter)
-    if term_filter:
-        qs = qs.filter(name__startswith=f"{term_filter} —")
-    if search:
-        qs = qs.filter(name__icontains=search)
-
-    # ---------- Summary ----------
-    total_value = qs.aggregate(t=Sum('amount_kes'))['t'] or 0
-
-    # ---------- Distinct classes used ----------
-    all_school_fs = FeeStructure.objects.filter(school=school)
-    used_classes = sorted(set(
-        all_school_fs.values_list('class_level', flat=True)
-    ))
-
-    # ---------- Term choices ----------
-    terms = set()
-    for name in all_school_fs.values_list('name', flat=True):
-        if ' — ' in name:
-            terms.add(name.split(' — ', 1)[0])
-        else:
-            terms.add(name)
-    term_choices = sorted(terms)
-
-    # ---------- Group by term for display ----------
-    grouped = defaultdict(list)
-    for fs in qs:
-        if ' — ' in fs.name:
-            term = fs.name.split(' — ', 1)[0]
-        else:
-            term = 'Uncategorized'
-        grouped[term].append(fs)
-
-    # Sort terms and get ordered groups
-    grouped_list = sorted(
-        grouped.items(),
-        key=lambda x: x[0],
-        reverse=True
-    )
+    # Group them by Class Level
+    grouped_fees = {}
+    for fee in fees:
+        cls_name = fee.class_level.name if fee.class_level else "Unassigned"
+        
+        if cls_name not in grouped_fees:
+            grouped_fees[cls_name] = {
+                'class_name': cls_name,
+                'class_id': fee.class_level.id if fee.class_level else None,
+                'items': [],
+                'total': 0
+            }
+        
+        grouped_fees[cls_name]['items'].append(fee)
+        grouped_fees[cls_name]['total'] += fee.amount_kes
 
     return render(request, 'dashboard/fee_structure_list.html', {
-        'fee_structures': qs,
-        'count': qs.count(),
-        'total_value': total_value,
-        'used_classes': used_classes,
-        'term_choices': term_choices,
-        'class_filter': class_filter,
-        'term_filter': term_filter,
-        'search': search,
-        'grouped_list': grouped_list,
-        'all_classes': ClassLevel.objects.filter(school=school).order_by('order', 'name'),
+        'grouped_fees': grouped_fees.values(),
+        'total_items': fees.count(),
     })
-
-
 @login_required
 @role_required('accountant', 'principal')
 def fee_structure_add(request):
@@ -1710,90 +1672,25 @@ def fee_structure_matrix_save(request):
 
 @login_required
 def fee_structure_class_pdf(request, class_name):
-    """Print/download the fee structure for ONE class as A4 portrait PDF."""
-    if request.user.role not in ('accountant', 'principal'):
-        return redirect('dashboard_home')
-
-    from django.utils import timezone
-    from urllib.parse import unquote
-    from apps.finance.models import FeeStructure
-    from apps.core.pdf_utils import html_to_pdf_response
+    """Generate a PDF of all fee items for a specific class."""
     from django.template.loader import render_to_string
-    from urllib.parse import unquote
-    class_name = unquote(class_name).strip()
-
+    from apps.core.pdf_utils import html_to_pdf_response, build_pdf_context
+    
     school = request.user.school
-    class_name = unquote(class_name).strip()
-    term_filter = request.GET.get('term', '').strip()
-
-    # Fetch fee structures for THIS class only
-    qs = FeeStructure.objects.filter(
+    fees = FeeStructure.objects.filter(school=school, class_level__name=class_name)
+    
+    total = sum(fee.amount_kes for fee in fees)
+    
+    context = build_pdf_context(
         school=school,
-        class_level=class_name,
-    ).order_by('name')
-
-    if term_filter:
-        qs = qs.filter(name__startswith=f"{term_filter} —")
-
-    if not qs.exists():
-        return HttpResponse(
-            f'<h1>No fee structure found for {class_name}</h1>'
-            '<p>Draft fees for this class first.</p>',
-            status=404
-        )
-
-    # Group by term prefix
-    terms = set()
-    items = []  # list of (item_name, amount)
-    due_date = None
-    total = 0
-
-    for fs in qs:
-        if ' — ' in fs.name:
-            term_part, item_part = fs.name.split(' — ', 1)
-            terms.add(term_part)
-        else:
-            term_part = fs.name
-            item_part = fs.name
-            terms.add(term_part)
-
-        items.append((item_part, float(fs.amount_kes)))
-        total += float(fs.amount_kes)
-        if due_date is None:
-            due_date = fs.due_date
-
-    term_name = term_filter if term_filter else (sorted(terms)[-1] if terms else 'Fee Structure')
-
-    # Logo path (Option A — file path)
-    school_logo_path = ''
-    if school.logo and hasattr(school.logo, 'path'):
-        try:
-            school_logo_path = school.logo.path
-        except (ValueError, NotImplementedError):
-            school_logo_path = ''
-
-    html_string = render_to_string('pdf/fee_structure.html',
-        build_pdf_context(
-            school=school,
-            generated_by=request.user,
-            school_logo_path=school_logo_path,
-            term_name=term_name,
-            due_date=due_date,
-            class_name=class_name,
-            classes=[{'name': class_name}],
-            rows=[
-                {'name': name, 'amounts': [amount], 'total': amount}
-                for name, amount in sorted(items)
-            ],
-            column_totals=[total],
-            grand_total=total,
-        )
+        generated_by=request.user,
+        class_name=class_name,
+        fees=fees,
+        total=total,
     )
-
-    safe_class = class_name.replace(' ', '_').replace('/', '-')
-    filename = f'fee_structure_{safe_class}_{term_name.replace(" ", "_")}.pdf'
-    return html_to_pdf_response(html_string, filename)
-
+    
+    html_string = render_to_string('pdf/fee_structure.html', context)
+    return html_to_pdf_response(html_string, f'Fee_Structure_{class_name}.pdf')
 
 @login_required
 def expenditure_list(request):
@@ -2176,4 +2073,76 @@ def parent_mpesa_payment(request):
         'children': children,
         'selected_child': selected_child,
         'school': request.user.school,
+    })
+    
+    from apps.academics.models import ClassLevel
+
+@login_required
+def fee_structure_matrix(request):
+    """Accountant drafts fee structures for a whole class at once."""
+    if request.user.role not in ('accountant', 'principal', 'super_admin'):
+        return redirect('dashboard_home')
+
+    school = request.user.school
+    classes = ClassLevel.objects.filter(school=school).order_by('order', 'name')
+    
+    selected_class_id = request.GET.get('class_id')
+    selected_year = request.GET.get('year', '2026')
+    selected_term = request.GET.get('term', 'Term 1')
+
+    selected_class = None
+    existing_fees = []
+    
+    if selected_class_id:
+        selected_class = ClassLevel.objects.filter(id=selected_class_id, school=school).first()
+        if selected_class:
+            existing_fees = FeeStructure.objects.filter(
+                school=school, 
+                class_level=selected_class, 
+                academic_year=selected_year,
+                term=selected_term
+            ).order_by('id')
+
+    if request.method == 'POST' and selected_class:
+        # Delete existing fees for this class/year/term to replace them with the new draft
+        FeeStructure.objects.filter(
+            school=school, class_level=selected_class, 
+            academic_year=selected_year, term=selected_term
+        ).delete()
+
+        # Save the new items from the form arrays
+        item_names = request.POST.getlist('item_name[]')
+        item_amounts = request.POST.getlist('item_amount[]')
+        item_dates = request.POST.getlist('item_date[]')
+
+        saved_count = 0
+        for i in range(len(item_names)):
+            name = item_names[i].strip()
+            amount = item_amounts[i].strip()
+            due_date = item_dates[i].strip() or None
+            
+            if name and amount:
+                FeeStructure.objects.create(
+                    school=school,
+                    class_level=selected_class,
+                    name=name,
+                    amount_kes=amount,
+                    due_date=due_date,
+                    academic_year=selected_year,
+                    term=selected_term
+                )
+                saved_count += 1
+
+        messages.success(request, f'Saved {saved_count} fee items for {selected_class.name} ({selected_term} {selected_year}).')
+        return redirect(f"{reverse('fee_structure_matrix')}?class_id={selected_class.id}&year={selected_year}&term={selected_term}")
+
+    return render(request, 'dashboard/fee_structure_matrix.html', {
+        'classes': classes,
+        'selected_class': selected_class,
+        'selected_class_id': selected_class_id,
+        'selected_year': selected_year,
+        'selected_term': selected_term,
+        'existing_fees': existing_fees,
+        'terms': ['Term 1', 'Term 2', 'Term 3'],
+        'years': [2025, 2026, 2027]
     })

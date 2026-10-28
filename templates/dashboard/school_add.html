@@ -1,171 +1,134 @@
-{% extends "base.html" %}
-{% load static %}
-
+{% extends 'base.html' %}
 {% block title %}Add School{% endblock %}
-{% block header_title %}Add School{% endblock %}
-{% block header_sub %}Register a new school tenant in the system{% endblock %}
+{% block header_title %}Onboard New School{% endblock %}
 
 {% block content %}
-
-<div class="card" style="max-width: 900px; margin: 0 auto;">
-  <form method="post" enctype="multipart/form-data">
+<div class="card" style="max-width: 800px; margin: 0 auto;">
+  <h3 class="mb-4">School & Principal Setup</h3>
+  <p class="mb-6" style="color: var(--ink-500);">This will create the school and the primary administrator login in one step.</p>
+  
+  <form method="post">
     {% csrf_token %}
-
-    {% if form.non_field_errors %}
-    <div class="card mb-4" style="border-left: 4px solid var(--danger); padding: var(--s-3); background: var(--danger-light);">
-      {% for err in form.non_field_errors %}
-        <p class="text-sm" style="margin: 0; color: var(--danger);">{{ err }}</p>
-      {% endfor %}
+    
+    <!-- SCHOOL DETAILS -->
+    <h4 style="margin: 20px 0 10px; color: var(--primary); border-bottom: 1px solid var(--border); padding-bottom: 8px;">School Information</h4>
+    
+    <div style="margin-bottom: 16px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">School Name *</label>
+      <input type="text" name="name" value="{{ form_data.name|default:'' }}" required style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px;">
+      <p style="font-size: 12px; color: var(--ink-500); margin-top: 4px;">The school code (e.g., SCH001) will be automatically generated.</p>
     </div>
-    {% endif %}
 
-    <!-- ============================================================ -->
-    <!-- 1. SCHOOL INFORMATION -->
-    <!-- ============================================================ -->
-    <div class="mb-6">
-      <h3 class="flex items-center gap-2 font-bold text-lg mb-4" style="color: var(--primary); border-bottom: 2px solid var(--primary-soft); padding-bottom: var(--s-2);">
-        {% include 'partials/icons.html' with name="home" size=20 %}
-        School Information
-      </h3>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-        <div class="md:col-span-2">
-          <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
-            School Name <span style="color: var(--danger);">*</span>
-          </label>
-          <input type="text" name="name" class="input w-full" required 
-                 value="{{ form_data.name|default:'' }}" placeholder="e.g. Nairobi High School">
-        </div>
-        <div>
-          <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">School Email</label>
-          <input type="email" name="email" class="input w-full" 
-                 value="{{ form_data.email|default:'' }}" placeholder="info@school.co.ke">
-        </div>
-        <div>
-          <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Phone</label>
-          <input type="tel" name="phone" class="input w-full" 
-                 value="{{ form_data.phone|default:'' }}" placeholder="07XX XXX XXX">
-        </div>
-        <div>
-          <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">NEMIS Code</label>
-          <input type="text" name="nemis_code" class="input w-full" 
-                 value="{{ form_data.nemis_code|default:'' }}">
-        </div>
-        <div>
-          <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Motto</label>
-          <input type="text" name="motto" class="input w-full" 
-                 value="{{ form_data.motto|default:'' }}">
-        </div>
-        <div>
-          <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">County</label>
-          <input type="text" name="county" class="input w-full" 
-                 value="{{ form_data.county|default:'' }}" placeholder="e.g. Bungoma">
-        </div>
-        <div>
-          <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Sub-County</label>
-          <input type="text" name="sub_county" class="input w-full" 
-                 value="{{ form_data.sub_county|default:'' }}">
-        </div>
-        <div class="md:col-span-2">
-          <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Physical Address</label>
-          <input type="text" name="physical_address" class="input w-full" 
-                 value="{{ form_data.physical_address|default:'' }}">
-        </div>
-        <div class="md:col-span-2">
-          <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Message Shown When Deactivated (optional)</label>
-          <textarea name="blocked_message" class="textarea w-full" rows="2"
-                    placeholder="e.g., Your subscription has expired. Kindly renew to regain access.">{{ form_data.blocked_message|default:'' }}</textarea>
-        </div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">School Email</label>
+        <input type="email" name="email" value="{{ form_data.email|default:'' }}" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px;">
+      </div>
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Phone Number</label>
+        <input type="text" name="phone" value="{{ form_data.phone|default:'' }}" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px;">
       </div>
     </div>
 
-    <!-- ============================================================ -->
-    <!-- 2. CATEGORY -->
-    <!-- ============================================================ -->
-    <div class="mb-6">
-      <h3 class="flex items-center gap-2 font-bold text-lg mb-4" style="color: var(--primary); border-bottom: 2px solid var(--primary-soft); padding-bottom: var(--s-2);">
-        {% include 'partials/icons.html' with name="grid" size=20 %}
-        Category
-      </h3>
-
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-        <div>
-          <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Type</label>
-          <select name="school_type" class="select w-full">
-            <option value="private" {% if form_data.school_type == 'private' %}selected{% endif %}>Private</option>
-            <option value="public" {% if form_data.school_type == 'public' %}selected{% endif %}>Public</option>
-          </select>
-        </div>
-        <div>
-          <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Gender</label>
-          <select name="gender" class="select w-full">
-            <option value="mixed" {% if form_data.gender == 'mixed' %}selected{% endif %}>Mixed (Boys &amp; Girls)</option>
-            <option value="boys" {% if form_data.gender == 'boys' %}selected{% endif %}>Boys Only</option>
-            <option value="girls" {% if form_data.gender == 'girls' %}selected{% endif %}>Girls Only</option>
-          </select>
-        </div>
-        <div>
-          <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Level</label>
-          <select name="level" class="select w-full">
-            <option value="primary" {% if form_data.level == 'primary' %}selected{% endif %}>Primary (CBC 1-6)</option>
-            <option value="jss" {% if form_data.level == 'jss' %}selected{% endif %}>Junior Secondary (7-9)</option>
-            <option value="senior" {% if form_data.level == 'senior' %}selected{% endif %}>Senior School (10-12)</option>
-            <option value="primary_jss" {% if form_data.level == 'primary_jss' %}selected{% endif %}>Primary + Junior Secondary</option>
-            <option value="all" {% if form_data.level == 'all' %}selected{% endif %}>Full School (1-12)</option>
-          </select>
-        </div>
+    <!-- LOCATION CASCADE -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 24px;">
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">County</label>
+        <select name="county" id="id_county" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px;">
+          <option value="">— Select County —</option>
+          {% for county in counties %}
+            <option value="{{ county.name }}" {% if form_data.county == county.name %}selected{% endif %}>{{ county.name|upper }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Sub-County</label>
+        <select name="sub_county" id="id_sub_county" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px;">
+          <option value="{{ form_data.sub_county|default:'' }}">{{ form_data.sub_county|default:"— Select County first —" }}</option>
+        </select>
+      </div>
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Ward</label>
+        <select name="ward" id="id_ward" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px;">
+          <option value="{{ form_data.ward|default:'' }}">{{ form_data.ward|default:"— Select Sub-County first —" }}</option>
+        </select>
       </div>
     </div>
 
-    <!-- ============================================================ -->
-    <!-- 3. SCHOOL ADMIN ACCOUNT -->
-    <!-- ============================================================ -->
-    <div class="mb-6">
-      <h3 class="flex items-center gap-2 font-bold text-lg mb-4" style="color: var(--primary); border-bottom: 2px solid var(--primary-soft); padding-bottom: var(--s-2);">
-        {% include 'partials/icons.html' with name="user" size=20 %}
-        School Admin Account
-      </h3>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-        <div>
-          <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Admin First Name</label>
-          <input type="text" name="admin_first_name" class="input w-full" 
-                 value="{{ form_data.admin_first_name|default:'' }}">
-        </div>
-        <div>
-          <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Admin Last Name</label>
-          <input type="text" name="admin_last_name" class="input w-full" 
-                 value="{{ form_data.admin_last_name|default:'' }}">
-        </div>
-        <div>
-          <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
-            Admin Email <span style="color: var(--danger);">*</span>
-          </label>
-          <input type="email" name="admin_email" class="input w-full" required
-                 value="{{ form_data.admin_email|default:'' }}">
-        </div>
-        <div>
-          <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
-            Admin Password <span style="color: var(--danger);">*</span>
-          </label>
-          <input type="text" name="admin_password" class="input w-full" required
-                 value="{{ form_data.admin_password|default:'changeme123' }}">
-        </div>
+    <!-- PRINCIPAL DETAILS -->
+    <h4 style="margin: 20px 0 10px; color: var(--primary); border-bottom: 1px solid var(--border); padding-bottom: 8px;">Principal Account</h4>
+    
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">First Name</label>
+        <input type="text" name="admin_first_name" value="{{ form_data.admin_first_name|default:'' }}" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px;">
+      </div>
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Last Name</label>
+        <input type="text" name="admin_last_name" value="{{ form_data.admin_last_name|default:'' }}" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px;">
       </div>
     </div>
 
-    <!-- ============================================================ -->
-    <!-- SUBMIT -->
-    <!-- ============================================================ -->
-    <div class="flex justify-end gap-3 mt-8 pt-4" style="border-top: 1px solid var(--border);">
+    <div style="margin-bottom: 16px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Principal Email (Login) *</label>
+      <input type="email" name="admin_email" value="{{ form_data.admin_email|default:'' }}" required style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px;">
+    </div>
+
+    <div style="margin-bottom: 24px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Password *</label>
+      <input type="text" name="admin_password" required minlength="6" placeholder="Min 6 characters" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px;">
+      <p style="font-size: 12px; color: var(--ink-500); margin-top: 4px;">Note down this password and share it with the principal securely.</p>
+    </div>
+
+    <div style="display: flex; justify-content: flex-end; gap: 12px;">
       <a href="{% url 'schools_manage' %}" class="btn btn-secondary">Cancel</a>
-      <button type="submit" class="btn btn-primary">
-        {% include 'partials/icons.html' with name="check-circle" size=16 %}
-        Create School
-      </button>
+      <button type="submit" class="btn btn-primary" style="padding: 12px 32px; font-size: 16px;">Create School & Admin</button>
     </div>
-
   </form>
 </div>
 
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const countySelect = document.getElementById('id_county');
+    const subCountySelect = document.getElementById('id_sub_county');
+    const wardSelect = document.getElementById('id_ward');
+
+    countySelect.addEventListener('change', function() {
+      const countyName = this.value;
+      subCountySelect.innerHTML = '<option value="">— Loading... —</option>';
+      wardSelect.innerHTML = '<option value="">— Select Sub-County first —</option>';
+      
+      if (countyName) {
+        fetch(`/api/locations/constituencies/?county=${encodeURIComponent(countyName)}`)
+          .then(res => res.json())
+          .then(data => {
+             subCountySelect.innerHTML = '<option value="">— Select Sub-County —</option>';
+             if (data.results) {
+               data.results.forEach(item => {
+                 subCountySelect.innerHTML += `<option value="${item.name}">${item.name}</option>`;
+               });
+             }
+          });
+      }
+    });
+
+    subCountySelect.addEventListener('change', function() {
+      const subCountyName = this.value;
+      wardSelect.innerHTML = '<option value="">— Loading... —</option>';
+      
+      if (subCountyName) {
+        fetch(`/api/locations/wards/?constituency=${encodeURIComponent(subCountyName)}`)
+          .then(res => res.json())
+          .then(data => {
+             wardSelect.innerHTML = '<option value="">— Select Ward —</option>';
+             if (data.results) {
+               data.results.forEach(item => {
+                 wardSelect.innerHTML += `<option value="${item.name}">${item.name}</option>`;
+               });
+             }
+          });
+      }
+    });
+  });
+</script>
 {% endblock %}

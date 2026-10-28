@@ -9,22 +9,25 @@ from .unallocated_models import UnallocatedPayment, UnallocatedAllocation
 # ==========================================================
 
 class FeeStructure(models.Model):
-    school = models.ForeignKey(
-        'schools.School', on_delete=models.CASCADE,
-        related_name='fee_structures'
-    )
-    name = models.CharField(max_length=100)
-    class_level = models.CharField(max_length=50)
+    school = models.ForeignKey('schools.School', on_delete=models.CASCADE)
+    class_level = models.ForeignKey('academics.ClassLevel', on_delete=models.CASCADE, related_name='fee_structures')
+    name = models.CharField(max_length=100, help_text="e.g. Tuition, Transport, Lunch")
     amount_kes = models.DecimalField(max_digits=10, decimal_places=2)
-    due_date = models.DateField()
+    due_date = models.DateField(null=True, blank=True)
+    
+    # NEW FIELDS FOR THE MATRIX
+    academic_year = models.IntegerField(default=2026, help_text="e.g. 2026")
+    term = models.CharField(max_length=20, default='Term 1', choices=(
+        ('Term 1', 'Term 1'),
+        ('Term 2', 'Term 2'),
+        ('Term 3', 'Term 3'),
+        ('Full Year', 'Full Year'),
+    ))
+
     created_at = models.DateTimeField(auto_now_add=True)
 
-    class Meta:
-        ordering = ['-created_at']
-
     def __str__(self):
-        return f"{self.name} - {self.class_level} (KES {self.amount_kes})"
-
+        return f"{self.class_level.name} - {self.name} ({self.term} {self.academic_year})"
 
 # ==========================================================
 # INVOICE — Individual student fee invoice

@@ -175,28 +175,21 @@ class School(models.Model):
         ordering = ['name']
 
     def save(self, *args, **kwargs):
-        # Auto-generate slug from name
-        if not self.slug:
-            base = slugify(self.name)[:45] or 'school'
-            slug = base
-            counter = 1
-            while School.objects.filter(slug=slug).exclude(pk=self.pk).exists():
-                slug = f"{base}-{counter}"
-                counter += 1
-            self.slug = slug
-
-        # Auto-generate school code (SCH0001, SCH0002, ...)
         if not self.code:
-            last = School.objects.order_by('-id').first()
-            next_num = (last.id + 1) if last else 1
-            while School.objects.filter(code=f'SCH{next_num:04d}').exclude(pk=self.pk).exists():
-                next_num += 1
-            self.code = f'SCH{next_num:04d}'
-
+            # Count how many schools exist and generate the next code
+            last_school = School.objects.all().order_by('id').last()
+            if not last_school:
+                self.code = 'SCH001'
+            else:
+                # Extract the number from the last code (e.g., SCH001 -> 1)
+                import re
+                match = re.search(r'\d+', last_school.code)
+                if match:
+                    next_num = int(match.group()) + 1
+                    self.code = f"SCH{next_num:03d}"
+                else:
+                    self.code = f"SCH{School.objects.count() + 1:03d}"
         super().save(*args, **kwargs)
-
-    def __str__(self):
-        return f"{self.code} — {self.name}" if self.code else self.name
 
     # ============ HELPER PROPERTIES ============
     @property

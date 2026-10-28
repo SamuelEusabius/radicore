@@ -1,336 +1,97 @@
 {% extends 'base.html' %}
-{% block title %}Draft Fee Structure{% endblock %}
-{% block header_title %}Draft Fee Structure{% endblock %}
-{% block header_sub %}{{ current_school.name }} — Bulk create fees across classes{% endblock %}
+{% block title %}Draft Fee Matrix{% endblock %}
+{% block header_title %}Fee Structure Drafting{% endblock %}
 
 {% block content %}
-
-<div x-data="matrixEditor()" x-cloak>
-
-  <!-- ============ TOP BAR: Term + Due Date ============ -->
-  <div class="bg-white shadow-sm border border-gray-200 p-5 mb-6">
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-
-            <div>
-        <label class="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">
-          Term Name <span class="text-red-600">*</span>
-        </label>
-        <input type="text"
-               x-model="termName"
-               placeholder="e.g. Term 1 2026"
-               class="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-teal-600">
-        <p class="text-xs text-gray-500 mt-1">
-          Invoices will be grouped as "<span x-text="termName || 'Term 1 2026'"></span> — [Fee Item]"
-        </p>
-      </div>
-
-      <div>
-        <label class="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">
-          Due Date <span class="text-red-600">*</span>
-        </label>
-        <input type="date"
-               x-model="dueDate"
-               class="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-teal-600">
-      </div>
-
-      <div class="flex items-end gap-2">
-        <button type="button"
-                @click="addRow()"
-                class="pro-btn pro-btn-secondary flex-1">
-          + Add Fee Item
-        </button>
-      </div>
-
+<div class="card mb-6" style="padding: 20px;">
+  <form method="get" style="display: flex; gap: 16px; align-items: flex-end; flex-wrap: wrap;">
+    <div style="flex: 1; min-width: 200px;">
+      <label style="display: block; font-size: 13px; font-weight: 600; color: var(--ink-500); margin-bottom: 6px;">Select Class</label>
+      <select name="class_id" required style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px;">
+        <option value="">— Choose Class —</option>
+        {% for c in classes %}
+          <option value="{{ c.id }}" {% if selected_class_id == c.id|stringformat:"s" %}selected{% endif %}>{{ c.name }}</option>
+        {% endfor %}
+      </select>
     </div>
-  </div>
-
-  <!-- ============ MATRIX GRID ============ -->
-  <div class="bg-white shadow-sm border border-gray-200 overflow-hidden mb-6">
-
-    <div class="p-4 border-b border-gray-200 flex items-center justify-between flex-wrap gap-3">
-      <div>
-        <h3 class="text-sm font-semibold text-gray-800">Fee Matrix</h3>
-        <p class="text-xs text-gray-500 mt-0.5">
-          Leave a cell empty to skip that class for that fee item.
-        </p>
-      </div>
-      <div class="text-xs text-gray-500">
-        <span x-text="filledCellCount()"></span> cells filled
-      </div>
+    
+    <div style="width: 150px;">
+      <label style="display: block; font-size: 13px; font-weight: 600; color: var(--ink-500); margin-bottom: 6px;">Academic Year</label>
+      <select name="year" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px;">
+        {% for y in years %}
+          <option value="{{ y }}" {% if selected_year == y|stringformat:"s" %}selected{% endif %}>{{ y }}</option>
+        {% endfor %}
+      </select>
     </div>
 
-    <!-- Scroll container -->
-    <div class="overflow-x-auto">
-      <table class="w-full text-sm" style="min-width: max-content;">
-
-        <!-- HEAD: class columns -->
-        <thead class="bg-gray-50">
-          <tr>
-            <th class="sticky left-0 bg-gray-50 z-10 text-left px-4 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide border-r border-gray-200"
-                style="min-width: 220px;">
-              Fee Item
-            </th>
-            <template x-for="cls in classes" :key="cls.id">
-              <th class="text-center px-3 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide border-r border-gray-200"
-                  style="min-width: 130px;">
-                <span x-text="cls.name"></span>
-              </th>
-            </template>
-            <th class="text-center px-4 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide"
-                style="min-width: 110px;">
-              Row Total
-            </th>
-            <th class="text-center px-3 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide"
-                style="min-width: 60px;">
-              ⋯
-            </th>
-          </tr>
-        </thead>
-
-        <!-- BODY: fee item rows -->
-        <tbody>
-          <template x-for="(row, rIdx) in rows" :key="row.uid">
-            <tr class="border-t border-gray-100 hover:bg-gray-50/50">
-
-              <!-- Item name (sticky) -->
-              <td class="sticky left-0 bg-white z-10 px-4 py-2 border-r border-gray-200">
-                <input type="text"
-                       x-model="row.name"
-                       placeholder="e.g. Tuition"
-                       class="w-full border-0 focus:outline-none focus:ring-1 focus:ring-teal-600 px-2 py-1.5 text-sm font-medium bg-transparent">
-                <label class="flex items-center gap-1.5 mt-1 text-xs text-gray-500 select-none">
-                  <input type="checkbox" x-model="row.mandatory" class="rounded text-teal-600 focus:ring-teal-500">
-                  <span>Mandatory</span>
-                </label>
-              </td>
-
-              <!-- Amount per class -->
-              <template x-for="cls in classes" :key="cls.id">
-                <td class="px-2 py-2 border-r border-gray-100">
-                  <input type="number"
-                         min="0"
-                         step="1"
-                         x-model.number="row.amounts[cls.id]"
-                         placeholder="—"
-                         class="w-full text-right border border-gray-200 focus:border-teal-600 focus:outline-none px-2 py-1.5 text-sm tabular-nums">
-                </td>
-              </template>
-
-              <!-- Row total -->
-              <td class="px-4 py-2 text-right font-semibold text-gray-900 tabular-nums border-r border-gray-100">
-                <span x-text="'KES ' + formatNumber(rowTotal(row))"></span>
-              </td>
-
-              <!-- Row actions -->
-              <td class="px-2 py-2 text-center">
-                <button type="button"
-                        @click="removeRow(rIdx)"
-                        class="text-gray-400 hover:text-red-600 transition"
-                        title="Remove this fee item">
-                  {% include 'partials/icons.html' with name="trash" size=16 %}
-                </button>
-              </td>
-
-            </tr>
-          </template>
-
-          <!-- Empty state -->
-          <template x-if="rows.length === 0">
-            <tr>
-              <td :colspan="classes.length + 3" class="px-4 py-12 text-center">
-                <div class="text-gray-400 mb-3" style="font-size: 48px;">📋</div>
-                <p class="text-sm font-medium text-gray-700">No fee items yet</p>
-                <p class="text-xs text-gray-500 mt-1 mb-4">Add your first fee item to get started</p>
-                <button type="button"
-                        @click="addRow()"
-                        class="pro-btn pro-btn-primary">
-                  + Add First Fee Item
-                </button>
-              </td>
-            </tr>
-          </template>
-        </tbody>
-
-        <!-- FOOT: column totals -->
-        <tfoot x-show="rows.length > 0" class="bg-gray-50 border-t-2 border-gray-200">
-          <tr>
-            <td class="sticky left-0 bg-gray-50 z-10 px-4 py-3 font-semibold text-gray-700 text-xs uppercase tracking-wide border-r border-gray-200">
-              Class Total
-            </td>
-            <template x-for="cls in classes" :key="cls.id">
-              <td class="px-3 py-3 text-right font-bold text-teal-700 tabular-nums border-r border-gray-200">
-                <span x-text="formatNumber(columnTotal(cls.id))"></span>
-              </td>
-            </template>
-            <td class="px-4 py-3 text-right font-bold text-gray-900 tabular-nums border-r border-gray-100">
-              <span x-text="formatNumber(grandTotal())"></span>
-            </td>
-            <td></td>
-          </tr>
-        </tfoot>
-
-      </table>
+    <div style="width: 150px;">
+      <label style="display: block; font-size: 13px; font-weight: 600; color: var(--ink-500); margin-bottom: 6px;">Term</label>
+      <select name="term" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px;">
+        {% for t in terms %}
+          <option value="{{ t }}" {% if selected_term == t %}selected{% endif %}>{{ t }}</option>
+        {% endfor %}
+      </select>
     </div>
 
-  </div>
-
-  <!-- ============ SAVE BAR ============ -->
-  <div class="bg-white shadow-sm border border-gray-200 p-4 sticky bottom-4 z-20"
-       style="box-shadow: 0 -4px 20px rgba(0,0,0,0.06);">
-    <div class="flex items-center justify-between flex-wrap gap-3">
-
-      <div class="text-sm">
-        <span class="text-gray-500">Will create</span>
-        <span class="font-bold text-gray-900" x-text="previewRowCount()"></span>
-        <span class="text-gray-500">fee structure records across</span>
-        <span class="font-bold text-gray-900" x-text="previewClassCount()"></span>
-        <span class="text-gray-500">classes</span>
-      </div>
-
-      <div class="flex gap-3">
-        <a href="{% url 'fee_structure_list' %}" class="pro-btn pro-btn-secondary">
-          Cancel
-        </a>
-        <button type="button"
-                @click="save()"
-                :disabled="!canSave() || saving"
-                :class="(!canSave() || saving) ? 'opacity-50 cursor-not-allowed' : ''"
-                class="pro-btn pro-btn-primary">
-          <span x-show="!saving">Save Fee Structure</span>
-          <span x-show="saving">Saving…</span>
-        </button>
-      </div>
-
-    </div>
-  </div>
-
+    <button type="submit" class="btn btn-primary" style="padding: 10px 24px;">Load Matrix</button>
+  </form>
 </div>
 
-<style>
-  [x-cloak] { display: none !important; }
-</style>
+{% if selected_class %}
+<div class="card">
+  <h3 style="margin-bottom: 16px; color: var(--ink-900);">
+    Drafting: {{ selected_class.name }} — {{ selected_term }} {{ selected_year }}
+  </h3>
+  
+  <form method="post">
+    {% csrf_token %}
+    <table class="table" id="fee-table" style="width: 100%; margin-bottom: 20px;">
+      <thead style="background: #f8fafc;">
+        <tr>
+          <th style="padding: 12px; text-align: left; font-size: 13px; color: var(--ink-500);">Fee Item Name</th>
+          <th style="padding: 12px; text-align: right; font-size: 13px; color: var(--ink-500); width: 200px;">Amount (KES)</th>
+          <th style="padding: 12px; text-align: left; font-size: 13px; color: var(--ink-500); width: 200px;">Due Date (Optional)</th>
+          <th style="padding: 12px; width: 50px;"></th>
+        </tr>
+      </thead>
+      <tbody id="fee-rows">
+        {% for fee in existing_fees %}
+        <tr>
+          <td style="padding: 8px;"><input type="text" name="item_name[]" value="{{ fee.name }}" required style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 4px;"></td>
+          <td style="padding: 8px;"><input type="number" name="item_amount[]" value="{{ fee.amount_kes }}" required style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 4px; text-align: right; font-family: monospace;"></td>
+          <td style="padding: 8px;"><input type="date" name="item_date[]" value="{{ fee.due_date|date:'Y-m-d' }}" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 4px;"></td>
+          <td style="padding: 8px; text-align: center;"><button type="button" onclick="this.closest('tr').remove()" style="background: #fee2e2; color: #991b1b; border: none; padding: 8px; border-radius: 4px; cursor: pointer;">✕</button></td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td style="padding: 8px;"><input type="text" name="item_name[]" placeholder="e.g. Tuition" required style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 4px;"></td>
+          <td style="padding: 8px;"><input type="number" name="item_amount[]" placeholder="0.00" required style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 4px; text-align: right; font-family: monospace;"></td>
+          <td style="padding: 8px;"><input type="date" name="item_date[]" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 4px;"></td>
+          <td style="padding: 8px; text-align: center;"><button type="button" onclick="this.closest('tr').remove()" style="background: #fee2e2; color: #991b1b; border: none; padding: 8px; border-radius: 4px; cursor: pointer;">✕</button></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
 
-{% endblock %}
+    <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); padding-top: 20px;">
+      <button type="button" onclick="addRow()" class="btn btn-secondary" style="background: white;">+ Add Another Item</button>
+      <button type="submit" class="btn btn-primary" style="padding: 12px 32px; font-size: 16px;">Save Fee Matrix</button>
+    </div>
+  </form>
+</div>
 
-{% block extra_js %}
 <script>
-function matrixEditor() {
-  return {
-    // --- Form state ---
-    termName: '{{ default_term_name|escapejs }}',
-    dueDate:  '{{ default_due_date|escapejs }}',
-    saving: false,
-
-    // --- Data from Django ---
-    classes: {{ classes_json|safe }},
-
-    // --- Grid ---
-    rows: [
-      { uid: Date.now() + 1, name: 'Tuition', mandatory: true,  amounts: {} },
-    ],
-    nextUid: Date.now() + 2,
-
-    // --- Actions ---
-    addRow() {
-      const suggestions = ['Tuition', 'Lunch', 'Transport', 'Activity Fee', 'Books', 'Uniform', 'Exam Fee', 'Development Fee'];
-      const used = this.rows.map(r => r.name);
-      const next = suggestions.find(s => !used.includes(s)) || '';
-      this.rows.push({ uid: this.nextUid++, name: next, mandatory: true, amounts: {} });
-    },
-
-    removeRow(idx) {
-      if (confirm('Remove this fee item?')) {
-        this.rows.splice(idx, 1);
-      }
-    },
-
-    // --- Calculations ---
-    rowTotal(row) {
-      return Object.values(row.amounts).reduce((sum, v) => sum + (Number(v) || 0), 0);
-    },
-
-    columnTotal(clsId) {
-      return this.rows.reduce((sum, r) => sum + (Number(r.amounts[clsId]) || 0), 0);
-    },
-
-    grandTotal() {
-      return this.rows.reduce((sum, r) => sum + this.rowTotal(r), 0);
-    },
-
-    filledCellCount() {
-      return this.rows.reduce((count, r) =>
-        count + Object.values(r.amounts).filter(v => Number(v) > 0).length, 0
-      );
-    },
-
-    previewRowCount() {
-      return this.rows.reduce((count, r) =>
-        count + Object.values(r.amounts).filter(v => Number(v) > 0).length, 0
-      );
-    },
-
-    previewClassCount() {
-      const usedClasses = new Set();
-      this.rows.forEach(r => {
-        Object.entries(r.amounts).forEach(([clsId, amt]) => {
-          if (Number(amt) > 0) usedClasses.add(clsId);
-        });
-      });
-      return usedClasses.size;
-    },
-
-    formatNumber(n) {
-      return (Number(n) || 0).toLocaleString('en-KE');
-    },
-
-    canSave() {
-      return this.termName.trim() !== ''
-          && this.dueDate !== ''
-          && this.rows.length > 0
-          && this.previewRowCount() > 0;
-    },
-
-    // --- Save ---
-    async save() {
-      if (!this.canSave()) return;
-      this.saving = true;
-
-      const payload = {
-        term_name: this.termName.trim(),
-        due_date: this.dueDate,
-        rows: this.rows
-          .filter(r => r.name.trim() !== '')
-          .map(r => ({
-            name: r.name.trim(),
-            mandatory: r.mandatory,
-            amounts: r.amounts,
-          })),
-      };
-
-      try {
-        const res = await fetch('{% url "fee_structure_matrix_save" %}', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': '{{ csrf_token }}',
-          },
-          body: JSON.stringify(payload),
-        });
-
-        const data = await res.json();
-
-        if (data.success) {
-          window.location.href = '{% url "fee_structure_list" %}';
-        } else {
-          alert(data.error || 'Something went wrong.');
-          this.saving = false;
-        }
-      } catch (err) {
-        alert('Network error: ' + err.message);
-        this.saving = false;
-      }
-    },
-  };
-}
+  function addRow() {
+    const tbody = document.getElementById('fee-rows');
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td style="padding: 8px;"><input type="text" name="item_name[]" placeholder="e.g. Transport" required style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 4px;"></td>
+      <td style="padding: 8px;"><input type="number" name="item_amount[]" placeholder="0.00" required style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 4px; text-align: right; font-family: monospace;"></td>
+      <td style="padding: 8px;"><input type="date" name="item_date[]" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 4px;"></td>
+      <td style="padding: 8px; text-align: center;"><button type="button" onclick="this.closest('tr').remove()" style="background: #fee2e2; color: #991b1b; border: none; padding: 8px; border-radius: 4px; cursor: pointer;">✕</button></td>
+    `;
+    tbody.appendChild(tr);
+  }
 </script>
+{% endif %}
 {% endblock %}

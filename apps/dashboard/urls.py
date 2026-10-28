@@ -184,22 +184,31 @@ urlpatterns = [
      path('accountant/generate-invoices/', views.generate_invoices, name='generate_invoices'),
      path('subscriptions/initiate-payment/<int:school_id>/', views.subscription.initiate_subscription_payment, name='initiate_subscription_payment'),
      path('sms/settings/', views.communication.school_sms_settings, name='school_sms_settings'),
-
+     path('accountant/fee-matrix/', views.finance.fee_structure_matrix, name='fee_structure_matrix'),
+    path('accountant/fee-structures/class/<str:class_name>/pdf/', views.finance.fee_structure_class_pdf, name='fee_structure_class_pdf'),
+    path('schools/<int:school_id>/modules/', views.school_modules_manage, name='school_modules_manage'),
+    path('schools/<int:school_id>/details-pdf/', views.admin_schools.school_details_pdf, name='school_details_pdf'),
+    
     path('teacher/my-class/rankings/download/',
          views.class_teacher_rankings_download,
          name='class_teacher_rankings_download'),
-        path('accountant/student/<int:student_id>/invoice/',
+         
+    path('accountant/student/<int:student_id>/invoice/',
          views.invoice_student_quick,
          name='invoice_student_quick'),
-     path('academics/subjects/<int:subject_id>/delete/',
+         
+    path('academics/subjects/<int:subject_id>/delete/',
          views.subject_delete,
          name='subject_delete'),
-     path('subscriptions/manage/',
+         
+    path('subscriptions/manage/',
          views.subscription_admin_picker,
          name='subscription_admin_picker'),
-     path('subscriptions/',
+         
+    path('subscriptions/',
          views.subscription_plans,
          name='subscription_plans'),
+         
     path('subscriptions/confirm/',
          views.subscription_confirm,
          name='subscription_confirm'),
@@ -207,13 +216,16 @@ urlpatterns = [
     path('subscriptions/payment/',
          views.subscription_payment,
          name='subscription_payment'),
-     path('accountant/transactions/report.pdf/',
+         
+    path('accountant/transactions/report.pdf/',
          views.financial_report_pdf,
          name='financial_report_pdf'),
-     path('students/<int:student_id>/',
+         
+    path('students/<int:student_id>/',
          views.student_detail,
          name='student_detail'),
-         path('users/<int:user_id>/deactivate/',
+         
+    path('users/<int:user_id>/deactivate/',
          views.user_deactivate,
          name='user_deactivate'),
 
@@ -224,18 +236,18 @@ urlpatterns = [
     path('users/<int:user_id>/change-role/',
          views.user_change_role,
          name='user_change_role'),
+         
     path('teacher/my-class/attendance/',
          views.class_teacher_attendance,
          name='class_teacher_attendance'),
     
-        path('admin/attendance/',
+    path('admin/attendance/',
          views.admin_attendance_overview,
          name='admin_attendance_overview'),
         
-     path('admin/attendance/class/<int:class_id>/',
-          views.admin_class_attendance,
-          name='admin_class_attendance'),
-        
+    path('admin/attendance/class/<int:class_id>/',
+         views.admin_class_attendance,
+         name='admin_class_attendance'),
 
     path('admin/attendance/export/',
          views.admin_attendance_export,
@@ -244,10 +256,6 @@ urlpatterns = [
     path('admin/student/<int:student_id>/',
          views.admin_student_detail,
          name='admin_student_detail'),
-    
-     path('admin/attendance/',
-         views.admin_attendance_overview,
-         name='admin_attendance_overview'),
 
     path('teacher/my-class/attendance/sheet/',
          views.class_teacher_attendance_sheet,
@@ -261,10 +269,11 @@ urlpatterns = [
          views.class_teacher_parents,
          name='class_teacher_parents'),
 
-       path('teacher/my-class/student/<int:student_id>/',
+    path('teacher/my-class/student/<int:student_id>/',
          views.class_teacher_view_student,
          name='class_teacher_view_student'),
-        path('teacher/my-class/parents/<int:parent_id>/',
+         
+    path('teacher/my-class/parents/<int:parent_id>/',
          views.class_teacher_view_parent,
          name='class_teacher_view_parent'),
 
@@ -275,7 +284,6 @@ urlpatterns = [
     # Class Results
     path('class-results/', views.class_results, name='class_results'),
     path('class-results/pdf/', views.class_results_pdf, name='class_results_pdf'),
-    
     path('teachers/add/', views.add_teacher, name='add_teacher'),
     path('teachers/<int:teacher_id>/delete/', views.delete_teacher, name='delete_teacher'),
     path('staff/add/', views.add_staff, name='add_staff'),

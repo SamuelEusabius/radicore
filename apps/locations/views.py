@@ -1,35 +1,27 @@
-"""
-AJAX endpoints for cascading dropdowns.
-
-GET /api/locations/constituencies/?county=<county_id>     → list of constituencies
-GET /api/locations/wards/?constituency=<constituency_id>   → list of wards
-"""
 from django.http import JsonResponse
 from django.views.decorators.http import require_GET
+from django.db.models import Q
 
 from .models import County, Constituency, Ward
 
 
 @require_GET
 def api_constituencies(request):
-    """
-    Returns constituencies for the given county.
-    Query param: county (County ID or code)
-    """
     county_param = request.GET.get('county', '').strip()
     if not county_param:
         return JsonResponse({'results': []})
 
     qs = Constituency.objects.all()
-    # Accept either ID or code
+    
+    # Accept ID, code, or name
     try:
         county_id = int(county_param)
         qs = qs.filter(county_id=county_id)
     except ValueError:
-        qs = qs.filter(county__code=county_param)
+        qs = qs.filter(Q(county__code__iexact=county_param) | Q(county__name__iexact=county_param))
 
     results = [
-        {'id': c.id, 'code': c.code, 'name': c.name}
+        {'id': c.id, 'code': c.code, 'name': c.name.upper()}
         for c in qs.order_by('name')
     ]
     return JsonResponse({'results': results})
@@ -37,23 +29,20 @@ def api_constituencies(request):
 
 @require_GET
 def api_wards(request):
-    """
-    Returns wards for the given constituency.
-    Query param: constituency (Constituency ID or code)
-    """
     cons_param = request.GET.get('constituency', '').strip()
     if not cons_param:
         return JsonResponse({'results': []})
 
     qs = Ward.objects.all()
+    
     try:
         cons_id = int(cons_param)
         qs = qs.filter(constituency_id=cons_id)
     except ValueError:
-        qs = qs.filter(constituency__code=cons_param)
+        qs = qs.filter(Q(constituency__code__iexact=cons_param) | Q(constituency__name__iexact=cons_param))
 
     results = [
-        {'id': w.id, 'code': w.code, 'name': w.name}
+        {'id': w.id, 'code': w.code, 'name': w.name.upper()}
         for w in qs.order_by('name')
     ]
     return JsonResponse({'results': results})

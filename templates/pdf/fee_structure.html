@@ -3,343 +3,115 @@
 <head>
 <meta charset="utf-8">
 <style>
-
-    /* ==========================================================
-     STANDARD REPORT HEADER
-     ========================================================== */
-  table.report-header { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
-  table.report-header td { vertical-align: top; padding: 0; }
-  .rh-logo-cell { width: 90px; padding-right: 16px; }
-  .rh-logo-img { width: 72px; height: 72px; object-fit: contain; }
-  .rh-info-cell { vertical-align: top; }
-  .rh-school-name { font-size: 16pt; font-weight: bold; color: #00695c; line-height: 1.1; margin: 0; }
-  .rh-motto { font-style: italic; font-size: 9.5pt; color: #555; margin-top: 3px; }
-  .rh-address { font-size: 9pt; color: #555; margin-top: 6px; }
-  .rh-contact { font-size: 9pt; color: #555; margin-top: 2px; }
-  .rh-meta-cell { width: 150px; text-align: right; vertical-align: top; padding-right: 4px; }
-  .rh-meta-label { font-size: 6.5pt; text-transform: uppercase; letter-spacing: 0.05em; color: #888; font-weight: bold; }
-  .rh-meta-date { font-size: 10pt; font-weight: bold; color: #1a1a1a; margin-top: 1px; }
-  .rh-meta-time { font-size: 8.5pt; color: #555; margin-top: 1px; }
-  .rh-meta-name { font-size: 8.5pt; color: #555; margin-top: 1px; }
-  .rh-divider { border-bottom: 2pt solid #00695c; margin-bottom: 14px; }
-
-   @page {
-    size: A4 portrait;
-    margin: 15mm 12mm 18mm 12mm;
-  }
-
-  * { box-sizing: border-box; }
-
-  body {
-    font-family: Helvetica, Arial, sans-serif;
-    font-size: 10pt;
-    color: #1a1a1a;
-    margin: 0;
-    padding: 0;
-  }
-
-  /* ============ HEADER ============ */
-  .header {
-    border-bottom: 2px solid #00695c;
-    padding-bottom: 10px;
-    margin-bottom: 14px;
-  }
-
-  .header-table {
-    width: 100%;
-    border-collapse: collapse;
-  }
-
-  .header-table td {
-    vertical-align: top;
-    padding: 0;
-  }
-
-  .logo-cell {
-    width: 80px;
-  }
-
-  .logo-cell img {
-    width: 70px;
-    height: auto;
-  }
-
-  .school-name {
-    font-size: 18pt;
-    font-weight: bold;
-    color: #00695c;
-    margin: 0;
-    line-height: 1.2;
-  }
-
-  .school-motto {
-    font-size: 9pt;
-    font-style: italic;
-    color: #6b7280;
-    margin: 3px 0 0 0;
-  }
-
-  .school-meta {
-    font-size: 9pt;
-    color: #4b5563;
-    margin: 4px 0 0 0;
-    line-height: 1.4;
-  }
-
-  /* ============ TITLE ============ */
-  .title-block {
-    text-align: center;
-    margin: 14px 0 14px 0;
-  }
-
-  .title-main {
-    font-size: 15pt;
-    font-weight: bold;
-    color: #111827;
-    margin: 0;
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-  }
-
-  .title-sub {
-    font-size: 10pt;
-    color: #4b5563;
-    margin: 5px 0 0 0;
-  }
-
-  /* ============ META INFO ============ */
-  .meta-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-bottom: 12px;
-    font-size: 9pt;
-  }
-
-  .meta-table td {
-    padding: 4px 6px;
-    vertical-align: top;
-  }
-
-  .meta-label {
-    color: #6b7280;
-  }
-
-  .meta-value {
-    font-weight: bold;
-    color: #111827;
-  }
-
-  /* ============ MAIN TABLE ============ */
-  .fee-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-bottom: 14px;
-    table-layout: fixed;
-  }
-
-  .fee-table th {
-    background: #00695c;
-    color: white;
-    font-size: 8.5pt;
-    padding: 8px 4px;
-    text-align: center;
-    font-weight: bold;
-    border: 1px solid #004d40;
-    word-wrap: break-word;
-    overflow-wrap: break-word;
-    vertical-align: middle;
-  }
-
-  .fee-table th.item-col {
-    text-align: left;
-    width: 22%;
-  }
-
-  .fee-table th.total-col {
-    background: #004d40;
-    width: 12%;
-  }
-
-  .fee-table td {
-    padding: 7px 4px;
-    font-size: 9pt;
-    border: 1px solid #d1d5db;
-    text-align: right;
-    vertical-align: middle;
-    word-wrap: break-word;
-  }
-
-  .fee-table td.item-name {
-    text-align: left;
-    font-weight: 500;
-    background: #f9fafb;
-  }
-
-  .fee-table tr.total-row td {
-    background: #e6f5ef;
-    font-weight: bold;
-    font-size: 9.5pt;
-    color: #004d40;
-    border-top: 2px solid #00695c;
-  }
-
-  .empty-cell {
-    color: #9ca3af;
-    text-align: center;
-  }
-
-  /* ============ SIGNATURE ============ */
-  .signature-block {
-    margin-top: 24px;
-    font-size: 9pt;
-  }
-
-  .signature-table {
-    width: 100%;
-    border-collapse: collapse;
-  }
-
-  .signature-table td {
-    padding: 8px 0;
-    vertical-align: bottom;
-  }
-
-  .signature-line {
-    border-bottom: 1px solid #4b5563;
-    height: 28px;
-    margin-bottom: 4px;
-  }
-
-  .signature-label {
-    color: #6b7280;
-    font-size: 8.5pt;
-  }
-
-  /* ============ FOOTER ============ */
-  .footer {
-    margin-top: 18px;
-    padding-top: 8px;
-    border-top: 1px solid #d1d5db;
-    font-size: 8pt;
-    color: #6b7280;
-    text-align: center;
-  }
-
-  .footer-left {
-    text-align: left;
-  }
-
-  .footer-right {
-    text-align: right;
-  }
-
-  /* ============ NOTES ============ */
-  .notes {
-    margin-top: 12px;
-    font-size: 8.5pt;
-    color: #4b5563;
-    padding: 10px 12px;
-    background: #f9fafb;
-    border-left: 3px solid #00695c;
-  }
+    @page { size: A4 portrait; margin: 2cm; }
+    body { font-family: Helvetica, Arial, sans-serif; font-size: 10pt; color: #000; line-height: 1.3; }
+    
+    .header { text-align: center; margin-bottom: 20px; }
+    .logo-img { max-height: 80px; max-width: 150px; margin-bottom: 10px; }
+    .school-name { font-size: 18pt; font-weight: bold; text-transform: uppercase; margin: 0; }
+    .school-address { font-size: 10pt; margin: 2px 0; }
+    .school-contact { font-size: 10pt; margin: 2px 0; }
+    .doc-title { font-size: 12pt; font-weight: bold; text-transform: uppercase; margin-top: 15px; border-bottom: 1px solid #000; padding-bottom: 5px; display: inline-block; }
+    
+    .student-info { margin-bottom: 15px; font-size: 10pt; line-height: 1.5; }
+    .student-info strong { display: inline-block; width: 120px; }
+    
+    .fee-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+    .fee-table th, .fee-table td { border: 1px solid #000; padding: 6px 8px; text-align: left; }
+    .fee-table th { background: #f8f9fa; font-weight: bold; }
+    .fee-table .text-right { text-align: right; }
+    
+    .period-header { background: #e9ecef; font-weight: bold; padding: 8px; border: 1px solid #000; border-bottom: none; margin-top: 15px; }
+    .subtotal-row { font-weight: bold; background: #f8f9fa; }
+    
+    .footer { margin-top: 30px; font-size: 9pt; text-align: center; color: #555; }
 </style>
 </head>
 <body>
 
-{% include 'pdf/_report_header.html' %}
+    <div class="header">
+        {% if school_logo_b64 or school.logo %}
+            <img src="{% if school_logo_b64 %}{{ school_logo_b64 }}{% else %}{{ school.logo.url }}{% endif %}" class="logo-img" alt="Logo">
+        {% endif %}
+        <div class="school-name">{{ school.name }}</div>
+        <div class="school-address">P.O. Box {{ school.postal_address|default:"—" }} {{ school.physical_address|default:"" }}</div>
+        <div class="school-contact">Phone: {{ school.phone|default:"—" }} | Email: {{ school.email|default:"—" }}</div>
+        <div class="doc-title">OFFICIAL FEES STRUCTURE</div>
+    </div>
 
-<!-- ============ TITLE ============ -->
-<div class="title-block">
-  <p class="title-main">{% if class_name %}{{ class_name }} — {% endif %}Fee Structure</p>
-  <p class="title-sub">{{ term_name }}{% if due_date %} · Due Date: {{ due_date }}{% endif %}</p>
-</div>
+    <div class="student-info">
+        <div><strong>Class Level:</strong> {{ class_name }}</div>
+        <div><strong>Printed On:</strong> {% now "d/m/Y" %}</div>
+        <div><strong>Generated By:</strong> {{ generated_by.get_full_name|default:generated_by.email }}</div>
+    </div>
 
-<!-- ============ META ============ -->
-<table class="meta-table">
-  <tr>
-    <td>
-      <span class="meta-label">Generated:</span>
-      <span class="meta-value">{{ generated_at|date:"d M Y" }}</span>
-    </td>
-    <td style="text-align: right;">
-      <span class="meta-label">By:</span>
-      <span class="meta-value">{{ generated_by.get_full_name|default:generated_by.email }}</span>
-    </td>
-  </tr>
-</table>
+    <table class="fee-table">
+        <thead>
+            <tr>
+                <th style="width: 20%;">Item Code</th>
+                <th style="width: 55%;">Description</th>
+                <th style="width: 25%; text-align: right;">Amount (KES)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% regroup fees by term as term_list %}
+            {% for term in term_list %}
+                <tr>
+                    <td colspan="3" class="period-header">
+                        Fee Period: {{ term.grouper }} {{ term.list.0.academic_year }}
+                    </td>
+                </tr>
+                
+                {% for fee in term.list %}
+                <tr>
+                    <td>
+                        <!-- GENERATE CLASS SPECIFIC CODE -->
+                        {% with words=class_name.split %}
+                            {% for word in words|slice:":3" %}{{ word|first|upper }}{% endfor %}
+                        {% endwith %}
+                        - {{ forloop.counter|stringformat:"03d" }}
+                    </td>
+                    <td>{{ fee.name }}</td>
+                    <td class="text-right">{{ fee.amount_kes|floatformat:2 }}</td>
+                </tr>
+                {% endfor %}
+                
+                <tr class="subtotal-row">
+                    <td colspan="2" class="text-right">Sub Total for {{ term.grouper }}</td>
+                    <td class="text-right">
+                        <!-- We will leave this blank for now as Django templates cannot sum loops easily -->
+                        <!-- You can calculate the term subtotal in the view if needed -->
+                        —
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="2" class="text-right" style="font-weight: bold; font-size: 12pt;">TOTAL FEES</td>
+                <td class="text-right" style="font-weight: bold; font-size: 12pt;">KES {{ total|floatformat:2 }}</td>
+            </tr>
+        </tfoot>
+    </table>
 
-<!-- ============ FEE TABLE ============ -->
-<table class="fee-table">
-  <thead>
-    <tr>
-      <th class="item-col">Fee Item</th>
-      {% for cls in classes %}
-        <th>{{ cls.name }}</th>
-      {% endfor %}
-      <th class="total-col">Total (KES)</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for row in rows %}
-      <tr>
-        <td class="item-name">{{ row.name }}</td>
-        {% for amount in row.amounts %}
-          <td class="{% if not amount %}empty-cell{% endif %}">
-            {% if amount %}{{ amount|floatformat:0 }}{% else %}—{% endif %}
-          </td>
-        {% endfor %}
-        <td><strong>{{ row.total|floatformat:0 }}</strong></td>
-      </tr>
-    {% endfor %}
+    <table style="width: 100%; margin-top: 40px;">
+        <tr>
+            <td style="width: 50%;">
+                <div style="border-bottom: 1px solid #000; width: 80%; height: 30px;"></div>
+                <p style="margin: 5px 0; font-size: 10pt;"><strong>Authorized Signature</strong></p>
+                <p style="margin: 0; font-size: 10pt;">Accountant / Bursar</p>
+            </td>
+            <td style="width: 50%; text-align: right;">
+                <div style="border: 1px dashed #000; padding: 20px; width: 150px; float: right; text-align: center; font-size: 9pt;">
+                    OFFICIAL SCHOOL<br>RUBBERSTAMP
+                </div>
+            </td>
+        </tr>
+    </table>
 
-    <tr class="total-row">
-      <td class="item-name">CLASS TOTAL</td>
-      {% for total in column_totals %}
-        <td>{{ total|floatformat:0 }}</td>
-      {% endfor %}
-      <td>{{ grand_total|floatformat:0 }}</td>
-    </tr>
-  </tbody>
-</table>
-
-<!-- ============ NOTES ============ -->
-<div class="notes">
-  <strong>Notes:</strong> Fees are payable on or before the due date.
-  Payments can be made via M-Pesa, Bank Transfer, or Cash at the school office.
-  For inquiries, contact the school accounts office.
-</div>
-
-<!-- ============ SIGNATURES ============ -->
-<div class="signature-block">
-  <table class="signature-table">
-    <tr>
-      <td style="width: 50%; padding-right: 20px;">
-        <div class="signature-line"></div>
-        <div class="signature-label">Prepared by: {{ generated_by.get_full_name|default:generated_by.email }}</div>
-      </td>
-      <td style="width: 50%; padding-left: 20px;">
-        <div class="signature-line"></div>
-        <div class="signature-label">
-          {% if school.principal_name %}
-            Principal: {{ school.principal_name }}
-          {% else %}
-            Principal / School Admin
-          {% endif %}
-        </div>
-      </td>
-    </tr>
-  </table>
-</div>
-
-<!-- ============ FOOTER ============ -->
-<div class="footer">
-  <table style="width: 100%;">
-    <tr>
-      <td class="footer-left">{{ school.name }} · {{ school.code }}</td>
-      <td class="footer-right">Generated {{ generated_at|date:"d M Y H:i" }}</td>
-    </tr>
-  </table>
-</div>
+    <div class="footer">
+        Page 1 of 1 | This is a computer-generated document.
+    </div>
 
 </body>
 </html>

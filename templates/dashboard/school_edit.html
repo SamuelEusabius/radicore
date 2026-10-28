@@ -30,11 +30,13 @@
     </div>
 
     <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+      
+      <a href="{% url 'school_details_pdf' school.id %}" target="_blank" class="pro-btn pro-btn-secondary" title="Download School Profile PDF">
+        {% include 'partials/icons.html' with name="download" size=15 %}
+        <span>Details PDF</span>
+      </a>
 
-      <!-- ⭐ MANAGE MODULES (new) -->
-      <a href="{% url 'school_modules_manage' school.id %}"
-         class="pro-btn pro-btn-orange"
-         title="Enable or disable modules for this school">
+      <a href="{% url 'school_modules_manage' school.id %}" class="pro-btn pro-btn-orange" title="Enable or disable modules for this school">
         {% include 'partials/icons.html' with name="grid" size=15 %}
         <span>Manage Modules</span>
       </a>
@@ -85,32 +87,6 @@
           Remove current logo
         </label>
         {% endif %}
-
-        <script>
-          document.getElementById('logo-input').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(ev) {
-              const preview = document.getElementById('logo-preview');
-              if (preview.tagName === 'IMG') {
-                preview.src = ev.target.result;
-              } else {
-                const img = document.createElement('img');
-                img.id = 'logo-preview';
-                img.src = ev.target.result;
-                img.style.width = '140px';
-                img.style.height = '140px';
-                img.style.objectFit = 'contain';
-                img.style.border = '1px solid #e5e7eb';
-                img.style.background = '#f9fafb';
-                img.style.padding = '8px';
-                preview.replaceWith(img);
-              }
-            };
-            reader.readAsDataURL(file);
-          });
-        </script>
       </div>
 
       <!-- Status card -->
@@ -188,23 +164,31 @@
                    style="width: 100%; border: 1px solid #d1d5db; padding: 8px; font-size: 13px;">
           </div>
 
+          <!-- 🌍 CASCADING LOCATION 🌍 -->
           <div>
             <label style="display: block; font-size: 12px; font-weight: 500; color: #374151; margin-bottom: 6px;">County</label>
-            <input type="text" name="county" value="{{ school.county|default:'' }}"
-                   style="width: 100%; border: 1px solid #d1d5db; padding: 8px; font-size: 13px;">
+            <select name="county" id="id_county" style="width: 100%; border: 1px solid #d1d5db; padding: 8px; font-size: 13px;">
+              <option value="">— Select County —</option>
+              {% for county in counties %}
+                <option value="{{ county.name }}" {% if school.county == county.name %}selected{% endif %}>{{ county.name|upper }}</option>
+              {% endfor %}
+            </select>
           </div>
 
           <div>
-            <label style="display: block; font-size: 12px; font-weight: 500; color: #374151; margin-bottom: 6px;">Sub-County</label>
-            <input type="text" name="sub_county" value="{{ school.sub_county|default:'' }}"
-                   style="width: 100%; border: 1px solid #d1d5db; padding: 8px; font-size: 13px;">
+            <label style="display: block; font-size: 12px; font-weight: 500; color: #374151; margin-bottom: 6px;">Sub-County / Constituency</label>
+            <select name="sub_county" id="id_sub_county" style="width: 100%; border: 1px solid #d1d5db; padding: 8px; font-size: 13px;">
+              <option value="{{ school.sub_county|default:'' }}">{{ school.sub_county|default:"— Select County first —" }}</option>
+            </select>
           </div>
 
           <div>
             <label style="display: block; font-size: 12px; font-weight: 500; color: #374151; margin-bottom: 6px;">Ward</label>
-            <input type="text" name="ward" value="{{ school.ward|default:'' }}"
-                   style="width: 100%; border: 1px solid #d1d5db; padding: 8px; font-size: 13px;">
+            <select name="ward" id="id_ward" style="width: 100%; border: 1px solid #d1d5db; padding: 8px; font-size: 13px;">
+              <option value="{{ school.ward|default:'' }}">{{ school.ward|default:"— Select Sub-County first —" }}</option>
+            </select>
           </div>
+          <!-- 🌍 END CASCADING LOCATION 🌍 -->
 
           <div>
             <label style="display: block; font-size: 12px; font-weight: 500; color: #374151; margin-bottom: 6px;">NEMIS Code</label>
@@ -382,4 +366,80 @@
 
 </form>
 
+<!-- ============================================================ -->
+<!-- JAVASCRIPT FOR LOCATION CASCADE                              -->
+<!-- ============================================================ -->
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const countySelect = document.getElementById('id_county');
+    const subCountySelect = document.getElementById('id_sub_county');
+    const wardSelect = document.getElementById('id_ward');
+
+    // 1. When County changes, fetch Constituencies
+    countySelect.addEventListener('change', function() {
+      const countyName = this.value;
+      
+      // Reset Sub-County and Ward
+      subCountySelect.innerHTML = '<option value="">— Loading... —</option>';
+      wardSelect.innerHTML = '<option value="">— Select Sub-County first —</option>';
+      
+      if (countyName) {
+        fetch(`/api/locations/constituencies/?county=${encodeURIComponent(countyName)}`)
+          .then(response => response.json())
+          .then(data => {
+             subCountySelect.innerHTML = '<option value="">— Select Sub-County —</option>';
+             if (data.results) {
+               data.results.forEach(item => {
+                 const option = document.createElement('option');
+                 option.value = item.name;
+                 option.text = item.name; // Uppercase from API
+                 subCountySelect.appendChild(option);
+               });
+             }
+          })
+          .catch(() => {
+             subCountySelect.innerHTML = '<option value="">— Error loading —</option>';
+          });
+      } else {
+        subCountySelect.innerHTML = '<option value="">— Select County first —</option>';
+      }
+    });
+
+    // 2. When Sub-County changes, fetch Wards
+    subCountySelect.addEventListener('change', function() {
+      const subCountyName = this.value;
+      
+      // Reset Wards
+      wardSelect.innerHTML = '<option value="">— Loading... —</option>';
+      
+      if (subCountyName) {
+        fetch(`/api/locations/wards/?constituency=${encodeURIComponent(subCountyName)}`)
+          .then(response => response.json())
+          .then(data => {
+             wardSelect.innerHTML = '<option value="">— Select Ward —</option>';
+             if (data.results) {
+               data.results.forEach(item => {
+                 const option = document.createElement('option');
+                 option.value = item.name;
+                 option.text = item.name; // Uppercase from API
+                 wardSelect.appendChild(option);
+               });
+             }
+          })
+          .catch(() => {
+             wardSelect.innerHTML = '<option value="">— Error loading —</option>';
+          });
+      } else {
+        wardSelect.innerHTML = '<option value="">— Select Sub-County first —</option>';
+      }
+    });
+
+    // If the school already has a county selected, trigger the load on page start
+    if (countySelect.value) {
+      // We don't want to clear the existing sub_county/ward on page load, 
+      // so we only trigger if we need to populate the dropdown.
+      // (You can add an auto-trigger here if you want it to always refresh).
+    }
+  });
+</script>
 {% endblock %}

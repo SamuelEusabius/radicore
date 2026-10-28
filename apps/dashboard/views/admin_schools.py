@@ -9,12 +9,14 @@ Admin & Schools views (Super Admin scope):
 """
 
 from django.shortcuts import render, redirect, get_object_or_404
+from apps.locations.models import County
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import HttpResponse, JsonResponse
 from django.db.models import Q, Count, Sum
 from django.utils import timezone
 from django.contrib.auth import get_user_model
+from apps.locations.models import County, Constituency, Ward
 
 from apps.accounts.roles import (
     Role,
@@ -250,10 +252,17 @@ def schools_manage(request):
 
 @login_required
 def school_add(request):
+    """Super Admin creates a School, its Principal, and sets up a Trial Subscription."""
     if request.user.role != 'super_admin':
         return redirect('dashboard_home')
 
-    from apps.schools.models import School
+    from apps.accounts.models import User
+    from apps.schools.models import School, SchoolSubscription
+    from apps.locations.models import County
+    from django.utils import timezone
+    from datetime import timedelta
+
+    counties = County.objects.all().order_by('name')
 
     if request.method == 'POST':
         name = request.POST.get('name', '').strip()
@@ -261,104 +270,72 @@ def school_add(request):
         phone = request.POST.get('phone', '').strip()
         county = request.POST.get('county', '').strip()
         sub_county = request.POST.get('sub_county', '').strip()
-        nemis_code = request.POST.get('nemis_code', '').strip()
-        school_type = request.POST.get('school_type', 'private')
-        gender = request.POST.get('gender', 'mixed')
-        level = request.POST.get('level', 'all')
-        motto = request.POST.get('motto', '').strip()
-        physical_address = request.POST.get('physical_address', '').strip()
-        blocked_message = request.POST.get('blocked_message', '').strip()
-
-        admin_email = request.POST.get('admin_email', '').strip()
+        ward = request.POST.get('ward', '').strip()
+        
+        admin_email = request.POST.get('admin_email', '').strip().lower()
         admin_password = request.POST.get('admin_password', '').strip()
         admin_first_name = request.POST.get('admin_first_name', '').strip()
         admin_last_name = request.POST.get('admin_last_name', '').strip()
 
         errors = []
-        if not name:
-            errors.append('School name is required.')
-        if not admin_email:
-            errors.append('Admin email is required.')
-        if not admin_password:
-            errors.append('Admin password is required.')
-        if School.objects.filter(name=name).exists():
-            errors.append(f'A school named "{name}" already exists.')
-        if User.objects.filter(email=admin_email).exists():
-            errors.append(f'Email "{admin_email}" is already registered.')
+        
+        if not name: errors.append('School name is required.')
+        if School.objects.filter(name=name).exists(): errors.append(f'A school named "{name}" already exists.')
+        if not admin_email: errors.append('Principal email is required.')
+        elif User.objects.filter(email=admin_email).exists(): errors.append(f'Email "{admin_email}" is already registered.')
+        if not admin_password or len(admin_password) < 6: errors.append('Principal password must be at least 6 characters.')
 
         if errors:
             for e in errors:
                 messages.error(request, e)
-            return render(request, 'dashboard/school_add.html', {'form_data': request.POST})
+            return render(request, 'dashboard/school_add.html', {
+                'form_data': request.POST,
+                'counties': counties,
+            })
 
-        school = School.objects.create(
-            name=name, email=email, phone=phone,
-            county=county, sub_county=sub_county, nemis_code=nemis_code,
-            school_type=school_type, gender=gender, level=level,
-            motto=motto, physical_address=physical_address,
-            blocked_message=blocked_message or None,
-            is_active=True,
-        )
+        try:
+            # 1. Create the School (Model handles the auto-code)
+            school = School.objects.create(
+                name=name,
+                email=email,
+                phone=phone,
+                county=county,
+                sub_county=sub_county,
+                ward=ward,
+                is_active=True,
+            )
 
-        User.objects.create_user(
-            username=admin_email, email=admin_email, password=admin_password,
-            first_name=admin_first_name, last_name=admin_last_name,
-            role='principal', school=school,
-        )
+            # 2. Create the Principal
+            principal = User.objects.create_user(
+                username=admin_email,
+                email=admin_email,
+                password=admin_password,
+                first_name=admin_first_name,
+                last_name=admin_last_name,
+                role='principal',
+                school=school,
+            )
 
-        messages.success(request, f'School "{school.name}" created with code {school.code}.')
-        return redirect('schools_manage')
+            # 3. Setup the 14-Day Trial Subscription
+            SchoolSubscription.objects.create(
+                school=school,
+                status=SchoolSubscription.Status.TRIAL,
+                trial_started_at=timezone.now(),
+                trial_ends_at=timezone.now() + timedelta(days=14),
+                max_students=450,
+                max_teachers=30,
+            )
 
-    return render(request, 'dashboard/school_add.html')
+            messages.success(request, f'School "{school.name}" and Principal "{principal.email}" created successfully!')
+            return redirect('schools_manage')
 
+        except Exception as e:
+            messages.error(request, f'An error occurred: {str(e)}')
 
-@login_required
-def school_toggle_active(request, school_id):
-    if request.user.role != 'super_admin':
-        return redirect('dashboard_home')
-
-    from apps.schools.models import School
-    school = get_object_or_404(School, id=school_id)
-
-    if request.method == 'POST':
-        school.is_active = not school.is_active
-        school.save()
-        status = 'activated' if school.is_active else 'deactivated'
-        messages.success(request, f'{school.name} has been {status}.')
-    return redirect('schools_manage')
-
-
-@login_required
-def school_change_admin_password(request, school_id):
-    if request.user.role != 'super_admin':
-        return redirect('dashboard_home')
-
-    from apps.schools.models import School
-    school = get_object_or_404(School, id=school_id)
-    admins = User.objects.filter(school=school, role='principal')
-
-    if request.method == 'POST':
-        user_id = request.POST.get('user_id')
-        new_password = request.POST.get('new_password', '').strip()
-
-        if not user_id or not new_password:
-            messages.error(request, 'Select an admin and enter a new password.')
-        elif len(new_password) < 6:
-            messages.error(request, 'Password must be at least 6 characters.')
-        else:
-            try:
-                admin = admins.get(id=user_id)
-                admin.set_password(new_password)
-                admin.save()
-                messages.success(request, f'Password changed for {admin.email}.')
-                return redirect('schools_manage')
-            except User.DoesNotExist:
-                messages.error(request, 'Admin not found.')
-
-    return render(request, 'dashboard/school_change_password.html', {
-        'school': school, 'admins': admins,
+    return render(request, 'dashboard/school_add.html', {
+        'counties': counties,
     })
-
+    
 
 @login_required
 def school_delete(request, school_id):
@@ -447,8 +424,7 @@ def school_edit(request, school_id):
             school.senior_teacher_photo = request.FILES['senior_teacher_photo']
         if 'accountant_photo' in request.FILES:
             school.accountant_photo = request.FILES['accountant_photo']
-
-        # ---------- Remove logo ----------
+            
         if request.POST.get('remove_logo') == 'on':
             school.logo.delete(save=False)
             school.logo = None
@@ -460,11 +436,15 @@ def school_edit(request, school_id):
     # GET — show form
     plans = SubscriptionPlan.objects.all().order_by('order', 'min_students')
     board_members = school.board_members.all()
+    
+    # FETCH THE COUNTIES FOR THE DROPDOWN
+    counties = County.objects.all().order_by('name')
 
     return render(request, 'dashboard/school_edit.html', {
         'school': school,
         'plans': plans,
         'board_members': board_members,
+        'counties': counties, 
     })
 
 
@@ -726,4 +706,80 @@ def school_modules_manage(request, school_id):
         'modules': modules,
         'enabled_count': sum(1 for m in modules if m['is_enabled']),
         'total_count': len(modules),
+    })
+    
+@login_required
+def school_details_pdf(request, school_id):
+    """Generates a PDF summary of the school's details."""
+    if request.user.role != 'super_admin':
+        return redirect('dashboard_home')
+
+    from apps.schools.models import School
+    from django.template.loader import render_to_string
+    from apps.core.pdf_utils import html_to_pdf_response, build_pdf_context, image_to_base64
+
+    school = get_object_or_404(School, id=school_id)
+    
+    context = build_pdf_context(
+        school=school,
+        generated_by=request.user,
+    )
+    
+    if school.logo:
+        context['school_logo_b64'] = image_to_base64(school.logo)
+
+    html_string = render_to_string('pdf/school_details.html', context)
+    
+    return html_to_pdf_response(
+        html_string, 
+        f'School_Profile_{school.code}.pdf'
+    )
+    
+@login_required
+def school_toggle_active(request, school_id):
+    if request.user.role != 'super_admin':
+        return redirect('dashboard_home')
+
+    from apps.schools.models import School
+    school = get_object_or_404(School, id=school_id)
+
+    if request.method == 'POST':
+        school.is_active = not school.is_active
+        school.save()
+        status = 'activated' if school.is_active else 'deactivated'
+        messages.success(request, f'{school.name} has been {status}.')
+    return redirect('schools_manage')
+
+
+@login_required
+def school_change_admin_password(request, school_id):
+    if request.user.role != 'super_admin':
+        return redirect('dashboard_home')
+
+    from apps.schools.models import School
+    from apps.accounts.models import User
+    
+    school = get_object_or_404(School, id=school_id)
+    admins = User.objects.filter(school=school, role='principal')
+
+    if request.method == 'POST':
+        user_id = request.POST.get('user_id')
+        new_password = request.POST.get('new_password', '').strip()
+
+        if not user_id or not new_password:
+            messages.error(request, 'Select an admin and enter a new password.')
+        elif len(new_password) < 6:
+            messages.error(request, 'Password must be at least 6 characters.')
+        else:
+            try:
+                admin = admins.get(id=user_id)
+                admin.set_password(new_password)
+                admin.save()
+                messages.success(request, f'Password changed for {admin.email}.')
+                return redirect('schools_manage')
+            except User.DoesNotExist:
+                messages.error(request, 'Admin not found.')
+
+    return render(request, 'dashboard/school_change_password.html', {
+        'school': school, 'admins': admins,
     })
