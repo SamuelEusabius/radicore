@@ -303,3 +303,22 @@ class MessageRecipient(models.Model):
             self.is_read = True
             self.read_at = timezone.now()
             self.save(update_fields=['is_read', 'read_at'])
+            
+class SchoolSmsConfig(models.Model):
+    """Stores Africa's Talking credentials for each specific school."""
+    school = models.OneToOneField(
+        'schools.School', on_delete=models.CASCADE, related_name='sms_config'
+    )
+    username = models.CharField(
+        max_length=100, help_text="AT Username (usually the school shortcode or 'sandbox')"
+    )
+    api_key = models.CharField(max_length=255, help_text="AT API Key")
+    sender_id = models.CharField(
+        max_length=20, blank=True, null=True, 
+        help_text="Sender ID (e.g., NAIROBI SCH). Leave blank if using generic shortcode."
+    )
+    is_active = models.BooleanField(default=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.school.name} - SMS Settings"

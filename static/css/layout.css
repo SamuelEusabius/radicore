@@ -1314,3 +1314,45 @@
     max-width: 200px !important;
   }
 }
+
+/* ============================================================
+   MOBILE TOPBAR CLEANUP
+   Hide the notification bell and profile avatar on small screens
+   ============================================================ */
+@media (max-width: 768px) {
+  /* Hide the right-side actions in the topbar */
+  .topbar-actions,
+  .topbar-profile,
+  .topbar-notifications {
+    display: none !important;
+  }
+}
+
+/* ============================================================
+   MOBILE TOPBAR CLEANUP
+   ============================================================ */
+@media (max-width: 768px) {
+  /* Hide the right side of the topbar (bell + avatar) */
+  .topbar-right,
+  .topbar-actions,
+  .topbar-profile,
+  .topbar-notifications,
+  .topbar > div:last-child > a,
+  .topbar > div:last-child > div {
+    display: none !important;
+  }
+
+  /* If your topbar is structured differently, this targets the inline styles */
+  .topbar a[href*="notifications"], 
+  .topbar a[href*="profile"],
+  .topbar a[href*="super-admin"] {
+    display: none !important;
+  }
+  
+  /* Hide the green initial circle */
+  .topbar .avatar, 
+  .topbar .user-avatar,
+  .topbar div[style*="border-radius: 50%"] {
+    display: none !important;
+  }
+}

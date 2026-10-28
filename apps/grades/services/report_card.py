@@ -35,14 +35,15 @@ def cbc_grade(pct):
         pct = float(pct)
     except (TypeError, ValueError):
         return '—'
-    if pct >= 100:
-        return 'EE1'
-    if pct <= 0:
-        return 'BE2'
-    for level in CBC_LEVELS:
-        if level['min'] <= pct <= level['max']:
-            return level['level']
-    return '—'
+    if pct >= 90: return 'EE1'
+    if pct >= 75: return 'EE2'
+    if pct >= 58: return 'ME1'
+    if pct >= 41: return 'ME2'
+    if pct >= 31: return 'AE1'
+    if pct >= 21: return 'AE2'
+    if pct >= 11: return 'BE1'
+    if pct >= 1:  return 'BE2'
+    return 'BE2'
 
 
 def cbc_points(pct):
@@ -50,15 +51,17 @@ def cbc_points(pct):
     try:
         pct = float(pct)
     except (TypeError, ValueError):
-        return 0
-    if pct >= 100:
-        return 8
-    if pct <= 0:
-        return 0
-    for level in CBC_LEVELS:
-        if level['min'] <= pct <= level['max']:
-            return level['points']
-    return 0
+        return 1
+    
+    if pct >= 90: return 8
+    if pct >= 75: return 7
+    if pct >= 58: return 6
+    if pct >= 41: return 5
+    if pct >= 31: return 4
+    if pct >= 21: return 3
+    if pct >= 11: return 2
+    if pct >= 1:  return 1
+    return 1
 
 
 def cbc_label(pct):
@@ -156,31 +159,22 @@ def subject_positions(exam, students_qs):
 
 
 def previous_exam_for(exam, school):
-    """Find the previous exam before this one.
-
-    Uses multiple strategies:
-      1. If exam has date, use exams with date < this exam's date
-      2. Fall back to (year, id) ordering
-      3. If current exam has no date, treat it as the latest
-    """
+    """Find the immediate previous exam to compare against."""
     from apps.grades.models import Exam
-    from django.db.models import Q
 
     qs = Exam.objects.filter(school=school).exclude(id=exam.id)
 
     if exam.date:
-        # Strategy 1: by date
-        earlier = qs.filter(date__lt=exam.date).order_by('-date', '-id').first()
-        if earlier:
-            return earlier
-        # Fallback: by year/id
-        return qs.filter(
-            Q(year__lt=exam.year) |
-            Q(year=exam.year, id__lt=exam.id)
-        ).order_by('-year', '-id').first()
+        previous = qs.filter(date__lt=exam.date).order_by('-date', '-id').first()
+        if previous:
+            return previous
 
-    # Current exam has no date — return most recent other exam
-    return qs.order_by('-year', '-id').first()
+    previous = qs.exclude(date__isnull=True).order_by('-date', '-id').first()
+    if previous:
+        return previous
+
+    return qs.order_by('-id').first()
+
 
 # ============================================================
 # PERFORMANCE CHART (returns base64 data URI)
@@ -189,7 +183,6 @@ def previous_exam_for(exam, school):
 def build_performance_chart(current_grades, previous_grades):
     """
     Builds a matplotlib bar+line chart as base64 data URI.
-    High-contrast, bold colors with abbreviated subject names.
     """
     import matplotlib
     matplotlib.use('Agg')
@@ -204,21 +197,17 @@ def build_performance_chart(current_grades, previous_grades):
     curr_vals = [current_grades.get(s, 0) for s in subject_names]
     prev_vals = [previous_grades.get(s, 0) for s in subject_names]
 
-    # ---- Figure setup ----
-    # Slightly wider figure to accommodate the legend without overlapping bars
     fig, ax = plt.subplots(figsize=(7.0, 2.4), dpi=110)
 
     x = list(range(len(subject_names)))
     bar_width = 0.35
 
-    # ---- BOLD, SATURATED Colors ----
-    color_current = '#0F766E'      # Deep Teal
-    color_previous = '#F59E0B'     # Amber Orange
+    color_current = '#0F766E'
+    color_previous = '#F59E0B'
     color_current_edge = '#134E4A'
     color_previous_edge = '#B45309'
-    color_line = '#0F172A'         # Dark navy
+    color_line = '#0F172A'
 
-    # ---- CURRENT BARS (Bold Teal) ----
     ax.bar(
         [i - bar_width/2 for i in x],
         curr_vals,
@@ -230,7 +219,6 @@ def build_performance_chart(current_grades, previous_grades):
         zorder=3,
     )
 
-    # ---- PREVIOUS BARS (Bold Orange) ----
     if previous_grades:
         ax.bar(
             [i + bar_width/2 for i in x],
@@ -243,7 +231,6 @@ def build_performance_chart(current_grades, previous_grades):
             zorder=3,
         )
 
-    # ---- TREND LINE (Thick, Dark) ----
     ax.plot(
         x, curr_vals,
         marker='o', linestyle='-',
@@ -253,113 +240,61 @@ def build_performance_chart(current_grades, previous_grades):
         zorder=4,
     )
 
-    # ---- VALUE LABELS on bars ----
     for i, v in enumerate(curr_vals):
-        ax.annotate(
-            f'{int(v)}',
-            (i - bar_width/2, v),
-            textcoords="offset points",
-            xytext=(0, 3),
-            ha='center',
-            fontsize=7,
-            fontweight='bold',
-            color=color_current_edge,
-        )
+        ax.annotate(f'{int(v)}', (i - bar_width/2, v), textcoords="offset points", xytext=(0, 3), ha='center', fontsize=7, fontweight='bold', color=color_current_edge)
     if previous_grades:
         for i, v in enumerate(prev_vals):
-            ax.annotate(
-                f'{int(v)}',
-                (i + bar_width/2, v),
-                textcoords="offset points",
-                xytext=(0, 3),
-                ha='center',
-                fontsize=7,
-                fontweight='bold',
-                color=color_previous_edge,
-            )
+            ax.annotate(f'{int(v)}', (i + bar_width/2, v), textcoords="offset points", xytext=(0, 3), ha='center', fontsize=7, fontweight='bold', color=color_previous_edge)
 
-    # ---- SUBJECT ABBREVIATIONS ----
     def _abbrev(name):
         n = name.upper().strip()
-        # Custom mappings for common Kenyan subjects
         mappings = {
-            'CHRISTIAN RELIGIOUS EDUCATION': 'CRE',
-            'CRE': 'CRE',
-            'ISLAMIC RELIGIOUS EDUCATION': 'IRE',
-            'IRE': 'IRE',
-            'HINDU RELIGIOUS EDUCATION': 'HRE',
-            'ENGLISH': 'ENG',
-            'KISWAHILI': 'KIS',
-            'MATHEMATICS': 'MATH',
-            'SCIENCE': 'SCI',
-            'SOCIAL STUDIES': 'SST',
-            'PERFORMING ART': 'P.ART',
-            'PERFORMING ARTS': 'P.ART',
-            'AGRICULTURE': 'AGR',
-            'BUSINESS STUDIES': 'BST',
-            'PHYSICAL EDUCATION': 'PE',
+            'CHRISTIAN RELIGIOUS EDUCATION': 'CRE', 'CRE': 'CRE',
+            'ISLAMIC RELIGIOUS EDUCATION': 'IRE', 'IRE': 'IRE',
+            'HINDU RELIGIOUS EDUCATION': 'HRE', 'ENGLISH': 'ENG',
+            'KISWAHILI': 'KIS', 'MATHEMATICS': 'MATH', 'SCIENCE': 'SCI',
+            'SOCIAL STUDIES': 'SST', 'PERFORMING ART': 'P.ART',
+            'PERFORMING ARTS': 'P.ART', 'AGRICULTURE': 'AGR',
+            'BUSINESS STUDIES': 'BST', 'PHYSICAL EDUCATION': 'PE',
             'COMPUTER SCIENCE': 'CS',
         }
         if n in mappings:
             return mappings[n]
-        
-        # Fallback for multi-word subjects: take first letter of each word
         if len(n.split()) > 1:
             return ''.join(w[0] for w in n.split())
-        
-        # Single word: take first 4 letters
         return n[:4]
 
     abbrevs = [_abbrev(s) for s in subject_names]
 
-    # ---- Axes styling ----
     ax.set_xticks(x)
     ax.set_xticklabels(abbrevs, rotation=0, ha='center', fontsize=9, fontweight='bold')
     ax.set_ylabel('Score (%)', fontsize=9, fontweight='bold')
     ax.set_ylim(0, 110)
 
-    # Gridlines (subtle, horizontal only)
     ax.yaxis.grid(True, linestyle='--', linewidth=0.5, color='#CBD5E1', alpha=0.7, zorder=0)
     ax.set_axisbelow(True)
 
-    # Remove top and right spines
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
     ax.spines['left'].set_linewidth(1.2)
     ax.spines['bottom'].set_linewidth(1.2)
 
-    # ---- Legend (high contrast, upper right) ----
-    legend = ax.legend(
-        loc='upper right',
-        fontsize=8,
-        frameon=True,
-        facecolor='#FFFFFF',
-        edgecolor='#94A3B8',
-        framealpha=1.0,
-    )
+    legend = ax.legend(loc='upper right', fontsize=8, frameon=True, facecolor='#FFFFFF', edgecolor='#94A3B8', framealpha=1.0)
     for text in legend.get_texts():
         text.set_fontweight('bold')
 
     plt.tight_layout()
 
-    # ---- Encode as base64 ----
     buffer = BytesIO()
-    plt.savefig(
-        buffer,
-        format='png',
-        bbox_inches='tight',
-        pad_inches=0.05,
-        facecolor='white',
-    )
+    plt.savefig(buffer, format='png', bbox_inches='tight', pad_inches=0.05, facecolor='white')
     plt.close(fig)
 
     img_bytes = buffer.getvalue()
     buffer.close()
 
-    print(f"[CHART] PNG size: {len(img_bytes)} bytes")
-
     return f"data:image/png;base64,{base64.b64encode(img_bytes).decode('ascii')}"
    
+
 # ============================================================
 # AUTO-GENERATED REMARKS
 # ============================================================

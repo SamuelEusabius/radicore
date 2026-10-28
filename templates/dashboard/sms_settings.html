@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% block title %}SMS Settings{% endblock %}
+{% block header_title %}Africa's Talking Settings{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 600px; margin: 0 auto;">
+  <h3 class="mb-4">SMS Configuration</h3>
+  <p class="mb-4" style="color: var(--ink-500);">Enter your school's Africa's Talking credentials. This ensures that all SMS messages to parents come directly from your school's name.</p>
+  
+  <form method="post">
+    {% csrf_token %}
+    
+    <div style="margin-bottom: 16px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">AT Username</label>
+      <input type="text" name="username" value="{{ config.username|default:'' }}" required placeholder="e.g. nairobischool" style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+    </div>
+    
+    <div style="margin-bottom: 16px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">API Key</label>
+      <input type="password" name="api_key" value="{{ config.api_key|default:'' }}" required style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+    </div>
+    
+    <div style="margin-bottom: 24px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Sender ID (Optional)</label>
+      <input type="text" name="sender_id" value="{{ config.sender_id|default:'' }}" placeholder="e.g. NAIROBI SCH" style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+      <p style="font-size: 12px; color: var(--ink-500); margin-top: 4px;">If left blank, messages will come from a generic shortcode.</p>
+    </div>
+    
+    <div style="display: flex; justify-content: flex-end;">
+      <button type="submit" class="btn btn-primary">Save Settings</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

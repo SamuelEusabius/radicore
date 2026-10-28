@@ -244,106 +244,71 @@ def send_test_sms_view(request):
     return render(request, 'dashboard/test_sms.html', {'result': result})
 
 
+from django.shortcuts import render, redirect
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from apps.students.models import Student
+from apps.parents.models import Parent
+from apps.teachers.models import Teacher
+from apps.notifications.services.sms import send_sms
+
 @login_required
 def bulk_sms(request):
-    """Send bulk SMS to groups of parents."""
+    """Send SMS to parents, students, or staff using the School's AT credentials."""
     if request.user.role not in ('principal', 'super_admin'):
         return redirect('dashboard_home')
 
-    from apps.parents.models import Parent
-    from apps.students.models import Student
-    from apps.academics.models import ClassLevel
-    from apps.finance.models import Invoice
-    from apps.notifications.services.sms import send_bulk_sms, normalize_phone
-
     school = request.user.school
-    all_parents = Parent.objects.filter(user__school=school).select_related('user')
 
-    unpaid_student_ids = Invoice.objects.filter(
-        student__school=school,
-        status__in=['unpaid', 'partial', 'overdue'],
-    ).values_list('student_id', flat=True).distinct()
-
-    unpaid_parents = Parent.objects.filter(
-        user__school=school, students__id__in=unpaid_student_ids
-    ).distinct()
-
-    classes = ClassLevel.objects.filter(school=school).order_by('order', 'name')
-
-    def count_with_phones(qs):
-        n = 0
-        for p in qs:
-            phone = p.user.phone or p.phone
-            if phone and normalize_phone(phone):
-                n += 1
-        return n
-
-    counts = {
-        'all': count_with_phones(all_parents),
-        'unpaid': count_with_phones(unpaid_parents),
-    }
-
-    result = None
     if request.method == 'POST':
-        group = request.POST.get('group', 'all')
-        class_id = request.POST.get('class_id')
-        custom_numbers = request.POST.get('custom_numbers', '').strip()
-        message = request.POST.get('message', '').strip()
+        recipient_group = request.POST.get('recipient_group')
+        message_text = request.POST.get('message', '').strip()
 
-        if not message:
+        if not message_text:
             messages.error(request, 'Message cannot be empty.')
-        else:
-            phones = []
+            return redirect('bulk_sms')
 
-            if group == 'custom':
-                raw = custom_numbers.replace('\n', ',').split(',')
-                for num in raw:
-                    num = num.strip()
-                    if num and normalize_phone(num):
-                        phones.append(num)
-            elif group == 'unpaid':
-                for p in unpaid_parents:
-                    phone = p.user.phone or p.phone
-                    if phone:
-                        phones.append(phone)
-            elif group == 'class' and class_id:
-                student_ids = Student.objects.filter(
-                    school=school, class_level=class_id, is_active=True
-                ).values_list('id', flat=True)
-                parents = Parent.objects.filter(
-                    user__school=school, students__id__in=student_ids
-                ).distinct()
-                for p in parents:
-                    phone = p.user.phone or p.phone
-                    if phone:
-                        phones.append(phone)
+        phones = []
+
+        # 1. Determine who receives the message
+        if recipient_group == 'parents':
+            students = Student.objects.filter(school=school, is_active=True)
+            phones = list(students.values_list('guardian_phone', flat=True).distinct())
+        elif recipient_group == 'staff':
+            teachers = Teacher.objects.filter(school=school, is_active=True)
+            phones = list(teachers.values_list('phone', flat=True).distinct())
+        elif recipient_group == 'custom':
+            raw_phones = request.POST.get('custom_phones', '')
+            phones = [p.strip() for p in raw_phones.split(',') if p.strip()]
+
+        # Filter out empty phone numbers
+        phones = [p for p in phones if p]
+
+        if not phones:
+            messages.warning(request, 'No phone numbers found for the selected group.')
+            return redirect('bulk_sms')
+
+        # 2. Send the messages using the multi-tenant service
+        success_count = 0
+        fail_count = 0
+
+        for phone in phones:
+            # We pass `school` as the first argument so it knows which keys to use!
+            success, response = send_sms(school, phone, message_text)
+            if success:
+                success_count += 1
             else:
-                for p in all_parents:
-                    phone = p.user.phone or p.phone
-                    if phone:
-                        phones.append(phone)
+                fail_count += 1
 
-            phones = list(set(phones))
+        messages.success(request, f'Bulk SMS sent! Success: {success_count} | Failed: {fail_count}.')
+        return redirect('bulk_sms')
 
-            if not phones:
-                messages.error(request, 'No valid recipients with phone numbers.')
-            else:
-                try:
-                    result = send_bulk_sms(phones, message)
-                    if result.get('success'):
-                        messages.success(request, f'Bulk SMS sent to {len(phones)} recipients.')
-                    else:
-                        messages.error(request, f'Failed: {result.get("message")}')
-                except Exception as e:
-                    messages.error(request, f'Error: {e}')
-
+    # GET request
     return render(request, 'dashboard/bulk_sms.html', {
-        'counts': counts,
-        'classes': classes,
-        'result': result,
+        'school': school,
     })
-
-
+    
+    
 @login_required
 def messages_inbox(request):
     """Each user sees messages sent to them."""
@@ -666,3 +631,26 @@ def mark_all_read(request):
 
     messages.success(request, 'All notifications marked as read.')
     return redirect('notifications_list')
+
+from apps.notifications.models import SchoolSmsConfig
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+
+@login_required
+def school_sms_settings(request):
+    """School Admin enters their specific Africa's Talking credentials."""
+    if request.user.role not in ('principal', 'super_admin'):
+        return redirect('dashboard_home')
+
+    config, created = SchoolSmsConfig.objects.get_or_create(school=request.user.school)
+
+    if request.method == 'POST':
+        config.username = request.POST.get('username')
+        config.api_key = request.POST.get('api_key')
+        config.sender_id = request.POST.get('sender_id')
+        config.save()
+        messages.success(request, 'Africa\'s Talking Settings saved successfully!')
+        return redirect('school_sms_settings')
+
+    return render(request, 'dashboard/sms_settings.html', {'config': config})

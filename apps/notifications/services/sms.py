@@ -57,48 +57,65 @@ def normalize_phone(phone: str) -> str:
     return f'+{p}'
 
 
-def send_sms(phone: str, message: str, sender_id: str = None) -> dict:
-    """
-    Send a single SMS via Africa's Talking.
+import africastalking
+from django.conf import settings
+import logging
 
-    Args:
-        phone: Recipient phone number (any common format)
-        message: SMS text (max ~160 chars for 1 credit)
-        sender_id: Optional sender ID (only works in production)
+logger = logging.getLogger(__name__)
 
-    Returns:
-        dict: {
-            'success': bool,
-            'recipients': list,   # AT response
-            'message': str,       # status or error
-        }
+import africastalking
+from django.conf import settings
+import logging
+
+logger = logging.getLogger(__name__)
+
+def send_sms(school, phone_number, message):
     """
-    phone = normalize_phone(phone)
-    if not phone:
-        return {'success': False, 'recipients': [], 'message': 'Empty phone number'}
+    Sends an SMS using the School's specific AT credentials.
+    Falls back to the global .env if the school hasn't configured their own.
+    """
+    if phone_number.startswith('0'):
+        phone_number = '+254' + phone_number[1:]
+    elif phone_number.startswith('254'):
+        phone_number = '+' + phone_number
+    elif not phone_number.startswith('+'):
+        phone_number = '+' + phone_number
+
+    if hasattr(school, 'sms_config') and school.sms_config.is_active:
+        username = school.sms_config.username
+        api_key = school.sms_config.api_key
+        sender_id = school.sms_config.sender_id
+    else:
+        username = getattr(settings, 'AT_USERNAME', 'sandbox')
+        api_key = getattr(settings, 'AT_API_KEY', '')
+        sender_id = getattr(settings, 'AT_SENDER_ID', None)
 
     try:
-        SMS = _initialize()
-
-        sender = sender_id or getattr(settings, 'AT_SENDER_ID', '') or None
-
-        # Send
-        if sender:
-            response = SMS.send(message, [phone], sender_id=sender)
-        else:
-            response = SMS.send(message, [phone])
-
-        logger.info(f"SMS sent to {phone}: {response}")
-        return {
-            'success': True,
-            'recipients': response.get('SMSMessageData', {}).get('Recipients', []),
-            'message': 'Sent',
-        }
+        africastalking.initialize(username, api_key)
+        sms = africastalking.SMS
+        
+        response = sms.send(
+            message, 
+            [phone_number], 
+            sender_id=sender_id
+        )
+        
+        # Check if AT actually accepted it
+        if response and 'SMSMessageData' in response:
+            recipients = response['SMSMessageData'].get('Recipients', [])
+            if recipients and recipients[0].get('status') == 'Success':
+                return True, response
+            else:
+                logger.error(f"AT Rejection for {phone_number}: {response}")
+                return False, response
+                
+        return False, "Invalid response from Africa's Talking"
 
     except Exception as e:
-        logger.exception(f"SMS failed for {phone}: {e}")
-        return {'success': False, 'recipients': [], 'message': str(e)}
-
+        logger.error(f"SMS Exception for {phone_number} via {school.name}: {str(e)}")
+        return False, str(e)
+    
+    
 
 def send_bulk_sms(phones: list, message: str, sender_id: str = None) -> dict:
     """

@@ -185,6 +185,10 @@
           {% include 'partials/icons.html' with name="message-square" size=18 %}
           <span class="sidebar-link-text">Bulk SMS</span>
         </a>
+        <a href="{% url 'school_sms_settings' %}" class="sidebar-link">
+  {% include 'partials/icons.html' with name="message-square" size=18 %}
+  <span class="sidebar-link-text">SMS Settings</span>
+</a>
       {% endif %}
       <a href="{% url 'admin_alerts_list' %}" class="sidebar-link">
         {% include 'partials/icons.html' with name="alert-triangle" size=18 %}
@@ -911,6 +915,11 @@
     <span class="sidebar-link-text">Letter Templates</span>
   </a>
 
+  <a href="{% url 'school_sms_settings' %}" class="sidebar-link">
+  {% include 'partials/icons.html' with name="message-square" size=18 %}
+  <span class="sidebar-link-text">SMS Settings</span>
+</a>
+
   <div class="sidebar-section-label">Notice Board</div>
   <a href="{% url 'secretary_notice_list' %}" class="sidebar-link">
     {% include 'partials/icons.html' with name="bell" size=18 %}
@@ -1231,14 +1240,22 @@
     <!-- ACCOUNT (all roles)                           -->
     <!-- ============================================ -->
     <div class="sidebar-section-label">Account</div>
-    <a href="{% url 'super_admin_profile' %}" class="sidebar-link">
+  
+    <a href="{% url 'notifications_list' %}" class="sidebar-link">
+      {% include 'partials/icons.html' with name="bell" size=18 %}
+      <span class="sidebar-link-text">Notifications</span>
+    </a>
+
+    <a href="{% url 'profile_view' %}" class="sidebar-link">
       {% include 'partials/icons.html' with name="user" size=18 %}
       <span class="sidebar-link-text">My Profile</span>
     </a>
+
     <a href="{% url 'change_password' %}" class="sidebar-link">
       {% include 'partials/icons.html' with name="lock" size=18 %}
       <span class="sidebar-link-text">Change Password</span>
     </a>
+    
     <a href="/accounts/logout/" class="sidebar-link" style="color: #F87171;">
       {% include 'partials/icons.html' with name="log-out" size=18 %}
       <span class="sidebar-link-text">Logout</span>

@@ -94,7 +94,6 @@ def class_teacher_all_report_cards_merged(request):
     exam = get_object_or_404(Exam, id=exam_id, school=school)
 
     # Determine the class
-    # School admin can pass ?class=<id>; class teacher uses their own class
     class_id = request.GET.get('class')
 
     if request.user.role == 'principal' and class_id:
@@ -171,6 +170,7 @@ def _render_single_report_card(student, exam, school, rankings, positions, class
     from apps.core.pdf_utils import image_to_base64
     from xhtml2pdf import pisa
     from django.template.loader import render_to_string
+    from apps.academics.models import ClassLevel, StreamSubjectTeacher
 
     current_grades = list(
         Grade.objects.filter(student=student, exam=exam)
@@ -204,11 +204,25 @@ def _render_single_report_card(student, exam, school, rankings, positions, class
         except Exception as e:
             print(f"[CHART] Error: {e}")
             chart_data_uri = None
-    else:
-        print(f"[CHART DEBUG] SKIPPED — prev_exam={bool(prev_exam)} | prev_map empty={not previous_grades_map}")
-    print()
+
+    # ====================================================
+    # FETCH SUBJECT TEACHERS FOR THIS CLASS
+    # ====================================================
+    class_level_obj = ClassLevel.objects.filter(school=student.school, name=student.class_level).first()
+    teacher_map = {}
     
-        # Grade rows
+    if class_level_obj:
+        subject_teachers = StreamSubjectTeacher.objects.filter(
+            school=student.school,
+            class_level=class_level_obj
+        ).select_related('teacher', 'subject')
+        
+        for st in subject_teachers:
+            if st.teacher:
+                teacher_map[st.subject_id] = f"{st.teacher.first_name[0]}. {st.teacher.last_name}"
+    # ====================================================
+
+    # Grade rows
     grade_rows = []
     for g in current_grades:
         pct = round((float(g.marks) / float(g.out_of or 100)) * 100, 1)
@@ -225,14 +239,6 @@ def _render_single_report_card(student, exam, school, rankings, positions, class
                 trend, trend_diff = 'down', f"{diff}"
             else:
                 trend, trend_diff = 'flat', "0"
-
-        # Subject teacher
-        teacher_name = ''
-        if g.subject.teacher:
-            teacher_name = (
-                g.subject.teacher.get_full_name()
-                or g.subject.teacher.email.split('@')[0]
-            )
 
         grade_rows.append({
             'subject': g.subject.name,
@@ -409,6 +415,7 @@ def report_card_pdf(request, student_id, exam_id):
     """Generate a detailed PDF report card with rankings and performance graph."""
     from apps.students.models import Student
     from apps.core.pdf_utils import html_to_pdf_response, image_to_base64
+    from apps.academics.models import ClassLevel, StreamSubjectTeacher
 
     # Load + authorize
     if request.user.is_super_admin:
@@ -436,7 +443,7 @@ def report_card_pdf(request, student_id, exam_id):
     total_out_of = sum(float(g.out_of) for g in current_grades) or 1
     avg_pct = round((total_marks / total_out_of) * 100, 1) if current_grades else 0
 
-        # Rankings
+    # Rankings
     rankings = compute_rankings(exam, classmates)
     class_rank_info = rankings.get(student.id, {'rank': '—', 'total': total_marks, 'avg': avg_pct})
     class_size = classmates.count()
@@ -444,16 +451,13 @@ def report_card_pdf(request, student_id, exam_id):
     positions = subject_positions(exam, classmates)
 
     # ============ COMBINED RANKING (Optional) ============
-    # If DOS has combined streams recently, show the student's rank in combined
     combined_rank = None
     combined_size = 0
     combined_classes = []
 
-    # Try to fetch last DOS combine from session
     dos_combined = request.session.get('dos_combined_classes', [])
 
     if dos_combined:
-        # Combine students from all selected classes
         combined_students = Student.objects.filter(
             school=student.school,
             class_level__in=dos_combined,
@@ -490,6 +494,23 @@ def report_card_pdf(request, student_id, exam_id):
         except Exception:
             chart_data_uri = None
 
+    # ====================================================
+    # FETCH SUBJECT TEACHERS FOR THIS CLASS
+    # ====================================================
+    class_level_obj = ClassLevel.objects.filter(school=student.school, name=student.class_level).first()
+    teacher_map = {}
+    
+    if class_level_obj:
+        subject_teachers = StreamSubjectTeacher.objects.filter(
+            school=student.school,
+            class_level=class_level_obj
+        ).select_related('teacher', 'subject')
+        
+        for st in subject_teachers:
+            if st.teacher:
+                teacher_map[st.subject_id] = f"{st.teacher.first_name[0]}. {st.teacher.last_name}"
+    # ====================================================
+
     # Grade rows
     grade_rows = []
     for g in current_grades:
@@ -508,18 +529,27 @@ def report_card_pdf(request, student_id, exam_id):
             else:
                 trend, trend_diff = 'flat', "0"
 
+        if pct >= 90: pts = 8
+        elif pct >= 75: pts = 7
+        elif pct >= 58: pts = 6
+        elif pct >= 41: pts = 5
+        elif pct >= 31: pts = 4
+        elif pct >= 21: pts = 3
+        elif pct >= 11: pts = 2
+        else: pts = 1
+
         grade_rows.append({
             'subject': g.subject.name,
+            'teacher': teacher_name,
             'marks': g.marks,
             'out_of': g.out_of,
             'pct': pct,
             'grade': cbc_grade(pct),
-            'points': cbc_points(pct),
+            'points': pts, 
             'position': pos,
             'trend': trend,
             'trend_diff': trend_diff,
         })
-
     # Average points
     if grade_rows:
         avg_points = round(sum(r['points'] for r in grade_rows) / len(grade_rows), 1)
@@ -528,12 +558,23 @@ def report_card_pdf(request, student_id, exam_id):
 
     overall_grade = points_to_overall_grade(avg_points)
 
-    # Previous exam average points
-    prev_avg_points = None
-    if prev_exam and previous_grades_map:
-        prev_points_list = [cbc_points(p) for p in previous_grades_map.values()]
-        if prev_points_list:
-            prev_avg_points = sum(prev_points_list) / len(prev_points_list)
+    # ====================================================
+    # FORCED PREVIOUS EXAM LOGIC
+    # ====================================================
+    from apps.grades.models import Exam
+    from django.db.models import Q
+    
+    # Find the most recent exam that is NOT the current one, and has a date
+    prev_exam = Exam.objects.filter(school=student.school).exclude(id=exam.id).exclude(date__isnull=True).order_by('-date', '-id').first()
+    
+    previous_grades_map = {}
+    if prev_exam:
+        prev_qs = Grade.objects.filter(student=student, exam=prev_exam)
+        previous_grades_map = {
+            g.subject.name: round((float(g.marks) / float(g.out_of or 100)) * 100, 1)
+            for g in prev_qs
+        }
+    # ====================================================
 
     # Auto remarks
     teacher_remarks = request.GET.get('remarks', '').strip()
@@ -584,7 +625,6 @@ def report_card_pdf(request, student_id, exam_id):
 
     filename = f'report_{student.admission_number}_{exam.name.replace(" ", "_")}.pdf'
     return html_to_pdf_response(html_string, filename)
-
 
 # ============================================================
 # CLASS RESULTS
@@ -674,11 +714,9 @@ def class_results_pdf(request):
         ).distinct().order_by('name')
     )
 
-    # If no subjects found, fallback to all school subjects
     if not subjects:
         subjects = list(Subject.objects.filter(school=school).order_by('name'))
 
-    # Build a marks matrix: {student_id: {subject_id: percentage}}
     all_grades = Grade.objects.filter(
         exam=exam, student__in=students
     ).values('student_id', 'subject_id', 'marks', 'out_of')
@@ -692,7 +730,6 @@ def class_results_pdf(request):
 
     rankings = compute_rankings(exam, students)
 
-    # Build rows
     rows = []
     for s in students:
         r = rankings.get(s.id, {'total': 0, 'avg': 0, 'rank': '—'})

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <style>
-    /* ==========================================================
+  /* ==========================================================
      STANDARD REPORT HEADER CSS
      ========================================================== */
   table.report-header { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
@@ -22,7 +22,6 @@
   .rh-meta-name { font-size: 8.5pt; color: #555; margin-top: 1px; }
   .rh-divider { border-bottom: 2pt solid #00695c; margin-bottom: 14px; }
 
-  /* Report card: student photo cell on the right */
   .rh-photo-cell { width: 90px; text-align: right; vertical-align: top; padding-left: 10px; }
   .rh-photo-cell img { width: 72px; height: 72px; object-fit: cover; border: 0.5pt solid #cfd8d4; }
   .rh-photo-placeholder {
@@ -206,19 +205,6 @@
     min-height: 14px;
   }
 
-  /* ============ SIGNATURES ============ */
-  .signature-block {
-    margin-top: 8px;
-  }
-  .signature-table { width: 100%; border-collapse: collapse; }
-  .signature-table td { padding: 3px 0; vertical-align: bottom; }
-  .signature-line {
-    border-bottom: 1px solid #4b5563;
-    height: 16px;
-    margin-bottom: 2px;
-  }
-  .signature-label { color: #6b7280; font-size: 7pt; }
-
   /* ============ FOOTER ============ */
   .footer {
     margin-top: 6px;
@@ -237,9 +223,9 @@
 <!-- ============================================================ -->
 <table class="report-header">
   <tr>
-    {% if logo_data_uri %}
+    {% if school_logo_b64 %}
     <td class="rh-logo-cell">
-      <img src="{{ logo_data_uri }}" alt="{{ school.name }}" class="rh-logo-img">
+      <img src="{{ school_logo_b64 }}" alt="{{ school.name }}" class="rh-logo-img">
     </td>
     {% endif %}
     <td class="rh-info-cell">
@@ -295,15 +281,9 @@
     <td style="text-align: right;">
       <span class="info-label">Class Rank:</span>
       <span class="info-value">{{ class_rank }} / {{ class_size }}</span>
-      {% if combined_rank %}
-        &nbsp;·&nbsp;
-        <span class="info-label">Combined:</span>
-        <span class="info-value">{{ combined_rank }} / {{ combined_size }}</span>
-      {% endif %}
       &nbsp;·&nbsp;
       <span class="info-label">Overall:</span>
       <span class="info-value grade-{{ overall_grade }}">{{ overall_grade }}</span>
-      <span class="info-value">({{ avg_points|floatformat:1 }} pts)</span>
     </td>
   </tr>
 </table>
@@ -332,7 +312,17 @@
       <td>{{ row.out_of|floatformat:0 }}</td>
       <td>{{ row.pct|floatformat:1 }}%</td>
       <td class="grade-{{ row.grade }}">{{ row.grade }}</td>
-      <td><strong>{{ row.points }}</strong></td>
+      <td>
+        <!-- FORCED POINTS CALCULATION -->
+        {% if row.pct >= 90 %}8
+        {% elif row.pct >= 75 %}7
+        {% elif row.pct >= 58 %}6
+        {% elif row.pct >= 41 %}5
+        {% elif row.pct >= 31 %}4
+        {% elif row.pct >= 21 %}3
+        {% elif row.pct >= 11 %}2
+        {% else %}1{% endif %}
+      </td>
       <td>{{ row.position }}</td>
       <td>
         {% if row.trend == 'up' %}
@@ -355,7 +345,19 @@
       <td>{{ total_out_of|floatformat:0 }}</td>
       <td>{{ avg_pct|floatformat:1 }}%</td>
       <td class="grade-{{ overall_grade }}">{{ overall_grade }}</td>
-      <td><strong>{{ avg_points|floatformat:1 }}</strong></td>
+      <td>
+        <!-- FORCED AVERAGE POINTS CALCULATION -->
+        <strong>
+        {% if avg_pct >= 90 %}8.0
+        {% elif avg_pct >= 75 %}7.0
+        {% elif avg_pct >= 58 %}6.0
+        {% elif avg_pct >= 41 %}5.0
+        {% elif avg_pct >= 31 %}4.0
+        {% elif avg_pct >= 21 %}3.0
+        {% elif avg_pct >= 11 %}2.0
+        {% else %}1.0{% endif %}
+        </strong>
+      </td>
       <td>{{ class_rank }} / {{ class_size }}</td>
       <td></td>
     </tr>
@@ -372,7 +374,16 @@
       </td>
       <td style="text-align: right;">
         <div class="label">Average Points</div>
-        <div class="points-value">{{ avg_points|floatformat:1 }} / 8.0</div>
+        <div class="points-value">
+          {% if avg_pct >= 90 %}8.0
+          {% elif avg_pct >= 75 %}7.0
+          {% elif avg_pct >= 58 %}6.0
+          {% elif avg_pct >= 41 %}5.0
+          {% elif avg_pct >= 31 %}4.0
+          {% elif avg_pct >= 21 %}3.0
+          {% elif avg_pct >= 11 %}2.0
+          {% else %}1.0{% endif %} / 8.0
+        </div>
         <div class="sub">Average: {{ avg_pct|floatformat:1 }}%</div>
       </td>
     </tr>
@@ -397,6 +408,7 @@
   </tr>
 </table>
 {% endif %}
+
 <!-- TEACHER REMARKS -->
 <div class="remarks-section">
   <div class="remarks-title">Class Teacher's Remarks:</div>
@@ -408,6 +420,7 @@
   <div class="remarks-title">Principal's Remarks:</div>
   <div class="remarks-text">{{ principal_remarks|default:"&nbsp;" }}</div>
 </div>
+
 <!-- FEE & TERM INFO -->
 <table style="width: 100%; margin-top: 15px; font-size: 10px; page-break-inside: avoid;">
   <tr>
@@ -433,33 +446,34 @@
   </tr>
 </table>
 
-<!-- SIGNATURES & RUBBERSTAMP & QR CODE -->
+<!-- COMBINED SIGNATURES, RUBBERSTAMP & QR CODE -->
 <table style="width: 100%; margin-top: 25px; page-break-inside: avoid;">
   <tr>
     <!-- Class Teacher -->
-    <td style="width: 25%; vertical-align: bottom;">
+    <td style="width: 30%; vertical-align: bottom;">
       <div style="border-bottom: 1px solid #000; height: 30px; margin-bottom: 4px;"></div>
       <p style="margin: 0; font-size: 9px; font-weight: bold;">Class Teacher Signature</p>
       <p style="margin: 0; font-size: 8px; color: #475569;">Date: _______________</p>
     </td>
 
     <!-- Principal -->
-    <td style="width: 25%; vertical-align: bottom; padding-left: 10px;">
+    <td style="width: 30%; vertical-align: bottom; padding-left: 10px;">
       <div style="border-bottom: 1px solid #000; height: 30px; margin-bottom: 4px;"></div>
       <p style="margin: 0; font-size: 9px; font-weight: bold;">Principal Signature</p>
       <p style="margin: 0; font-size: 8px; color: #475569;">Date: _______________</p>
     </td>
 
     <!-- Rubberstamp Space -->
-    <td style="width: 25%; vertical-align: bottom; text-align: center; padding-left: 10px;">
-      <div style="border: 2px dashed #94a3b8; height: 60px; width: 110px; margin: 0 auto; display: flex; align-items: center; justify-content: center;">
+    <td style="width: 20%; vertical-align: bottom; text-align: center; padding-left: 5px;">
+      <div style="border: 2px dashed #94a3b8; height: 60px; width: 90px; margin: 0 auto; display: flex; align-items: center; justify-content: center;">
         <span style="font-size: 8px; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; text-align: center;">
           Official School<br>Rubberstamp
         </span>
       </div>
     </td>
-        <!-- QR Code -->
-    <td style="width: 25%; vertical-align: bottom; text-align: right;">
+
+    <!-- QR Code -->
+    <td style="width: 20%; vertical-align: bottom; text-align: right;">
       {% if qr_data_uri %}
         <div style="width: 80px; height: 80px; margin-left: auto;">
           <img src="{{ qr_data_uri }}" alt="QR Code" style="width: 80px; height: 80px;" />
@@ -471,23 +485,6 @@
     </td>
   </tr>
 </table>
-<!-- SIGNATURES -->
-<div class="signature-block">
-  <table class="signature-table">
-    <tr>
-      <td style="width: 50%; padding-right: 15px;">
-        <div class="signature-line"></div>
-        <div class="signature-label">Class Teacher</div>
-      </td>
-      <td style="width: 50%; padding-left: 15px;">
-        <div class="signature-line"></div>
-        <div class="signature-label">
-          {% if school.principal_name %}Principal: {{ school.principal_name }}{% else %}Principal / School Admin{% endif %}
-        </div>
-      </td>
-    </tr>
-  </table>
-</div>
 
 <!-- FOOTER -->
 <div class="footer">
