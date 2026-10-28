@@ -2,103 +2,94 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>School Access Suspended</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>School Access Suspended - RacodCore</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="min-h-screen bg-gradient-to-br from-red-600 via-red-700 to-red-900 flex items-center justify-center p-4 relative overflow-hidden">
+<body class="min-h-screen bg-slate-100 flex items-center justify-center p-4 md:p-8">
 
-<!-- Decorative circles -->
-<div class="absolute top-0 left-0 w-96 h-96 bg-white opacity-5 rounded-full -translate-x-1/2 -translate-y-1/2"></div>
-<div class="absolute bottom-0 right-0 w-96 h-96 bg-white opacity-5 rounded-full translate-x-1/2 translate-y-1/2"></div>
-
-<div class="w-full max-w-lg relative z-10">
-
-  <div class="bg-white rounded-2xl shadow-2xl overflow-hidden">
-
+  <!-- Removed the giant absolute background block so it fits perfectly on mobile -->
+  
+  <div class="w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-200 my-auto">
+    
     <!-- Header -->
-    <div class="bg-[#1a2332] p-6 flex items-center gap-3">
-      <div class="w-12 h-12 rounded-full bg-red-500 flex items-center justify-center font-bold text-white text-lg">
-        SM
+    <div class="bg-[#0B1B3D] p-5 md:p-6 flex items-center gap-4">
+      <div class="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-[#F0B323] flex items-center justify-center font-bold text-[#0B1B3D] text-lg md:text-xl shadow-lg shrink-0">
+        RC
       </div>
       <div>
-        <h1 class="text-white font-bold text-lg leading-tight">School MS</h1>
-        <p class="text-red-300 text-xs mt-0.5">Access Suspended</p>
+        <h1 class="text-white font-bold text-base md:text-lg leading-tight tracking-wide">RacodCore</h1>
+        <p class="text-[#F0B323] text-[10px] md:text-xs font-semibold mt-0.5">Smart School Management</p>
       </div>
     </div>
 
     <!-- Body -->
-    <div class="p-8 text-center">
+    <div class="p-6 md:p-8 text-center">
 
-      <!-- Warning icon -->
-      <div class="w-24 h-24 mx-auto mb-6 rounded-full bg-red-100 flex items-center justify-center relative">
-        <div class="absolute inset-0 rounded-full bg-red-200 animate-ping opacity-30"></div>
-        <svg class="w-12 h-12 text-red-600 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M5.07 19h13.86a2 2 0 001.7-3.03L13.7 4.97a2 2 0 00-3.4 0L3.37 15.97A2 2 0 005.07 19z"></path>
+      <!-- Lock Icon -->
+      <div class="w-16 h-16 md:w-20 md:h-20 mx-auto mb-5 rounded-full bg-red-50 flex items-center justify-center">
+        <svg class="w-8 h-8 md:w-10 md:h-10 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
         </svg>
       </div>
 
-      <h2 class="text-2xl font-bold text-gray-800 mb-3">
-        ⚠️ School Access Suspended
+      <h2 class="text-xl md:text-2xl font-bold text-[#0B1B3D] mb-2 md:mb-3">
+        Access Suspended
       </h2>
 
       {% if user.school %}
-      <p class="text-gray-600 text-sm mb-2">
-        <strong class="text-gray-800">{{ user.school.name }}</strong>
+      <p class="text-slate-600 text-xs md:text-sm mb-2">
+        The subscription for <strong class="text-[#0B1B3D]">{{ user.school.name }}</strong>
         {% if user.school.code %}
-          <span class="text-xs text-gray-400">({{ user.school.code }})</span>
+          <span class="text-[10px] md:text-xs text-slate-400">({{ user.school.code }})</span>
         {% endif %}
+        has expired.
       </p>
       {% endif %}
 
-      <p class="text-gray-500 text-sm mb-6">
-        {{ user.school.blocked_message|default:"Your school subscription has expired. Please contact the school administration or renew your subscription to continue using the system." }}
+      <p class="text-slate-500 text-xs md:text-sm mb-5 md:mb-6">
+        {{ user.school.blocked_message|default:"Please contact the school administration or renew your subscription to continue using the system." }}
       </p>
 
       <!-- Info box -->
-      <div class="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded text-left mb-6">
-        <p class="text-xs text-yellow-800">
-          <strong>What to do:</strong>
-        </p>
-        <ul class="text-xs text-yellow-700 mt-2 space-y-1 list-disc pl-4">
-          <li>Contact your school administrator</li>
-          <li>Ask them to renew the school's subscription</li>
-          <li>Once renewed, you'll regain full access immediately</li>
+      <div class="bg-slate-50 border border-slate-200 border-l-4 border-l-[#F0B323] p-4 rounded text-left mb-6">
+        <p class="text-[11px] md:text-xs font-bold text-[#0B1B3D] mb-1.5">What to do next:</p>
+        <ul class="text-[11px] md:text-xs text-slate-600 space-y-1.5 list-disc pl-4">
+          <li>Contact your School Administrator / Principal.</li>
+          <li>Ask them to renew the subscription via M-Pesa.</li>
+          <li>Once renewed, access is restored automatically.</li>
         </ul>
       </div>
 
       <!-- Actions -->
       <div class="space-y-3">
-        <a href="/accounts/logout/"
-           class="block w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 rounded-lg transition">
-          🚪 Log out
+        <a href="/accounts/logout/" 
+           class="flex items-center justify-center gap-2 w-full bg-[#0B1B3D] hover:bg-[#152b5e] text-white font-semibold text-sm md:text-base py-3 rounded-lg transition duration-200 shadow-md">
+          <svg class="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+          Log out
         </a>
 
         <a href="mailto:samuelusabius14164@gmail.com"
-           class="block w-full border-2 border-gray-200 hover:border-red-400 hover:bg-red-50 text-gray-700 font-medium py-3 rounded-lg transition">
-          📧 Contact Support
+           class="flex items-center justify-center gap-2 w-full bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-medium text-sm md:text-base py-3 rounded-lg transition duration-200">
+          <svg class="w-4 h-4 md:w-5 md:h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+          Contact Support
         </a>
       </div>
 
     </div>
 
     <!-- Footer -->
-    <div class="bg-gray-50 px-8 py-4 text-center border-t border-gray-100">
-      <p class="text-xs text-gray-500">
-        © 2026 School MS · All rights reserved
+    <div class="bg-slate-50 px-6 py-4 text-center border-t border-slate-100">
+      <p class="text-[10px] md:text-xs text-slate-500">
+        &copy; 2026 RacodCore · All rights reserved
       </p>
-      <p class="text-xs text-gray-400 mt-1">
-        Developed by <span class="text-teal-600 font-semibold">LoyTech Developer Limited</span>
+      <p class="text-[10px] md:text-xs text-slate-400 mt-0.5">
+        Powered by <span class="text-[#0B1B3D] font-bold">RacodCore</span>
       </p>
     </div>
 
   </div>
-
-  <!-- Help text -->
-  <p class="text-center text-red-100 text-xs mt-6 opacity-75">
-    If you believe this is a mistake, contact your school's administrator.
-  </p>
-
-</div>
 
 </body>
 </html>
