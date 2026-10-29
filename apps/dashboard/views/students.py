@@ -141,73 +141,139 @@ def student_dash(request):
     })
 
 
-@login_required
-def add_student(request):
-    """
-    Redirect to the deep Admission Application form.
-    The Secretary/Principal fills the full form there, then converts to Student
-    via the Admit flow (which handles parent creation + boarding assignment).
-    """
-    if request.user.role not in ('principal', 'super_admin', 'secretary', 'deputy_admin'):
-        return redirect('dashboard_home')
-
-    return redirect('secretary_application_create')
-
-
 def generate_next_admission_number(school):
-    """
-    Increment the highest admission number for this school.
-
-    Examples:
-      SCH0006-2026-0001  → SCH0006-2026-0002
-      SCH0006-2026-0009  → SCH0006-2026-0010
-      SCH0006-2026-0099  → SCH0006-2026-0100
-      001234             → 001235
-      ADM-045            → ADM-046
-
-    Preserves the prefix and zero-padding width.
-    """
+    """Generate the next admission number starting from 1."""
     from apps.students.models import Student
+    from django.db.models import Max
     import re
 
-    numbers = (
-        Student.objects.filter(school=school)
-        .exclude(admission_number__isnull=True)
-        .exclude(admission_number='')
-        .values_list('admission_number', flat=True)
-    )
-
-    if not numbers:
-        # Fallback — shouldn't happen because view checks has_existing_students
-        return 'ADM-0001'
-
-    best_prefix = None
-    best_digits = None
-    best_value = -1
-
+    # Get all admission numbers for this school
+    numbers = Student.objects.filter(school=school).exclude(admission_number__isnull=True).exclude(admission_number='').values_list('admission_number', flat=True)
+    
+    highest_num = 0
     for num in numbers:
-        num = str(num).strip()
-        if not num:
-            continue
-        match = re.match(r'^(.*?)(\d+)$', num)
-        if not match:
-            continue
-        prefix, digits = match.group(1), match.group(2)
+        # Extract just the digits if there is a prefix (e.g., ADM-5 -> 5)
+        match = re.search(r'(\d+)$', str(num))
+        if match:
+            val = int(match.group(1))
+            if val > highest_num:
+                highest_num = val
+                
+    return str(highest_num + 1)
+
+@login_required
+def add_student(request):
+    """Directly add a student to the system (no complex application flow)."""
+    if request.user.role not in ('principal', 'secretary', 'super_admin', 'deputy_admin'):
+        return redirect('dashboard_home')
+
+    from apps.students.models import Student
+    from apps.academics.models import ClassLevel
+
+    school = request.user.school
+    classes = ClassLevel.objects.filter(school=school).order_by('order', 'name')
+
+    if request.method == 'POST':
+        # --- 1. Personal Details ---
+        first_name = request.POST.get('first_name', '').strip()
+        middle_name = request.POST.get('middle_name', '').strip()
+        last_name = request.POST.get('last_name', '').strip()
+        gender = request.POST.get('gender', 'M')
+        date_of_birth = request.POST.get('date_of_birth') or None
+        class_level = request.POST.get('class_level')
+        admission_date = request.POST.get('admission_date') or None
+        
+        # --- 2. Guardian Details ---
+        guardian_name = request.POST.get('guardian_name', '').strip()
+        guardian_phone = request.POST.get('guardian_phone', '').strip()
+        parent_id_number = request.POST.get('parent_id_number', '').strip()
+        
+        # --- 3. Location ---
+        county = request.POST.get('county', '').strip()
+        sub_county = request.POST.get('sub_county', '').strip()
+        ward = request.POST.get('ward', '').strip()
+        village = request.POST.get('village', '').strip()
+        
+        # --- 4. Documents & Previous School ---
+        birth_certificate_number = request.POST.get('birth_certificate_number', '').strip()
+        upi = request.POST.get('upi', '').strip()
+        previous_school_marks = request.POST.get('previous_school_marks', '').strip()
+        previous_school_mean_grade = request.POST.get('previous_school_mean_grade', '').strip()
+        
+        # --- 5. Boarding ---
+        is_boarding = request.POST.get('is_boarding') == 'on'
+
+        # --- 6. Validation ---
+        errors = []
+        if not first_name or not last_name:
+            errors.append("First and Last name are required.")
+        if not class_level:
+            errors.append("Class Level is required.")
+            
+        if errors:
+            for e in errors:
+                messages.error(request, e)
+            return render(request, 'dashboard/add_student.html', {
+                'classes': classes, 'form_data': request.POST,
+            })
+
+        # --- 7. Generate Admission Number ---
+        admission_number = generate_next_admission_number(school)
+
+        # --- 8. Create the Student ---
         try:
-            value = int(digits)
-        except ValueError:
-            continue
-        if value > best_value:
-            best_value = value
-            best_prefix = prefix
-            best_digits = digits
+            student = Student.objects.create(
+                school=school,
+                admission_number=admission_number,
+                first_name=first_name,
+                middle_name=middle_name,
+                last_name=last_name,
+                gender=gender,
+                date_of_birth=date_of_birth,
+                class_level=class_level,
+                admission_date=admission_date,
+                guardian_name=guardian_name,
+                guardian_phone=guardian_phone,
+                parent_id_number=parent_id_number,
+                birth_certificate_number=birth_certificate_number,
+                upi=upi,
+                previous_school_marks=previous_school_marks,
+                previous_school_mean_grade=previous_school_mean_grade,
+                is_boarding=is_boarding,
+                is_active=True
+            )
+            messages.success(request, f"Student {student.full_name} added successfully! Adm No: {admission_number}. Please print the Bio-Data for physical filing.")
+            return redirect('student_bio_page', student_id=student.id)
+        except Exception as e:
+            messages.error(request, f"An error occurred: {str(e)}")
+            return render(request, 'dashboard/add_student.html', {
+                'classes': classes, 'form_data': request.POST,
+            })
 
-    if best_prefix is None:
-        return 'ADM-0001'
+    return render(request, 'dashboard/add_student.html', {
+        'classes': classes,
+        'next_admission_number': generate_next_admission_number(school),
+    })
 
-    next_value = best_value + 1
-    width = len(best_digits)
-    return f"{best_prefix}{str(next_value).zfill(width)}"
+def generate_next_admission_number(school):
+    """Generate the next admission number starting from 1."""
+    from apps.students.models import Student
+    from django.db.models import Max
+    import re
+
+    # Get all admission numbers for this school
+    numbers = Student.objects.filter(school=school).exclude(admission_number__isnull=True).exclude(admission_number='').values_list('admission_number', flat=True)
+    
+    highest_num = 0
+    for num in numbers:
+        # Extract just the digits if there is a prefix (e.g., ADM-5 -> 5)
+        match = re.search(r'(\d+)$', str(num))
+        if match:
+            val = int(match.group(1))
+            if val > highest_num:
+                highest_num = val
+                
+    return str(highest_num + 1)
 
 @login_required
 def delete_student(request, student_id):

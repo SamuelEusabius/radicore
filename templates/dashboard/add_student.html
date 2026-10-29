@@ -1,286 +1,194 @@
 {% extends 'base.html' %}
-{% load static %}
-
 {% block title %}Add Student{% endblock %}
 {% block header_title %}Add New Student{% endblock %}
-{% block header_sub %}{{ current_school.name|default:"School" }} &middot; register a new student{% endblock %}
 
 {% block content %}
-
-<div style="max-width: 900px; margin: 0 auto;">
-
-  <a href="{% url 'students_list' %}" class="btn btn-ghost btn-sm" style="margin-bottom: var(--s-4);">
-    {% include 'partials/icons.html' with name="arrow-left" size=16 %}
-    Back to Students List
-  </a>
-
-  <!-- Flash messages -->
-  {% if messages %}
-    {% for m in messages %}
-    <div class="card mb-4" style="border-left: 4px solid
-      {% if m.tags == 'error' %}var(--danger){% else %}var(--primary){% endif %};
-      padding: var(--s-3); background: {% if m.tags == 'error' %}var(--danger-light){% else %}var(--primary-soft){% endif %};">
-      <p class="text-sm" style="margin: 0; color:
-        {% if m.tags == 'error' %}var(--danger){% else %}var(--primary-dark){% endif %};">
-        {{ m }}
-      </p>
-    </div>
-    {% endfor %}
-  {% endif %}
-
-  <form method="post" enctype="multipart/form-data" class="card">
+<div class="card" style="max-width: 900px; margin: 0 auto;">
+  <h3 class="mb-4">Student Registration</h3>
+  <p class="mb-6" style="color: var(--ink-500);">
+    Fill in the details below. Supporting documents (Birth Cert, Parent ID, Leaving Cert) will be physically attached to the printed Bio-Data.
+  </p>
+  
+  <form method="post">
     {% csrf_token %}
-
-    <!-- ============================================ -->
-    <!-- ADMISSION NUMBER                              -->
-    <!-- ============================================ -->
-    <h3 class="card-title mb-4">Admission Number</h3>
-
-    <div class="mb-6">
-      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
-        Admission Number <span style="color: var(--danger);">*</span>
-      </label>
-
-      {% if not has_existing_students %}
-        <!-- FIRST STUDENT — Manual Entry -->
-        <input type="text"
-               name="admission_number"
-               id="admission_number"
-               class="input w-full"
-               value="{{ form_data.admission_number|default:'' }}"
-               placeholder="e.g. SCH0006-2026-0001"
-               required>
-
-        <div class="card mt-3" style="background: var(--info-light); padding: var(--s-3); border-left: 4px solid var(--info);">
-          <p class="text-xs" style="margin: 0; color: var(--ink-700);">
-            <strong>First student:</strong> Enter a starting number here (e.g. <code style="font-family: var(--font-mono);">SCH0006-2026-0001</code>).
-            All future students will auto-increment from this number.
-          </p>
-        </div>
-      {% else %}
-        <!-- SUBSEQUENT STUDENTS — Auto-Generated -->
-        <div class="input w-full" style="background: var(--surface-muted); cursor: not-allowed; display: flex; align-items: center; justify-content: space-between; padding: 10px 12px;">
-          <span style="font-family: var(--font-mono); font-weight: 600; color: var(--ink-900); font-size: 14px;">
-            {{ next_admission_number }}
-          </span>
-          <span class="badge badge-success">Auto-generated</span>
-        </div>
-
-        <input type="hidden" name="admission_number" value="{{ next_admission_number }}">
-
-        <p class="text-xs mt-1" style="color: var(--ink-500);">
-          Automatically incremented from the last student in your school. No manual entry needed.
-        </p>
-      {% endif %}
-    </div>
-
-    <hr style="border: none; border-top: 1px solid var(--border); margin: var(--s-5) 0;">
-
-    <!-- ============================================ -->
-    <!-- PERSONAL DETAILS                              -->
-    <!-- ============================================ -->
-    <h3 class="card-title mb-4">Personal Details</h3>
-
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+    
+    <!-- 1. Personal Details -->
+    <h4 style="margin: 20px 0 10px; color: var(--primary); border-bottom: 1px solid var(--border); padding-bottom: 8px;">1. Personal Details</h4>
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 16px;">
       <div>
-        <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
-          First Name <span style="color: var(--danger);">*</span>
-        </label>
-        <input type="text" name="first_name" class="input w-full" required
-               value="{{ form_data.first_name|default:'' }}" placeholder="First name">
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">First Name *</label>
+        <input type="text" name="first_name" value="{{ form_data.first_name|default:'' }}" required style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px;">
       </div>
       <div>
-        <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
-          Middle Name
-        </label>
-        <input type="text" name="middle_name" class="input w-full"
-               value="{{ form_data.middle_name|default:'' }}" placeholder="Middle name (optional)">
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Middle Name</label>
+        <input type="text" name="middle_name" value="{{ form_data.middle_name|default:'' }}" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px;">
       </div>
       <div>
-        <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
-          Last Name <span style="color: var(--danger);">*</span>
-        </label>
-        <input type="text" name="last_name" class="input w-full" required
-               value="{{ form_data.last_name|default:'' }}" placeholder="Last name">
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Last Name *</label>
+        <input type="text" name="last_name" value="{{ form_data.last_name|default:'' }}" required style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px;">
       </div>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 16px; margin-bottom: 24px;">
       <div>
-        <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
-          Gender <span style="color: var(--danger);">*</span>
-        </label>
-        <select name="gender" class="select w-full" required>
-          <option value="">— Select —</option>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Gender *</label>
+        <select name="gender" required style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px;">
           <option value="M" {% if form_data.gender == 'M' %}selected{% endif %}>Male</option>
           <option value="F" {% if form_data.gender == 'F' %}selected{% endif %}>Female</option>
         </select>
       </div>
       <div>
-        <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
-          Date of Birth
-        </label>
-        <input type="date" name="date_of_birth" class="input w-full"
-               value="{{ form_data.date_of_birth|default:'' }}">
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Date of Birth</label>
+        <input type="date" name="date_of_birth" value="{{ form_data.date_of_birth|default:'' }}" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px;">
       </div>
       <div>
-        <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
-          Admission Date
-        </label>
-        <input type="date" name="admission_date" class="input w-full"
-               value="{{ form_data.admission_date|default:'' }}">
-      </div>
-    </div>
-
-    <hr style="border: none; border-top: 1px solid var(--border); margin: var(--s-5) 0;">
-
-    <!-- ============================================ -->
-    <!-- ACADEMIC DETAILS                              -->
-    <!-- ============================================ -->
-    <h3 class="card-title mb-4">Academic Details</h3>
-
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-      <div>
-        <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
-          CBC Level
-        </label>
-        <select name="cbc_level" class="select w-full">
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Class Level *</label>
+        <select name="class_level" required style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px;">
           <option value="">— Select —</option>
-          {% for value, label in cbc_levels %}
-            <option value="{{ value }}" {% if form_data.cbc_level == value %}selected{% endif %}>{{ label }}</option>
+          {% for c in classes %}
+            <option value="{{ c.name }}" {% if form_data.class_level == c.name %}selected{% endif %}>{{ c.name }}</option>
           {% endfor %}
         </select>
       </div>
       <div>
-        <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
-          Class / Stream
-        </label>
-        <input type="text" name="class_level" class="input w-full"
-               value="{{ form_data.class_level|default:'' }}"
-               placeholder="e.g. Grade 5 East">
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Admission Date</label>
+        <input type="date" name="admission_date" value="{{ form_data.admission_date|default:'' }}" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px;">
       </div>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+    <!-- 2. Previous School -->
+    <h4 style="margin: 20px 0 10px; color: var(--primary); border-bottom: 1px solid var(--border); padding-bottom: 8px;">2. Previous School Academic History</h4>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;">
       <div>
-        <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
-          UPI Number
-        </label>
-        <input type="text" name="upi" class="input w-full"
-               value="{{ form_data.upi|default:'' }}"
-               placeholder="NEMIS UPI number">
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Previous Overall Grade</label>
+        <input type="text" name="previous_school_mean_grade" value="{{ form_data.previous_school_mean_grade|default:'' }}" placeholder="e.g. B+ or 4.0" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px;">
       </div>
       <div>
-        <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
-          Birth Certificate #
-        </label>
-        <input type="text" name="birth_certificate_number" class="input w-full"
-               value="{{ form_data.birth_certificate_number|default:'' }}"
-               placeholder="Birth certificate number">
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Total Marks / Percentage</label>
+        <input type="text" name="previous_school_marks" value="{{ form_data.previous_school_marks|default:'' }}" placeholder="e.g. 350/500 or 70%" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px;">
       </div>
     </div>
 
-    <hr style="border: none; border-top: 1px solid var(--border); margin: var(--s-5) 0;">
-
-    <!-- ============================================ -->
-    <!-- GUARDIAN DETAILS                              -->
-    <!-- ============================================ -->
-    <h3 class="card-title mb-4">Guardian / Parent Details</h3>
-
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+    <!-- 3. Guardian Details -->
+    <h4 style="margin: 20px 0 10px; color: var(--primary); border-bottom: 1px solid var(--border); padding-bottom: 8px;">3. Guardian Details</h4>
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 24px;">
       <div>
-        <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
-          Guardian Name
-        </label>
-        <input type="text" name="guardian_name" class="input w-full"
-               value="{{ form_data.guardian_name|default:'' }}"
-               placeholder="Full name">
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Guardian Name</label>
+        <input type="text" name="guardian_name" value="{{ form_data.guardian_name|default:'' }}" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px;">
       </div>
       <div>
-        <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
-          Guardian Phone
-        </label>
-        <input type="tel" name="guardian_phone" class="input w-full"
-               value="{{ form_data.guardian_phone|default:'' }}"
-               placeholder="07XX XXX XXX">
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Guardian Phone</label>
+        <input type="text" name="guardian_phone" value="{{ form_data.guardian_phone|default:'' }}" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px;">
       </div>
       <div>
-        <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
-          Relationship
-        </label>
-        <input type="text" name="guardian_relationship" class="input w-full"
-               value="{{ form_data.guardian_relationship|default:'' }}"
-               placeholder="e.g. Mother, Father, Guardian">
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Parent ID Number</label>
+        <input type="text" name="parent_id_number" value="{{ form_data.parent_id_number|default:'' }}" placeholder="For physical filing" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px;">
       </div>
     </div>
 
-    <hr style="border: none; border-top: 1px solid var(--border); margin: var(--s-5) 0;">
-
-    <!-- ============================================ -->
-    <!-- SPECIAL NEEDS                                 -->
-    <!-- ============================================ -->
-    <h3 class="card-title mb-4">Special Needs</h3>
-
-    <div class="mb-4">
-      <label class="flex items-center gap-2 text-sm" style="color: var(--ink-700);">
-        <input type="checkbox" name="has_special_needs" id="has_special_needs"
-               {% if form_data.has_special_needs %}checked{% endif %}>
-        <span>This student has special needs</span>
-      </label>
+    <!-- 4. Location (Dropdowns) -->
+    <h4 style="margin: 20px 0 10px; color: var(--primary); border-bottom: 1px solid var(--border); padding-bottom: 8px;">4. Home Location</h4>
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 24px;">
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">County</label>
+        <select name="county_fk" id="id_county" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px;">
+          <option value="">— Select County —</option>
+          <!-- We will populate this via API or template loop if available -->
+        </select>
+      </div>
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Constituency</label>
+        <select name="constituency_fk" id="id_constituency" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px;">
+          <option value="">— Select Constituency —</option>
+        </select>
+      </div>
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Ward</label>
+        <select name="ward_fk" id="id_ward" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px;">
+          <option value="">— Select Ward —</option>
+        </select>
+      </div>
     </div>
 
-    <div class="mb-6" id="special_needs_notes_wrap" style="display: none;">
-      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
-        Special Needs Notes
-      </label>
-      <textarea name="special_needs_notes" rows="3" class="textarea w-full"
-                placeholder="Describe the special needs and required support...">{{ form_data.special_needs_notes|default:'' }}</textarea>
+    <!-- 5. Identity Documents -->
+    <h4 style="margin: 20px 0 10px; color: var(--primary); border-bottom: 1px solid var(--border); padding-bottom: 8px;">5. Identity Documents</h4>
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 24px;">
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Birth Certificate #</label>
+        <input type="text" name="birth_certificate_number" value="{{ form_data.birth_certificate_number|default:'' }}" placeholder="e.g. 123456789" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px;">
+      </div>
+      <div>
+        <label style="display: block; font-weight: 600; margin-bottom: 6px;">UPI Number</label>
+        <input type="text" name="upi" value="{{ form_data.upi|default:'' }}" placeholder="e.g. 2024UPI..." style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px;">
+      </div>
+      <div style="display: flex; align-items: center; margin-top: 24px;">
+        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 600;">
+          <input type="checkbox" name="is_boarding" {% if form_data.is_boarding %}checked{% endif %} style="width: 18px; height: 18px;">
+          Is Boarding Student
+        </label>
+      </div>
+    </div>
+    
+    <div style="background: #f8fafc; padding: 16px; border-left: 4px solid var(--primary); margin-bottom: 24px;">
+      <p style="margin: 0; font-size: 13px; color: var(--ink-600);">
+        <strong>Note:</strong> The admission number will be auto-generated as <strong>{{ next_admission_number }}</strong>. After saving, you will be redirected to print the Bio-Data for physical filing.
+      </p>
     </div>
 
-    <hr style="border: none; border-top: 1px solid var(--border); margin: var(--s-5) 0;">
-
-    <!-- ============================================ -->
-    <!-- PHOTO                                         -->
-    <!-- ============================================ -->
-    <h3 class="card-title mb-4">Photo</h3>
-
-    <div class="mb-6">
-      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
-        Student Photo
-      </label>
-      <input type="file" name="photo" class="input w-full" accept="image/*">
-      <p class="text-xs mt-1" style="color: var(--ink-500);">JPG or PNG, max 5MB</p>
-    </div>
-
-    <!-- ============================================ -->
-    <!-- SUBMIT                                        -->
-    <!-- ============================================ -->
-    <div class="flex gap-3">
-      <button type="submit" class="btn btn-primary">
-        {% include 'partials/icons.html' with name="check-circle" size=16 %}
-        Add Student
-      </button>
+    <div style="display: flex; justify-content: flex-end; gap: 12px;">
       <a href="{% url 'students_list' %}" class="btn btn-secondary">Cancel</a>
+      <button type="submit" class="btn btn-primary" style="padding: 12px 32px; font-size: 16px;">Save & Print Bio-Data</button>
     </div>
-
   </form>
-
 </div>
 
-{% endblock %}
-
-{% block extra_js %}
+<!-- JavaScript for Location Cascading Dropdowns -->
 <script>
-(function() {
-    var checkbox = document.getElementById('has_special_needs');
-    var wrap = document.getElementById('special_needs_notes_wrap');
-    if (checkbox && wrap) {
-        function toggle() {
-            wrap.style.display = checkbox.checked ? 'block' : 'none';
+  document.addEventListener('DOMContentLoaded', function() {
+    const countySelect = document.getElementById('id_county');
+    const constituencySelect = document.getElementById('id_constituency');
+    const wardSelect = document.getElementById('id_ward');
+
+    if (countySelect) {
+      countySelect.addEventListener('change', function() {
+        const countyId = this.value;
+        constituencySelect.innerHTML = '<option value="">— Loading... —</option>';
+        wardSelect.innerHTML = '<option value="">— Select Ward —</option>';
+        
+        if (countyId) {
+          fetch(`/api/locations/constituencies/?county=${countyId}`)
+            .then(res => res.json())
+            .then(data => {
+               constituencySelect.innerHTML = '<option value="">— Select Constituency —</option>';
+               if (data.results) {
+                 data.results.forEach(item => {
+                   constituencySelect.innerHTML += `<option value="${item.id}">${item.name}</option>`;
+                 });
+               }
+            });
         }
-        checkbox.addEventListener('change', toggle);
-        toggle();
+      });
     }
-})();
+
+    if (constituencySelect) {
+      constituencySelect.addEventListener('change', function() {
+        const consId = this.value;
+        wardSelect.innerHTML = '<option value="">— Loading... —</option>';
+        
+        if (consId) {
+          fetch(`/api/locations/wards/?constituency=${consId}`)
+            .then(res => res.json())
+            .then(data => {
+               wardSelect.innerHTML = '<option value="">— Select Ward —</option>';
+               if (data.results) {
+                 data.results.forEach(item => {
+                   wardSelect.innerHTML += `<option value="${item.id}">${item.name}</option>`;
+                 });
+               }
+            });
+        }
+      });
+    }
+  });
 </script>
 {% endblock %}

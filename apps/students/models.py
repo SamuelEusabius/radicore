@@ -49,10 +49,10 @@ class Student(models.Model):
     leaving_certificate_notes = models.TextField(blank=True, default='')
     leaving_certificate_content = models.TextField(blank=True, default='', help_text="Rich HTML body content")
     # ============ IDENTIFICATION ============
-    upi = models.CharField(
-        max_length=30, blank=True,
-        help_text="NEMIS UPI Number"
-    )
+    upi = models.CharField(max_length=50, blank=True, null=True)
+    parent_id_number = models.CharField(max_length=20, blank=True, null=True)
+    previous_school_marks = models.CharField(max_length=50, blank=True, null=True)
+    previous_school_mean_grade = models.CharField(max_length=10, blank=True, null=True)
     admission_number = models.CharField(max_length=30)
     birth_certificate_number = models.CharField(max_length=30, blank=True)
 
@@ -382,3 +382,8 @@ class StudentAdminCase(models.Model):
 
     def __str__(self):
         return f"{self.student} — {self.title} ({self.get_status_display()})"
+    
+        # For physical document tracking
+    previous_school_marks = models.CharField(max_length=50, blank=True, null=True)
+    previous_school_mean_grade = models.CharField(max_length=10, blank=True, null=True)
+    parent_id_number = models.CharField(max_length=20, blank=True, null=True)
