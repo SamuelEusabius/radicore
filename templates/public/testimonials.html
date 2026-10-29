@@ -1,0 +1,88 @@
+{% extends 'public/base_public.html' %}
+{% load static %}
+{% block title %}Testimonials - RacodCore{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div style="background: #0B1B3D; padding: 100px 20px 60px 20px; text-align: center;">
+    <div style="max-width: 800px; margin: 0 auto;">
+        <h1 style="font-size: 42px; font-weight: 800; color: white; margin-bottom: 20px; font-family: 'Poppins', sans-serif;">
+            Trusted by School Leaders
+        </h1>
+        <p style="font-size: 18px; color: #cbd5e1; line-height: 1.6;">
+            Don't just take our word for it. Here is what principals, accountants, and teachers across Kenya have to say about RacodCore.
+        </p>
+    </div>
+</div>
+
+<!-- Testimonials Grid -->
+<div style="background: #f8fafc; padding: 60px 20px;">
+    <div style="max-width: 1100px; margin: -40px auto 0; position: relative; z-index: 3;">
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 32px;">
+            
+            <!-- Testimonial 1 -->
+            <div style="background: white; padding: 40px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; display: flex; flex-direction: column; justify-content: space-between;">
+                <div>
+                    <div style="color: #F0B323; font-size: 24px; margin-bottom: 16px;">★★★★★</div>
+                    <p style="color: #475569; font-size: 16px; line-height: 1.8; font-style: italic; margin-bottom: 24px;">
+                        "Before RacodCore, our accountant spent three weeks reconciling M-Pesa payments with the fee register. Now, the system does it automatically. It has saved us so much time and eliminated human error."
+                    </p>
+                </div>
+                <div style="display: flex; align-items: center; gap: 16px;">
+                    <div style="width: 50px; height: 50px; border-radius: 50%; background: #0B1B3D; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px;">JM</div>
+                    <div>
+                        <h4 style="margin: 0; font-size: 16px; font-weight: 700; color: #0B1B3D;">Mr. John Mwangi</h4>
+                        <p style="margin: 0; font-size: 13px; color: #64748b;">Principal, Nairobi School</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Testimonial 2 -->
+            <div style="background: white; padding: 40px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; display: flex; flex-direction: column; justify-content: space-between;">
+                <div>
+                    <div style="color: #F0B323; font-size: 24px; margin-bottom: 16px;">★★★★★</div>
+                    <p style="color: #475569; font-size: 16px; line-height: 1.8; font-style: italic; margin-bottom: 24px;">
+                        "The CBC report card module is brilliant. It automatically calculates the trend arrows and assigns the subject teachers. My teachers save hours during exam periods."
+                    </p>
+                </div>
+                <div style="display: flex; align-items: center; gap: 16px;">
+                    <div style="width: 50px; height: 50px; border-radius: 50%; background: #F0B323; color: #0B1B3D; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px;">SK</div>
+                    <div>
+                        <h4 style="margin: 0; font-size: 16px; font-weight: 700; color: #0B1B3D;">Mrs. Sarah Kiprop</h4>
+                        <p style="margin: 0; font-size: 13px; color: #64748b;">Deputy Academics, Eldoret Academy</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Testimonial 3 -->
+            <div style="background: white; padding: 40px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; display: flex; flex-direction: column; justify-content: space-between;">
+                <div>
+                    <div style="color: #F0B323; font-size: 24px; margin-bottom: 16px;">★★★★★</div>
+                    <p style="color: #475569; font-size: 16px; line-height: 1.8; font-style: italic; margin-bottom: 24px;">
+                        "We onboarded 1,200 students in a single afternoon using the bulk import. The support team is responsive, and the system is built exactly for the Kenyan context. Highly recommended."
+                    </p>
+                </div>
+                <div style="display: flex; align-items: center; gap: 16px;">
+                    <div style="width: 50px; height: 50px; border-radius: 50%; background: #059669; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px;">DN</div>
+                    <div>
+                        <h4 style="margin: 0; font-size: 16px; font-weight: 700; color: #0B1B3D;">Mr. David Njoroge</h4>
+                        <p style="margin: 0; font-size: 13px; color: #64748b;">Director of Studies, Mombasa High</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Call to Action -->
+        <div style="text-align: center; margin-top: 80px; background: #0B1B3D; padding: 60px 20px; border-radius: 16px;">
+            <h2 style="color: white; font-size: 32px; font-weight: 800; margin-bottom: 16px;">Ready to transform your school?</h2>
+            <p style="color: #cbd5e1; font-size: 16px; margin-bottom: 32px;">Join the schools that have already switched to RacodCore.</p>
+            <a href="{% url 'school_signup' %}" style="display: inline-block; background: #F0B323; color: #0B1B3D; font-weight: 700; padding: 16px 40px; border-radius: 8px; text-decoration: none; font-size: 16px; transition: background 0.2s;" onmouseover="this.style.background='#ffc83d'" onmouseout="this.style.background='#F0B323'">
+                Get Started Today
+            </a>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

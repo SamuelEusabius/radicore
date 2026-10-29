@@ -110,3 +110,7 @@ def terms(request):
 def resource_centre(request):
     """A polite placeholder for the upcoming Digital Resource Centre."""
     return render(request, 'public/resource_centre.html')
+
+def testimonials(request):
+    """A page showing feedback from schools using RacodCore."""
+    return render(request, 'public/testimonials.html')
