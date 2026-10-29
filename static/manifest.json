@@ -1,0 +1,24 @@
+{
+  "name": "RacodCore - Smart School Management",
+  "short_name": "RacodCore",
+  "description": "A complete school management platform built for Kenya.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0B1B3D",
+  "theme_color": "#0B1B3D",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/static/images/landing/pwa-icon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/static/images/landing/pwa-icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
