@@ -13,6 +13,7 @@
   <link rel="stylesheet" href="{% static 'css/design-tokens.css' %}?v={% now 'U' %}">
   <link rel="stylesheet" href="{% static 'css/components.css' %}?v={% now 'U' %}">
   <link rel="stylesheet" href="{% static 'css/utilities.css' %}?v={% now 'U' %}">
+  <link rel="icon" type="image/png" href="{% static 'images/favicon.png' %}">
 
   <style>
     /* ============ PUBLIC NAV (GLOBAL) ============ */
@@ -27,7 +28,7 @@
       background: rgba(255, 255, 255, 0.95);
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
-      border-radius: 100px; /* Pill shape */
+      border-radius: 100px;
       box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
       border: 1px solid rgba(255, 255, 255, 0.2);
     }
@@ -41,7 +42,6 @@
       gap: 24px;
     }
 
-    /* Logo */
     .pub-logo {
       display: flex;
       align-items: center;
@@ -80,7 +80,6 @@
     }
     .brand-gold { color: #D4A017; }
 
-    /* Desktop Menu */
     .pub-menu {
       display: flex;
       align-items: center;
@@ -115,7 +114,6 @@
       width: 100%;
     }
 
-    /* CTA Buttons */
     .pub-cta {
       display: flex;
       align-items: center;
@@ -146,7 +144,6 @@
       box-shadow: 0 4px 12px rgba(10, 138, 95, 0.3);
     }
 
-    /* Search Bar */
     .pub-search-form {
       position: relative; 
       display: flex; 
@@ -177,7 +174,6 @@
       cursor: pointer;
     }
 
-    /* Hamburger */
     .pub-hamburger {
       display: none;
       width: 44px; height: 44px;
@@ -187,10 +183,11 @@
     }
     .pub-hamburger svg { width: 24px; height: 24px; }
 
-    /* Mobile Drawer */
+    /* ============ MOBILE DRAWER (REDUCED TO 60%) ============ */
     .pub-mobile-menu {
       position: fixed; top: 0; right: 0; bottom: 0;
-      width: 320px; max-width: 85vw;
+      width: 60%; /* REDUCED SIZE */
+      max-width: 60vw; /* REDUCED SIZE */
       background: #FFFFFF;
       z-index: 9999;
       transform: translateX(105%);
@@ -224,7 +221,6 @@
       border-top: 1px solid var(--border);
     }
 
-    /* Backdrop */
     .pub-backdrop {
       position: fixed; inset: 0;
       background: rgba(15, 23, 42, 0.5);
@@ -233,28 +229,19 @@
     }
     .pub-backdrop.open { display: block; opacity: 1; }
 
-    /* Utility */
     .pub-main { min-height: calc(100vh - 400px); }
 
-     /* ============ PUBLIC FOOTER ============ */
+    /* ============ PUBLIC FOOTER ============ */
     .pub-footer {
-      background: linear-gradient(135deg, #0A6E9F 0%, #1FA2D6 50%, #0A6E9F 100%);
+      background: #0B1B3D;
       color: #FFFFFF;
       padding: 64px 0 24px;
       margin-top: 80px;
       position: relative;
       overflow: hidden;
+      border-top: 4px solid #F0B323;
     }
     
-    .pub-footer::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background-image: radial-gradient(circle at 20% 50%, rgba(255,255,255,0.1) 0%, transparent 50%),
-                        radial-gradient(circle at 80% 80%, rgba(255,255,255,0.05) 0%, transparent 40%);
-      pointer-events: none;
-    }
-
     .pub-footer-inner {
       max-width: 1280px;
       margin: 0 auto;
@@ -285,16 +272,7 @@
       line-height: 1.2;
       letter-spacing: -0.02em;
     }
-    .pub-footer-brand-name .brand-gold { color: #D4A017; }
-    .pub-footer-brand-name small {
-      display: block;
-      font-size: 10px;
-      font-weight: 600;
-      color: rgba(255, 255, 255, 0.7);
-      letter-spacing: 0.10em;
-      text-transform: uppercase;
-      margin-top: 2px;
-    }
+    .pub-footer-brand-name .brand-gold { color: #F0B323; }
     
     .pub-footer-desc {
       font-size: 14px;
@@ -330,6 +308,7 @@
     .pub-footer-link:hover { 
       opacity: 0.8; 
       text-decoration: underline;
+      color: #F0B323;
     }
 
     .pub-footer-social {
@@ -343,16 +322,17 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      background: #FFFFFF;
+      background: rgba(255, 255, 255, 0.1);
       border-radius: 50%;
-      color: #0A6E9F;
+      color: #FFFFFF;
       transition: transform 150ms, box-shadow 150ms;
       text-decoration: none;
     }
 
     .pub-footer-social a:hover {
       transform: translateY(-3px);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      background: #F0B323;
+      color: #0B1B3D;
     }
 
     .pub-footer-social svg {
@@ -372,9 +352,10 @@
     }
 
     .pub-footer-bottom strong {
-      color: #FFFFFF;
+      color: #F0B323;
       font-weight: 700;
     }
+
     @media (max-width: 1024px) {
       .pub-footer-grid { grid-template-columns: 1fr 1fr; }
     }
@@ -383,7 +364,7 @@
       .pub-footer-inner { padding: 0 16px; }
       .pub-footer-bottom { flex-direction: column; text-align: center; }
     }
-        /* ============ RESPONSIVE ============ */
+
     @media (max-width: 1200px) {
       .pub-menu, 
       .pub-cta { 
@@ -397,7 +378,6 @@
         width: 95%; 
         border-radius: 20px; 
       }
-      
       .pub-nav-inner { 
         padding: 12px 20px; 
         justify-content: space-between;
@@ -409,12 +389,8 @@
 </head>
 <body>
 
-  <!-- ============================================ -->
-  <!-- GLOBAL PUBLIC NAV                            -->
-  <!-- ============================================ -->
   <nav class="pub-nav">
     <div class="pub-nav-inner">
-
       <a href="{% url 'landing' %}" class="pub-logo">
         <div class="pub-logo-mark">
           <img src="{% static 'images/graduation-cap-books.png' %}" alt="RacodCore">
@@ -431,7 +407,6 @@
         <a href="{% url 'about' %}" class="pub-menu-link {% if request.resolver_match.url_name == 'about' %}active{% endif %}">About</a>
         <a href="{% url 'help_page' %}" class="pub-menu-link {% if request.resolver_match.url_name == 'help_page' %}active{% endif %}">Help</a>
         <a href="{% url 'contact' %}" class="pub-menu-link {% if request.resolver_match.url_name == 'contact' %}active{% endif %}">Contact</a>
-
       </div>
 
       <div class="pub-cta">
@@ -474,6 +449,7 @@
     </div>
     <div class="pub-mobile-links">
       <a href="{% url 'landing' %}#features">Features</a>
+      <a href="{% url 'resource_centre' %}">Resources</a> <!-- ADDED RESOURCES LINK -->
       <a href="{% url 'about' %}">About</a>
       <a href="{% url 'help_page' %}">Help</a>
       <a href="{% url 'contact' %}">Contact</a>
@@ -484,9 +460,6 @@
     </div>
   </div>
 
-  <!-- ============================================ -->
-  <!-- MAIN PAGE CONTENT                            -->
-  <!-- ============================================ -->
   <main class="pub-main">
     {% block content %}{% endblock %}
   </main>
@@ -589,9 +562,7 @@
 
     </div>
 </footer>
-  <!-- ============================================ -->
-  <!-- HAMBURGER JS                                 -->
-  <!-- ============================================ -->
+
   <script>
     document.addEventListener('DOMContentLoaded', function() {
       var hamburger = document.getElementById('pub-hamburger');

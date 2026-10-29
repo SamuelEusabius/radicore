@@ -44,11 +44,10 @@
     .auth-nav-text span { color: #D4A017; }
     .auth-nav-text small { display: block; font-size: 10px; font-weight: 600; color: var(--ink-500); letter-spacing: 0.10em; text-transform: uppercase; margin-top: 1px; }
     
-    /* Desktop Links - UPPERCASE */
+    /* Desktop Links */
     .auth-nav-links { display: flex; gap: 28px; align-items: center; }
     .auth-nav-links a { font-size: 15px; font-weight: 700; color: var(--ink-800); text-decoration: none; text-transform: uppercase; letter-spacing: 0.05em; transition: color 150ms; position: relative; }
     .auth-nav-links a:hover { color: var(--primary); }
-    
     .auth-nav-links a::after {
       content: '';
       position: absolute;
@@ -61,7 +60,7 @@
     }
     .auth-nav-links a:hover::after { width: 100%; }
 
-    /* Hamburger Button */
+    /* Hamburger */
     .auth-hamburger {
       display: none;
       width: 40px; height: 40px;
@@ -71,11 +70,12 @@
     }
     .auth-hamburger svg { width: 24px; height: 24px; }
 
-    /* Mobile Menu Drawer */
+    /* ============ MOBILE DRAWER (60% WIDTH & UNIFORM STYLING) ============ */
     .auth-mobile-menu {
       position: fixed;
       top: 0; right: 0; bottom: 0;
-      width: 280px; max-width: 85vw;
+      width: 60%;
+      max-width: 60vw;
       background: #FFFFFF;
       box-shadow: -8px 0 32px rgba(15, 23, 42, 0.15);
       z-index: 9999;
@@ -86,13 +86,24 @@
       flex-direction: column;
     }
     .auth-mobile-menu.open { transform: translateX(0); }
-    .auth-mobile-header { display: flex; justify-content: flex-end; margin-bottom: 24px; }
+    .auth-mobile-header { display: flex; justify-content: flex-end; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
     .auth-mobile-close { background: var(--surface-muted); border: none; width: 36px; height: 36px; border-radius: var(--radius); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--ink-600); }
-    .auth-mobile-links { display: flex; flex-direction: column; gap: 8px; }
-    .auth-mobile-links a { padding: 12px 16px; font-size: 15px; font-weight: 700; color: var(--ink-800); text-decoration: none; border-radius: var(--radius); transition: background 150ms; text-transform: uppercase; letter-spacing: 0.05em; }
+    
+    .auth-mobile-links { display: flex; flex-direction: column; gap: 4px; flex: 1; }
+    .auth-mobile-links a { 
+      padding: 14px 16px; 
+      font-size: 15px; 
+      font-weight: 700; 
+      color: var(--ink-800); 
+      text-decoration: none; 
+      border-radius: var(--radius); 
+      transition: background 150ms; 
+      text-transform: uppercase; 
+      letter-spacing: 0.05em; 
+    }
     .auth-mobile-links a:hover { background: var(--primary-soft); color: var(--primary); }
 
-    /* Mobile Backdrop */
+    /* Backdrop */
     .auth-backdrop {
       display: none;
       position: fixed;
@@ -105,48 +116,14 @@
     .auth-backdrop.open { display: block; opacity: 1; }
 
     /* ============ LAYOUT ============ */
-    .auth-main { 
-      flex: 1; 
-      display: grid; 
-      grid-template-columns: 1fr 1fr; 
-      min-height: 100vh; 
-      /* padding-top removed so the image touches the top */
-    }
+    .auth-main { flex: 1; display: grid; grid-template-columns: 1fr 1fr; min-height: 100vh; }
 
-    /* ============ LEFT PANEL ============ */
-    .auth-left { 
-      position: relative; 
-      background-color: #0B1220; 
-      background-size: cover;
-      background-position: center;
-      overflow: hidden; 
-      padding: 120px 56px 64px; /* Added 120px top padding to clear the floating nav */
-      display: flex; 
-      flex-direction: column; 
-      justify-content: space-between; 
-      color: #FFFFFF; 
-    }
-    
-    .auth-left::before { 
-      content: ''; 
-      position: absolute; 
-      inset: 0; 
-      background: linear-gradient(135deg, rgba(11, 18, 32, 0.88) 0%, rgba(5, 90, 62, 0.72) 55%, rgba(11, 18, 32, 0.85) 100%); 
-      z-index: 0; 
-    }
-    
+    /* LEFT PANEL */
+    .auth-left { position: relative; background-color: #0B1220; background-size: cover; background-position: center; overflow: hidden; padding: 120px 56px 64px; display: flex; flex-direction: column; justify-content: space-between; color: #FFFFFF; }
+    .auth-left::before { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(11, 18, 32, 0.88) 0%, rgba(5, 90, 62, 0.72) 55%, rgba(11, 18, 32, 0.85) 100%); z-index: 0; }
     .auth-left > * { position: relative; z-index: 1; }
 
-    /* Left Panel Text */
-    .auth-left-hero h1 { 
-      font-family: var(--font-heading); 
-      font-size: 42px; 
-      font-weight: 800; 
-      line-height: 1.1; 
-      letter-spacing: -0.03em; 
-      color: #FFFFFF; 
-      margin-bottom: 20px; 
-    }
+    .auth-left-hero h1 { font-family: var(--font-heading); font-size: 42px; font-weight: 800; line-height: 1.1; letter-spacing: -0.03em; color: #FFFFFF; margin-bottom: 20px; }
     .auth-left-hero p { font-size: 15px; line-height: 1.7; color: rgba(255, 255, 255, 0.75); max-width: 420px; }
 
     .auth-left-features { margin-top: 40px; display: flex; flex-direction: column; gap: 16px; }
@@ -157,14 +134,8 @@
 
     .auth-left-footer { font-size: 11px; color: rgba(255, 255, 255, 0.4); margin-top: 48px; }
 
-    /* ============ RIGHT PANEL ============ */
-    .auth-right { 
-      display: flex; 
-      align-items: center; 
-      justify-content: center; 
-      padding: 120px 32px 40px; /* Added 120px top padding so the form doesn't hide behind nav */
-      background: #FFFFFF; 
-    }
+    /* RIGHT PANEL */
+    .auth-right { display: flex; align-items: center; justify-content: center; padding: 120px 32px 40px; background: #FFFFFF; }
     .auth-form-wrap { width: 100%; max-width: 400px; }
 
     .auth-form-header { text-align: center; margin-bottom: 32px; }
@@ -197,26 +168,14 @@
     .auth-form-links { display: flex; flex-direction: column; gap: 10px; margin-top: 24px; }
     .auth-legal { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); font-size: 11px; color: var(--ink-400); text-align: center; }
 
-    /* ============ RESPONSIVE (MOBILE/TABLET) ============ */
     @media (max-width: 900px) {
-      .auth-main { 
-        grid-template-columns: 1fr; 
-        grid-template-rows: auto 1fr; 
-      }
-      .auth-left { 
-        padding: 100px 24px 32px; /* Adjusted for mobile nav */
-        min-height: auto; 
-      }
+      .auth-main { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+      .auth-left { padding: 100px 24px 32px; min-height: auto; }
       .auth-left-hero h1 { font-size: 28px; margin-bottom: 12px; }
       .auth-left-hero p { font-size: 14px; margin-bottom: 0; }
       .auth-left-features { display: none; }
       .auth-left-footer { display: none; }
-      
-      .auth-right { 
-        padding: 40px 24px; 
-        align-items: flex-start; 
-      }
-      
+      .auth-right { padding: 40px 24px; align-items: flex-start; }
       .auth-nav-links { display: none; }
       .auth-hamburger { display: flex; }
     }
@@ -237,10 +196,11 @@
     </a>
     
     <div class="auth-nav-links">
-      <a href="{% url 'landing' %}#features">Features</a>
-      <a href="{% url 'about' %}">About</a>
-      <a href="{% url 'help_page' %}">Help</a>
-      <a href="{% url 'contact' %}">Contact</a>
+      <a href="{% url 'landing' %}#features">FEATURES</a>
+      <a href="{% url 'resource_centre' %}">RESOURCES</a>
+      <a href="{% url 'about' %}">ABOUT</a>
+      <a href="{% url 'help_page' %}">HELP</a>
+      <a href="{% url 'contact' %}">CONTACT</a>
     </div>
 
     <button class="auth-hamburger" id="auth-hamburger" aria-label="Open menu">
@@ -261,17 +221,17 @@
       </button>
     </div>
     <div class="auth-mobile-links">
-      <a href="{% url 'landing' %}#features">Features</a>
-      <a href="{% url 'about' %}">About</a>
-      <a href="{% url 'help_page' %}">Help</a>
-      <a href="{% url 'contact' %}">Contact</a>
+      <a href="{% url 'landing' %}#features">FEATURES</a>
+      <a href="{% url 'resource_centre' %}">RESOURCES</a>
+      <a href="{% url 'about' %}">ABOUT</a>
+      <a href="{% url 'help_page' %}">HELP</a>
+      <a href="{% url 'contact' %}">CONTACT</a>
     </div>
   </div>
 
   <!-- MAIN CONTENT -->
   <main class="auth-main">
-
-    <!-- LEFT: Branding (Logo Removed) -->
+    <!-- LEFT: Branding -->
     <div class="auth-left" {% block left_panel_style %}{% endblock %}>
       <div>
         <div class="auth-left-hero">
@@ -308,7 +268,6 @@
         {% block auth_content %}{% endblock %}
       </div>
     </div>
-
   </main>
 
   <script>

@@ -1395,3 +1395,33 @@ body.a11y-no-motion * {
     border-color: #059669 !important;
     background: #ecfdf5 !important;
 }
+
+/* ============================================================
+   UNIVERSAL MOBILE DRAWER OVERRIDE (60% Width)
+   ============================================================ */
+@media (max-width: 768px) {
+    /* 1. Force the drawer container to 60% width */
+    #mobile-menu, 
+    #mobileMenu, 
+    .mobile-menu, 
+    .mobile-drawer, 
+    .nav-drawer, 
+    .offcanvas, 
+    .navbar-collapse,
+    .sidebar {
+        width: 60% !important;
+        max-width: 60% !important;
+        min-width: 60% !important;
+        box-shadow: 4px 0 24px rgba(0,0,0,0.2) !important;
+    }
+
+    /* 2. Ensure the links inside stack properly and are large */
+    #mobile-menu a, 
+    #mobileMenu a, 
+    .mobile-menu a, 
+    .nav-drawer a {
+        font-size: 18px !important;
+        padding: 20px 16px !important;
+        display: block !important;
+    }
+}

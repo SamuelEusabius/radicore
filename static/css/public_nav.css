@@ -46,3 +46,48 @@
   min-height: 48px;
   border-radius: 10px;
 }
+
+/* ============================================================
+   MOBILE DRAWER SIZE FIX (30% Reduction)
+   ============================================================ */
+@media (max-width: 768px) {
+    /* Target the specific drawer class your auth page uses */
+    .mobile-menu, 
+    .nav-drawer, 
+    .pub-mobile-menu,
+    .mobile-nav {
+        width: 75% !important; /* Reduced from 100% */
+        max-width: 280px !important; 
+        padding: 24px 16px !important;
+    }
+
+    /* Ensure links are large and touch-friendly */
+    .mobile-menu a, 
+    .nav-drawer a,
+    .pub-mobile-menu a {
+        padding: 14px 16px !important;
+        font-size: 16px !important;
+        display: block !important;
+        border-bottom: 1px solid #e2e8f0 !important;
+    }
+}
+
+/* ============================================================
+   NUCLEAR MOBILE DRAWER OVERRIDE (50% Width)
+   ============================================================ */
+@media (max-width: 768px) {
+
+    #mobile-menu, 
+    #mobileMenu, 
+    .mobile-menu, 
+    .mobile-drawer, 
+    .nav-drawer, 
+    .offcanvas, 
+    .navbar-collapse,
+    .sidebar,
+    .mobile-nav {
+        width: 50% !important;
+        max-width: 50% !important;
+        min-width: 50% !important;
+    }
+}
