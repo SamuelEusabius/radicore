@@ -1356,3 +1356,42 @@
     display: none !important;
   }
 }
+
+/* ============================================================
+   ACCESSIBILITY MODES (Triggered by JS)
+   ============================================================ */
+
+/* 1. High Contrast */
+body.a11y-contrast {
+    filter: invert(1) hue-rotate(180deg) !important;
+    background: #000 !important;
+}
+body.a11y-contrast img, body.a11y-contrast video, body.a11y-contrast svg {
+    filter: invert(1) hue-rotate(180deg) !important;
+}
+
+/* 2. Bigger Text */
+body.a11y-text-size {
+    font-size: 120% !important;
+}
+
+/* 3. Dyslexia Friendly */
+body.a11y-dyslexia {
+    font-family: 'Comic Sans MS', 'OpenDyslexic', sans-serif !important;
+    letter-spacing: 0.05em !important;
+    word-spacing: 0.1em !important;
+    line-height: 1.8 !important;
+}
+
+/* 4. Stop Animations */
+body.a11y-no-motion * {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+}
+
+/* Active button state */
+.a11y-btn.active {
+    border-color: #059669 !important;
+    background: #ecfdf5 !important;
+}

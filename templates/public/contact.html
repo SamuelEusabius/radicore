@@ -1,171 +1,89 @@
 {% extends 'public/base_public.html' %}
 {% load static %}
-{% block title %}Contact · School MS{% endblock %}
-
-{% block extra_css %}
-<style>
-  .page-hero {
-    padding: var(--s-10) var(--s-6) var(--s-8);
-    text-align: center;
-    background: linear-gradient(180deg, var(--primary-soft) 0%, var(--bg) 100%);
-  }
-  .page-hero h1 {
-    font-family: var(--font-heading);
-    font-size: 44px;
-    font-weight: 800;
-    color: var(--ink-900);
-    letter-spacing: -0.03em;
-    margin: 0 0 var(--s-4);
-  }
-  .page-hero p {
-    font-size: var(--text-md);
-    color: var(--ink-600);
-    max-width: 640px;
-    margin: 0 auto;
-  }
-  .contact-grid {
-    max-width: 1100px;
-    margin: 0 auto;
-    padding: var(--s-10) var(--s-6);
-    display: grid;
-    grid-template-columns: 1.5fr 1fr;
-    gap: var(--s-8);
-  }
-  .contact-form {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
-    padding: var(--s-6);
-    box-shadow: var(--shadow-sm);
-  }
-  .contact-info {
-    display: flex;
-    flex-direction: column;
-    gap: var(--s-5);
-  }
-  .contact-channel {
-    display: flex;
-    gap: var(--s-3);
-    align-items: flex-start;
-  }
-  .contact-channel-icon {
-    width: 44px; height: 44px;
-    background: var(--primary-soft);
-    color: var(--primary);
-    border-radius: var(--radius);
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0;
-  }
-  .contact-channel-icon svg { width: 20px; height: 20px; }
-  .contact-channel h4 {
-    font-family: var(--font-heading);
-    font-size: var(--text-sm);
-    font-weight: 700;
-    color: var(--ink-900);
-    margin: 0 0 var(--s-1);
-  }
-  .contact-channel p {
-    font-size: var(--text-sm);
-    color: var(--ink-600);
-    margin: 0;
-  }
-  @media (max-width: 900px) {
-    .contact-grid { grid-template-columns: 1fr; }
-    .page-hero h1 { font-size: 32px; }
-  }
-</style>
-{% endblock %}
+{% block title %}Contact Us - RacodCore{% endblock %}
 
 {% block content %}
+<div style="background: #f8fafc; min-height: 100vh; padding: 120px 20px 60px 20px;">
+    <div style="max-width: 1100px; margin: 0 auto; background: white; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); overflow: hidden; display: flex; flex-wrap: wrap; border: 1px solid #e2e8f0;">
+        
+        <!-- Left Side: Contact Info & Image -->
+        <div style="flex: 1; min-width: 300px; background: #0B1B3D; color: white; padding: 50px; position: relative;">
+            <h2 style="font-size: 32px; font-weight: 800; margin-bottom: 16px; font-family: 'Poppins', sans-serif;">Get in touch</h2>
+            <p style="color: #94a3b8; font-size: 15px; line-height: 1.6; margin-bottom: 40px;">
+                We'd love to hear from you. Whether you want to onboard your school, need technical support, or just want to say hello, our team is ready to help.
+            </p>
+            
+            <div style="display: flex; flex-direction: column; gap: 24px; margin-bottom: 40px;">
+                <!-- Phone -->
+                <div style="display: flex; gap: 16px; align-items: flex-start;">
+                    <div style="width: 40px; height: 40px; border-radius: 50%; background: rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                        <svg width="20" height="20" fill="none" stroke="#F0B323" stroke-width="2" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                    </div>
+                    <div>
+                        <div style="font-size: 12px; text-transform: uppercase; color: #94a3b8; font-weight: 700; letter-spacing: 1px; margin-bottom: 4px;">Phone & WhatsApp</div>
+                        <div style="font-size: 16px; font-weight: 600;">+254 796 174 943</div>
+                    </div>
+                </div>
 
-<section class="page-hero">
-  <h1>Get in Touch</h1>
-  <p>Questions about School MS? Want a demo? We'd love to hear from you.</p>
-</section>
+                <!-- Email -->
+                <div style="display: flex; gap: 16px; align-items: flex-start;">
+                    <div style="width: 40px; height: 40px; border-radius: 50%; background: rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                        <svg width="20" height="20" fill="none" stroke="#F0B323" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                    </div>
+                    <div>
+                        <div style="font-size: 12px; text-transform: uppercase; color: #94a3b8; font-weight: 700; letter-spacing: 1px; margin-bottom: 4px;">Email Us</div>
+                        <div style="font-size: 16px; font-weight: 600; word-break: break-all;">samuelusabius14164@gmail.com</div>
+                    </div>
+                </div>
 
-<div class="contact-grid">
+                <!-- Address -->
+                <div style="display: flex; gap: 16px; align-items: flex-start;">
+                    <div style="width: 40px; height: 40px; border-radius: 50%; background: rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                        <svg width="20" height="20" fill="none" stroke="#F0B323" stroke-width="2" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                    </div>
+                    <div>
+                        <div style="font-size: 12px; text-transform: uppercase; color: #94a3b8; font-weight: 700; letter-spacing: 1px; margin-bottom: 4px;">Location</div>
+                        <div style="font-size: 15px; font-weight: 500; line-height: 1.5;">Bungoma & Eldoret<br>P.O. Box 410 - 50200</div>
+                    </div>
+                </div>
+            </div>
 
-  <form class="contact-form" method="post">
-    {% csrf_token %}
-
-    {% if messages %}
-      {% for m in messages %}
-        <div class="flash {% if m.tags == 'error' %}flash-error{% else %}flash-success{% endif %}" style="margin-bottom: var(--s-5);">
-          {{ m }}
+            <!-- Image with Hardcoded Path to ensure it loads -->
+    <img src="{% static 'images/landing/support-agent.jpg.jpeg' %}" alt="Support Agent" style="width: 100%; height: 180px; object-fit: cover; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
         </div>
-      {% endfor %}
-    {% endif %}
 
-    <div class="form-group">
-      <label class="form-label">Your Name <span class="required">*</span></label>
-      <input type="text" name="name" required class="input" placeholder="e.g. Samuel Nganga">
+        <!-- Right Side: Contact Form -->
+        <div style="flex: 1.5; min-width: 300px; padding: 50px;">
+            <h3 style="font-size: 24px; font-weight: 700; color: #0B1B3D; margin-bottom: 24px;">Send us a message</h3>
+            
+            <form method="post" action="{% url 'contact' %}">
+                {% csrf_token %}
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+                    <div>
+                        <label style="display: block; font-size: 13px; font-weight: 600; color: #475569; margin-bottom: 6px;">Full Name</label>
+                        <input type="text" name="name" required style="width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 13px; font-weight: 600; color: #475569; margin-bottom: 6px;">Email Address</label>
+                        <input type="email" name="email" required style="width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px;">
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 16px;">
+                    <label style="display: block; font-size: 13px; font-weight: 600; color: #475569; margin-bottom: 6px;">School Name (Optional)</label>
+                    <input type="text" name="school" style="width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px;">
+                </div>
+
+                <div style="margin-bottom: 24px;">
+                    <label style="display: block; font-size: 13px; font-weight: 600; color: #475569; margin-bottom: 6px;">Message</label>
+                    <textarea name="message" required rows="5" style="width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; resize: vertical;"></textarea>
+                </div>
+
+                <button type="submit" style="background: #F0B323; color: #0B1B3D; border: none; padding: 14px 32px; font-size: 16px; font-weight: 700; border-radius: 8px; cursor: pointer; width: 100%; transition: background 0.2s;">
+                    Send Message
+                </button>
+            </form>
+        </div>
     </div>
-
-    <div class="form-group">
-      <label class="form-label">Email Address <span class="required">*</span></label>
-      <input type="email" name="email" required class="input" placeholder="you@school.ac.ke">
-    </div>
-
-    <div class="form-group">
-      <label class="form-label">School Name</label>
-      <input type="text" name="school" class="input" placeholder="e.g. Nairibischool">
-    </div>
-
-    <div class="form-group">
-      <label class="form-label">Message <span class="required">*</span></label>
-      <textarea name="message" rows="5" required class="textarea" placeholder="Tell us about your school and what you're looking for..."></textarea>
-    </div>
-
-    <button type="submit" class="btn btn-primary" style="width: 100%; padding: 14px;">
-      Send Message
-    </button>
-
-  </form>
-
-  <div class="contact-info">
-
-    <div class="contact-channel">
-      <div class="contact-channel-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-      </div>
-      <div>
-        <h4>Email Us</h4>
-        <p>samuelusabius14164@gmail.com</p>
-      </div>
-    </div>
-
-    <div class="contact-channel">
-      <div class="contact-channel-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-      </div>
-      <div>
-        <h4>Call Us</h4>
-        <p>+254 700 000 000</p>
-      </div>
-    </div>
-
-    <div class="contact-channel">
-      <div class="contact-channel-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
-      </div>
-      <div>
-        <h4>Office</h4>
-        <p>Bungoma, Kenya</p>
-      </div>
-    </div>
-
-    <div class="contact-channel">
-      <div class="contact-channel-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-      </div>
-      <div>
-        <h4>Business Hours</h4>
-        <p>Monday–Friday: 8am – 6pm<br>Saturday: 9am – 1pm</p>
-      </div>
-    </div>
-
-  </div>
-
 </div>
-
 {% endblock %}

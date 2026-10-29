@@ -1,0 +1,117 @@
+<!-- Accessibility Floating Button -->
+<button id="a11y-toggle" aria-label="Open Accessibility Menu" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999; width: 50px; height: 50px; border-radius: 50%; background: #059669; color: white; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.15); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: transform 0.2s;">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"></circle>
+        <circle cx="12" cy="7" r="2"></circle>
+        <line x1="12" y1="9" x2="12" y2="15"></line>
+        <line x1="8" y1="12" x2="16" y2="12"></line>
+        <line x1="12" y1="15" x2="9" y2="21"></line>
+        <line x1="12" y1="15" x2="15" y2="21"></line>
+    </svg>
+</button>
+
+<!-- Accessibility Panel -->
+<div id="a11y-panel" style="position: fixed; top: 0; right: -350px; width: 320px; height: 100vh; background: white; z-index: 10000; box-shadow: -5px 0 25px rgba(0,0,0,0.1); transition: right 0.3s ease; display: flex; flex-direction: column; overflow-y: auto;">
+    
+    <div style="padding: 20px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; background: #f8fafc;">
+        <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: #0f172a;">Accessibility</h3>
+        <button id="a11y-close" style="background: none; border: none; cursor: pointer; color: #64748b; padding: 4px;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+    </div>
+
+    <div style="padding: 20px; display: grid; gap: 12px;">
+        <!-- Toggle: High Contrast -->
+        <button class="a11y-btn" data-action="contrast" style="display: flex; align-items: center; gap: 12px; padding: 16px; border: 1px solid #e2e8f0; border-radius: 8px; background: white; cursor: pointer; text-align: left; transition: background 0.2s;">
+            <div style="width: 32px; height: 32px; border-radius: 50%; background: #0f172a; color: white; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold;">◐</div>
+            <div style="flex: 1;">
+                <div style="font-weight: 600; font-size: 14px; color: #1e293b;">High Contrast</div>
+                <div style="font-size: 12px; color: #64748b;">Dark mode & high visibility</div>
+            </div>
+        </button>
+
+        <!-- Toggle: Bigger Text -->
+        <button class="a11y-btn" data-action="text-size" style="display: flex; align-items: center; gap: 12px; padding: 16px; border: 1px solid #e2e8f0; border-radius: 8px; background: white; cursor: pointer; text-align: left; transition: background 0.2s;">
+            <div style="width: 32px; height: 32px; border-radius: 50%; background: #f1f5f9; color: #0f172a; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: bold;">A+</div>
+            <div style="flex: 1;">
+                <div style="font-weight: 600; font-size: 14px; color: #1e293b;">Bigger Text</div>
+                <div style="font-size: 12px; color: #64748b;">Increase text size</div>
+            </div>
+        </button>
+
+        <!-- Toggle: Dyslexia Friendly -->
+        <button class="a11y-btn" data-action="dyslexia" style="display: flex; align-items: center; gap: 12px; padding: 16px; border: 1px solid #e2e8f0; border-radius: 8px; background: white; cursor: pointer; text-align: left; transition: background 0.2s;">
+            <div style="width: 32px; height: 32px; border-radius: 50%; background: #f1f5f9; color: #0f172a; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: bold;">Dy</div>
+            <div style="flex: 1;">
+                <div style="font-weight: 600; font-size: 14px; color: #1e293b;">Dyslexia Friendly</div>
+                <div style="font-size: 12px; color: #64748b;">Readable font & spacing</div>
+            </div>
+        </button>
+
+        <!-- Toggle: Stop Animations -->
+        <button class="a11y-btn" data-action="no-motion" style="display: flex; align-items: center; gap: 12px; padding: 16px; border: 1px solid #e2e8f0; border-radius: 8px; background: white; cursor: pointer; text-align: left; transition: background 0.2s;">
+            <div style="width: 32px; height: 32px; border-radius: 50%; background: #f1f5f9; color: #0f172a; display: flex; align-items: center; justify-content: center; font-size: 16px;">🚫</div>
+            <div style="flex: 1;">
+                <div style="font-weight: 600; font-size: 14px; color: #1e293b;">Stop Animations</div>
+                <div style="font-size: 12px; color: #64748b;">Freeze motion</div>
+            </div>
+        </button>
+    </div>
+
+    <div style="margin-top: auto; padding: 20px;">
+        <button id="a11y-reset" style="width: 100%; padding: 12px; background: #059669; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: background 0.2s;">Reset Settings</button>
+    </div>
+</div>
+
+<!-- Overlay -->
+<div id="a11y-overlay" style="position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 9998; display: none;"></div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const toggleBtn = document.getElementById('a11y-toggle');
+    const closeBtn = document.getElementById('a11y-close');
+    const panel = document.getElementById('a11y-panel');
+    const overlay = document.getElementById('a11y-overlay');
+    const resetBtn = document.getElementById('a11y-reset');
+    const actionBtns = document.querySelectorAll('.a11y-btn');
+
+    // Open/Close Panel
+    function togglePanel() {
+        const isOpen = panel.style.right === '0px';
+        panel.style.right = isOpen ? '-350px' : '0px';
+        overlay.style.display = isOpen ? 'none' : 'block';
+    }
+
+    toggleBtn.addEventListener('click', togglePanel);
+    closeBtn.addEventListener('click', togglePanel);
+    overlay.addEventListener('click', togglePanel);
+
+    // Handle Toggles
+    actionBtns.forEach(btn => {
+        const action = btn.dataset.action;
+        const bodyClass = `a11y-${action}`;
+
+        // Check if already active in localStorage
+        if (localStorage.getItem(bodyClass) === 'true') {
+            document.body.classList.add(bodyClass);
+            btn.classList.add('active');
+        }
+
+        btn.addEventListener('click', () => {
+            const isActive = document.body.classList.toggle(bodyClass);
+            btn.classList.toggle('active', isActive);
+            localStorage.setItem(bodyClass, isActive);
+        });
+    });
+
+    // Reset
+    resetBtn.addEventListener('click', () => {
+        actionBtns.forEach(btn => {
+            const bodyClass = `a11y-${btn.dataset.action}`;
+            document.body.classList.remove(bodyClass);
+            btn.classList.remove('active');
+            localStorage.setItem(bodyClass, 'false');
+        });
+    });
+});
+</script>

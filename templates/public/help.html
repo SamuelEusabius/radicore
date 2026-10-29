@@ -1,171 +1,98 @@
 {% extends 'public/base_public.html' %}
 {% load static %}
-{% block title %}Help Center · School MS{% endblock %}
-
-{% block extra_css %}
-<style>
-  .page-hero {
-    padding: var(--s-10) var(--s-6) var(--s-8);
-    text-align: center;
-    background: linear-gradient(180deg, var(--primary-soft) 0%, var(--bg) 100%);
-  }
-  .page-hero h1 {
-    font-family: var(--font-heading);
-    font-size: 44px;
-    font-weight: 800;
-    color: var(--ink-900);
-    letter-spacing: -0.03em;
-    margin: 0 0 var(--s-4);
-  }
-  .page-hero p {
-    font-size: var(--text-md);
-    color: var(--ink-600);
-    max-width: 640px;
-    margin: 0 auto;
-  }
-  .help-wrap {
-    max-width: 900px;
-    margin: 0 auto;
-    padding: var(--s-10) var(--s-6);
-  }
-  .faq-item {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
-    margin-bottom: var(--s-3);
-    overflow: hidden;
-  }
-  .faq-item summary {
-    padding: var(--s-5);
-    font-family: var(--font-heading);
-    font-weight: 700;
-    font-size: var(--text-md);
-    color: var(--ink-900);
-    cursor: pointer;
-    list-style: none;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    transition: background var(--t-fast);
-  }
-  .faq-item summary:hover { background: var(--surface-muted); }
-  .faq-item summary::-webkit-details-marker { display: none; }
-  .faq-item summary::after {
-    content: '+';
-    font-size: 24px;
-    color: var(--primary);
-    font-weight: 400;
-  }
-  .faq-item[open] summary::after { content: '−'; }
-  .faq-body {
-    padding: 0 var(--s-5) var(--s-5);
-    font-size: var(--text-sm);
-    color: var(--ink-700);
-    line-height: 1.7;
-  }
-  .help-cta {
-    margin-top: var(--s-10);
-    padding: var(--s-7);
-    background: var(--primary-soft);
-    border-radius: var(--radius-lg);
-    text-align: center;
-  }
-  .help-cta h3 {
-    font-family: var(--font-heading);
-    font-size: var(--text-lg);
-    font-weight: 700;
-    color: var(--ink-900);
-    margin: 0 0 var(--s-2);
-  }
-  .help-cta p {
-    font-size: var(--text-sm);
-    color: var(--ink-600);
-    margin: 0 0 var(--s-5);
-  }
-  @media (max-width: 900px) {
-    .page-hero h1 { font-size: 32px; }
-  }
-</style>
-{% endblock %}
+{% block title %}Help & User Guide - RacodCore{% endblock %}
 
 {% block content %}
-
-<section class="page-hero">
-  <h1>Help Center</h1>
-  <p>Answers to common questions about School MS. Can't find what you're looking for? Contact us.</p>
-</section>
-
-<div class="help-wrap">
-
-  <details class="faq-item" open>
-    <summary>How much does School MS cost?</summary>
-    <div class="faq-body">
-      Plans start from free for small schools (up to 50 students) and scale to KES 25,000 per term for large institutions. Visit our landing page to see all plans, or contact us for a custom quote.
+<!-- Hero Section -->
+<div style="position: relative; background: #0B1B3D; padding: 100px 20px 80px 20px; text-align: center; overflow: hidden;">
+    
+    <!-- Background Image pointing to landing folder -->
+  <img src="{% static 'images/landing/teachers-collaborating.jpg.jpeg' %}" alt="Teachers" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0.25; z-index: 1;">
+    
+    <div style="position: relative; z-index: 2; max-width: 700px; margin: 0 auto;">
+        <h1 style="font-size: 40px; font-weight: 800; color: white; margin-bottom: 16px; font-family: 'Poppins', sans-serif;">How can we help?</h1>
+        <p style="font-size: 18px; color: #e2e8f0;">Search our knowledge base or browse categories below.</p>
+        
+        <!-- Search Bar -->
+        <div style="margin-top: 32px; position: relative; max-width: 500px; margin-left: auto; margin-right: auto;">
+            <svg style="position: absolute; left: 16px; top: 14px; color: #94a3b8;" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <input type="text" placeholder="Search for answers..." style="width: 100%; padding: 14px 20px 14px 48px; border-radius: 8px; border: none; font-size: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+        </div>
     </div>
-  </details>
-
-  <details class="faq-item">
-    <summary>Can I try it before paying?</summary>
-    <div class="faq-body">
-      Yes — every new school gets a full-featured 30-day free trial. No credit card required. Set up your school, invite staff, and explore everything at no cost.
-    </div>
-  </details>
-
-  <details class="faq-item">
-    <summary>Does it work on phones and tablets?</summary>
-    <div class="faq-body">
-      Absolutely. School MS is fully responsive and works on any device with a browser — Android phones, iPhones, tablets, laptops, and desktop computers. No app installation required.
-    </div>
-  </details>
-
-  <details class="faq-item">
-    <summary>How do parents receive fee statements?</summary>
-    <div class="faq-body">
-      Parents get their own login to view invoices, balances, payment history, and results. You can also send SMS reminders directly from the admin dashboard, and download printable PDF statements.
-    </div>
-  </details>
-
-  <details class="faq-item">
-    <summary>Is my school's data secure?</summary>
-    <div class="faq-body">
-      Every school's data is strictly isolated — no one from another school, and not even our own team, can access your records. We run on enterprise-grade hosting with daily backups, HTTPS encryption, and audit logs.
-    </div>
-  </details>
-
-  <details class="faq-item">
-    <summary>Can I accept M-Pesa payments?</summary>
-    <div class="faq-body">
-      Yes. We integrate directly with Safaricom's Daraja API, so parents can pay fees via M-Pesa STK Push or Paybill. Payments are automatically recorded against the correct invoice.
-    </div>
-  </details>
-
-  <details class="faq-item">
-    <summary>How long does setup take?</summary>
-    <div class="faq-body">
-      Most schools are fully set up within a day. Add classes, upload students, invite teachers, and start invoicing. Our team can help with bulk data import if needed.
-    </div>
-  </details>
-
-  <details class="faq-item">
-    <summary>Can I import my existing student data?</summary>
-    <div class="faq-body">
-      Yes — you can import students, parents, and staff via CSV. Our support team is happy to help with your first import, no matter the size.
-    </div>
-  </details>
-
-  <details class="faq-item">
-    <summary>What happens if I need help?</summary>
-    <div class="faq-body">
-      Contact us by email or phone anytime. We respond within 24 hours on business days. Enterprise customers get priority support with a dedicated account manager.
-    </div>
-  </details>
-
-  <div class="help-cta">
-    <h3>Still need help?</h3>
-    <p>Our team is here to assist you with anything else.</p>
-    <a href="{% url 'contact' %}" class="btn btn-primary">Contact Support</a>
-  </div>
-
 </div>
 
+<!-- Knowledge Base Cards -->
+<div style="max-width: 1100px; margin: -40px auto 60px; padding: 0 20px; position: relative; z-index: 3;">
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px;">
+        
+        <div style="background: white; padding: 32px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; text-align: center;">
+            <div style="width: 60px; height: 60px; background: #ecfdf5; color: #059669; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
+                <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
+            </div>
+            <h3 style="font-size: 18px; font-weight: 700; color: #0B1B3D; margin-bottom: 8px;">Getting Started</h3>
+            <p style="color: #64748b; font-size: 14px; line-height: 1.5;">How to set up your school, add classes, and invite staff.</p>
+        </div>
+
+        <div style="background: white; padding: 32px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; text-align: center;">
+            <div style="width: 60px; height: 60px; background: #eff6ff; color: #2563eb; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
+                <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+            </div>
+            <h3 style="font-size: 18px; font-weight: 700; color: #0B1B3D; margin-bottom: 8px;">M-Pesa Payments</h3>
+            <p style="color: #64748b; font-size: 14px; line-height: 1.5;">Learn how to set up Paybill, receive fees, and top up wallets.</p>
+        </div>
+
+        <div style="background: white; padding: 32px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; text-align: center;">
+            <div style="width: 60px; height: 60px; background: #fef2f2; color: #dc2626; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
+                <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+            </div>
+            <h3 style="font-size: 18px; font-weight: 700; color: #0B1B3D; margin-bottom: 8px;">Reports & Exams</h3>
+            <p style="color: #64748b; font-size: 14px; line-height: 1.5;">How to generate CBC report cards, class results, and PDFs.</p>
+        </div>
+
+    </div>
+
+    <!-- FAQ Section -->
+    <div style="max-width: 800px; margin: 60px auto 0;">
+        <h2 style="font-size: 28px; font-weight: 800; color: #0B1B3D; margin-bottom: 32px; text-align: center;">Frequently Asked Questions</h2>
+        
+        <div style="display: flex; flex-direction: column; gap: 16px;">
+            
+            <details style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; cursor: pointer;">
+                <summary style="padding: 20px; font-weight: 600; color: #0B1B3D; font-size: 16px; list-style: none; display: flex; justify-content: space-between; align-items: center;">
+                    How do parents pay school fees via M-Pesa?
+                    <svg width="20" height="20" fill="none" stroke="#64748b" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </summary>
+                <div style="padding: 0 20px 20px; color: #475569; font-size: 15px; line-height: 1.6;">
+                    Parents log into their portal and click "Pay via M-Pesa". They can select "Fees" or "Wallet", enter the amount, and an STK Push prompt will be sent directly to their phone. The system automatically updates the school ledger.
+                </div>
+            </details>
+
+            <details style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; cursor: pointer;">
+                <summary style="padding: 20px; font-weight: 600; color: #0B1B3D; font-size: 16px; list-style: none; display: flex; justify-content: space-between; align-items: center;">
+                    Can teachers access the system on their phones?
+                    <svg width="20" height="20" fill="none" stroke="#64748b" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </summary>
+                <div style="padding: 0 20px 20px; color: #475569; font-size: 15px; line-height: 1.6;">
+                    Yes! RacodCore is designed to be fully mobile-responsive. Teachers can mark attendance, enter grades, and view their timetables from their smartphones while in class.
+                </div>
+            </details>
+
+            <details style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; cursor: pointer;">
+                <summary style="padding: 20px; font-weight: 600; color: #0B1B3D; font-size: 16px; list-style: none; display: flex; justify-content: space-between; align-items: center;">
+                    How do I generate a CBC Report Card?
+                    <svg width="20" height="20" fill="none" stroke="#64748b" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </summary>
+                <div style="padding: 0 20px 20px; color: #475569; font-size: 15px; line-height: 1.6;">
+                    Class teachers can go to "Class Results", select the exam, and click "Download PDF" to generate a personalized CBC report card with performance trends and teacher remarks for every student.
+                </div>
+            </details>
+
+        </div>
+    </div>
+
+    <div style="text-align: center; margin-top: 60px;">
+        <p style="color: #475569; font-size: 16px;">Still need help?</p>
+        <a href="{% url 'contact' %}" style="display: inline-block; margin-top: 12px; background: #0B1B3D; color: white; padding: 12px 32px; font-weight: 600; border-radius: 8px; text-decoration: none;">Contact Support Team</a>
+    </div>
+</div>
 {% endblock %}

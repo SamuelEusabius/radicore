@@ -17,6 +17,13 @@
   flex-shrink: 0;
 }
 
+.public-nav, .navbar, header {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 1000 !important;
+    background: white !important;
+}
+
 .pub-logo-mark img,
 .pub-mobile-brand-mark img,
 .pub-footer-brand-mark img,

@@ -107,3 +107,6 @@ def privacy(request):
 def terms(request):
     """Public Terms & Conditions page."""
     return render(request, 'public/terms.html')
+def resource_centre(request):
+    """A polite placeholder for the upcoming Digital Resource Centre."""
+    return render(request, 'public/resource_centre.html')
