@@ -48,48 +48,49 @@ def _school(request):
 
 @role_required(*CSO_ROLES)
 def cso_dashboard(request):
+    """CSO dashboard — quick overview of today's gate activity."""
     school = _school(request)
     today = timezone.localdate()
-    week_ago = timezone.now() - timedelta(days=7)
 
-    # KPI stats
-    stats = {
-        'on_premises':    Visitor.objects.filter(school=school, time_out__isnull=True).count(),
-        'today_visitors': Visitor.objects.filter(school=school, time_in__date=today).count(),
-        'official_today': Visitor.objects.filter(
-            school=school, time_in__date=today, visit_type='official'
-        ).count(),
-        'open_incidents': Incident.objects.filter(school=school).exclude(status='resolved').count(),
-        'held_items':     LostItem.objects.filter(school=school, status='held').count(),
-        'week_visitors':  Visitor.objects.filter(school=school, time_in__gte=week_ago).count(),
-    }
+    visitors_today = Visitor.objects.filter(
+        school=school, created_at__date=today
+    ).select_related('host_user')
 
-    context = {
+    # Anyone who has registered but not yet exited/cancelled is "on premises"
+    on_premises = Visitor.objects.filter(
+        school=school,
+        status__in=[
+            Visitor.Status.REGISTERED,
+            Visitor.Status.IN_MEETING,
+            Visitor.Status.SIGNED_OUT,
+        ]
+    ).select_related('host_user')
+
+    # Active gate passes (not yet used or cancelled)
+    active_passes = GatePass.objects.filter(
+        school=school,
+        status__in=[
+            GatePass.Status.PENDING,
+            GatePass.Status.ACTIVE,
+            GatePass.Status.SIGNED,
+        ]
+    ).select_related('visitor')
+
+    recent_incidents = Incident.objects.filter(
+        school=school
+    ).order_by('-created_at')[:5]
+
+    return render(request, 'dashboards/cso/dashboard.html', {
         'school': school,
         'today': today,
-        'stats': stats,
-        'recent_visitors': (
-            Visitor.objects.filter(school=school)
-            .select_related('host_user', 'registered_by')
-            .order_by('-time_in')[:8]
-        ),
-        'open_incidents': (
-            Incident.objects.filter(school=school)
-            .exclude(status='resolved')
-            .select_related('involved_student')
-            .order_by('-occurred_at')[:6]
-        ),
-        'on_premises_list': (
-            Visitor.objects.filter(school=school, time_out__isnull=True)
-            .select_related('host_user')
-            .order_by('-time_in')[:10]
-        ),
-    }
-    return render(request, 'dashboards/cso/visitor_form.html', {
-    'school': request.user.school,
-    'form': form,
-    'mode': 'check_in'
-})
+        'visitors_today': visitors_today,
+        'visitors_today_count': visitors_today.count(),
+        'on_premises': on_premises,
+        'on_premises_count': on_premises.count(),
+        'active_passes': active_passes,
+        'active_passes_count': active_passes.count(),
+        'recent_incidents': recent_incidents,
+    })
     
 # ==========================================================
 # Visitors — register, list, detail, check out
