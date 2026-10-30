@@ -436,34 +436,39 @@ def delete_parent(request, parent_id):
 
 
 @login_required
-@school_staff_only
 def link_parent_children(request, parent_id):
+    """Link/Unlink students to a parent."""
+    if request.user.role not in ('principal', 'secretary', 'super_admin'):
+        return redirect('dashboard_home')
+
     from apps.parents.models import Parent
     from apps.students.models import Student
 
-    parent = get_object_or_404(Parent, id=parent_id, user__school=request.user.school)
-    school = request.user.school
+    parent = get_object_or_404(Parent, id=parent_id)
+    school = parent.user.school if parent.user and parent.user.school else request.user.school
+    students = Student.objects.filter(school=school, is_active=True).order_by('first_name', 'last_name')
+    linked_student_ids = set(parent.students.values_list('id', flat=True))
 
     if request.method == 'POST':
-        student_ids = request.POST.getlist('students')
-        students_to_link = Student.objects.filter(id__in=student_ids, school=school)
-        parent.students.set(students_to_link)
-        messages.success(
-            request,
-            f'✅ Updated children for {parent.user.get_full_name()}: '
-            f'{parent.students.count()} linked.'
-        )
-        return redirect('parents_list')
+        selected_student_ids = request.POST.getlist('students')
+        selected_student_ids = [int(sid) for sid in selected_student_ids]
+        parent.students.clear()
+        for sid in selected_student_ids:
+            try:
+                student = Student.objects.get(id=sid, school=school)
+                parent.students.add(student)
+            except Student.DoesNotExist:
+                pass
 
-    all_students = Student.objects.filter(school=school, is_active=True).order_by('class_level', 'first_name')
-    linked_ids = set(parent.students.values_list('id', flat=True))
+        messages.success(request, f'Updated student links for {parent.first_name} {parent.last_name}.')
+        return redirect('parents_list')
 
     return render(request, 'dashboard/link_parent_children.html', {
         'parent': parent,
-        'students': all_students,
-        'linked_ids': linked_ids,
+        'students': students,
+        'linked_student_ids': linked_student_ids,
+        'school': school,
     })
-
 
 @login_required
 @parent_only

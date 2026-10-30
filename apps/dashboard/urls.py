@@ -182,7 +182,8 @@ urlpatterns = [
          name='parent_child_statement_pdf'),
      
      path('school/settings/', views.admin_schools.school_general_settings, name='school_general_settings'),
-     
+     path('students/<int:student_id>/edit/', views.students.edit_student, name='edit_student'),
+     path('students/<int:student_id>/link-parent/', views.students.link_parent_to_student, name='link_parent_to_student'),
      path('accountant/generate-invoices/', views.generate_invoices, name='generate_invoices'),
      path('subscriptions/initiate-payment/<int:school_id>/', views.subscription.initiate_subscription_payment, name='initiate_subscription_payment'),
      path('sms/settings/', views.communication.school_sms_settings, name='school_sms_settings'),

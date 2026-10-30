@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+{% block title %}Link Parent{% endblock %}
+{% block header_title %}Link Parent{% endblock %}
+
+{% block content %}
+<!-- Tom Select CSS/JS -->
+<link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+
+<style>
+    .form-label {
+        display: block; font-size: 12px; font-weight: 600; color: #64748b; 
+        margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em;
+    }
+    .form-input {
+        width: 100%; padding: 12px; border: 2px solid #cbd5e1; 
+        border-radius: 8px; font-size: 14px; box-sizing: border-box;
+    }
+    .form-input:focus { border-color: #10b981; outline: none; }
+</style>
+
+<div class="card" style="max-width: 900px; margin: 0 auto; padding: 32px;">
+    <h3 class="mb-4">Link Parent to {{ student.full_name }}</h3>
+    <p class="mb-6" style="color: var(--ink-500);">Adm No: {{ student.admission_number }} | Class: {{ student.class_level }}</p>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 32px;">
+        
+        <!-- Option 1: Link Existing -->
+        <div style="border: 1px solid var(--border); padding: 24px; border-radius: 8px; background: #f8fafc;">
+            <h4 style="margin-bottom: 16px; font-weight: 600; color: #0B1B3D;">Link an Existing Parent</h4>
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="link_existing">
+                
+                <div style="margin-bottom: 16px;">
+                    <label class="form-label">Search Parent</label>
+                    <select id="parent-search" name="parent_id" required></select>
+                </div>
+                
+                <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px;">Link Parent</button>
+            </form>
+        </div>
+
+        <!-- Option 2: Create New -->
+        <div style="border: 1px solid var(--border); padding: 24px; border-radius: 8px; background: #f8fafc;">
+            <h4 style="margin-bottom: 16px; font-weight: 600; color: #0B1B3D;">Create a New Parent</h4>
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="create_new">
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                    <div>
+                        <label class="form-label">First Name</label>
+                        <input type="text" name="first_name" required class="form-input">
+                    </div>
+                    <div>
+                        <label class="form-label">Last Name</label>
+                        <input type="text" name="last_name" required class="form-input">
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 12px;">
+                    <label class="form-label">Phone</label>
+                    <input type="text" name="phone" required class="form-input">
+                </div>
+                
+                <div style="margin-bottom: 12px;">
+                    <label class="form-label">Email</label>
+                    <input type="email" name="email" required class="form-input">
+                </div>
+
+                <div style="margin-bottom: 16px;">
+                    <label class="form-label">National ID Number</label>
+                    <input type="text" name="id_number" class="form-input">
+                </div>
+                
+                <button type="submit" class="btn btn-secondary" style="width: 100%; padding: 12px;">Create & Link Parent</button>
+            </form>
+        </div>
+
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Load the parents data passed from the view
+    const parentsData = [
+        {% for p in parent_data %}
+            { value: "{{ p.id }}", text: "{{ p.label|escapejs }}" },
+        {% endfor %}
+    ];
+
+    // Initialize the searchable dropdown
+    new TomSelect("#parent-search", {
+        options: parentsData,
+        create: false,
+        sortField: { field: "text", direction: "asc" },
+        placeholder: "Type name, phone, or ID number...",
+        maxItems: 1
+    });
+});
+</script>
+{% endblock %}

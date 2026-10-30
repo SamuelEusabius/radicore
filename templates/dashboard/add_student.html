@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
-{% block title %}Add New Student{% endblock %}
-{% block header_title %}Student Admission{% endblock %}
+{% block title %}{% if is_edit %}Edit Student{% else %}Add Student{% endif %}{% endblock %}
+{% block header_title %}{% if is_edit %}Edit Student{% else %}Student Admission{% endif %}{% endblock %}
 
 {% block content %}
 
@@ -24,19 +24,21 @@
         text-transform: uppercase;
         letter-spacing: 0.05em;
     }
+    /* FORCE VISIBLE INPUTS */
     .form-input {
         width: 100%;
         padding: 10px 12px;
         font-family: var(--font-sans);
         font-size: 14px;
-        border: 1px solid var(--border);
+        border: 2px solid #cbd5e1 !important;
         border-radius: 6px;
-        background: white;
+        background: white !important;
         color: var(--ink-900);
         transition: border-color 0.2s;
+        box-sizing: border-box;
     }
     .form-input:focus {
-        border-color: var(--primary);
+        border-color: var(--primary) !important;
         outline: none;
         box-shadow: 0 0 0 3px rgba(10, 138, 95, 0.1);
     }
@@ -46,6 +48,7 @@
 
 <div class="card" style="max-width: 1000px; margin: 0 auto; padding: 32px;">
 
+  {% if not is_edit %}
   <div style="background: #ecfdf5; border-left: 4px solid var(--primary); padding: 16px; border-radius: 8px; margin-bottom: 32px; display: flex; justify-content: space-between; align-items: center;">
       <div>
           <h4 style="margin: 0; color: var(--primary); font-weight: 700;">Admission Number</h4>
@@ -55,12 +58,31 @@
           {{ next_admission_number }}
       </div>
   </div>
+  {% endif %}
 
-  <form method="post">
+  <!-- Added enctype for file uploads -->
+  <form method="post" enctype="multipart/form-data">
     {% csrf_token %}
 
     <!-- 1. Applicant -->
     <h4 class="form-section-title">1. Applicant Details</h4>
+    
+    <!-- PHOTO UPLOAD -->
+    <div style="margin-bottom: 24px; display: flex; align-items: center; gap: 16px; background: #f8fafc; padding: 16px; border-radius: 8px; border: 1px solid var(--border);">
+        {% if form_data.photo_url %}
+             <img src="{{ form_data.photo_url }}" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover;">
+        {% else %}
+            <div style="width: 80px; height: 80px; border-radius: 50%; background: white; border: 2px dashed #cbd5e1; display: flex; align-items: center; justify-content: center; color: #94a3b8; flex-shrink: 0;">
+                <svg width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+            </div>
+        {% endif %}
+        <div style="flex: 1;">
+            <label class="form-label">Student Photo (Optional)</label>
+            <input type="file" name="photo" accept="image/*" class="form-input" style="padding: 8px; border: 1px solid var(--border) !important;">
+            <p style="font-size: 12px; color: var(--ink-500); margin-top: 4px;">Passport size photo (JPG or PNG).</p>
+        </div>
+    </div>
+
     <div class="form-grid-3">
       <div>
         <label class="form-label">First Name *</label>
@@ -131,7 +153,7 @@
         <select name="county_fk" id="id_county" class="form-input">
           <option value="">— Select County —</option>
           {% for county in counties %}
-            <option value="{{ county.id }}">{{ county.name|upper }}</option>
+            <option value="{{ county.id }}" {% if form_data.county_fk_id == county.id %}selected{% endif %}>{{ county.name|upper }}</option>
           {% endfor %}
         </select>
       </div>
@@ -196,7 +218,7 @@
     <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 40px; border-top: 1px solid var(--border); padding-top: 24px;">
       <a href="{% url 'students_list' %}" class="btn btn-secondary">Cancel</a>
       <button type="submit" class="btn btn-primary" style="padding: 12px 32px; font-size: 16px;">
-        Save & Print Bio-Data
+        {% if is_edit %}Save Changes{% else %}Save & Print Bio-Data{% endif %}
       </button>
     </div>
 

@@ -249,6 +249,7 @@ def add_student(request):
                 previous_school_marks=previous_school_marks,
                 previous_school_mean_grade=previous_school_mean_grade,
                 is_boarding=is_boarding,
+                photo=request.FILES.get('photo'),
                 is_active=True
             )
             messages.success(request, f"Student {student.full_name} added successfully! Adm No: {admission_number}")
@@ -624,4 +625,136 @@ def student_bio_page(request, student_id):
         'parents': parents,
         'boarding': boarding,
         'school': request.user.school,
+    })
+    
+@login_required
+def edit_student(request, student_id):
+    """Edit an existing student's details."""
+    if request.user.role not in ('principal', 'secretary', 'super_admin', 'deputy_admin'):
+        return redirect('dashboard_home')
+
+    from apps.students.models import Student
+    from apps.academics.models import ClassLevel
+    from apps.locations.models import County
+
+    school = request.user.school
+    student = get_object_or_404(Student, id=student_id, school=school)
+    classes = ClassLevel.objects.filter(school=school).order_by('order', 'name')
+    counties = County.objects.all().order_by('name')
+
+    if request.method == 'POST':
+        # Update basic details
+        student.first_name = request.POST.get('first_name', '').strip()
+        student.middle_name = request.POST.get('middle_name', '').strip()
+        student.last_name = request.POST.get('last_name', '').strip()
+        student.gender = request.POST.get('gender', 'M')
+        student.date_of_birth = request.POST.get('date_of_birth') or None
+        student.class_level = request.POST.get('class_level')
+        student.guardian_name = request.POST.get('guardian_name', '').strip()
+        student.guardian_phone = request.POST.get('guardian_phone', '').strip()
+        student.parent_id_number = request.POST.get('parent_id_number', '').strip()
+        student.birth_certificate_number = request.POST.get('birth_certificate_number', '').strip()
+        student.upi = request.POST.get('upi', '').strip()
+        student.is_boarding = request.POST.get('is_boarding') == 'on'
+        
+        # Handle location safely (only if they are valid IDs)
+        if request.POST.get('county_fk'): student.county_fk_id = request.POST.get('county_fk')
+        if request.POST.get('constituency_fk'): student.constituency_fk_id = request.POST.get('constituency_fk')
+        if request.POST.get('ward_fk'): student.ward_fk_id = request.POST.get('ward_fk')
+
+        # Handle photo upload
+        if 'photo' in request.FILES:
+            student.photo = request.FILES['photo']
+
+        student.save()
+        messages.success(request, f"Student {student.full_name} updated successfully.")
+        return redirect('students_list')
+
+    # For GET, we need to pass the student data back to the form
+    # The template expects 'form_data', so we mock it
+    form_data = {
+        'first_name': student.first_name,
+        'middle_name': student.middle_name,
+        'last_name': student.last_name,
+        'gender': student.gender,
+        'date_of_birth': student.date_of_birth.strftime('%Y-%m-%d') if student.date_of_birth else '',
+        'class_level': student.class_level,
+        'guardian_name': student.guardian_name,
+        'guardian_phone': student.guardian_phone,
+        'parent_id_number': student.parent_id_number,
+        'birth_certificate_number': student.birth_certificate_number,
+        'upi': student.upi,
+        'is_boarding': student.is_boarding,
+    }
+
+    return render(request, 'dashboard/add_student.html', {
+        'classes': classes,
+        'counties': counties,
+        'form_data': form_data,
+        'is_edit': True, # We can use this to change the title/button
+        'student': student,
+    })
+
+
+@login_required
+def link_parent_to_student(request, student_id):
+    """Manually link an existing parent or create a new one for a student."""
+    if request.user.role not in ('principal', 'secretary', 'super_admin'):
+        return redirect('dashboard_home')
+
+    from apps.students.models import Student
+    from apps.parents.models import Parent
+    from apps.accounts.models import User
+
+    school = request.user.school
+    student = get_object_or_404(Student, id=student_id, school=school)
+    
+    # Get all parents in this school
+    existing_parents = Parent.objects.filter(user__school=school).select_related('user')
+
+    if request.method == 'POST':
+        action = request.POST.get('action')
+
+        if action == 'link_existing':
+            parent_id = request.POST.get('parent_id')
+            parent = get_object_or_404(Parent, id=parent_id, user__school=school)
+            parent.students.add(student)
+            messages.success(request, f"Linked parent {parent.first_name} {parent.last_name} to {student.full_name}.")
+            return redirect('students_list')
+
+        elif action == 'create_new':
+            first_name = request.POST.get('first_name')
+            last_name = request.POST.get('last_name')
+            phone = request.POST.get('phone')
+            email = request.POST.get('email')
+            id_number = request.POST.get('id_number')
+            password = '12345678'
+
+            if not User.objects.filter(email=email).exists():
+                user = User.objects.create_user(
+                    username=email, email=email, password=password,
+                    first_name=first_name, last_name=last_name,
+                    role='parent', school=school
+                )
+                parent = Parent.objects.create(
+                    user=user, first_name=first_name, last_name=last_name, 
+                    phone=phone, id_number=id_number
+                )
+                parent.students.add(student)
+                messages.success(request, f"Created parent account {email} and linked. Password: {password}")
+            else:
+                messages.error(request, f"A user with email {email} already exists.")
+            
+            return redirect('students_list')
+
+    # Create a list of parents to pass to the Javascript for searching
+    parent_data = []
+    for p in existing_parents:
+        label = f"{p.first_name} {p.last_name} | Phone: {p.phone or '—'} | ID: {p.id_number or '—'}"
+        parent_data.append({'id': p.id, 'label': label})
+
+    return render(request, 'dashboard/link_parent.html', {
+        'student': student,
+        'parents': existing_parents,
+        'parent_data': parent_data,
     })
