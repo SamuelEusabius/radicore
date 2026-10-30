@@ -3,78 +3,112 @@
 {% block header_title %}Link Parent{% endblock %}
 
 {% block content %}
-<!-- Tom Select CSS/JS -->
-<link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
-
-<style>
-    .form-label {
-        display: block; font-size: 12px; font-weight: 600; color: #64748b; 
-        margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em;
-    }
-    .form-input {
-        width: 100%; padding: 12px; border: 2px solid #cbd5e1; 
-        border-radius: 8px; font-size: 14px; box-sizing: border-box;
-    }
-    .form-input:focus { border-color: #10b981; outline: none; }
-</style>
-
 <div class="card" style="max-width: 900px; margin: 0 auto; padding: 32px;">
-    <h3 class="mb-4">Link Parent to {{ student.full_name }}</h3>
-    <p class="mb-6" style="color: var(--ink-500);">Adm No: {{ student.admission_number }} | Class: {{ student.class_level }}</p>
+    
+    <!-- Student Info Banner (Matches the Parent Banner style) -->
+    <div style="background: #ecfdf5; border-left: 4px solid var(--primary); padding: 20px; border-radius: 8px; margin-bottom: 32px; display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <h2 style="margin: 0 0 4px 0; font-size: 20px; color: var(--ink-900); font-weight: 700;">
+                {{ student.full_name }}
+            </h2>
+            <p style="margin: 0; font-size: 14px; color: var(--ink-600);">
+                Adm No: {{ student.admission_number }} · Class: {{ student.class_level }}
+            </p>
+            <p style="margin: 4px 0 0 0; font-size: 13px; color: var(--ink-500);">
+                Currently linked parents: <strong>{{ student.parents.count }}</strong>
+            </p>
+        </div>
+        <a href="{% url 'students_list' %}" class="btn btn-secondary">Back to Students</a>
+    </div>
 
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 32px;">
+    <div style="display: grid; grid-template-columns: 1fr; gap: 32px;">
         
         <!-- Option 1: Link Existing -->
-        <div style="border: 1px solid var(--border); padding: 24px; border-radius: 8px; background: #f8fafc;">
-            <h4 style="margin-bottom: 16px; font-weight: 600; color: #0B1B3D;">Link an Existing Parent</h4>
-            <form method="post">
-                {% csrf_token %}
-                <input type="hidden" name="action" value="link_existing">
-                
-                <div style="margin-bottom: 16px;">
-                    <label class="form-label">Search Parent</label>
-                    <select id="parent-search" name="parent_id" required></select>
-                </div>
-                
-                <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px;">Link Parent</button>
-            </form>
+        <div>
+            <h3 style="font-size: 16px; font-weight: 600; color: var(--ink-900); margin-bottom: 16px;">Link an Existing Parent</h3>
+            
+            <!-- Search Bar -->
+            <div style="margin-bottom: 16px;">
+                <input type="text" id="parent-search" class="form-input" placeholder="Type parent name, phone, or ID number..." style="width: 100%; padding: 12px; border: 2px solid var(--border); border-radius: 8px; font-size: 15px;">
+            </div>
+
+            <!-- Parent Table -->
+            <div style="border: 1px solid var(--border); border-radius: 8px; overflow: hidden; margin-bottom: 24px;">
+                <table class="table" style="width: 100%; border-collapse: collapse;">
+                    <thead style="background: #f8fafc; border-bottom: 1px solid var(--border);">
+                        <tr>
+                            <th style="padding: 12px; text-align: left; font-size: 12px; color: var(--ink-500);">Parent Name</th>
+                            <th style="padding: 12px; text-align: left; font-size: 12px; color: var(--ink-500);">Phone</th>
+                            <th style="padding: 12px; text-align: left; font-size: 12px; color: var(--ink-500);">ID Number</th>
+                            <th style="padding: 12px; text-align: right; font-size: 12px; color: var(--ink-500);">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="parents-table-body">
+                        {% for p in parents %}
+                        <tr class="parent-row" data-name="{{ p.first_name|lower }} {{ p.last_name|lower }}" data-phone="{{ p.phone|default:'' }}" data-id="{{ p.id_number|default:'' }}" style="border-bottom: 1px solid var(--border);">
+                            <td style="padding: 12px; font-weight: 500;">{{ p.first_name }} {{ p.last_name }}</td>
+                            <td style="padding: 12px; color: var(--ink-600);">{{ p.phone|default:"—" }}</td>
+                            <td style="padding: 12px; font-family: monospace; color: var(--ink-600);">{{ p.id_number|default:"—" }}</td>
+                            <td style="padding: 12px; text-align: right;">
+                                <form method="post" style="display: inline;">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="link_existing">
+                                    <input type="hidden" name="parent_id" value="{{ p.id }}">
+                                    <button type="submit" class="btn btn-sm btn-primary" style="padding: 6px 12px; font-size: 12px;">Link</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" style="padding: 40px; text-align: center; color: var(--ink-500);">
+                                No parents found in this school.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <p style="font-size: 13px; color: var(--ink-500); margin-bottom: 24px;">
+                Showing <span id="visible-count">{{ parents|length }}</span> of {{ parents|length }} parents
+            </p>
         </div>
 
-        <!-- Option 2: Create New -->
-        <div style="border: 1px solid var(--border); padding: 24px; border-radius: 8px; background: #f8fafc;">
-            <h4 style="margin-bottom: 16px; font-weight: 600; color: #0B1B3D;">Create a New Parent</h4>
+        <!-- Option 2: Create New Parent -->
+        <div style="border-top: 1px solid var(--border); padding-top: 32px;">
+            <h3 style="font-size: 16px; font-weight: 600; color: var(--ink-900); margin-bottom: 16px;">Create a New Parent</h3>
+            
             <form method="post">
                 {% csrf_token %}
                 <input type="hidden" name="action" value="create_new">
                 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
                     <div>
-                        <label class="form-label">First Name</label>
-                        <input type="text" name="first_name" required class="form-input">
+                        <label style="display: block; font-size: 12px; font-weight: 600; color: var(--ink-500); margin-bottom: 6px;">First Name</label>
+                        <input type="text" name="first_name" required class="form-input" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px;">
                     </div>
                     <div>
-                        <label class="form-label">Last Name</label>
-                        <input type="text" name="last_name" required class="form-input">
+                        <label style="display: block; font-size: 12px; font-weight: 600; color: var(--ink-500); margin-bottom: 6px;">Last Name</label>
+                        <input type="text" name="last_name" required class="form-input" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px;">
                     </div>
                 </div>
                 
-                <div style="margin-bottom: 12px;">
-                    <label class="form-label">Phone</label>
-                    <input type="text" name="phone" required class="form-input">
-                </div>
-                
-                <div style="margin-bottom: 12px;">
-                    <label class="form-label">Email</label>
-                    <input type="email" name="email" required class="form-input">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+                    <div>
+                        <label style="display: block; font-size: 12px; font-weight: 600; color: var(--ink-500); margin-bottom: 6px;">Phone</label>
+                        <input type="text" name="phone" required class="form-input" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 12px; font-weight: 600; color: var(--ink-500); margin-bottom: 6px;">Email (Login)</label>
+                        <input type="email" name="email" required class="form-input" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px;">
+                    </div>
                 </div>
 
-                <div style="margin-bottom: 16px;">
-                    <label class="form-label">National ID Number</label>
-                    <input type="text" name="id_number" class="form-input">
+                <div style="margin-bottom: 24px;">
+                    <label style="display: block; font-size: 12px; font-weight: 600; color: var(--ink-500); margin-bottom: 6px;">National ID Number</label>
+                    <input type="text" name="id_number" class="form-input" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px;">
                 </div>
                 
-                <button type="submit" class="btn btn-secondary" style="width: 100%; padding: 12px;">Create & Link Parent</button>
+                <button type="submit" class="btn btn-secondary" style="padding: 12px 32px;">Create & Link Parent</button>
             </form>
         </div>
 
@@ -83,20 +117,28 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Load the parents data passed from the view
-    const parentsData = [
-        {% for p in parent_data %}
-            { value: "{{ p.id }}", text: "{{ p.label|escapejs }}" },
-        {% endfor %}
-    ];
+    const searchInput = document.getElementById('parent-search');
+    const rows = document.querySelectorAll('.parent-row');
+    const countSpan = document.getElementById('visible-count');
 
-    // Initialize the searchable dropdown
-    new TomSelect("#parent-search", {
-        options: parentsData,
-        create: false,
-        sortField: { field: "text", direction: "asc" },
-        placeholder: "Type name, phone, or ID number...",
-        maxItems: 1
+    searchInput.addEventListener('input', function() {
+        const query = this.value.toLowerCase();
+        let visibleCount = 0;
+
+        rows.forEach(row => {
+            const name = row.dataset.name;
+            const phone = row.dataset.phone;
+            const idNum = row.dataset.id;
+            
+            if (name.includes(query) || phone.includes(query) || idNum.includes(query)) {
+                row.style.display = '';
+                visibleCount++;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+
+        countSpan.textContent = visibleCount;
     });
 });
 </script>
