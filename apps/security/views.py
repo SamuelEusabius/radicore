@@ -158,10 +158,14 @@ def visitor_list(request):
 def visitor_check_in(request):
     """CSO registers a visitor at the gate + auto-issues a gate pass."""
     school = _school(request)
+    
+    from apps.accounts.models import User
+    from apps.students.models import Student
 
     if request.method == 'POST':
         form = VisitorCheckInForm(request.POST, school=school)
         if form.is_valid():
+            # ... (keep your existing save logic) ...
             visitor = form.save(commit=False)
             visitor.school = school
             visitor.registered_by = request.user
@@ -176,10 +180,7 @@ def visitor_check_in(request):
                 else GatePass.PassType.STANDARD
             )
             
-            # --- GENERATE CUSTOM PASS NUMBER ---
-            # Get the school initials (e.g. NAIROBI SCHOOL -> NS)
             school_prefix = "".join([word[0].upper() for word in school.name.split()])
-            # Count existing passes to get the next number
             count = GatePass.objects.filter(school=school).count() + 1
             pass_number = f"GP-{school_prefix}-{count:04d}"
 
@@ -194,38 +195,30 @@ def visitor_check_in(request):
                 status=GatePass.Status.ACTIVE,
             )
 
-            # Notify host
-            try:
-                notify_host_of_visitor(visitor)
-            except Exception:
-                pass
-
-            # Notify secretary for official visitors
-            if visitor.is_official:
-                try:
-                    notify_secretary_of_official(visitor)
-                except Exception:
-                    pass
-                messages.info(
-                    request,
-                    f"Official visitor. Secretary notified. Pass {gate_pass.pass_number} issued."
-                )
-            else:
-                messages.success(
-                    request,
-                    f"{visitor.full_name} checked in. Pass {gate_pass.pass_number} issued."
-                )
+            # ... (keep your existing notifications) ...
 
             return redirect('cso_visitor_detail', pk=visitor.pk)
     else:
         form = VisitorCheckInForm(school=school)
 
+    # Fetch all potential hosts for the searchable dropdown
+    staff = User.objects.filter(school=school, is_active=True).exclude(role='student').exclude(role='parent').order_by('first_name')
+    students = Student.objects.filter(school=school, is_active=True).order_by('first_name')
+    
+    # Combine into a single list of dictionaries
+    hosts = []
+    for s in staff:
+        role_display = s.get_role_display() or "Staff"
+        hosts.append({'id': f"user_{s.id}", 'name': f"{s.get_full_name() or s.email} ({role_display})"})
+    for st in students:
+        hosts.append({'id': f"student_{st.id}", 'name': f"{st.full_name} (Student - {st.class_level})"})
+
     return render(request, 'dashboards/cso/visitor_form.html', {
         'school': school,
         'form': form,
         'mode': 'check_in',
+        'hosts': hosts,
     })
-
 @role_required(*CSO_ROLES)
 def visitor_detail(request, pk):
     school = _school(request)

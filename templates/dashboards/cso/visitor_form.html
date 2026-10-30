@@ -3,6 +3,10 @@
 {% block header_title %}Security Checkpoint{% endblock %}
 
 {% block content %}
+<!-- Tom Select CSS & JS -->
+<link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+
 <style>
     .form-card {
         background: white;
@@ -41,7 +45,8 @@
     .form-card input[type="number"],
     .form-card input[type="tel"],
     .form-card select,
-    .form-card textarea {
+    .form-card textarea,
+    .ts-wrapper .ts-control {
         width: 100%;
         padding: 12px 14px;
         border: 2px solid #cbd5e1 !important;
@@ -51,9 +56,18 @@
         color: #0f172a;
         background: #ffffff !important;
         transition: all 0.2s;
-        margin-top: 4px;
         box-sizing: border-box;
     }
+    
+    /* Tom Select specific overrides to match our style */
+    .ts-wrapper .ts-control {
+        padding: 8px 14px !important;
+    }
+    .ts-wrapper.focus .ts-control {
+        border-color: #10b981 !important;
+        box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.15) !important;
+    }
+
     .form-card input:focus, .form-card select:focus, .form-card textarea:focus {
         border-color: #10b981 !important;
         outline: none;
@@ -123,14 +137,21 @@
                 <div style="margin-bottom: 16px;"><label class="form-label">Purpose Notes</label>{{ form.purpose_note }}</div>
             </div>
 
+            <!-- HOST DETAILS (Searchable Dropdown) -->
             <div class="form-card">
                 <div class="form-card-title">
                     <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
                     Host / Person Being Visited
                 </div>
-                <div class="grid-2">
-                    <div><label class="form-label">Staff Member</label>{{ form.host_user }}</div>
-                    <div><label class="form-label">Or Free-Text Host</label>{{ form.host_name }}</div>
+                
+                <div style="margin-bottom: 16px;">
+                    <label class="form-label">Search Staff or Student</label>
+                    <!-- Tom Select Search Input -->
+                    <input type="text" id="host-search" placeholder="Type a name (e.g. Mr. Kamau, John Doe)..." autocomplete="off">
+                    
+                    <!-- Hidden fields that Django will save -->
+                    <input type="hidden" name="host_name" id="hidden-host-name" value="{{ form.host_name.value|default:'' }}">
+                    <input type="hidden" name="host_user" id="hidden-host-user" value="{{ form.host_user.value|default:'' }}">
                 </div>
             </div>
 
@@ -151,6 +172,52 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 1. Prepare the hosts data from Django
+    const hostsData = [
+        {% for h in hosts %}
+            { value: "{{ h.id }}", text: "{{ h.name|escapejs }}" },
+        {% endfor %}
+    ];
+
+    // 2. Initialize Tom Select
+    const hostSearch = new TomSelect("#host-search", {
+        options: hostsData,
+        create: true, // Allow free-text (visitors visiting non-registered people)
+        createOnBlur: true,
+        placeholder: "Search by name or type a custom host...",
+        sortField: { field: "text", direction: "asc" },
+        onChange: function(value) {
+            if (!value) {
+                document.getElementById('hidden-host-name').value = '';
+                document.getElementById('hidden-host-user').value = '';
+                return;
+            }
+
+            // If they selected a valid option (e.g. user_5 or student_12)
+            if (value.startsWith('user_') || value.startsWith('student_')) {
+                const selectedText = this.options[value].text;
+                // Clean up the text (remove the role brackets) for the displayed name
+                const cleanName = selectedText.split(' (')[0];
+                
+                document.getElementById('hidden-host-name').value = cleanName;
+                
+                if (value.startsWith('user_')) {
+                    document.getElementById('hidden-host-user').value = value.replace('user_', '');
+                } else {
+                    document.getElementById('hidden-host-user').value = '';
+                }
+            } else {
+                // If they typed a free-text name (create: true)
+                document.getElementById('hidden-host-name').value = value;
+                document.getElementById('hidden-host-user').value = '';
+            }
+        }
+    });
+});
+</script>
 
 <style>
     @media (max-width: 900px) {
