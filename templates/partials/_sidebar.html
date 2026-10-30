@@ -109,14 +109,6 @@
         {% include 'partials/icons.html' with name="book-open" size=18 %}
         <span class="sidebar-link-text">Subjects</span>
       </a>
-      <a href="{% url 'timetable_view' %}" class="sidebar-link">
-        {% include 'partials/icons.html' with name="calendar" size=18 %}
-        <span class="sidebar-link-text">Timetable</span>
-      </a>
-      <a href="{% url 'class_results' %}" class="sidebar-link">
-        {% include 'partials/icons.html' with name="bar-chart" size=18 %}
-        <span class="sidebar-link-text">Class Results</span>
-      </a>
       <a href="{% url 'admin_attendance_overview' %}" class="sidebar-link">
         {% include 'partials/icons.html' with name="clipboard" size=18 %}
         <span class="sidebar-link-text">Attendance</span>
@@ -171,11 +163,16 @@
   {% include 'partials/icons.html' with name="search" size=18 %}
   <span class="sidebar-link-text">Search</span>
    </a>
+   
       <div class="sidebar-section-label">Tools</div>
       <a href="{% url 'manage_users' %}" class="sidebar-link">
         {% include 'partials/icons.html' with name="user-plus" size=18 %}
         <span class="sidebar-link-text">User Accounts</span>
       </a>
+<a href="{% url 'school_general_settings' %}" class="sidebar-link">
+    {% include 'partials/icons.html' with name="settings" size=18 %}
+    <span class="sidebar-link-text">School Settings</span>
+</a>
       <a href="{% url 'messages_inbox' %}" class="sidebar-link">
         {% include 'partials/icons.html' with name="mail" size=18 %}
         <span class="sidebar-link-text">Inbox</span>

@@ -1,142 +1,160 @@
-{% extends "base.html" %}
-{% load static %}
-
+{% extends 'base.html' %}
 {% block title %}Register Visitor{% endblock %}
-{% block header_title %}Register Visitor{% endblock %}
-{% block header_sub %}Check in a visitor at the gate and issue a gate pass{% endblock %}
+{% block header_title %}Security Checkpoint{% endblock %}
 
 {% block content %}
+<style>
+    .form-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        border: 1px solid #e2e8f0;
+        padding: 24px;
+        margin-bottom: 24px;
+    }
+    .form-card-title {
+        font-family: 'Poppins', sans-serif;
+        font-size: 16px;
+        font-weight: 700;
+        color: #0B1B3D;
+        border-bottom: 2px solid #e2e8f0;
+        padding-bottom: 12px;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .form-label {
+        font-size: 12px;
+        font-weight: 600;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 6px;
+        display: block;
+    }
+    .form-label .req { color: #ef4444; }
+    
+    /* FORCE VISIBLE INPUTS */
+    .form-card input[type="text"],
+    .form-card input[type="email"],
+    .form-card input[type="number"],
+    .form-card input[type="tel"],
+    .form-card select,
+    .form-card textarea {
+        width: 100%;
+        padding: 12px 14px;
+        border: 2px solid #cbd5e1 !important;
+        border-radius: 8px;
+        font-family: 'Inter', sans-serif;
+        font-size: 14px;
+        color: #0f172a;
+        background: #ffffff !important;
+        transition: all 0.2s;
+        margin-top: 4px;
+        box-sizing: border-box;
+    }
+    .form-card input:focus, .form-card select:focus, .form-card textarea:focus {
+        border-color: #10b981 !important;
+        outline: none;
+        box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.15);
+    }
 
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+    
+    .protocol-card {
+        background: #0B1B3D;
+        color: white;
+        border-radius: 12px;
+        padding: 24px;
+        position: sticky;
+        top: 24px;
+    }
+    .protocol-step { display: flex; gap: 12px; margin-bottom: 16px; }
+    .protocol-icon {
+        width: 24px; height: 24px; border-radius: 50%;
+        background: rgba(255, 255, 255, 0.1);
+        display: flex; align-items: center; justify-content: center;
+        flex-shrink: 0; color: #F0B323; font-size: 12px; font-weight: bold;
+    }
+</style>
 
-  <!-- FORM -->
-  <div class="lg:col-span-2">
-    <form method="post" class="card">
-      {% csrf_token %}
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px; max-width: 1200px; margin: 0 auto;">
+    <div>
+        <form method="post">
+            {% csrf_token %}
 
-      {% if form.non_field_errors %}
-        <div class="card mb-4" style="border-left: 4px solid var(--danger); padding: var(--s-3); background: var(--danger-light);">
-          {% for err in form.non_field_errors %}
-            <p class="text-sm" style="margin: 0; color: var(--danger);">{{ err }}</p>
-          {% endfor %}
-        </div>
-      {% endif %}
+            <div class="form-card">
+                <div class="form-card-title">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                    Visitor Identification
+                </div>
+                <div class="grid-2">
+                    <div>
+                        <label class="form-label">Full Name <span class="req">*</span></label>
+                        {{ form.full_name }}
+                    </div>
+                    <div>
+                        <label class="form-label">Phone Number <span class="req">*</span></label>
+                        {{ form.phone }}
+                    </div>
+                </div>
+                <div class="grid-3">
+                    <div><label class="form-label">ID Type</label>{{ form.id_type }}</div>
+                    <div><label class="form-label">ID Number</label>{{ form.id_number }}</div>
+                    <div><label class="form-label">Vehicle Plate</label>{{ form.vehicle_plate }}</div>
+                </div>
+                <div class="grid-2">
+                    <div><label class="form-label">Organisation (Optional)</label>{{ form.organisation }}</div>
+                    <div><label class="form-label">Badge Number</label>{{ form.badge_number }}</div>
+                </div>
+            </div>
 
-      <!-- Visitor identity -->
-      <h3 class="card-title mb-4">Visitor Details</h3>
+            <div class="form-card">
+                <div class="form-card-title">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                    Visit Details
+                </div>
+                <div class="grid-2">
+                    <div><label class="form-label">Purpose of Visit <span class="req">*</span></label>{{ form.purpose }}</div>
+                    <div><label class="form-label">Visit Type</label>{{ form.visit_type }}</div>
+                </div>
+                <div style="margin-bottom: 16px;"><label class="form-label">Purpose Notes</label>{{ form.purpose_note }}</div>
+            </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-        <div>
-          <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
-            Full Name <span style="color: var(--danger);">*</span>
-          </label>
-          {{ form.full_name }}
-          {% if form.full_name.errors %}<p class="text-xs mt-1" style="color: var(--danger);">{{ form.full_name.errors.0 }}</p>{% endif %}
-        </div>
-        <div>
-          <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Phone</label>
-          {{ form.phone }}
-        </div>
-      </div>
+            <div class="form-card">
+                <div class="form-card-title">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                    Host / Person Being Visited
+                </div>
+                <div class="grid-2">
+                    <div><label class="form-label">Staff Member</label>{{ form.host_user }}</div>
+                    <div><label class="form-label">Or Free-Text Host</label>{{ form.host_name }}</div>
+                </div>
+            </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-        <div>
-          <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">ID Type</label>
-          {{ form.id_type }}
-        </div>
-        <div>
-          <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">ID Number</label>
-          {{ form.id_number }}
-        </div>
-        <div>
-          <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Vehicle Plate</label>
-          {{ form.vehicle_plate }}
-        </div>
-      </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-        <div>
-          <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Organisation</label>
-          {{ form.organisation }}
-        </div>
-        <div>
-          <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Badge Number</label>
-          {{ form.badge_number }}
-        </div>
-      </div>
-
-      <hr style="border: none; border-top: 1px solid var(--border); margin: var(--s-5) 0;">
-
-      <!-- Visit details -->
-      <h3 class="card-title mb-4">Visit Details</h3>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-        <div>
-          <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Purpose</label>
-          {{ form.purpose }}
-        </div>
-        <div>
-          <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Visit Type</label>
-          {{ form.visit_type }}
-          <p class="text-xs mt-1" style="color: var(--ink-500);">
-            Official visits require admin signature; Secretary will coordinate.
-          </p>
-        </div>
-      </div>
-
-      <div class="mb-4">
-        <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Purpose Notes</label>
-        {{ form.purpose_note }}
-      </div>
-
-      <hr style="border: none; border-top: 1px solid var(--border); margin: var(--s-5) 0;">
-
-      <!-- Host -->
-      <h3 class="card-title mb-4">Host / Person Being Visited</h3>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-        <div>
-          <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Staff Member</label>
-          {{ form.host_user }}
-          <p class="text-xs mt-1" style="color: var(--ink-500);">Pick a staff member to notify them via SMS</p>
-        </div>
-        <div>
-          <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Or Free-Text Host</label>
-          {{ form.host_name }}
-          <p class="text-xs mt-1" style="color: var(--ink-500);">Use if host isn't a system user</p>
-        </div>
-      </div>
-
-      <div class="mb-6">
-        <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Host Role</label>
-        {{ form.host_role }}
-      </div>
-
-      <div class="flex gap-3">
-        <button type="submit" class="btn btn-primary">
-          {% include 'partials/icons.html' with name="check-circle" size=16 %}
-          Register &amp; Issue Pass
-        </button>
-        <a href="{% url 'cso_visitor_list' %}" class="btn btn-secondary">Cancel</a>
-      </div>
-
-    </form>
-  </div>
-
-  <!-- SIDE INFO -->
-  <div class="lg:col-span-1">
-    <div class="card">
-      <h3 class="card-title mb-4">Gate Protocol</h3>
-      <ol style="padding-left: var(--s-5); margin: 0; color: var(--ink-700); font-size: var(--text-sm); line-height: 1.7;">
-        <li>Verify the visitor's ID and record it here.</li>
-        <li>Issue the badge and gate pass.</li>
-        <li>The host is notified by SMS automatically.</li>
-        <li>For <strong>official visits</strong>, the Secretary is notified to prepare the official pass.</li>
-        <li>Log the visitor out when they exit the gate.</li>
-      </ol>
+            <div style="display: flex; justify-content: flex-end; gap: 12px; margin-bottom: 40px;">
+                <a href="{% url 'cso_dashboard' %}" class="btn btn-secondary" style="padding: 12px 24px;">Cancel</a>
+                <button type="submit" class="btn btn-primary" style="padding: 12px 32px; font-weight: 600;">Log Visitor & Issue Pass</button>
+            </div>
+        </form>
     </div>
-  </div>
 
+    <div>
+        <div class="protocol-card">
+            <h3 style="font-family: 'Poppins', sans-serif; font-size: 16px; font-weight: 700; margin-bottom: 20px; color: #F0B323;">Gate Protocol</h3>
+            <div class="protocol-step"><div class="protocol-icon">1</div><div><div style="font-weight: 600; font-size: 14px;">Verify ID</div><div style="font-size: 13px; color: #94a3b8; margin-top: 2px;">Check the visitor's physical ID and record the number above.</div></div></div>
+            <div class="protocol-step"><div class="protocol-icon">2</div><div><div style="font-weight: 600; font-size: 14px;">Notify Host</div><div style="font-size: 13px; color: #94a3b8; margin-top: 2px;">The staff member is notified automatically by SMS.</div></div></div>
+            <div class="protocol-step"><div class="protocol-icon">3</div><div><div style="font-weight: 600; font-size: 14px;">Issue Badge</div><div style="font-size: 13px; color: #94a3b8; margin-top: 2px;">Hand the visitor their printed Gate Pass and a physical badge.</div></div></div>
+            <div class="protocol-step"><div class="protocol-icon">4</div><div><div style="font-weight: 600; font-size: 14px;">Log Exit</div><div style="font-size: 13px; color: #94a3b8; margin-top: 2px;">When they leave, record the time out in the Visitor Log.</div></div></div>
+        </div>
+    </div>
 </div>
 
+<style>
+    @media (max-width: 900px) {
+        div[style*="grid-template-columns: 2fr 1fr;"] { grid-template-columns: 1fr !important; }
+    }
+</style>
 {% endblock %}

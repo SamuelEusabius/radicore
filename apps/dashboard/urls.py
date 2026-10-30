@@ -181,6 +181,8 @@ urlpatterns = [
          views.parent_child_statement_pdf,
          name='parent_child_statement_pdf'),
      
+     path('school/settings/', views.admin_schools.school_general_settings, name='school_general_settings'),
+     
      path('accountant/generate-invoices/', views.generate_invoices, name='generate_invoices'),
      path('subscriptions/initiate-payment/<int:school_id>/', views.subscription.initiate_subscription_payment, name='initiate_subscription_payment'),
      path('sms/settings/', views.communication.school_sms_settings, name='school_sms_settings'),

@@ -1,285 +1,96 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <title>Gate Pass {{ gate_pass.pass_number }}</title>
-  <style>
-    * { box-sizing: border-box; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      font-size: 11px;
-      color: #111;
-      margin: 24px;
-      line-height: 1.5;
-    }
-    .header {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      border-bottom: 2px solid #333;
-      padding-bottom: 10px;
-      margin-bottom: 16px;
-    }
-    .header-left { display: flex; gap: 12px; align-items: center; }
-    .header-left img { max-width: 64px; max-height: 64px; }
-    .header-left h1 { margin: 0 0 2px 0; font-size: 16px; }
-    .header-left .meta { color: #555; font-size: 10px; }
-    .header-right { text-align: right; font-size: 10px; color: #555; }
-    .header-right .label {
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      color: #333;
-      font-size: 9px;
-    }
-    .header-right .passno {
-      font-family: 'Courier New', monospace;
-      font-weight: 700;
-      font-size: 14px;
-      color: #111;
-      margin-top: 2px;
-    }
-
-    .pass-type {
-      text-align: center;
-      padding: 8px;
-      background: #1f2937;
-      color: #fff;
-      font-size: 13px;
-      font-weight: 700;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      margin-bottom: 20px;
-    }
-
-    .grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      margin-bottom: 20px;
-    }
-    .field {
-      padding: 8px 10px;
-      border: 1px solid #e5e7eb;
-      border-radius: 3px;
-    }
-    .field .label {
-      font-size: 9px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      color: #6b7280;
-      font-weight: 600;
-    }
-    .field .value {
-      font-size: 12px;
-      color: #111;
-      font-weight: 500;
-      margin-top: 2px;
-    }
-    .field.full { grid-column: span 2; }
-
-    .purpose-box {
-      padding: 12px;
-      background: #f9fafb;
-      border: 1px solid #e5e7eb;
-      border-radius: 3px;
-      margin-bottom: 20px;
-    }
-    .purpose-box .label {
-      font-size: 9px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      color: #6b7280;
-      font-weight: 600;
-      margin-bottom: 4px;
-    }
-
-    .signature-section {
-      margin-top: 40px;
-      page-break-inside: avoid;
-    }
-    .signature-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 40px;
-    }
-    .signature-box {
-      border-top: 1.5px solid #333;
-      padding-top: 6px;
-      font-size: 10px;
-      color: #374151;
-    }
-    .signature-box .role {
-      font-size: 9px;
-      color: #6b7280;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      font-weight: 600;
-    }
-    .signature-box .name {
-      font-size: 11px;
-      color: #111;
-      font-weight: 600;
-      margin-top: 2px;
-    }
-
-    .footer {
-      margin-top: 30px;
-      padding-top: 8px;
-      border-top: 1px solid #e5e7eb;
-      font-size: 9px;
-      color: #6b7280;
-      text-align: center;
-    }
-
-    .stamp {
-      position: absolute;
-      top: 60px;
-      right: 40px;
-      border: 3px solid #dc2626;
-      color: #dc2626;
-      padding: 6px 12px;
-      font-size: 14px;
-      font-weight: 700;
-      letter-spacing: 3px;
-      transform: rotate(-12deg);
-      opacity: 0.7;
-    }
-    .stamp.official { border-color: #2563eb; color: #2563eb; }
-  </style>
+<meta charset="utf-8">
+<style>
+    @page { size: A6 portrait; margin: 5mm; }
+    body { font-family: Helvetica, Arial, sans-serif; font-size: 7pt; color: #1a1a1a; line-height: 1.1; margin: 0; padding: 0; }
+    
+    table.header { width: 100%; border-collapse: collapse; margin-bottom: 4px; }
+    table.header td { vertical-align: middle; padding: 0; }
+    .logo-img { width: 30px; height: 30px; object-fit: contain; }
+    .school-name { font-size: 10pt; font-weight: bold; color: #0B1B3D; text-transform: uppercase; line-height: 1; }
+    .doc-title { font-size: 6.5pt; font-weight: bold; color: #D4A017; text-transform: uppercase; margin-top: 2px; }
+    .pass-number { font-size: 8pt; font-weight: bold; color: #0B1B3D; border: 1px solid #cbd5e1; padding: 2px 4px; background: #f1f5f9; text-align: right; }
+    
+    .divider { border-bottom: 1.5px solid #0B1B3D; margin-bottom: 6px; }
+    
+    table.data-grid { width: 100%; border-collapse: collapse; margin-bottom: 4px; }
+    table.data-grid td { padding: 1.5px 0; font-size: 7pt; vertical-align: top; }
+    .lbl { font-weight: bold; color: #475569; width: 30%; }
+    .val { color: #0f172a; font-weight: bold; width: 70%; }
+    
+    .section-title { font-size: 6.5pt; font-weight: bold; text-transform: uppercase; color: #64748b; margin-top: 4px; margin-bottom: 2px; border-bottom: 0.5px solid #e2e8f0; }
+    
+    .sig-box { border: 1px solid #cbd5e1; background: #f8fafc; padding: 4px; margin-top: 4px; }
+    .sig-line { border-bottom: 1px solid #64748b; height: 10px; width: 90%; margin-bottom: 1px; }
+    .sig-lbl { font-size: 5.5pt; color: #64748b; }
+    
+    .footer { text-align: center; font-size: 5pt; color: #94a3b8; margin-top: 6px; border-top: 0.5px solid #e2e8f0; padding-top: 3px; }
+</style>
 </head>
 <body>
 
-  <div class="header">
-    <div class="header-left">
-      {% if logo_data_uri %}
-        <img src="{{ logo_data_uri }}" alt="Logo">
-      {% endif %}
-      <div>
-        <h1>{{ school.name }}</h1>
-        <div class="meta">
-          {% if school.code %}{{ school.code }}{% endif %}
-          {% if school.physical_address %} &middot; {{ school.physical_address }}{% endif %}
-          {% if school.phone %} &middot; {{ school.phone }}{% endif %}
-        </div>
-      </div>
-    </div>
-    <div class="header-right">
-      <div class="label">Gate Pass</div>
-      <div class="passno">{{ gate_pass.pass_number }}</div>
-      <div style="margin-top: 4px;">Issued {{ gate_pass.issued_at|date:"d M Y" }}</div>
-      <div>{{ gate_pass.issued_at|date:"H:i" }}</div>
-    </div>
-  </div>
+    <table class="header">
+        <tr>
+            <td style="width: 15%;">{% if school.logo %}<img src="{{ school.logo.url }}" class="logo-img">{% endif %}</td>
+            <td style="width: 55%; text-align: left;">
+                <div class="school-name">{{ school.name }}</div>
+                <div class="doc-title">Visitor / Parent Gate Pass</div>
+            </td>
+            <td style="width: 30%; text-align: right;"><div class="pass-number">{{ pass.pass_number }}</div></td>
+        </tr>
+    </table>
+    <div class="divider"></div>
 
-  <div class="pass-type">
-    {% if gate_pass.pass_type == 'official' %}
-      Official Visitor Pass
-    {% else %}
-      Standard Visitor Pass
-    {% endif %}
-  </div>
+    <div class="section-title">Visitor & Host Details</div>
+    <table class="data-grid">
+        <tr><td class="lbl">Full Name:</td><td class="val">{{ pass.visitor.full_name }}</td></tr>
+        <tr><td class="lbl">Phone:</td><td class="val">{{ pass.visitor.phone }}</td></tr>
+        <tr><td class="lbl">ID Number:</td><td class="val">{{ pass.visitor.id_number|default:"—" }}</td></tr>
+        <tr><td class="lbl">Category:</td><td class="val">{{ pass.visitor.get_visit_type_display|upper }}</td></tr>
+        <tr><td class="lbl">Visiting:</td><td class="val">{{ pass.visitor.host_name|default:"General" }}</td></tr>
+        <tr><td class="lbl">Purpose:</td><td class="val">{{ pass.visitor.get_purpose_display|default:pass.visitor.purpose }}</td></tr>
+    </table>
 
-  {% if gate_pass.status == 'used' %}
-    <div class="stamp">USED</div>
-  {% elif gate_pass.status == 'cancelled' %}
-    <div class="stamp">CANCELLED</div>
-  {% elif gate_pass.pass_type == 'official' %}
-    <div class="stamp official">OFFICIAL</div>
-  {% endif %}
+    <div class="section-title">Visit Record</div>
+    <table class="data-grid">
+        <tr>
+            <td class="lbl">Date:</td><td class="val" style="width: 30%;">{{ pass.visitor.created_at|date:"d M Y" }}</td>
+            <td class="lbl" style="width: 15%;">Time In:</td><td class="val" style="width: 25%;">{{ pass.visitor.time_in|time:"H:i" }}</td>
+        </tr>
+        <tr>
+            <td class="lbl">Expected Out:</td><td class="val">{{ pass.valid_until|time:"H:i" }}</td>
+            <td class="lbl">Badge:</td><td class="val">{{ pass.visitor.badge_number|default:"—" }}</td>
+        </tr>
+    </table>
 
-  <div class="grid">
-    <div class="field">
-      <div class="label">Visitor Name</div>
-      <div class="value">{{ visitor.full_name }}</div>
-    </div>
-    <div class="field">
-      <div class="label">Phone</div>
-      <div class="value">{{ visitor.phone|default:"—" }}</div>
+    <div class="section-title">Authorizations</div>
+    <div class="sig-box">
+        <table style="width: 100%; border-collapse: collapse;">
+            <tr>
+                <td style="width: 50%; padding-right: 6px;"><div class="sig-line"></div><div class="sig-lbl">Host Signature: <strong>{{ pass.visitor.host_name|default:"" }}</strong></div></td>
+                <td style="width: 50%; padding-left: 6px;"><div class="sig-line"></div><div class="sig-lbl">Authorized By: <strong>{{ pass.issued_by.get_full_name|default:pass.issued_by.email }}</strong></div></td>
+            </tr>
+        </table>
     </div>
 
-    <div class="field">
-      <div class="label">ID Type &amp; Number</div>
-      <div class="value">{{ visitor.get_id_type_display }}{% if visitor.id_number %} &middot; {{ visitor.id_number }}{% endif %}</div>
-    </div>
-    <div class="field">
-      <div class="label">Organisation</div>
-      <div class="value">{{ visitor.organisation|default:"—" }}</div>
-    </div>
+    <div class="section-title">Security Verification</div>
+    <table class="data-grid">
+        <tr>
+            <td class="lbl">Officer:</td><td class="val" style="width: 40%;">______________________</td>
+            <td class="lbl" style="width: 15%;">Time Out:</td><td class="val" style="width: 15%;">____________</td>
+        </tr>
+        <tr>
+            <td class="lbl">Signature:</td><td class="val">______________________</td>
+            <td colspan="2"></td>
+        </tr>
+    </table>
 
-    <div class="field">
-      <div class="label">Person Being Visited</div>
-      <div class="value">{{ visitor.host_display }}</div>
+    <div class="footer">
+        Thank you for visiting. Your cooperation helps us maintain a safe learning environment.<br>
+        Generated by {{ school.name }} · Powered by RacodCore
     </div>
-    <div class="field">
-      <div class="label">Destination</div>
-      <div class="value">{{ gate_pass.destination|default:visitor.host_display }}</div>
-    </div>
-
-    {% if visitor.vehicle_plate %}
-    <div class="field">
-      <div class="label">Vehicle Plate</div>
-      <div class="value" style="font-family: 'Courier New', monospace;">{{ visitor.vehicle_plate }}</div>
-    </div>
-    {% endif %}
-    {% if visitor.badge_number %}
-    <div class="field">
-      <div class="label">Badge Number</div>
-      <div class="value" style="font-family: 'Courier New', monospace;">{{ visitor.badge_number }}</div>
-    </div>
-    {% endif %}
-  </div>
-
-  <div class="purpose-box">
-    <div class="label">Purpose of Visit</div>
-    <div style="font-size: 12px;">{{ visitor.get_purpose_display }}</div>
-    {% if visitor.purpose_note %}
-    <div style="font-size: 10px; color: #4b5563; margin-top: 4px;">{{ visitor.purpose_note }}</div>
-    {% endif %}
-  </div>
-
-  <div class="signature-section">
-    <div class="signature-grid">
-      <div class="signature-box">
-        <div class="role">Visitor Signature</div>
-        <div class="name">&nbsp;</div>
-      </div>
-
-      <div class="signature-box">
-        <div class="role">
-          {% if gate_pass.pass_type == 'official' %}
-            Admin Signature (Person Visited)
-          {% else %}
-            Host Signature
-          {% endif %}
-        </div>
-        <div class="name">
-          {% if gate_pass.signed_by_name %}
-            {{ gate_pass.signed_by_name }}
-          {% elif gate_pass.signed_by_user %}
-            {{ gate_pass.signed_by_user.get_full_name }}
-          {% else %}
-            &nbsp;
-          {% endif %}
-        </div>
-        {% if gate_pass.signed_at %}
-        <div style="font-size: 9px; color: #6b7280; margin-top: 2px;">
-          Signed {{ gate_pass.signed_at|date:"d M Y, H:i" }}
-        </div>
-        {% endif %}
-      </div>
-    </div>
-  </div>
-
-  <div class="footer">
-    Issued by {{ gate_pass.issued_by.get_full_name|default:gate_pass.issued_by.email|default:"Security" }}
-    &middot; Generated {{ generated_on|date:"d M Y, H:i" }}
-    <br>
-    This pass must be surrendered at the gate upon exit.
-    {% if gate_pass.valid_until %}
-      &middot; Valid until {{ gate_pass.valid_until|date:"d M Y, H:i" }}
-    {% endif %}
-  </div>
 
 </body>
 </html>

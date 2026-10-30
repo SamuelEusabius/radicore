@@ -163,15 +163,17 @@ def generate_next_admission_number(school):
 
 @login_required
 def add_student(request):
-    """Directly add a student to the system (no complex application flow)."""
+    """Directly add a student to the system."""
     if request.user.role not in ('principal', 'secretary', 'super_admin', 'deputy_admin'):
         return redirect('dashboard_home')
 
     from apps.students.models import Student
     from apps.academics.models import ClassLevel
+    from apps.locations.models import County, Constituency, Ward
 
     school = request.user.school
     classes = ClassLevel.objects.filter(school=school).order_by('order', 'name')
+    counties = County.objects.all().order_by('name')
 
     if request.method == 'POST':
         # --- 1. Personal Details ---
@@ -188,10 +190,10 @@ def add_student(request):
         guardian_phone = request.POST.get('guardian_phone', '').strip()
         parent_id_number = request.POST.get('parent_id_number', '').strip()
         
-        # --- 3. Location ---
-        county = request.POST.get('county', '').strip()
-        sub_county = request.POST.get('sub_county', '').strip()
-        ward = request.POST.get('ward', '').strip()
+        # --- 3. Location (IDs from dropdowns) ---
+        county_id = request.POST.get('county_fk') or None
+        constituency_id = request.POST.get('constituency_fk') or None
+        ward_id = request.POST.get('ward_fk') or None
         village = request.POST.get('village', '').strip()
         
         # --- 4. Documents & Previous School ---
@@ -214,7 +216,10 @@ def add_student(request):
             for e in errors:
                 messages.error(request, e)
             return render(request, 'dashboard/add_student.html', {
-                'classes': classes, 'form_data': request.POST,
+                'classes': classes,
+                'counties': counties,
+                'form_data': request.POST,
+                'next_admission_number': generate_next_admission_number(school),
             })
 
         # --- 7. Generate Admission Number ---
@@ -235,6 +240,10 @@ def add_student(request):
                 guardian_name=guardian_name,
                 guardian_phone=guardian_phone,
                 parent_id_number=parent_id_number,
+                county_fk_id=county_id,
+                constituency_fk_id=constituency_id,
+                ward_fk_id=ward_id,
+                village=village,
                 birth_certificate_number=birth_certificate_number,
                 upi=upi,
                 previous_school_marks=previous_school_marks,
@@ -242,38 +251,54 @@ def add_student(request):
                 is_boarding=is_boarding,
                 is_active=True
             )
-            messages.success(request, f"Student {student.full_name} added successfully! Adm No: {admission_number}. Please print the Bio-Data for physical filing.")
-            return redirect('student_bio_page', student_id=student.id)
+            messages.success(request, f"Student {student.full_name} added successfully! Adm No: {admission_number}")
+            return redirect('students_list')
         except Exception as e:
             messages.error(request, f"An error occurred: {str(e)}")
             return render(request, 'dashboard/add_student.html', {
-                'classes': classes, 'form_data': request.POST,
+                'classes': classes,
+                'counties': counties,
+                'form_data': request.POST,
+                'next_admission_number': generate_next_admission_number(school),
             })
 
+    # --- GET Request ---
     return render(request, 'dashboard/add_student.html', {
         'classes': classes,
+        'counties': counties,
         'next_admission_number': generate_next_admission_number(school),
     })
 
 def generate_next_admission_number(school):
-    """Generate the next admission number starting from 1."""
+    """Generate the next admission number starting from the school's configured baseline."""
     from apps.students.models import Student
-    from django.db.models import Max
     import re
 
-    # Get all admission numbers for this school
-    numbers = Student.objects.filter(school=school).exclude(admission_number__isnull=True).exclude(admission_number='').values_list('admission_number', flat=True)
+    numbers = (
+        Student.objects.filter(school=school)
+        .exclude(admission_number__isnull=True)
+        .exclude(admission_number='')
+        .values_list('admission_number', flat=True)
+    )
     
     highest_num = 0
     for num in numbers:
-        # Extract just the digits if there is a prefix (e.g., ADM-5 -> 5)
         match = re.search(r'(\d+)$', str(num))
         if match:
             val = int(match.group(1))
             if val > highest_num:
                 highest_num = val
                 
+    # The baseline is the number the Principal set in Settings
+    baseline = school.starting_admission_number or 1
+
+    # If the highest number found is less than the baseline, 
+    # it means we are starting a new series.
+    if highest_num < baseline:
+        return str(baseline)
+        
     return str(highest_num + 1)
+
 
 @login_required
 def delete_student(request, student_id):

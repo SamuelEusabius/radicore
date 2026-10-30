@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% block title %}School Settings{% endblock %}
+{% block header_title %}General Settings{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 600px; margin: 0 auto;">
+  <h3 class="mb-4">School Configuration</h3>
+  <p class="mb-6" style="color: var(--ink-500);">Manage system-wide settings for {{ school.name }}.</p>
+
+  <form method="post">
+    {% csrf_token %}
+    
+    <div style="margin-bottom: 24px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Starting Admission Number</label>
+      <input type="number" name="starting_admission_number" value="{{ school.starting_admission_number }}" required min="1" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px;">
+      <p style="font-size: 12px; color: var(--ink-500); margin-top: 4px;">
+        This is the number the system will use for the very first student you admit. Subsequent students will automatically increment from here (e.g., 500, 501, 502).
+      </p>
+    </div>
+
+    <div style="display: flex; justify-content: flex-end;">
+      <button type="submit" class="btn btn-primary">Save Settings</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

@@ -1,148 +1,210 @@
 {% extends 'base.html' %}
-{% block title %}Add Student{% endblock %}
-{% block header_title %}Add New Student{% endblock %}
+{% load static %}
+{% block title %}Add New Student{% endblock %}
+{% block header_title %}Student Admission{% endblock %}
 
 {% block content %}
-<div class="card" style="max-width: 900px; margin: 0 auto;">
-  <h3 class="mb-4">Student Registration</h3>
-  <p class="mb-6" style="color: var(--ink-500);">
-    Fill in the details below. Supporting documents (Birth Cert, Parent ID, Leaving Cert) will be physically attached to the printed Bio-Data.
-  </p>
-  
+
+<style>
+    .form-section-title {
+        font-family: 'Poppins', sans-serif;
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--primary);
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 8px;
+        margin: 32px 0 16px 0;
+    }
+    .form-label {
+        display: block;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--ink-600);
+        margin-bottom: 6px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    .form-input {
+        width: 100%;
+        padding: 10px 12px;
+        font-family: var(--font-sans);
+        font-size: 14px;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        background: white;
+        color: var(--ink-900);
+        transition: border-color 0.2s;
+    }
+    .form-input:focus {
+        border-color: var(--primary);
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(10, 138, 95, 0.1);
+    }
+    .form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+    .form-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+</style>
+
+<div class="card" style="max-width: 1000px; margin: 0 auto; padding: 32px;">
+
+  <div style="background: #ecfdf5; border-left: 4px solid var(--primary); padding: 16px; border-radius: 8px; margin-bottom: 32px; display: flex; justify-content: space-between; align-items: center;">
+      <div>
+          <h4 style="margin: 0; color: var(--primary); font-weight: 700;">Admission Number</h4>
+          <p style="margin: 4px 0 0 0; font-size: 13px; color: var(--ink-600);">This number will be assigned automatically when the student is admitted.</p>
+      </div>
+      <div style="background: white; padding: 8px 16px; border-radius: 6px; font-family: monospace; font-size: 18px; font-weight: 700; color: var(--ink-900); border: 1px solid var(--border);">
+          {{ next_admission_number }}
+      </div>
+  </div>
+
   <form method="post">
     {% csrf_token %}
-    
-    <!-- 1. Personal Details -->
-    <h4 style="margin: 20px 0 10px; color: var(--primary); border-bottom: 1px solid var(--border); padding-bottom: 8px;">1. Personal Details</h4>
-    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+
+    <!-- 1. Applicant -->
+    <h4 class="form-section-title">1. Applicant Details</h4>
+    <div class="form-grid-3">
       <div>
-        <label style="display: block; font-weight: 600; margin-bottom: 6px;">First Name *</label>
-        <input type="text" name="first_name" value="{{ form_data.first_name|default:'' }}" required style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px;">
+        <label class="form-label">First Name *</label>
+        <input type="text" name="first_name" class="form-input" value="{{ form_data.first_name|default:'' }}" required>
       </div>
       <div>
-        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Middle Name</label>
-        <input type="text" name="middle_name" value="{{ form_data.middle_name|default:'' }}" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px;">
+        <label class="form-label">Middle Name</label>
+        <input type="text" name="middle_name" class="form-input" value="{{ form_data.middle_name|default:'' }}">
       </div>
       <div>
-        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Last Name *</label>
-        <input type="text" name="last_name" value="{{ form_data.last_name|default:'' }}" required style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px;">
+        <label class="form-label">Last Name *</label>
+        <input type="text" name="last_name" class="form-input" value="{{ form_data.last_name|default:'' }}" required>
       </div>
     </div>
 
-    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 16px; margin-bottom: 24px;">
+    <div class="form-grid-3">
       <div>
-        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Gender *</label>
-        <select name="gender" required style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px;">
+        <label class="form-label">Gender *</label>
+        <select name="gender" class="form-input" required>
+          <option value="">— Select —</option>
           <option value="M" {% if form_data.gender == 'M' %}selected{% endif %}>Male</option>
           <option value="F" {% if form_data.gender == 'F' %}selected{% endif %}>Female</option>
         </select>
       </div>
       <div>
-        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Date of Birth</label>
-        <input type="date" name="date_of_birth" value="{{ form_data.date_of_birth|default:'' }}" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px;">
+        <label class="form-label">Date of Birth</label>
+        <input type="date" name="date_of_birth" class="form-input" value="{{ form_data.date_of_birth|default:'' }}">
       </div>
       <div>
-        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Class Level *</label>
-        <select name="class_level" required style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px;">
-          <option value="">— Select —</option>
+        <label class="form-label">Applying For (Class) *</label>
+        <select name="class_level" class="form-input" required>
+          <option value="">— Select Class —</option>
           {% for c in classes %}
             <option value="{{ c.name }}" {% if form_data.class_level == c.name %}selected{% endif %}>{{ c.name }}</option>
           {% endfor %}
         </select>
       </div>
-      <div>
-        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Admission Date</label>
-        <input type="date" name="admission_date" value="{{ form_data.admission_date|default:'' }}" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px;">
-      </div>
+    </div>
+    
+    <div class="form-grid-3">
+        <div>
+            <label class="form-label">Admission Date</label>
+            <input type="date" name="admission_date" class="form-input" value="{{ form_data.admission_date|default:'' }}">
+        </div>
     </div>
 
     <!-- 2. Previous School -->
-    <h4 style="margin: 20px 0 10px; color: var(--primary); border-bottom: 1px solid var(--border); padding-bottom: 8px;">2. Previous School Academic History</h4>
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;">
+    <h4 class="form-section-title">2. Previous School / Academic History</h4>
+    <div class="form-grid-2">
       <div>
-        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Previous Overall Grade</label>
-        <input type="text" name="previous_school_mean_grade" value="{{ form_data.previous_school_mean_grade|default:'' }}" placeholder="e.g. B+ or 4.0" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px;">
+        <label class="form-label">Previous Overall Grade</label>
+        <input type="text" name="previous_school_mean_grade" class="form-input" value="{{ form_data.previous_school_mean_grade|default:'' }}" placeholder="e.g. B+ or 4.0">
       </div>
       <div>
-        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Total Marks / Percentage</label>
-        <input type="text" name="previous_school_marks" value="{{ form_data.previous_school_marks|default:'' }}" placeholder="e.g. 350/500 or 70%" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px;">
-      </div>
-    </div>
-
-    <!-- 3. Guardian Details -->
-    <h4 style="margin: 20px 0 10px; color: var(--primary); border-bottom: 1px solid var(--border); padding-bottom: 8px;">3. Guardian Details</h4>
-    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 24px;">
-      <div>
-        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Guardian Name</label>
-        <input type="text" name="guardian_name" value="{{ form_data.guardian_name|default:'' }}" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px;">
-      </div>
-      <div>
-        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Guardian Phone</label>
-        <input type="text" name="guardian_phone" value="{{ form_data.guardian_phone|default:'' }}" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px;">
-      </div>
-      <div>
-        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Parent ID Number</label>
-        <input type="text" name="parent_id_number" value="{{ form_data.parent_id_number|default:'' }}" placeholder="For physical filing" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px;">
+        <label class="form-label">Total Marks / Percentage</label>
+        <input type="text" name="previous_school_marks" class="form-input" value="{{ form_data.previous_school_marks|default:'' }}" placeholder="e.g. 350/500">
       </div>
     </div>
+    <p style="font-size: 12px; color: var(--ink-500); margin-bottom: 16px;">
+        * Physical copies of the Result Slip and Leaving Certificate should be attached to the printed Bio-Data.
+    </p>
 
-    <!-- 4. Location (Dropdowns) -->
-    <h4 style="margin: 20px 0 10px; color: var(--primary); border-bottom: 1px solid var(--border); padding-bottom: 8px;">4. Home Location</h4>
-    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 24px;">
+    <!-- 3. Home Location -->
+    <h4 class="form-section-title">3. Home Location</h4>
+    <div class="form-grid-3">
       <div>
-        <label style="display: block; font-weight: 600; margin-bottom: 6px;">County</label>
-        <select name="county_fk" id="id_county" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px;">
+        <label class="form-label">County</label>
+        <select name="county_fk" id="id_county" class="form-input">
           <option value="">— Select County —</option>
-          <!-- We will populate this via API or template loop if available -->
+          {% for county in counties %}
+            <option value="{{ county.id }}">{{ county.name|upper }}</option>
+          {% endfor %}
         </select>
       </div>
       <div>
-        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Constituency</label>
-        <select name="constituency_fk" id="id_constituency" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px;">
+        <label class="form-label">Constituency</label>
+        <select name="constituency_fk" id="id_constituency" class="form-input">
           <option value="">— Select Constituency —</option>
         </select>
       </div>
       <div>
-        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Ward</label>
-        <select name="ward_fk" id="id_ward" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px;">
+        <label class="form-label">Ward</label>
+        <select name="ward_fk" id="id_ward" class="form-input">
           <option value="">— Select Ward —</option>
         </select>
       </div>
     </div>
-
-    <!-- 5. Identity Documents -->
-    <h4 style="margin: 20px 0 10px; color: var(--primary); border-bottom: 1px solid var(--border); padding-bottom: 8px;">5. Identity Documents</h4>
-    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 24px;">
+    <div class="form-grid-3">
       <div>
-        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Birth Certificate #</label>
-        <input type="text" name="birth_certificate_number" value="{{ form_data.birth_certificate_number|default:'' }}" placeholder="e.g. 123456789" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px;">
-      </div>
-      <div>
-        <label style="display: block; font-weight: 600; margin-bottom: 6px;">UPI Number</label>
-        <input type="text" name="upi" value="{{ form_data.upi|default:'' }}" placeholder="e.g. 2024UPI..." style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px;">
-      </div>
-      <div style="display: flex; align-items: center; margin-top: 24px;">
-        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 600;">
-          <input type="checkbox" name="is_boarding" {% if form_data.is_boarding %}checked{% endif %} style="width: 18px; height: 18px;">
-          Is Boarding Student
-        </label>
+        <label class="form-label">Village</label>
+        <input type="text" name="village" class="form-input" value="{{ form_data.village|default:'' }}">
       </div>
     </div>
-    
-    <div style="background: #f8fafc; padding: 16px; border-left: 4px solid var(--primary); margin-bottom: 24px;">
-      <p style="margin: 0; font-size: 13px; color: var(--ink-600);">
-        <strong>Note:</strong> The admission number will be auto-generated as <strong>{{ next_admission_number }}</strong>. After saving, you will be redirected to print the Bio-Data for physical filing.
-      </p>
+
+    <!-- 4. Identity Documents -->
+    <h4 class="form-section-title">4. Identity Documents</h4>
+    <div class="form-grid-3">
+      <div>
+        <label class="form-label">Birth Certificate #</label>
+        <input type="text" name="birth_certificate_number" class="form-input" value="{{ form_data.birth_certificate_number|default:'' }}">
+      </div>
+      <div>
+        <label class="form-label">UPI Number</label>
+        <input type="text" name="upi" class="form-input" value="{{ form_data.upi|default:'' }}">
+      </div>
+      <div>
+        <label class="form-label">Parent ID Number</label>
+        <input type="text" name="parent_id_number" class="form-input" value="{{ form_data.parent_id_number|default:'' }}">
+      </div>
     </div>
 
-    <div style="display: flex; justify-content: flex-end; gap: 12px;">
+    <!-- 5. Parent / Guardian -->
+    <h4 class="form-section-title">5. Parent / Guardian</h4>
+    <div class="form-grid-3">
+      <div>
+        <label class="form-label">Guardian Name *</label>
+        <input type="text" name="guardian_name" class="form-input" value="{{ form_data.guardian_name|default:'' }}" required>
+      </div>
+      <div>
+        <label class="form-label">Phone *</label>
+        <input type="text" name="guardian_phone" class="form-input" value="{{ form_data.guardian_phone|default:'' }}" required>
+      </div>
+    </div>
+
+    <!-- 6. Boarding -->
+    <h4 class="form-section-title">6. Boarding</h4>
+    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; margin-bottom: 16px;">
+        <input type="checkbox" name="is_boarding" {% if form_data.is_boarding %}checked{% endif %} style="width: 18px; height: 18px;">
+        This is a boarding (hostel) student — auto-assign a bed on admission
+    </label>
+
+    <!-- Action Buttons -->
+    <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 40px; border-top: 1px solid var(--border); padding-top: 24px;">
       <a href="{% url 'students_list' %}" class="btn btn-secondary">Cancel</a>
-      <button type="submit" class="btn btn-primary" style="padding: 12px 32px; font-size: 16px;">Save & Print Bio-Data</button>
+      <button type="submit" class="btn btn-primary" style="padding: 12px 32px; font-size: 16px;">
+        Save & Print Bio-Data
+      </button>
     </div>
+
   </form>
 </div>
+{% endblock %}
 
-<!-- JavaScript for Location Cascading Dropdowns -->
+{% block extra_js %}
 <script>
   document.addEventListener('DOMContentLoaded', function() {
     const countySelect = document.getElementById('id_county');

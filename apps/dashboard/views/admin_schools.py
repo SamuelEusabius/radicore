@@ -783,3 +783,24 @@ def school_change_admin_password(request, school_id):
     return render(request, 'dashboard/school_change_password.html', {
         'school': school, 'admins': admins,
     })
+    
+@login_required
+def school_general_settings(request):
+    if request.user.role not in ('principal', 'super_admin'):
+        return redirect('dashboard_home')
+
+    school = request.user.school
+
+    if request.method == 'POST':
+        start_num = request.POST.get('starting_admission_number')
+        if start_num and start_num.isdigit():
+            school.starting_admission_number = int(start_num)
+            school.save()
+            messages.success(request, "Admission number settings updated successfully.")
+            return redirect('school_general_settings')
+        else:
+            messages.error(request, "Please enter a valid number.")
+
+    return render(request, 'dashboard/school_general_settings.html', {
+        'school': school
+    })

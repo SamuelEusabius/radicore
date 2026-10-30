@@ -170,6 +170,11 @@ class School(models.Model):
     )
 
     created_at = models.DateTimeField(auto_now_add=True)
+    
+    starting_admission_number = models.IntegerField(
+        default=1, 
+        help_text="The number the system will start counting from when generating new admission numbers."
+    )
 
     class Meta:
         ordering = ['name']

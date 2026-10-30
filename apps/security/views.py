@@ -7,6 +7,7 @@ tenant-scoped via request.school (from SchoolTenantMiddleware).
 from datetime import timedelta
 
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404, redirect, render
@@ -84,9 +85,12 @@ def cso_dashboard(request):
             .order_by('-time_in')[:10]
         ),
     }
-    return render(request, 'dashboards/cso/dashboard.html', context)
-
-
+    return render(request, 'dashboards/cso/visitor_form.html', {
+    'school': request.user.school,
+    'form': form,
+    'mode': 'check_in'
+})
+    
 # ==========================================================
 # Visitors — register, list, detail, check out
 # ==========================================================
@@ -170,9 +174,18 @@ def visitor_check_in(request):
                 if visitor.visit_type == Visitor.VisitType.OFFICIAL
                 else GatePass.PassType.STANDARD
             )
+            
+            # --- GENERATE CUSTOM PASS NUMBER ---
+            # Get the school initials (e.g. NAIROBI SCHOOL -> NS)
+            school_prefix = "".join([word[0].upper() for word in school.name.split()])
+            # Count existing passes to get the next number
+            count = GatePass.objects.filter(school=school).count() + 1
+            pass_number = f"GP-{school_prefix}-{count:04d}"
+
             gate_pass = GatePass.objects.create(
                 school=school,
                 visitor=visitor,
+                pass_number=pass_number,
                 pass_type=pass_type,
                 destination=visitor.host_display,
                 valid_from=timezone.now(),
@@ -211,7 +224,6 @@ def visitor_check_in(request):
         'form': form,
         'mode': 'check_in',
     })
-
 
 @role_required(*CSO_ROLES)
 def visitor_detail(request, pk):
@@ -351,27 +363,20 @@ def gate_pass_issue(request, visitor_id):
     })
 
 
-@role_required(*CSO_ROLES)
+@login_required
 def gate_pass_print(request, pk):
-    """Printable / PDF-ready official pass view."""
-    school = _school(request)
-    gate_pass = get_object_or_404(
-        GatePass.objects.select_related(
-            'visitor', 'issued_by', 'signed_by_user', 'visitor__host_user',
-        ),
-        pk=pk, school=school,
-    )
-
-    from apps.core.pdf_utils import build_pdf_context
-    context = build_pdf_context(
-        school,
-        request.user,
-        gate_pass=gate_pass,
-        visitor=gate_pass.visitor,
-    )
-    return render(request, 'pdf/gate_pass.html', context)
-
-
+    from django.template.loader import render_to_string
+    from apps.core.pdf_utils import html_to_pdf_response
+    from .models import GatePass
+    
+    gate_pass = get_object_or_404(GatePass, pk=pk, school=request.user.school)
+    
+    html_string = render_to_string('pdf/gate_pass.html', {
+        'pass': gate_pass,
+        'school': request.user.school,
+    })
+    
+    return html_to_pdf_response(html_string, f'GatePass_{gate_pass.pass_number}.pdf')
 @role_required(*CSO_ROLES)
 def gate_pass_cancel(request, pk):
     school = _school(request)
