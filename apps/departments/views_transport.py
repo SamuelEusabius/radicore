@@ -736,6 +736,7 @@ def vehicle_form(request, vehicle_id=None):
 
     return render(request, 'departments/driver/vehicle_form.html', {
         'vehicle': vehicle,
+        'form_data': {},
     })
 
 
@@ -869,6 +870,7 @@ def trip_form(request, trip_id=None):
         'trip': trip,
         'routes': routes,
         'vehicles': vehicles,
+        'form_data': {},   
     })
 
 
@@ -917,4 +919,69 @@ def trip_assign_students(request, trip_id):
         'students': all_students,
         'classes': classes,
         'assigned_ids': assigned_ids,
+    })
+    
+@login_required
+def route_form(request, route_id=None):
+    """Create or edit a route."""
+    if not _driver_required(request):
+        return redirect('dashboard_home')
+
+    from .models import Route
+
+    school = request.user.school
+    route = None
+    if route_id:
+        route = get_object_or_404(Route, id=route_id, school=school)
+
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        description = request.POST.get('description', '').strip()
+        morning_departure = request.POST.get('morning_departure') or None
+        evening_departure = request.POST.get('evening_departure') or None
+        is_active = request.POST.get('is_active') == 'on'
+
+        errors = []
+        if not name:
+            errors.append('Route name is required.')
+
+        # Check for duplicate name
+        existing = Route.objects.filter(school=school, name=name)
+        if route:
+            existing = existing.exclude(id=route.id)
+        if existing.exists():
+            errors.append(f'A route named "{name}" already exists.')
+
+        if errors:
+            for e in errors:
+                messages.error(request, e)
+            return render(request, 'departments/driver/route_form.html', {
+                'route': route,
+                'form_data': request.POST,
+            })
+
+        if route:
+            route.name = name
+            route.description = description
+            route.morning_departure = morning_departure
+            route.evening_departure = evening_departure
+            route.is_active = is_active
+            route.save()
+            messages.success(request, f'Route "{name}" updated.')
+        else:
+            Route.objects.create(
+                school=school,
+                name=name,
+                description=description,
+                morning_departure=morning_departure,
+                evening_departure=evening_departure,
+                is_active=is_active,
+            )
+            messages.success(request, f'Route "{name}" created.')
+
+        return redirect('trip_create')
+
+    return render(request, 'departments/driver/route_form.html', {
+        'route': route,
+        'form_data': {},
     })

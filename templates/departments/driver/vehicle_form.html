@@ -53,36 +53,36 @@
 
         <div style="margin-bottom: 20px;">
             <label class="form-label">Plate Number <span class="req">*</span></label>
-            <input type="text" name="plate_number" required class="form-input" 
-                   value="{{ vehicle.plate_number|default:form_data.plate_number|default:'' }}" 
+            <input type="text" name="plate_number" required class="form-input"
+                   value="{% if vehicle %}{{ vehicle.plate_number }}{% elif form_data and form_data.plate_number %}{{ form_data.plate_number }}{% endif %}"
                    placeholder="e.g. KDA 123X" style="text-transform: uppercase;">
         </div>
 
         <div class="grid-2">
             <div>
                 <label class="form-label">Make</label>
-                <input type="text" name="make" class="form-input" 
-                       value="{{ vehicle.make|default:form_data.make|default:'' }}" 
+                <input type="text" name="make" class="form-input"
+                       value="{% if vehicle %}{{ vehicle.make }}{% elif form_data and form_data.make %}{{ form_data.make }}{% endif %}"
                        placeholder="e.g. Toyota">
             </div>
             <div>
                 <label class="form-label">Model</label>
-                <input type="text" name="model" class="form-input" 
-                       value="{{ vehicle.model|default:form_data.model|default:'' }}" 
+                <input type="text" name="model" class="form-input"
+                       value="{% if vehicle %}{{ vehicle.model }}{% elif form_data and form_data.model %}{{ form_data.model }}{% endif %}"
                        placeholder="e.g. Coaster">
             </div>
         </div>
 
         <div style="margin-bottom: 20px;">
             <label class="form-label">Capacity (seats)</label>
-            <input type="number" name="capacity" class="form-input" 
-                   value="{{ vehicle.capacity|default:form_data.capacity|default:40 }}" 
+            <input type="number" name="capacity" class="form-input"
+                   value="{% if vehicle %}{{ vehicle.capacity }}{% elif form_data and form_data.capacity %}{{ form_data.capacity }}{% else %}40{% endif %}"
                    min="1" placeholder="e.g. 40">
         </div>
 
         <div style="margin-bottom: 24px;">
             <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px;">
-                <input type="checkbox" name="is_active" 
+                <input type="checkbox" name="is_active"
                        {% if not vehicle or vehicle.is_active %}checked{% endif %}
                        style="width: 18px; height: 18px;">
                 This vehicle is active

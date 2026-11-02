@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% block title %}{% if route %}Edit Route{% else %}Add Route{% endif %}{% endblock %}
+{% block header_title %}{% if route %}Edit Route{% else %}Add Route{% endif %}{% endblock %}
+
+{% block content %}
+<style>
+    .form-card { background: white; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); border: 1px solid #e2e8f0; padding: 32px; max-width: 700px; margin: 0 auto; }
+    .form-label { font-size: 13px; font-weight: 600; color: #475569; margin-bottom: 8px; display: block; }
+    .form-label .req { color: #ef4444; }
+    .form-input { width: 100%; padding: 12px 14px; border: 2px solid #cbd5e1; border-radius: 8px; font-family: 'Inter', sans-serif; font-size: 14px; color: #0f172a; background: white; transition: all 0.2s; box-sizing: border-box; }
+    .form-input:focus { border-color: #10b981; outline: none; box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.15); }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+</style>
+
+<div class="form-card">
+    <div style="margin-bottom: 24px; border-bottom: 1px solid #e2e8f0; padding-bottom: 16px;">
+        <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: #0B1B3D;">
+            {% if route %}Update Route Details{% else %}Create New Route{% endif %}
+        </h3>
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+
+        <div style="margin-bottom: 20px;">
+            <label class="form-label">Route Name <span class="req">*</span></label>
+            <input type="text" name="name" required class="form-input" 
+                   value="{% if route %}{{ route.name }}{% elif form_data and form_data.name %}{{ form_data.name }}{% endif %}" 
+                   placeholder="e.g. Westlands - CBD">
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <label class="form-label">Description / Stops</label>
+            <textarea name="description" rows="3" class="form-input" 
+                      placeholder="e.g. Pick up at Westlands, drop off at School">{% if route %}{{ route.description }}{% elif form_data and form_data.description %}{{ form_data.description }}{% endif %}</textarea>
+        </div>
+
+        <div class="grid-2">
+            <div>
+                <label class="form-label">Morning Departure (Home to School)</label>
+                <input type="time" name="morning_departure" class="form-input" 
+                       value="{% if route and route.morning_departure %}{{ route.morning_departure|time:'H:i' }}{% elif form_data and form_data.morning_departure %}{{ form_data.morning_departure }}{% endif %}">
+            </div>
+            <div>
+                <label class="form-label">Evening Departure (School to Home)</label>
+                <input type="time" name="evening_departure" class="form-input" 
+                       value="{% if route and route.evening_departure %}{{ route.evening_departure|time:'H:i' }}{% elif form_data and form_data.evening_departure %}{{ form_data.evening_departure }}{% endif %}">
+            </div>
+        </div>
+
+        <div style="margin-bottom: 24px;">
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px;">
+                <input type="checkbox" name="is_active" 
+                       {% if not route or route.is_active %}checked{% endif %}
+                       style="width: 18px; height: 18px;">
+                This route is active
+            </label>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 12px; border-top: 1px solid #e2e8f0; padding-top: 24px;">
+            <a href="{% url 'trip_create' %}" class="btn btn-secondary" style="padding: 12px 24px;">Cancel</a>
+            <button type="submit" class="btn btn-primary" style="padding: 12px 32px;">
+                {% if route %}Save Changes{% else %}Create Route{% endif %}
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

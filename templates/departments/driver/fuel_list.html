@@ -1,52 +1,105 @@
 {% extends 'base.html' %}
-{% block title %}Fuel History{% endblock %}
-{% block header_title %}Fuel History{% endblock %}
-{% block header_sub %}Total: KES {{ total|floatformat:0 }}{% endblock %}
+{% block title %}Fuel Logs{% endblock %}
+{% block header_title %}Fuel Logs{% endblock %}
 
 {% block content %}
+<style>
+    .card { background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; margin-bottom: 24px; }
+    .data-table { width: 100%; border-collapse: collapse; text-align: left; }
+    .data-table th { padding: 16px; font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #e2e8f0; background: #f8fafc; }
+    .data-table td { padding: 16px; border-bottom: 1px solid #e2e8f0; font-size: 14px; color: #0f172a; vertical-align: middle; }
+    .data-table tbody tr:hover { background: #f8fafc; }
+    .data-table tbody tr:last-child td { border-bottom: none; }
+    
+    .badge { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 9999px; font-size: 12px; font-weight: 600; text-transform: capitalize; }
+    .badge-mpesa { background: #ecfdf5; color: #059669; }
+    .badge-cash { background: #fffbeb; color: #d97706; }
+    .badge-card { background: #eff6ff; color: #2563eb; }
+    .badge-credit { background: #fdf4ff; color: #c026d3; }
+    .badge-default { background: #f1f5f9; color: #475569; }
 
-<div class="page-header">
-  <div class="page-header-info">
-    <h1 class="page-title">Fuel Logs</h1>
-    <p class="page-subtitle">{{ logs.count }} entries · Total KES {{ total|floatformat:0 }}</p>
-  </div>
-  <a href="{% url 'fuel_log_add' %}" class="btn btn-primary">+ Log Fuel</a>
-</div>
+    .btn-primary { background: #10b981; color: white; padding: 10px 16px; border-radius: 8px; font-weight: 600; font-size: 14px; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; border: none; cursor: pointer; transition: background 0.2s; }
+    .btn-primary:hover { background: #059669; }
+</style>
 
-<div class="card">
-  {% if logs %}
-    <table class="table">
-      <thead>
-        <tr>
-          <th>Date</th>
-          <th>Vehicle</th>
-          <th>Amount</th>
-          <th>Litres</th>
-          <th>Payment</th>
-          <th>Reference</th>
-          <th>Station</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for f in logs %}
-        <tr>
-          <td>{{ f.date|date:"j M Y" }}</td>
-          <td>{{ f.vehicle.plate_number }}</td>
-          <td>KES {{ f.amount_kes|floatformat:0 }}</td>
-          <td>{{ f.litres|default:"—" }}</td>
-          <td><span class="badge badge-info">{{ f.get_payment_method_display }}</span></td>
-          <td>{{ f.payment_reference|default:"—" }}</td>
-          <td>{{ f.station_name|default:"—" }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  {% else %}
-    <div class="pro-empty" style="border: none; padding: 40px;">
-      <p style="color: var(--ink-500);">No fuel logs yet.</p>
-      <a href="{% url 'fuel_log_add' %}" class="btn btn-primary" style="margin-top: 12px;">Log your first entry</a>
+<!-- Top Header -->
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+    <div>
+        <h1 style="margin: 0; font-size: 24px; font-weight: 700; color: #0f172a;">Fuel Logs</h1>
+        <p style="margin: 4px 0 0 0; font-size: 14px; color: #64748b;">
+            {{ logs|length }} entries &middot; Total Spend: <strong style="color: #0f172a;">KES {{ total|floatformat:0 }}</strong>
+        </p>
     </div>
-  {% endif %}
+    <a href="{% url 'fuel_log_add' %}" class="btn-primary">
+        {% include 'partials/icons.html' with name="plus" size=16 %} Log Fuel
+    </a>
 </div>
 
+<!-- Table Card -->
+<div class="card">
+    <div style="overflow-x: auto;">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>DATE</th>
+                    <th>VEHICLE</th>
+                    <th>AMOUNT</th>
+                    <th>LITRES</th>
+                    <th>PAYMENT METHOD</th>
+                    <th>REFERENCE</th>
+                    <th>STATION</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs %}
+                <tr>
+                    <td style="white-space: nowrap;">
+                        <div style="font-weight: 600;">{{ log.date|date:"d M Y" }}</div>
+                        <div style="font-size: 12px; color: #64748b;">{{ log.created_at|time:"H:i" }}</div>
+                    </td>
+                    <td>
+                        <div style="font-weight: 600; color: #0f172a;">{{ log.vehicle.plate_number|default:"-" }}</div>
+                        <div style="font-size: 12px; color: #64748b;">{{ log.vehicle.make|default:"" }}</div>
+                    </td>
+                    <td style="font-weight: 600; color: #0f172a;">
+                        KES {{ log.amount_kes|floatformat:2 }}
+                    </td>
+                    <td>
+                        {{ log.litres|default:"-" }} <span style="color: #64748b; font-size: 12px;">L</span>
+                    </td>
+                    <td>
+                        {% if log.payment_method == 'mpesa' %}
+                            <span class="badge badge-mpesa">M-Pesa</span>
+                        {% elif log.payment_method == 'cash' %}
+                            <span class="badge badge-cash">Cash</span>
+                        {% elif log.payment_method == 'card' %}
+                            <span class="badge badge-card">Card</span>
+                        {% elif log.payment_method == 'credit' %}
+                            <span class="badge badge-credit">Credit</span>
+                        {% else %}
+                            <span class="badge badge-default">{{ log.get_payment_method_display|default:log.payment_method }}</span>
+                        {% endif %}
+                    </td>
+                    <td style="color: #475569; font-family: monospace;">
+                        {{ log.payment_reference|default:"-" }}
+                    </td>
+                    <td style="color: #475569;">
+                        {{ log.station_name|default:"-" }}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" style="text-align: center; padding: 60px 20px;">
+                        <div style="color: #94a3b8; margin-bottom: 16px;">
+                            {% include 'partials/icons.html' with name="droplet" size=48 %}
+                        </div>
+                        <h3 style="margin: 0 0 8px 0; color: #0f172a; font-size: 16px; font-weight: 600;">No fuel logs yet</h3>
+                        <p style="margin: 0; color: #64748b; font-size: 14px;">Record your first fuel purchase to start tracking expenses.</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
 {% endblock %}

@@ -1,110 +1,181 @@
 {% extends 'base.html' %}
-{% block title %}{{ trip }}{% endblock %}
+{% block title %}Trip Details - {{ trip.route.name }}{% endblock %}
 {% block header_title %}Trip Details{% endblock %}
-{% block header_sub %}{{ trip.route.name }} · {{ trip.date|date:"j M Y" }}{% endblock %}
 
 {% block content %}
+<style>
+    .card { background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; margin-bottom: 24px; }
+    .data-table { width: 100%; border-collapse: collapse; text-align: left; }
+    .data-table th { padding: 16px; font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #e2e8f0; background: #f8fafc; }
+    .data-table td { padding: 16px; border-bottom: 1px solid #e2e8f0; font-size: 14px; color: #0f172a; vertical-align: middle; }
+    .data-table tbody tr:hover { background: #f8fafc; }
+    .data-table tbody tr:last-child td { border-bottom: none; }
+    
+    .btn-sm { padding: 6px 12px; font-size: 13px; border-radius: 6px; font-weight: 600; border: 1px solid transparent; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s; }
+    .btn-outline { background: white; border-color: #cbd5e1; color: #475569; }
+    .btn-outline:hover { background: #f8fafc; border-color: #94a3b8; }
+    
+    .btn-success { background: #10b981; color: white; }
+    .btn-success:hover { background: #059669; }
+    
+    .btn-danger { background: white; border-color: #fca5a5; color: #ef4444; }
+    .btn-danger:hover { background: #fef2f2; border-color: #ef4444; }
 
-<div class="page-header">
-  <div class="page-header-info">
-    <h1 class="page-title">{{ trip.route.name }}</h1>
-    <p class="page-subtitle">
-      {{ trip.get_direction_display }} · {{ trip.date|date:"l, j F Y" }}
-      {% if trip.vehicle %} · Vehicle: {{ trip.vehicle.plate_number }}{% endif %}
-    </p>
-  </div>
-  <div style="display: flex; gap: 8px;">
-    {% if trip.status == 'scheduled' %}
-      <a href="{% url 'trip_start' trip.id %}" class="btn btn-primary">Start Trip</a>
-    {% elif trip.status == 'in_progress' %}
-      <a href="{% url 'trip_complete' trip.id %}" class="btn btn-primary">Complete Trip</a>
-    {% endif %}
-    <a href="{% url 'checklist_update' trip.id %}" class="btn btn-secondary">Pre-Trip Checklist</a>
-    <a href="{% url 'driver_dashboard' %}" class="btn btn-secondary">← Back</a>
-        <a href="{% url 'trip_manifest' trip.id %}" target="_blank" class="btn btn-secondary">🖨️ Print Manifest</a>
-    <a href="{% url 'trip_manifest_pdf' trip.id %}" class="btn btn-secondary">📄 Download PDF</a>
-  </div>
+    .status-badge { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 9999px; font-size: 12px; font-weight: 600; }
+    .status-pending { background: #f1f5f9; color: #64748b; }
+    .status-boarded { background: #ecfdf5; color: #059669; }
+    .status-dropped { background: #eff6ff; color: #3b82f6; }
+    .status-absent { background: #fef2f2; color: #ef4444; }
+</style>
+
+<!-- Top Header / Actions -->
+<div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px;">
+    <div>
+        <h1 style="margin: 0 0 8px 0; font-size: 24px; font-weight: 700; color: #0f172a;">
+            {{ trip.route.name }}
+            <span style="font-size: 16px; font-weight: 500; color: #64748b; margin-left: 8px;">({{ trip.get_direction_display }})</span>
+        </h1>
+        <div style="font-size: 14px; color: #64748b; display: flex; align-items: center; gap: 12px;">
+            <span style="display: flex; align-items: center; gap: 4px;">
+                {% include 'partials/icons.html' with name="calendar" size=16 %} {{ trip.date|date:"l, F j, Y" }}
+            </span>
+            <span style="display: flex; align-items: center; gap: 4px;">
+                {% include 'partials/icons.html' with name="truck" size=16 %} {{ trip.vehicle.plate_number|default:"No Vehicle" }}
+            </span>
+            <span style="display: flex; align-items: center; gap: 4px;">
+                {% include 'partials/icons.html' with name="clock" size=16 %} {{ trip.departure_time|time:"H:i"|default:"--:--" }}
+            </span>
+        </div>
+    </div>
+    
+    <div style="display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end;">
+        {% if trip.status == 'scheduled' %}
+            <a href="{% url 'trip_start' trip.id %}" class="btn btn-success" style="padding: 10px 16px; border-radius: 8px; font-weight: 600; font-size: 14px; text-decoration: none;">
+                Start Trip
+            </a>
+        {% elif trip.status == 'in_progress' %}
+            <a href="{% url 'trip_complete' trip.id %}" class="btn btn-success" style="padding: 10px 16px; border-radius: 8px; font-weight: 600; font-size: 14px; text-decoration: none; background: #3b82f6;">
+                Complete Trip
+            </a>
+        {% endif %}
+        
+        <a href="{% url 'checklist_update' trip.id %}" class="btn-sm btn-outline" style="padding: 10px 16px;">
+            {% include 'partials/icons.html' with name="clipboard" size=16 %} Pre-Trip Checklist
+        </a>
+        <a href="{% url 'trip_assign_students' trip.id %}" class="btn-sm btn-outline" style="padding: 10px 16px;">
+            {% include 'partials/icons.html' with name="users" size=16 %} Manage Students
+        </a>
+        <a href="{% url 'trip_manifest' trip.id %}" target="_blank" class="btn-sm btn-outline" style="padding: 10px 16px;">
+            {% include 'partials/icons.html' with name="printer" size=16 %} Print Manifest
+        </a>
+        <a href="{% url 'trip_manifest_pdf' trip.id %}" class="btn-sm btn-outline" style="padding: 10px 16px;">
+            {% include 'partials/icons.html' with name="download" size=16 %} Download PDF
+        </a>
+        <a href="{% url 'trip_list' %}" class="btn-sm btn-outline" style="padding: 10px 16px;">
+            Back to Trips
+        </a>
+    </div>
 </div>
 
-<!-- Status + Stats -->
-<div class="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-6">
-  <div class="card">
-    <div class="stat-label">Status</div>
-    <div class="stat-value" style="font-size: var(--text-md);">{{ trip.get_status_display }}</div>
-  </div>
-  <div class="card">
-    <div class="stat-label">Total Students</div>
-    <div class="stat-value">{{ trip_students.count }}</div>
-  </div>
-  <div class="card">
-    <div class="stat-label">Boarded</div>
-    <div class="stat-value" style="color: var(--success);">{{ boarded_count }}</div>
-  </div>
-  <div class="card">
-    <div class="stat-label">Pending</div>
-    <div class="stat-value" style="color: var(--warning);">{{ pending_count }}</div>
-  </div>
+<!-- KPI Cards -->
+<div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 24px;">
+    <div class="card" style="padding: 20px;">
+        <div style="font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Status</div>
+        <div style="font-size: 18px; font-weight: 700; color: #0f172a; text-transform: capitalize;">{{ trip.get_status_display }}</div>
+    </div>
+    <div class="card" style="padding: 20px;">
+        <div style="font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Total Students</div>
+        <div style="font-size: 24px; font-weight: 700; color: #0f172a;">{{ trip_students|length }}</div>
+    </div>
+    <div class="card" style="padding: 20px;">
+        <div style="font-size: 12px; font-weight: 600; color: #10b981; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Boarded</div>
+        <div style="font-size: 24px; font-weight: 700; color: #10b981;">{{ boarded_count }}</div>
+    </div>
+    <div class="card" style="padding: 20px;">
+        <div style="font-size: 12px; font-weight: 600; color: #f59e0b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Pending</div>
+        <div style="font-size: 24px; font-weight: 700; color: #f59e0b;">{{ pending_count }}</div>
+    </div>
 </div>
 
-<!-- Checklist status -->
-{% if checklist.is_cleared %}
-  <div class="card" style="background: #d1fae5; border-left: 4px solid var(--success); margin-bottom: 24px;">
-    <strong style="color: #065f46;">✅ Pre-trip checklist cleared</strong>
-    <span style="color: #065f46; font-size: var(--text-sm);"> · {{ checklist.cleared_at|date:"j M Y H:i" }}</span>
-  </div>
-{% else %}
-  <div class="card" style="background: #fef3c7; border-left: 4px solid var(--warning); margin-bottom: 24px;">
-    <strong style="color: #92400e;">⚠️ Pre-trip checklist NOT cleared</strong>
-    <a href="{% url 'checklist_update' trip.id %}" style="color: #92400e; text-decoration: underline;">Complete it now →</a>
-  </div>
+<!-- Checklist Warning -->
+{% if not trip.pretripchecklist.is_cleared %}
+<div class="card" style="padding: 16px 20px; background: #fffbeb; border-color: #fcd34d; display: flex; justify-content: space-between; align-items: center;">
+    <div style="display: flex; align-items: center; gap: 12px; color: #92400e; font-weight: 500; font-size: 14px;">
+        <div style="color: #d97706;">
+            {% include 'partials/icons.html' with name="alert-triangle" size=20 %}
+        </div>
+        Pre-trip checklist is NOT cleared. Please complete it before starting the trip.
+    </div>
+    <a href="{% url 'checklist_update' trip.id %}" style="color: #b45309; font-weight: 600; font-size: 14px; text-decoration: underline;">Complete it now &rarr;</a>
+</div>
 {% endif %}
 
-<!-- Student Manifest -->
+<!-- Student Manifest Table -->
 <div class="card">
-  <h3 style="margin-bottom: 16px; font-family: var(--font-heading);">Student Manifest</h3>
-  {% if trip_students %}
-    <table class="table">
-      <thead>
-        <tr>
-          <th>Student</th>
-          <th>Admission No</th>
-          <th>Status</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for ts in trip_students %}
-        <tr>
-          <td>{{ ts.student.full_name }}</td>
-          <td>{{ ts.student.admission_number }}</td>
-          <td>
-            <span class="badge badge-{% if ts.boarding_status == 'boarded' %}success{% elif ts.boarding_status == 'dropped' %}info{% elif ts.boarding_status == 'absent' %}danger{% else %}gray{% endif %}">
-              {{ ts.get_boarding_status_display }}
-            </span>
-          </td>
-          <td>
-            <form method="post" action="{% url 'trip_student_mark' trip.id ts.student.id %}" style="display: inline-flex; gap: 4px;">
-              {% csrf_token %}
-              {% if ts.boarding_status != 'boarded' %}
-                <button name="action" value="boarded" class="btn btn-sm btn-primary">Board</button>
-              {% endif %}
-              {% if ts.boarding_status == 'boarded' %}
-                <button name="action" value="dropped" class="btn btn-sm btn-primary">Drop</button>
-              {% endif %}
-              {% if ts.boarding_status == 'pending' %}
-                <button name="action" value="absent" class="btn btn-sm btn-secondary">Absent</button>
-              {% endif %}
-            </form>
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  {% else %}
-    <div class="pro-empty" style="border: none; padding: 40px;">
-      <p style="color: var(--ink-500);">No students assigned to this trip yet.</p>
+    <div style="padding: 20px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
+        <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+            {% include 'partials/icons.html' with name="users" size=18 %} Student Manifest
+        </h3>
     </div>
-  {% endif %}
+    
+    <div style="overflow-x: auto;">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>STUDENT</th>
+                    <th>ADMISSION NO</th>
+                    <th>STATUS</th>
+                    <th style="text-align: right;">ACTIONS</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ts in trip_students %}
+                <tr>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            {% if ts.student.photo %}
+                                <img src="{{ ts.student.photo.url }}" alt="{{ ts.student.first_name }}" style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover;">
+                            {% else %}
+                                <div style="width: 36px; height: 36px; border-radius: 50%; background: #f1f5f9; color: #64748b; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600;">
+                                    {{ ts.student.first_name|first|upper }}{{ ts.student.last_name|first|upper }}
+                                </div>
+                            {% endif %}
+                            <div>
+                                <div style="font-weight: 600; color: #0f172a;">{{ ts.student.first_name }} {{ ts.student.last_name }}</div>
+                                <div style="font-size: 12px; color: #64748b;">{{ ts.student.class_level }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td style="font-weight: 500;">{{ ts.student.admission_number }}</td>
+                    <td>
+                        <span class="status-badge status-{{ ts.boarding_status }}">
+                            {{ ts.get_boarding_status_display }}
+                        </span>
+                    </td>
+                    <td style="text-align: right;">
+                        <form method="post" action="{% url 'trip_student_mark' trip.id ts.student.id %}" style="display: inline-flex; gap: 8px;">
+                            {% csrf_token %}
+                            {% if ts.boarding_status == 'pending' %}
+                                <button type="submit" name="action" value="boarded" class="btn-sm btn-success">Board</button>
+                                <button type="submit" name="action" value="absent" class="btn-sm btn-danger">Absent</button>
+                            {% elif ts.boarding_status == 'boarded' %}
+                                <button type="submit" name="action" value="dropped" class="btn-sm" style="background: #3b82f6; color: white;">Drop Off</button>
+                                <button type="submit" name="action" value="reset" class="btn-sm btn-outline" title="Undo">Reset</button>
+                            {% else %}
+                                <button type="submit" name="action" value="reset" class="btn-sm btn-outline">Reset</button>
+                            {% endif %}
+                        </form>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" style="text-align: center; padding: 40px; color: #64748b;">
+                        No students assigned to this trip yet. <a href="{% url 'trip_assign_students' trip.id %}" style="color: #10b981; font-weight: 600; text-decoration: none;">Add students &rarr;</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
-
 {% endblock %}

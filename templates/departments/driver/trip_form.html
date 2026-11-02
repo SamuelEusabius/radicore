@@ -24,11 +24,14 @@
 
         <div class="grid-2">
             <div>
-                <label class="form-label">Route <span class="req">*</span></label>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <label class="form-label" style="margin-bottom: 0;">Route <span class="req">*</span></label>
+                    <a href="{% url 'route_create' %}" style="font-size: 12px; color: #10b981; text-decoration: none; font-weight: 600;">+ Create New Route</a>
+                </div>
                 <select name="route" required class="form-input">
                     <option value="">— Select route —</option>
                     {% for r in routes %}
-                        <option value="{{ r.id }}" {% if trip.route_id == r.id or form_data.route|add:"0" == r.id %}selected{% endif %}>{{ r.name }}</option>
+                        <option value="{{ r.id }}" {% if trip.route_id == r.id %}selected{% elif form_data and form_data.route|add:"0" == r.id %}selected{% endif %}>{{ r.name }}</option>
                     {% endfor %}
                 </select>
             </div>
@@ -37,7 +40,7 @@
                 <select name="vehicle" class="form-input">
                     <option value="">— Select vehicle —</option>
                     {% for v in vehicles %}
-                        <option value="{{ v.id }}" {% if trip.vehicle_id == v.id or form_data.vehicle|add:"0" == v.id %}selected{% endif %}>{{ v.plate_number }} ({{ v.make }})</option>
+                        <option value="{{ v.id }}" {% if trip.vehicle_id == v.id %}selected{% elif form_data and form_data.vehicle|add:"0" == v.id %}selected{% endif %}>{{ v.plate_number }} ({{ v.make }})</option>
                     {% endfor %}
                 </select>
             </div>
@@ -46,14 +49,15 @@
         <div class="grid-2">
             <div>
                 <label class="form-label">Date <span class="req">*</span></label>
-                <input type="date" name="date" required class="form-input" value="{{ trip.date|date:'Y-m-d'|default:form_data.date|default:'' }}">
+                <input type="date" name="date" required class="form-input"
+                       value="{% if trip %}{{ trip.date|date:'Y-m-d' }}{% elif form_data and form_data.date %}{{ form_data.date }}{% endif %}">
             </div>
             <div>
                 <label class="form-label">Direction <span class="req">*</span></label>
                 <select name="direction" required class="form-input">
                     <option value="">— Select —</option>
-                    <option value="morning" {% if trip.direction == 'morning' or form_data.direction == 'morning' %}selected{% endif %}>Morning (Home → School)</option>
-                    <option value="evening" {% if trip.direction == 'evening' or form_data.direction == 'evening' %}selected{% endif %}>Evening (School → Home)</option>
+                    <option value="morning" {% if trip.direction == 'morning' %}selected{% elif form_data and form_data.direction == 'morning' %}selected{% endif %}>Morning (Home to School)</option>
+                    <option value="evening" {% if trip.direction == 'evening' %}selected{% elif form_data and form_data.direction == 'evening' %}selected{% endif %}>Evening (School to Home)</option>
                 </select>
             </div>
         </div>
@@ -61,23 +65,25 @@
         <div class="grid-2">
             <div>
                 <label class="form-label">Departure Time</label>
-                <input type="time" name="departure_time" class="form-input" value="{{ trip.departure_time|time:'H:i'|default:form_data.departure_time|default:'' }}">
+                <input type="time" name="departure_time" class="form-input"
+                       value="{% if trip and trip.departure_time %}{{ trip.departure_time|time:'H:i' }}{% elif form_data and form_data.departure_time %}{{ form_data.departure_time }}{% endif %}">
             </div>
             <div>
                 <label class="form-label">Arrival Time</label>
-                <input type="time" name="arrival_time" class="form-input" value="{{ trip.arrival_time|time:'H:i'|default:form_data.arrival_time|default:'' }}">
+                <input type="time" name="arrival_time" class="form-input"
+                       value="{% if trip and trip.arrival_time %}{{ trip.arrival_time|time:'H:i' }}{% elif form_data and form_data.arrival_time %}{{ form_data.arrival_time }}{% endif %}">
             </div>
         </div>
 
         <div style="margin-bottom: 24px;">
             <label class="form-label">Notes</label>
-            <textarea name="notes" rows="3" class="form-input">{{ trip.notes|default:form_data.notes|default:'' }}</textarea>
+            <textarea name="notes" rows="3" class="form-input">{% if trip %}{{ trip.notes }}{% elif form_data and form_data.notes %}{{ form_data.notes }}{% endif %}</textarea>
         </div>
 
         <div style="display: flex; justify-content: flex-end; gap: 12px; border-top: 1px solid #e2e8f0; padding-top: 24px;">
             <a href="{% url 'trip_list' %}" class="btn btn-secondary" style="padding: 12px 24px;">Cancel</a>
             <button type="submit" class="btn btn-primary" style="padding: 12px 32px;">
-                {% if trip %}Save Changes{% else %}Schedule Trip →{% endif %}
+                {% if trip %}Save Changes{% else %}Schedule Trip{% endif %}
             </button>
         </div>
     </form>

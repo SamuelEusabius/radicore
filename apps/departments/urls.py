@@ -138,4 +138,5 @@ urlpatterns = [
     path('driver/trips/schedule/', views_transport.trip_form, name='trip_create'),
     path('driver/trips/<int:trip_id>/edit/', views_transport.trip_form, name='trip_edit'),
     path('driver/trips/<int:trip_id>/assign/', views_transport.trip_assign_students, name='trip_assign_students'),
+    path('driver/routes/add/', views_transport.route_form, name='route_create'),
 ]
