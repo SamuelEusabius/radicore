@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% block title %}Vehicles{% endblock %}
+{% block header_title %}Vehicles{% endblock %}
+
+{% block content %}
+
+<div class="page-header mb-6" style="display: flex; justify-content: space-between; align-items: center;">
+    <div>
+        <h1 class="page-title">School Vehicles</h1>
+        <p class="page-subtitle">Manage the school's fleet.</p>
+    </div>
+    <a href="{% url 'vehicle_add' %}" class="btn btn-primary">+ Add Vehicle</a>
+</div>
+
+{% if messages %}
+    {% for m in messages %}
+        <div class="card mb-4" style="border-left: 4px solid {% if m.tags == 'error' %}var(--danger){% else %}var(--success){% endif %}; padding: 12px 16px;">
+            <p style="margin: 0;">{{ m }}</p>
+        </div>
+    {% endfor %}
+{% endif %}
+
+{% if vehicles %}
+<div class="card" style="padding: 0; overflow: hidden;">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Plate Number</th>
+                <th>Make / Model</th>
+                <th>Capacity</th>
+                <th>Status</th>
+                <th style="text-align: right;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for v in vehicles %}
+            <tr>
+                <td><strong>{{ v.plate_number }}</strong></td>
+                <td>{{ v.make }} {{ v.model|default:"—" }}</td>
+                <td>{{ v.capacity }} seats</td>
+                <td>
+                    {% if v.is_active %}
+                        <span class="badge badge-success">Active</span>
+                    {% else %}
+                        <span class="badge badge-warning">Inactive</span>
+                    {% endif %}
+                </td>
+                <td style="text-align: right; white-space: nowrap;">
+                    <a href="{% url 'vehicle_edit' v.id %}" class="btn btn-sm btn-secondary">Edit</a>
+                    <form method="post" action="{% url 'vehicle_delete' v.id %}" style="display: inline;" onsubmit="return confirm('Delete vehicle {{ v.plate_number|escapejs }}?');">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-sm" style="background: var(--danger); color: white;">Delete</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="card" style="padding: 40px; text-align: center;">
+    <p style="color: var(--ink-500); margin: 0 0 16px 0;">No vehicles registered yet.</p>
+    <a href="{% url 'vehicle_add' %}" class="btn btn-primary">+ Add First Vehicle</a>
+</div>
+{% endif %}
+
+{% endblock %}

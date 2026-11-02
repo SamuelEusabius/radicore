@@ -1,47 +1,90 @@
 {% extends 'base.html' %}
-{% block title %}New Report{% endblock %}
-{% block header_title %}New Report{% endblock %}
-{% block header_sub %}{{ department_name }}{% endblock %}
+{% block title %}Submit Report{% endblock %}
+{% block header_title %}Submit Report to Principal{% endblock %}
 
 {% block content %}
-<div class="card" style="max-width: 720px; margin: 0 auto;">
-  <form method="post" enctype="multipart/form-data">
-    {% csrf_token %}
-    
-    <div style="margin-bottom: 20px;">
-      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Title *</label>
-      <input type="text" name="title" required style="width: 100%; padding: 10px; border: 1px solid var(--border);">
+<style>
+    .form-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        border: 1px solid #e2e8f0;
+        padding: 32px;
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    .form-label {
+        font-size: 13px;
+        font-weight: 600;
+        color: #475569;
+        margin-bottom: 8px;
+        display: block;
+    }
+    .form-label .req { color: #ef4444; }
+    .form-input {
+        width: 100%;
+        padding: 12px 14px;
+        border: 2px solid #cbd5e1;
+        border-radius: 8px;
+        font-family: 'Inter', sans-serif;
+        font-size: 14px;
+        color: #0f172a;
+        background: white;
+        transition: all 0.2s;
+        box-sizing: border-box;
+    }
+    .form-input:focus {
+        border-color: #10b981;
+        outline: none;
+        box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.15);
+    }
+</style>
+
+<div class="form-card">
+    <div style="margin-bottom: 24px; border-bottom: 1px solid #e2e8f0; padding-bottom: 16px;">
+        <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: #0B1B3D;">New Report</h3>
+        <p style="margin: 4px 0 0 0; font-size: 14px; color: #64748b;">This report will be sent directly to the Principal's inbox.</p>
     </div>
-    
-    <div style="margin-bottom: 20px;">
-      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Report Date *</label>
-      <input type="date" name="report_date" required value="{% now 'Y-m-d' %}" style="width: 100%; padding: 10px; border: 1px solid var(--border);">
-    </div>
-    
-    <div style="margin-bottom: 20px;">
-      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Priority</label>
-      <select name="priority" style="width: 100%; padding: 10px; border: 1px solid var(--border);">
-        <option value="low">Low</option>
-        <option value="normal" selected>Normal</option>
-        <option value="high">High</option>
-        <option value="urgent">Urgent</option>
-      </select>
-    </div>
-    
-    <div style="margin-bottom: 20px;">
-      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Description *</label>
-      <textarea name="description" required rows="6" style="width: 100%; padding: 10px; border: 1px solid var(--border);"></textarea>
-    </div>
-    
-    <div style="margin-bottom: 24px;">
-      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Attachment (optional)</label>
-      <input type="file" name="attachment">
-    </div>
-    
-    <div style="display: flex; gap: 12px; justify-content: flex-end;">
-      <a href="{% url 'dashboard_home' %}" class="btn btn-secondary">Cancel</a>
-      <button type="submit" class="btn btn-primary">Submit Report</button>
-    </div>
-  </form>
+
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        
+        <div style="margin-bottom: 20px;">
+            <label class="form-label">Title <span class="req">*</span></label>
+            <input type="text" name="title" required class="form-input" placeholder="e.g. Brake failure on route 4">
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+            <div>
+                <label class="form-label">Report Date <span class="req">*</span></label>
+                <input type="date" name="report_date" required class="form-input" value="{{ today|date:'Y-m-d' }}">
+            </div>
+            <div>
+                <label class="form-label">Priority</label>
+                <select name="priority" class="form-input">
+                    <option value="low">Low</option>
+                    <option value="normal" selected>Normal</option>
+                    <option value="high">High</option>
+                    <option value="urgent">Urgent</option>
+                </select>
+            </div>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <label class="form-label">Description <span class="req">*</span></label>
+            <textarea name="description" required rows="6" class="form-input" placeholder="Provide detailed information about the issue..."></textarea>
+        </div>
+
+        <div style="margin-bottom: 32px;">
+            <label class="form-label">Attachment (Optional)</label>
+            <input type="file" name="attachment" class="form-input" style="padding: 10px;">
+            <p style="font-size: 12px; color: #64748b; margin-top: 6px;">Attach photos, receipts, or any relevant documents.</p>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 12px; border-top: 1px solid #e2e8f0; padding-top: 24px;">
+            <a href="{% url 'driver_dashboard' %}" class="btn btn-secondary" style="padding: 12px 24px;">Cancel</a>
+            <button type="submit" class="btn btn-primary" style="padding: 12px 32px;">Submit Report</button>
+        </div>
+    </form>
 </div>
 {% endblock %}

@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
 from django.db.models import Sum, Q
+from django.views.decorators.http import require_POST
 
 from .models import (
     Trip, TripStudent, Route, Vehicle, FuelLog, PreTripChecklist,
@@ -612,3 +613,308 @@ def driver_fuel_report_pdf(request):
         html_string,
         f'fuel_report_{request.user.id}_{period}.pdf',
     )
+    
+@login_required
+def admin_transport_dashboard(request):
+    """Read-only transport overview for the Principal/Admin."""
+    if request.user.role not in ('principal', 'deputy_admin', 'super_admin'):
+        return redirect('dashboard_home')
+
+    from .models import Vehicle, Route, Trip, FuelLog, DepartmentReport
+    from django.utils import timezone
+    from datetime import timedelta
+    from django.db.models import Sum
+
+    school = request.user.school
+    thirty_days_ago = timezone.now().date() - timedelta(days=30)
+
+    vehicles = Vehicle.objects.filter(school=school, is_active=True)
+    routes = Route.objects.filter(school=school, is_active=True)
+    
+    upcoming_trips = Trip.objects.filter(
+        school=school, date__gte=timezone.now().date()
+    ).order_by('date', 'departure_time')
+
+    fuel_spend = FuelLog.objects.filter(
+        school=school, date__gte=thirty_days_ago
+    ).aggregate(total=Sum('amount_kes'))['total'] or 0
+
+    # Fetch driver reports
+    driver_reports = DepartmentReport.objects.filter(
+        school=school, department='transport'
+    ).order_by('-created_at')[:10]
+
+    return render(request, 'dashboard/departments/transport.html', {
+        'vehicles': vehicles,
+        'vehicle_count': vehicles.count(),
+        'route_count': routes.count(),
+        'upcoming_trips': upcoming_trips,
+        'upcoming_trips_count': upcoming_trips.count(),
+        'fuel_spend_30d': fuel_spend,
+        'driver_reports': driver_reports,
+    })
+    
+    # ============================================================
+# VEHICLE CRUD (Driver)
+# ============================================================
+
+@login_required
+def vehicle_list(request):
+    """Driver sees all vehicles in their school + Add button."""
+    if not _driver_required(request):
+        return redirect('dashboard_home')
+
+    from .models import Vehicle
+
+    school = request.user.school
+    vehicles = Vehicle.objects.filter(school=school).order_by('-is_active', 'plate_number')
+
+    return render(request, 'departments/driver/vehicle_list.html', {
+        'vehicles': vehicles,
+    })
+
+
+@login_required
+def vehicle_form(request, vehicle_id=None):
+    """Create or edit a vehicle."""
+    if not _driver_required(request):
+        return redirect('dashboard_home')
+
+    from .models import Vehicle
+
+    school = request.user.school
+    vehicle = None
+    if vehicle_id:
+        vehicle = get_object_or_404(Vehicle, id=vehicle_id, school=school)
+
+    if request.method == 'POST':
+        plate = request.POST.get('plate_number', '').strip().upper()
+        make = request.POST.get('make', '').strip()
+        model_name = request.POST.get('model', '').strip()
+        capacity = request.POST.get('capacity', '0').strip()
+        is_active = request.POST.get('is_active') == 'on'
+
+        errors = []
+        if not plate:
+            errors.append('Plate number is required.')
+
+        # Check for duplicate plate in same school
+        existing = Vehicle.objects.filter(school=school, plate_number=plate)
+        if vehicle:
+            existing = existing.exclude(id=vehicle.id)
+        if existing.exists():
+            errors.append(f'A vehicle with plate "{plate}" already exists.')
+
+        if errors:
+            for e in errors:
+                messages.error(request, e)
+            return render(request, 'departments/driver/vehicle_form.html', {
+                'vehicle': vehicle,
+                'form_data': request.POST,
+            })
+
+        if vehicle:
+            vehicle.plate_number = plate
+            vehicle.make = make
+            vehicle.model = model_name
+            vehicle.capacity = int(capacity or 40)
+            vehicle.is_active = is_active
+            vehicle.save()
+            messages.success(request, f'Vehicle {plate} updated.')
+        else:
+            Vehicle.objects.create(
+                school=school,
+                plate_number=plate,
+                make=make,
+                model=model_name,
+                capacity=int(capacity or 40),
+                is_active=is_active,
+            )
+            messages.success(request, f'Vehicle {plate} added.')
+
+        return redirect('vehicle_list')
+
+    return render(request, 'departments/driver/vehicle_form.html', {
+        'vehicle': vehicle,
+    })
+
+
+@login_required
+@require_POST
+def vehicle_delete(request, vehicle_id):
+    """Delete a vehicle if it has no scheduled trips."""
+    if not _driver_required(request):
+        return redirect('dashboard_home')
+
+    from .models import Vehicle, Trip
+
+    school = request.user.school
+    vehicle = get_object_or_404(Vehicle, id=vehicle_id, school=school)
+
+    active_trips = Trip.objects.filter(
+        vehicle=vehicle,
+        status__in=['scheduled', 'in_progress']
+    ).count()
+
+    if active_trips > 0:
+        messages.error(request, f'Cannot delete {vehicle.plate_number}: it has {active_trips} active trip(s).')
+        return redirect('vehicle_list')
+
+    plate = vehicle.plate_number
+    vehicle.delete()
+    messages.success(request, f'Vehicle {plate} deleted.')
+    return redirect('vehicle_list')
+
+
+# ============================================================
+# TRIP CRUD (Driver)
+# ============================================================
+
+@login_required
+def trip_list(request):
+    """Driver sees their assigned trips."""
+    if not _driver_required(request):
+        return redirect('dashboard_home')
+
+    from .models import Trip
+
+    school = request.user.school
+    trips = (
+        Trip.objects
+        .filter(school=school, driver=request.user)
+        .select_related('route', 'vehicle')
+        .order_by('-date', '-departure_time')
+    )
+
+    return render(request, 'departments/driver/trip_list.html', {
+        'trips': trips,
+    })
+
+
+@login_required
+def trip_form(request, trip_id=None):
+    """Create or edit a trip."""
+    if not _driver_required(request):
+        return redirect('dashboard_home')
+
+    from .models import Trip, Route, Vehicle
+    from django.utils import timezone
+
+    school = request.user.school
+    trip = None
+    if trip_id:
+        trip = get_object_or_404(Trip, id=trip_id, school=school, driver=request.user)
+
+    routes = Route.objects.filter(school=school, is_active=True).order_by('name')
+    vehicles = Vehicle.objects.filter(school=school, is_active=True).order_by('plate_number')
+
+    if request.method == 'POST':
+        route_id = request.POST.get('route')
+        vehicle_id = request.POST.get('vehicle') or None
+        date = request.POST.get('date')
+        direction = request.POST.get('direction')
+        departure_time = request.POST.get('departure_time') or None
+        arrival_time = request.POST.get('arrival_time') or None
+        notes = request.POST.get('notes', '').strip()
+
+        errors = []
+        if not route_id:
+            errors.append('Route is required.')
+        if not date:
+            errors.append('Date is required.')
+        if not direction:
+            errors.append('Direction is required.')
+
+        if errors:
+            for e in errors:
+                messages.error(request, e)
+            return render(request, 'departments/driver/trip_form.html', {
+                'trip': trip,
+                'routes': routes,
+                'vehicles': vehicles,
+                'form_data': request.POST,
+            })
+
+        route = get_object_or_404(Route, id=route_id, school=school)
+        vehicle = Vehicle.objects.filter(id=vehicle_id, school=school).first() if vehicle_id else None
+
+        if trip:
+            trip.route = route
+            trip.vehicle = vehicle
+            trip.date = date
+            trip.direction = direction
+            trip.departure_time = departure_time
+            trip.arrival_time = arrival_time
+            trip.notes = notes
+            trip.save()
+            messages.success(request, 'Trip updated.')
+            return redirect('trip_detail', trip_id=trip.id)
+        else:
+            trip = Trip.objects.create(
+                school=school,
+                route=route,
+                vehicle=vehicle,
+                driver=request.user,
+                date=date,
+                direction=direction,
+                departure_time=departure_time,
+                arrival_time=arrival_time,
+                notes=notes,
+                status='scheduled',
+            )
+            messages.success(request, 'Trip scheduled. Now add students to the manifest.')
+            return redirect('trip_assign_students', trip_id=trip.id)
+
+    return render(request, 'departments/driver/trip_form.html', {
+        'trip': trip,
+        'routes': routes,
+        'vehicles': vehicles,
+    })
+
+
+@login_required
+def trip_assign_students(request, trip_id):
+    """Assign students to a trip (searchable + filterable)."""
+    if not _driver_required(request):
+        return redirect('dashboard_home')
+
+    from .models import Trip, TripStudent
+    from apps.students.models import Student
+    from apps.academics.models import ClassLevel
+
+    school = request.user.school
+    trip = get_object_or_404(Trip, id=trip_id, school=school, driver=request.user)
+
+    # Only boarding students typically take transport
+    all_students = Student.objects.filter(school=school, is_active=True).order_by('first_name', 'last_name')
+    classes = ClassLevel.objects.filter(school=school).order_by('order', 'name')
+
+    # Already on this trip
+    assigned_ids = set(
+        TripStudent.objects.filter(trip=trip).values_list('student_id', flat=True)
+    )
+
+    if request.method == 'POST':
+        selected_ids = request.POST.getlist('students')
+        selected_ids = set(int(sid) for sid in selected_ids if str(sid).isdigit())
+
+        # Remove anyone unchecked
+        TripStudent.objects.filter(trip=trip).exclude(student_id__in=selected_ids).delete()
+
+        # Add new ones
+        existing_assigned = set(
+            TripStudent.objects.filter(trip=trip).values_list('student_id', flat=True)
+        )
+        for sid in selected_ids - existing_assigned:
+            if all_students.filter(id=sid).exists():
+                TripStudent.objects.create(trip=trip, student_id=sid)
+
+        messages.success(request, f'Updated manifest for {trip.route.name} on {trip.date}.')
+        return redirect('trip_detail', trip_id=trip.id)
+
+    return render(request, 'departments/driver/trip_assign_students.html', {
+        'trip': trip,
+        'students': all_students,
+        'classes': classes,
+        'assigned_ids': assigned_ids,
+    })

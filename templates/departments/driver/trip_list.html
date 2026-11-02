@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+{% block title %}My Trips{% endblock %}
+{% block header_title %}My Trips{% endblock %}
+
+{% block content %}
+
+<div class="page-header mb-6" style="display: flex; justify-content: space-between; align-items: center;">
+    <div>
+        <h1 class="page-title">Scheduled Trips</h1>
+        <p class="page-subtitle">Manage your routes, vehicles, and student manifests.</p>
+    </div>
+    <div style="display: flex; gap: 8px;">
+        <a href="{% url 'vehicle_list' %}" class="btn btn-secondary">Vehicles</a>
+        <a href="{% url 'trip_create' %}" class="btn btn-primary">+ Schedule Trip</a>
+    </div>
+</div>
+
+{% if messages %}
+    {% for m in messages %}
+        <div class="card mb-4" style="border-left: 4px solid {% if m.tags == 'error' %}var(--danger){% else %}var(--success){% endif %}; padding: 12px 16px;">
+            <p style="margin: 0;">{{ m }}</p>
+        </div>
+    {% endfor %}
+{% endif %}
+
+{% if trips %}
+<div class="card" style="padding: 0; overflow: hidden;">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Route</th>
+                <th>Direction</th>
+                <th>Vehicle</th>
+                <th>Students</th>
+                <th>Status</th>
+                <th style="text-align: right;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for t in trips %}
+            <tr>
+                <td>
+                    <strong>{{ t.date|date:"d M Y" }}</strong><br>
+                    <span style="font-size: 12px; color: var(--ink-500);">{{ t.departure_time|time:"H:i"|default:"—" }}</span>
+                </td>
+                <td>{{ t.route.name }}</td>
+                <td><span class="badge badge-info">{{ t.get_direction_display }}</span></td>
+                <td>{{ t.vehicle.plate_number|default:"—" }}</td>
+                <td><strong>{{ t.student_count }}</strong> assigned</td>
+                <td>
+                    {% if t.status == 'scheduled' %}<span class="badge badge-warning">Scheduled</span>
+                    {% elif t.status == 'in_progress' %}<span class="badge badge-primary">In Progress</span>
+                    {% elif t.status == 'completed' %}<span class="badge badge-success">Completed</span>
+                    {% else %}<span class="badge badge-danger">Cancelled</span>{% endif %}
+                </td>
+                <td style="text-align: right; white-space: nowrap;">
+                    {% if t.status == 'scheduled' %}
+                        <a href="{% url 'trip_assign_students' t.id %}" class="btn btn-sm btn-secondary">Assign Students</a>
+                        <a href="{% url 'trip_detail' t.id %}" class="btn btn-sm btn-primary">Start Trip</a>
+                        <a href="{% url 'trip_edit' t.id %}" class="btn btn-sm btn-secondary">Edit</a>
+                    {% else %}
+                        <a href="{% url 'trip_detail' t.id %}" class="btn btn-sm btn-secondary">View</a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="card" style="padding: 40px; text-align: center;">
+    <p style="color: var(--ink-500); margin: 0 0 16px 0;">You have no scheduled trips.</p>
+    <a href="{% url 'trip_create' %}" class="btn btn-primary">+ Schedule First Trip</a>
+</div>
+{% endif %}
+
+{% endblock %}

@@ -1,277 +1,93 @@
 {% extends 'base.html' %}
+{% load static %}
 {% block title %}Transport{% endblock %}
-{% block header_title %}Transport Department{% endblock %}
-{% block header_sub %}{{ current_school.name }}{% endblock %}
+{% block header_title %}Transport Overview{% endblock %}
 
 {% block content %}
 
-<div class="page-header">
-  <div class="page-header-info">
-    <h1 class="page-title">Transport</h1>
-    <p class="page-subtitle">Vehicles, routes, trips, and fuel logs.</p>
-  </div>
-  <div style="display: flex; gap: 8px;">
-    <a href="{% url 'transport_fuel_add' %}" class="btn btn-secondary">+ Log Fuel</a>
-    <a href="{% url 'transport_trip_add' %}" class="btn btn-primary">+ Schedule Trip</a>
-    <a href="{% url 'departments_hub' %}" class="btn btn-secondary">← Departments</a>
-  </div>
-</div>
-
-<!-- ============================================ -->
-<!-- KPI ROW                                       -->
-<!-- ============================================ -->
-<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-  <div class="card">
-    <div class="stat-label">Vehicles</div>
-    <div class="stat-value">{{ vehicle_count }}</div>
-    <div class="stat-meta">Active fleet</div>
-  </div>
-  <div class="card">
-    <div class="stat-label">Routes</div>
-    <div class="stat-value">{{ route_count }}</div>
-    <div class="stat-meta">Configured routes</div>
-  </div>
-  <div class="card">
-    <div class="stat-label">Upcoming Trips</div>
-    <div class="stat-value">{{ trip_count }}</div>
-    <div class="stat-meta">Next 30 days</div>
-  </div>
-  <div class="card">
-    <div class="stat-label">Fuel (30 days)</div>
-    <div class="stat-value" style="font-size: var(--text-md);">KES {{ fuel_total_30d|floatformat:0 }}</div>
-    <div class="stat-meta">Total spent</div>
-  </div>
-</div>
-
-<!-- ============================================ -->
-<!-- VEHICLES                                      -->
-<!-- ============================================ -->
-<div class="card mb-6">
-  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-    <h3 style="margin: 0; font-family: var(--font-heading);">Vehicles</h3>
-    <a href="{% url 'transport_vehicle_add' %}" class="btn btn-sm btn-primary">+ Add Vehicle</a>
-  </div>
-
-  {% if vehicles %}
-  <div style="overflow-x: auto;">
-    <table class="table">
-      <thead>
-        <tr>
-          <th>Plate</th>
-          <th>Make / Model</th>
-          <th>Capacity</th>
-          <th>Status</th>
-          <th style="text-align: right;">Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for v in vehicles %}
-        <tr>
-          <td><strong>{{ v.plate_number }}</strong></td>
-          <td>{{ v.make|default:"—" }} {{ v.model|default:"" }}</td>
-          <td>{{ v.capacity }} seats</td>
-          <td>
-            {% if v.is_active %}
-              <span class="badge badge-success">Active</span>
-            {% else %}
-              <span class="badge badge-gray">Inactive</span>
-            {% endif %}
-          </td>
-          <td style="text-align: right;">
-            <a href="{% url 'transport_vehicle_edit' v.id %}" class="btn btn-sm btn-secondary">Edit</a>
-            <a href="{% url 'transport_vehicle_delete' v.id %}" class="btn btn-sm" style="background: #fee2e2; color: #991b1b;">Delete</a>
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-  {% else %}
-  <div class="pro-empty" style="border: none; padding: 40px;">
-    <p style="color: var(--ink-500);">No vehicles yet.</p>
-    <a href="{% url 'transport_vehicle_add' %}" class="btn btn-primary" style="margin-top: 12px;">+ Add your first vehicle</a>
-  </div>
-  {% endif %}
-</div>
-
-<!-- ============================================ -->
-<!-- ROUTES                                        -->
-<!-- ============================================ -->
-<div class="card mb-6">
-  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-    <h3 style="margin: 0; font-family: var(--font-heading);">Routes</h3>
-    <a href="{% url 'transport_route_add' %}" class="btn btn-sm btn-primary">+ Add Route</a>
-  </div>
-
-  {% if routes %}
-  <div style="overflow-x: auto;">
-    <table class="table">
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Morning</th>
-          <th>Evening</th>
-          <th>Status</th>
-          <th style="text-align: right;">Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for r in routes %}
-        <tr>
-          <td><strong>{{ r.name }}</strong></td>
-          <td>{{ r.morning_departure|default:"—" }}</td>
-          <td>{{ r.evening_departure|default:"—" }}</td>
-          <td>
-            {% if r.is_active %}
-              <span class="badge badge-success">Active</span>
-            {% else %}
-              <span class="badge badge-gray">Inactive</span>
-            {% endif %}
-          </td>
-          <td style="text-align: right;">
-            <a href="{% url 'transport_route_edit' r.id %}" class="btn btn-sm btn-secondary">Edit</a>
-            <a href="{% url 'transport_route_delete' r.id %}" class="btn btn-sm" style="background: #fee2e2; color: #991b1b;">Delete</a>
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-  {% else %}
-  <div class="pro-empty" style="border: none; padding: 40px;">
-    <p style="color: var(--ink-500);">No routes yet.</p>
-    <a href="{% url 'transport_route_add' %}" class="btn btn-primary" style="margin-top: 12px;">+ Add your first route</a>
-  </div>
-  {% endif %}
-</div>
-
-<!-- ============================================ -->
-<!-- TRIPS (Today & Upcoming)                      -->
-<!-- ============================================ -->
-<div class="card mb-6">
-  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-    <div>
-      <h3 style="margin: 0; font-family: var(--font-heading);">Trips (Today & Upcoming)</h3>
-      <p style="margin: 4px 0 0; font-size: var(--text-xs); color: var(--ink-500);">
-        Next 30 days. Click <strong>Students</strong> to assign who travels on each trip.
-      </p>
+<!-- STATS ROW -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+    <div class="card" style="padding: 20px;">
+        <div class="stat-label">Active Fleet</div>
+        <div class="stat-value">{{ vehicle_count|default:"0" }}</div>
+        <div class="stat-meta">Vehicles registered</div>
     </div>
-    <a href="{% url 'transport_trip_add' %}" class="btn btn-sm btn-primary">+ Schedule Trip</a>
-  </div>
-
-  {% if today_trips %}
-  <div style="overflow-x: auto;">
-    <table class="table">
-      <thead>
-        <tr>
-          <th>Date</th>
-          <th>Direction</th>
-          <th>Route</th>
-          <th>Vehicle</th>
-          <th>Driver</th>
-          <th>Students</th>
-          <th>Status</th>
-          <th style="text-align: right;">Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for t in today_trips %}
-        <tr>
-          <td>
-            <strong>{{ t.date|date:"j M" }}</strong>
-            {% if t.date == today %}
-              <span class="badge badge-primary" style="font-size: 9px;">TODAY</span>
-            {% endif %}
-          </td>
-          <td>{{ t.get_direction_display }}</td>
-          <td>{{ t.route.name }}</td>
-          <td>{{ t.vehicle.plate_number|default:"—" }}</td>
-          <td>
-            {% if t.driver %}
-              {{ t.driver.get_full_name|default:t.driver.email|truncatechars:22 }}
-            {% else %}
-              <span style="color: var(--ink-400);">—</span>
-            {% endif %}
-          </td>
-          <td>
-            <span class="badge badge-info">{{ t.student_count }}</span>
-          </td>
-          <td>
-            <span class="badge badge-{% if t.status == 'in_progress' %}warning{% elif t.status == 'completed' %}success{% elif t.status == 'cancelled' %}danger{% else %}info{% endif %}">
-              {{ t.get_status_display }}
-            </span>
-          </td>
-          <td style="text-align: right; white-space: nowrap;">
-            <a href="{% url 'transport_trip_students' t.id %}" class="btn btn-sm btn-primary">👥 Students</a>
-            <a href="{% url 'transport_trip_edit' t.id %}" class="btn btn-sm btn-secondary">Edit</a>
-            <a href="{% url 'transport_trip_delete' t.id %}" class="btn btn-sm" style="background: #fee2e2; color: #991b1b;">Delete</a>
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-  {% else %}
-  <div class="pro-empty" style="border: none; padding: 40px;">
-    <p style="color: var(--ink-500);">No trips scheduled in the next 30 days.</p>
-    <a href="{% url 'transport_trip_add' %}" class="btn btn-primary" style="margin-top: 12px;">+ Schedule a trip</a>
-  </div>
-  {% endif %}
+    <div class="card" style="padding: 20px;">
+        <div class="stat-label">Configured Routes</div>
+        <div class="stat-value">{{ route_count|default:"0" }}</div>
+        <div class="stat-meta">Active routes</div>
+    </div>
+    <div class="card" style="padding: 20px;">
+        <div class="stat-label">Upcoming Trips</div>
+        <div class="stat-value">{{ upcoming_trips_count|default:"0" }}</div>
+        <div class="stat-meta">Next 30 days</div>
+    </div>
+    <div class="card" style="padding: 20px;">
+        <div class="stat-label">Fuel Spend (30 Days)</div>
+        <div class="stat-value" style="color: var(--danger);">KES {{ fuel_spend_30d|default:"0"|floatformat:0 }}</div>
+        <div class="stat-meta">Total cost</div>
+    </div>
 </div>
 
-<!-- ============================================ -->
-<!-- RECENT FUEL LOGS                              -->
-<!-- ============================================ -->
-<div class="card">
-  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-    <h3 style="margin: 0; font-family: var(--font-heading);">Recent Fuel Logs</h3>
-    <a href="{% url 'transport_fuel_add' %}" class="btn btn-sm btn-primary">+ Log Fuel</a>
-  </div>
-
-  {% if recent_fuel %}
-  <div style="overflow-x: auto;">
+<!-- FLEET STATUS (Read Only) -->
+<div class="card mb-6" style="padding: 0; overflow: hidden;">
+    <div style="padding: 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+        <h3 style="margin: 0; font-size: 16px; font-weight: 600;">Fleet Overview</h3>
+        <!-- No Add Button. Principal cannot add vehicles. -->
+    </div>
     <table class="table">
-      <thead>
-        <tr>
-          <th>Date</th>
-          <th>Vehicle</th>
-          <th>Driver</th>
-          <th>Amount</th>
-          <th>Payment</th>
-          <th>Station</th>
-          <th style="text-align: right;">Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for f in recent_fuel %}
-        <tr>
-          <td>{{ f.date|date:"j M Y" }}</td>
-          <td>{{ f.vehicle.plate_number }}</td>
-          <td>
-            {% if f.driver %}
-              {{ f.driver.get_full_name|default:f.driver.email|truncatechars:20 }}
-            {% else %}
-              <span style="color: var(--ink-400);">—</span>
-            {% endif %}
-          </td>
-          <td><strong>KES {{ f.amount_kes|floatformat:0 }}</strong></td>
-          <td><span class="badge badge-info">{{ f.get_payment_method_display }}</span></td>
-          <td>{{ f.station_name|default:"—" }}</td>
-          <td style="text-align: right; white-space: nowrap;">
-            <a href="{% url 'transport_fuel_edit' f.id %}" class="btn btn-sm btn-secondary">Edit</a>
-            <a href="{% url 'transport_fuel_delete' f.id %}" class="btn btn-sm" style="background: #fee2e2; color: #991b1b;">Delete</a>
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
+        <thead>
+            <tr>
+                <th>Vehicle</th>
+                <th>Plate Number</th>
+                <th>Capacity</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for v in vehicles %}
+            <tr>
+                <td><strong>{{ v.make }} {{ v.model }}</strong></td>
+                <td><span class="badge badge-info">{{ v.plate_number }}</span></td>
+                <td>{{ v.capacity }} seats</td>
+                <td><span class="badge badge-success">Active</span></td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4" style="text-align: center; padding: 20px;">No vehicles registered yet.</td></tr>
+            {% endfor %}
+        </tbody>
     </table>
-  </div>
-  {% else %}
-  <div class="pro-empty" style="border: none; padding: 40px;">
-    <p style="color: var(--ink-500);">No fuel logs yet.</p>
-    <a href="{% url 'transport_fuel_add' %}" class="btn btn-primary" style="margin-top: 12px;">+ Log your first fuel entry</a>
-  </div>
-  {% endif %}
+</div>
+
+<!-- RECENT DRIVER REPORTS -->
+<div class="card" style="padding: 0; overflow: hidden;">
+    <div style="padding: 20px; border-bottom: 1px solid var(--border);">
+        <h3 style="margin: 0; font-size: 16px; font-weight: 600;">Recent Driver Reports</h3>
+    </div>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Driver</th>
+                <th>Subject</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for report in driver_reports %}
+            <tr>
+                <td>{{ report.created_at|date:"d M Y" }}</td>
+                <td>{{ report.submitted_by.get_full_name }}</td>
+                <td>{{ report.title }}</td>
+                <td>
+                    <a href="{% url 'report_pdf' report.id %}" target="_blank" class="btn btn-sm btn-secondary">View PDF</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4" style="text-align: center; padding: 20px;">No reports submitted yet.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
 </div>
 
 {% endblock %}
