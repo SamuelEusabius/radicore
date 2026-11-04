@@ -6,60 +6,103 @@
 {% block header_sub %}Organize inventory items into categories{% endblock %}
 
 {% block content %}
+<style>
+    .card { background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
+    .form-label { font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 8px; display: block; text-transform: uppercase; letter-spacing: 0.5px; }
+    .form-input { width: 100%; padding: 12px 14px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; color: #0f172a; background: white; transition: all 0.2s; box-sizing: border-box; }
+    .form-input:focus { border-color: #10b981; outline: none; box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15); }
+    
+    .data-table { width: 100%; border-collapse: collapse; text-align: left; }
+    .data-table th { padding: 16px; font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #e2e8f0; background: #f8fafc; }
+    .data-table td { padding: 16px; border-bottom: 1px solid #e2e8f0; font-size: 14px; color: #0f172a; vertical-align: middle; }
+    .data-table tbody tr:hover { background: #f8fafc; }
+    .data-table tbody tr:last-child td { border-bottom: none; }
+    
+    .badge { display: inline-flex; align-items: center; padding: 4px 12px; border-radius: 9999px; font-size: 12px; font-weight: 600; text-decoration: none; transition: background 0.2s; }
+    .badge-primary { background: #ecfdf5; color: #059669; }
+    .badge-primary:hover { background: #d1fae5; }
+    .badge-empty { background: #f1f5f9; color: #64748b; }
+    .badge-empty:hover { background: #e2e8f0; }
+    
+    /* Modern Top Button */
+    .btn-top { background: #10b981; color: white; padding: 10px 16px; border-radius: 8px; font-weight: 600; font-size: 14px; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; border: none; cursor: pointer; transition: background 0.2s; }
+    .btn-top:hover { background: #059669; }
+    
+    .btn-submit { background: #10b981; color: white; padding: 12px 16px; border-radius: 8px; font-weight: 600; font-size: 14px; text-decoration: none; display: flex; justify-content: center; align-items: center; gap: 8px; border: none; cursor: pointer; transition: background 0.2s; width: 100%; }
+    .btn-submit:hover { background: #059669; }
+</style>
 
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+<!-- Top Header with Action Button -->
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+    <div>
+        <h1 style="margin: 0; font-size: 24px; font-weight: 700; color: #0f172a;">Item Categories</h1>
+        <p style="margin: 4px 0 0 0; font-size: 14px; color: #64748b;">Organize inventory items into categories</p>
+    </div>
+    <button type="button" class="btn-top" onclick="document.getElementById('name').focus()">
+        {% include 'partials/icons.html' with name="plus" size=16 %} Add Category
+    </button>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr; gap: 24px;" class="lg:grid lg:grid-cols-3">
 
   <!-- ============ ADD CATEGORY FORM ============ -->
-  <div class="lg:col-span-1">
-    <div class="card">
-      <h3 class="card-title mb-4">Add Category</h3>
-      <form method="post">
+  <div style="grid-column: span 1;">
+    <div class="card" style="padding: 24px;">
+      <h3 style="margin: 0 0 20px 0; font-size: 16px; font-weight: 700; color: #0f172a;">New Category</h3>
+      
+      <form method="post" id="categoryForm">
         {% csrf_token %}
-        <div class="mb-4">
-          <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
-            Category Name <span style="color: var(--danger);">*</span>
+        
+        <div style="margin-bottom: 16px;">
+          <label class="form-label">
+            Category Name <span style="color: #ef4444;">*</span>
           </label>
-          <input type="text" name="name" required class="input w-full" placeholder="e.g. Stationery">
+          <input type="text" name="name" id="name" required class="form-input" placeholder="e.g. Stationery">
         </div>
-        <div class="mb-4">
-          <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
+        
+        <div style="margin-bottom: 24px;">
+          <label class="form-label">
             Description
           </label>
-          <textarea name="description" rows="2" class="textarea w-full" placeholder="Optional"></textarea>
+          <textarea name="description" rows="3" class="form-input" placeholder="Optional details about this category..."></textarea>
         </div>
-        <button type="submit" class="btn btn-primary w-full">
-          {% include 'partials/icons.html' with name="plus" size=16 %}
-          Add Category
+        
+        <button type="submit" class="btn-submit">
+          {% include 'partials/icons.html' with name="save" size=16 %}
+          Save Category
         </button>
       </form>
     </div>
   </div>
 
   <!-- ============ CATEGORIES TABLE ============ -->
-  <div class="lg:col-span-2">
+  <div style="grid-column: span 2;">
     {% if categories %}
-    <div class="card" style="padding: 0; overflow: hidden;">
-      <div class="table-wrap">
-        <table class="table">
+    <div class="card" style="margin-bottom: 0; overflow: hidden;">
+      <div style="overflow-x: auto;">
+        <table class="data-table">
           <thead>
             <tr>
-              <th>Category</th>
-              <th>Description</th>
-              <th style="width: 120px; text-align: center;">Items</th>
+              <th>CATEGORY NAME</th>
+              <th>DESCRIPTION</th>
+              <th style="width: 140px; text-align: center;">ITEMS</th>
             </tr>
           </thead>
           <tbody>
             {% for c in categories %}
             <tr>
-              <td style="font-weight: 600; color: var(--ink-900);">{{ c.name }}</td>
-              <td style="color: var(--ink-600); font-size: var(--text-sm);">
-                {{ c.description|default:"—" }}
-              </td>
+              <td style="font-weight: 600; color: #0f172a;">{{ c.name }}</td>
+              <td style="color: #64748b;">{{ c.description|default:"—" }}</td>
               <td style="text-align: center;">
-                <a href="{% url 'store_items_list' %}?category={{ c.id }}"
-                   class="badge badge-primary" style="text-decoration: none;">
+                {% if c.item_count > 0 %}
+                <a href="{% url 'store_items_list' %}?category={{ c.id }}" class="badge badge-primary">
                   {{ c.item_count }} item{{ c.item_count|pluralize }}
                 </a>
+                {% else %}
+                <a href="{% url 'store_items_list' %}?category={{ c.id }}" class="badge badge-empty">
+                  0 items
+                </a>
+                {% endif %}
               </td>
             </tr>
             {% endfor %}
@@ -68,14 +111,28 @@
       </div>
     </div>
     {% else %}
-    <div class="card" style="padding: var(--s-8); text-align: center;">
-      <p class="text-sm" style="color: var(--ink-500); margin: 0;">
-        No categories yet. Add your first one →
-      </p>
+    <div class="card" style="padding: 60px 20px; text-align: center;">
+      <div style="color: #94a3b8; margin-bottom: 12px;">
+        {% include 'partials/icons.html' with name="grid" size=48 %}
+      </div>
+      <h3 style="margin: 0 0 4px 0; color: #0f172a; font-size: 16px; font-weight: 600;">No categories yet</h3>
+      <p style="margin: 0; color: #64748b; font-size: 14px;">Add your first category using the form on the left.</p>
     </div>
     {% endif %}
   </div>
 
 </div>
+
+<script>
+  // Optional: If you click the top "Add Category" button, it focuses the input.
+  // This makes it feel like it opens a modal or acts on the form instantly.
+  document.addEventListener("DOMContentLoaded", function() {
+      // If there's an error message or the user just wants to add, auto-focus the name field
+      const nameInput = document.getElementById('name');
+      if (nameInput) {
+          nameInput.focus();
+      }
+  });
+</script>
 
 {% endblock %}

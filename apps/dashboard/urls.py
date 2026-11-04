@@ -188,27 +188,28 @@ urlpatterns = [
      path('subscriptions/initiate-payment/<int:school_id>/', views.subscription.initiate_subscription_payment, name='initiate_subscription_payment'),
      path('sms/settings/', views.communication.school_sms_settings, name='school_sms_settings'),
      path('accountant/fee-matrix/', views.finance.fee_structure_matrix, name='fee_structure_matrix'),
-    path('accountant/fee-structures/class/<str:class_name>/pdf/', views.finance.fee_structure_class_pdf, name='fee_structure_class_pdf'),
-    path('schools/<int:school_id>/modules/', views.school_modules_manage, name='school_modules_manage'),
-    path('schools/<int:school_id>/details-pdf/', views.admin_schools.school_details_pdf, name='school_details_pdf'),
+     path('accountant/fee-structures/class/<str:class_name>/pdf/', views.finance.fee_structure_class_pdf, name='fee_structure_class_pdf'),
+     path('schools/<int:school_id>/modules/', views.school_modules_manage, name='school_modules_manage'),
+     path('schools/<int:school_id>/details-pdf/', views.admin_schools.school_details_pdf, name='school_details_pdf'),
+     path('students/bulk-upload/', views.students.bulk_upload_students, name='bulk_upload_students'),
     
-    path('teacher/my-class/rankings/download/',
+     path('teacher/my-class/rankings/download/',
          views.class_teacher_rankings_download,
          name='class_teacher_rankings_download'),
          
-    path('accountant/student/<int:student_id>/invoice/',
+     path('accountant/student/<int:student_id>/invoice/',
          views.invoice_student_quick,
          name='invoice_student_quick'),
          
-    path('academics/subjects/<int:subject_id>/delete/',
+     path('academics/subjects/<int:subject_id>/delete/',
          views.subject_delete,
          name='subject_delete'),
          
-    path('subscriptions/manage/',
+      path('subscriptions/manage/',
          views.subscription_admin_picker,
          name='subscription_admin_picker'),
          
-    path('subscriptions/',
+     path('subscriptions/',
          views.subscription_plans,
          name='subscription_plans'),
          

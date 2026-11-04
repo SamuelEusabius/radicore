@@ -578,11 +578,16 @@ def store_categories(request):
     if request.method == 'POST':
         name = request.POST.get('name', '').strip()
         description = request.POST.get('description', '').strip()
+        
         if not name:
             messages.error(request, 'Category name is required.')
+        elif ItemCategory.objects.filter(school=school, name__iexact=name).exists():
+            # Check for duplicates before saving to prevent IntegrityError
+            messages.error(request, f'Category "{name}" already exists.')
         else:
             ItemCategory.objects.create(school=school, name=name, description=description)
             messages.success(request, f'Category "{name}" added.')
+            return redirect('store_categories')
 
     context = {
         'school': school,

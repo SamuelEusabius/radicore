@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block title %}Bulk Upload Students{% endblock %}
+{% block header_title %}Bulk Upload Students{% endblock %}
+
+{% block content %}
+<style>
+    .card { background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; padding: 32px; max-width: 700px; margin: 0 auto; }
+    .form-input { width: 100%; padding: 12px 14px; border: 2px dashed #cbd5e1; border-radius: 8px; font-size: 14px; color: #0f172a; background: #f8fafc; cursor: pointer; transition: all 0.2s; }
+    .form-input:hover { border-color: #10b981; background: #ecfdf5; }
+    .btn-primary { background: #10b981; color: white; padding: 12px 24px; border-radius: 8px; font-weight: 600; font-size: 14px; text-decoration: none; display: flex; justify-content: center; align-items: center; gap: 8px; border: none; cursor: pointer; width: 100%; margin-top: 16px; }
+    .btn-primary:hover { background: #059669; }
+</style>
+
+<div style="margin-bottom: 24px;">
+    <a href="{% url 'students_list' %}" style="color: #64748b; text-decoration: none; font-size: 14px; font-weight: 600;">&larr; Back to Students</a>
+</div>
+
+<div class="card">
+    <h3 style="margin: 0 0 16px 0; font-size: 20px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+        {% include 'partials/icons.html' with name="upload" size=24 %} Upload CSV File
+    </h3>
+    
+    <div style="background: #eff6ff; border-left: 4px solid #3b82f6; padding: 16px; margin-bottom: 24px; border-radius: 0 8px 8px 0;">
+        <p style="margin: 0; font-size: 14px; color: #1e3a8a;">
+            <strong>Instructions:</strong> Save your Excel file as a <strong>CSV (Comma delimited)</strong>. Your file must have the following headers in the first row:
+            <br><br>
+            <code style="background: white; padding: 4px 8px; border-radius: 4px; font-size: 12px;">admission_number, first_name, last_name, gender, class_level, guardian_name, guardian_phone</code>
+        </p>
+    </div>
+
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        
+        <div style="margin-bottom: 24px;">
+            <label class="form-label">Select CSV File <span style="color: #ef4444;">*</span></label>
+            <input type="file" name="csv_file" accept=".csv" required class="form-input">
+        </div>
+
+        <button type="submit" class="btn-primary">
+            {% include 'partials/icons.html' with name="upload" size=16 %}
+            Upload & Import Students
+        </button>
+    </form>
+</div>
+{% endblock %}

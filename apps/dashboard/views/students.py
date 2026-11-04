@@ -10,6 +10,11 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import HttpResponse
 from django.db.models import Q, Count, Sum, Avg
+import csv
+from django.db import transaction
+from apps.schools.models import School
+from apps.students.models import Student
+from apps.academics.models import ClassLevel
 
 from apps.accounts.decorators import (
     role_required, school_staff_only, teacher_only,
@@ -758,3 +763,75 @@ def link_parent_to_student(request, student_id):
         'parents': existing_parents,
         'parent_data': parent_data,
     })
+    
+@login_required
+def bulk_upload_students(request):
+    """Bulk upload students via CSV."""
+    if request.user.role not in ('principal', 'super_admin', 'deputy_admin'):
+        return redirect('dashboard_home')
+
+    school = request.user.school
+
+    if request.method == 'POST':
+        csv_file = request.FILES.get('csv_file')
+        if not csv_file or not csv_file.name.endswith('.csv'):
+            messages.error(request, 'Please upload a valid .csv file.')
+            return redirect('bulk_upload_students')
+
+        try:
+            decoded_file = csv_file.read().decode('utf-8').splitlines()
+            reader = csv.DictReader(decoded_file)
+            
+            success_count = 0
+            errors = []
+
+            with transaction.atomic():
+                for row_num, row in enumerate(reader, start=2):
+                    # Required fields
+                    adm_num = row.get('admission_number', '').strip()
+                    first_name = row.get('first_name', '').strip()
+                    last_name = row.get('last_name', '').strip()
+                    gender = row.get('gender', '').strip().upper()
+                    class_level = row.get('class_level', '').strip()
+
+                    if not adm_num or not first_name or not last_name:
+                        errors.append(f"Row {row_num}: Missing admission_number, first_name, or last_name.")
+                        continue
+
+                    if Student.objects.filter(school=school, admission_number=adm_num).exists():
+                        errors.append(f"Row {row_num}: Student with ADM {adm_num} already exists.")
+                        continue
+
+                    # Create student
+                    Student.objects.create(
+                        school=school,
+                        admission_number=adm_num,
+                        first_name=first_name,
+                        middle_name=row.get('middle_name', '').strip(),
+                        last_name=last_name,
+                        gender=gender if gender in ['M', 'F'] else 'M',
+                        date_of_birth=row.get('date_of_birth') or None,
+                        class_level=class_level,
+                        cbc_level=row.get('cbc_level', 'JSS').strip(),
+                        guardian_name=row.get('guardian_name', '').strip(),
+                        guardian_phone=row.get('guardian_phone', '').strip(),
+                        guardian_relationship=row.get('guardian_relationship', 'Parent').strip(),
+                        is_active=True
+                    )
+                    success_count += 1
+
+            if success_count > 0:
+                messages.success(request, f'Successfully imported {success_count} students.')
+            if errors:
+                for err in errors[:5]: # Show first 5 errors
+                    messages.warning(request, err)
+                if len(errors) > 5:
+                    messages.warning(request, f"...and {len(errors) - 5} more errors.")
+            
+            return redirect('students_list')
+
+        except Exception as e:
+            messages.error(request, f'Error parsing file: {e}')
+            return redirect('bulk_upload_students')
+
+    return render(request, 'dashboard/students/bulk_upload.html')
