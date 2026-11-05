@@ -1,6 +1,9 @@
 from django.db import models
 from django.utils.text import slugify
+from django.utils import timezone
 from apps.schools.managers import TenantManager
+import random
+import string
 
 
 
@@ -570,3 +573,92 @@ def school_has_module(school, module_code):
         module=module_code,
         is_enabled=True,
     ).exists()
+
+import random
+
+class PlatformStaff(models.Model):
+    ROLE_CHOICES = [
+        ('network_admin', 'Network Administrator'),
+        ('security_officer', 'Security Officer'),
+        ('field_trainer', 'Field Trainer'),
+        ('software_engineer', 'Software Engineer'),
+        ('web_designer', 'Web Designer'),
+        ('driver', 'Driver'),
+        ('secretary', 'Secretary'),
+        ('pa_ceo', 'PA to CEO'),
+        ('other', 'Other'),
+    ]
+
+    full_name = models.CharField(max_length=150)
+    email = models.EmailField(unique=True)
+    phone = models.CharField(max_length=20, blank=True)
+    id_number = models.CharField(max_length=20, blank=True, help_text="National ID Number")
+    role = models.CharField(max_length=50, choices=ROLE_CHOICES)
+    date_joined = models.DateField(default=timezone.now)
+    is_active = models.BooleanField(default=True)
+    notes = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    employee_code = models.CharField(max_length=20, unique=True, blank=True, null=True, editable=False)
+    photo = models.ImageField(upload_to='platform/staff_photos/', blank=True, null=True)
+
+    class Meta:
+        ordering = ['full_name']
+        verbose_name_plural = "Platform Staff"
+
+    def __str__(self):
+        return f"{self.full_name} ({self.get_role_display()})"
+
+    def save(self, *args, **kwargs):
+        if not self.employee_code:
+            # 1. Get Role Initials (e.g., Software Engineer -> SE)
+            # Split the role name by spaces and take the first letter of each word
+            words = self.get_role_display().split()
+            initials = "".join([word[0].upper() for word in words if word.isalnum()])
+            
+            # Fallback if no initials found
+            if not initials:
+                initials = "ST"
+                
+            # Ensure it's exactly 2 letters maximum
+            initials = initials[:2]
+
+            # 2. Generate unique PURE NUMERICAL suffix
+            while True:
+                # Generate a random 5-digit number (e.g., 00001 to 99999)
+                suffix = f"{random.randint(1, 99999):05d}" 
+                
+                # Combine: e.g. SE00123
+                new_code = f"{initials}{suffix}"
+                
+                # Check if it exists to ensure no repetition
+                if not PlatformStaff.objects.filter(employee_code=new_code).exists():
+                    self.employee_code = new_code
+                    break
+
+        super().save(*args, **kwargs)
+class CompanyProfile(models.Model):
+    """Global settings for the SaaS Platform"""
+    name = models.CharField(max_length=150, default="LoyTech Developers")
+    signature_image = models.ImageField(upload_to='platform/signatures/', blank=True, null=True)
+    
+    class Meta:
+        verbose_name_plural = "Company Profile"
+
+    def __str__(self):
+        return self.nam    
+    
+class CompanyProfile(models.Model):
+    """Global settings for the SaaS Platform"""
+    name = models.CharField(max_length=150, default="LoyTech Developers")
+    
+    # ADD THIS LINE
+    logo = models.ImageField(upload_to='platform/logos/', blank=True, null=True)
+    
+    signature_image = models.ImageField(upload_to='platform/signatures/', blank=True, null=True)
+    
+    class Meta:
+        verbose_name_plural = "Company Profile"
+
+    def __str__(self):
+        return self.name

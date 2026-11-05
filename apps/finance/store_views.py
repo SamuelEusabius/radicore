@@ -357,43 +357,45 @@ def store_issue_create(request):
                     if not item_id or not qty:
                         continue
                     try:
-                        qty = float(qty)
-                        if qty <= 0:
+                        # FIX: Convert to Decimal to match the database field type
+                        from decimal import Decimal
+                        qty_dec = Decimal(str(qty))
+
+                        if qty_dec <= 0:
                             continue
                         inv_item = InventoryItem.objects.get(pk=item_id, school=school)
-                        if inv_item.quantity < qty:
+                        if inv_item.quantity < qty_dec:
                             messages.warning(request, f'{inv_item.name}: only {inv_item.quantity} in stock, skipped.')
                             continue
 
                         StockIssueItem.objects.create(
                             issue=issue,
                             item=inv_item,
-                            quantity=qty,
+                            quantity=qty_dec,
                             unit_cost=inv_item.unit_cost,
                         )
 
                         # Update stock + log movement
-                        balance_before = inv_item.quantity
-                        inv_item.quantity = inv_item.quantity - qty
+                        inv_item.quantity = inv_item.quantity - qty_dec
                         inv_item.save(update_fields=['quantity', 'updated_at'])
 
                         StockMovement.objects.create(
                             school=school,
                             item=inv_item,
                             action='issue',
-                            quantity=-qty,
+                            quantity=-qty_dec,
                             balance_after=inv_item.quantity,
                             issue=issue,
                             reason=f"Issued to {recipient_name}",
                             performed_by=request.user,
                         )
                         created_lines += 1
-                    except (InventoryItem.DoesNotExist, ValueError):
+                    except (InventoryItem.DoesNotExist, ValueError, TypeError):
                         continue
 
                 if created_lines == 0:
                     issue.delete()
-                    messages.error(request, 'No valid items were issued.')
+                    messages.error(request, 'No valid items were issued. Check quantities and stock levels.')
                 else:
                     messages.success(request, f'Stock issue {issue.issue_number} recorded ({created_lines} items).')
                     return redirect('store_issue_detail', issue_id=issue.id)
@@ -407,7 +409,6 @@ def store_issue_create(request):
         'recipient_choices': StockIssue._meta.get_field('recipient_type').choices,
     }
     return render(request, 'dashboards/store_keeper/issue_form.html', context)
-
 
 @store_keeper_required
 def store_issue_detail(request, issue_id):

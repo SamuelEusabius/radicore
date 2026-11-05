@@ -804,3 +804,170 @@ def school_general_settings(request):
     return render(request, 'dashboard/school_general_settings.html', {
         'school': school
     })
+    
+@login_required
+def platform_staff_manage(request):
+    """Super Admin: list and search platform support staff."""
+    if request.user.role != 'super_admin':
+        return redirect('dashboard_home')
+
+    from apps.schools.models import PlatformStaff
+    from django.db.models import Q
+
+    search_query = request.GET.get('q', '').strip()
+    staff_list = PlatformStaff.objects.all()
+
+    if search_query:
+        staff_list = staff_list.filter(
+            Q(full_name__icontains=search_query) |
+            Q(employee_code__icontains=search_query) |
+            Q(role__icontains=search_query)
+        )
+
+    staff_list = staff_list.order_by('is_active', 'full_name')
+    
+    return render(request, 'dashboard/platform_staff.html', {
+        'staff_list': staff_list,
+        'search_query': search_query,
+    })
+
+@login_required
+def platform_staff_create(request):
+    if request.user.role != 'super_admin':
+        return redirect('dashboard_home')
+
+    from apps.schools.models import PlatformStaff
+    roles = PlatformStaff.ROLE_CHOICES
+
+    if request.method == 'POST':
+        full_name = request.POST.get('full_name', '').strip()
+        email = request.POST.get('email', '').strip().lower()
+        phone = request.POST.get('phone', '').strip()
+        id_number = request.POST.get('id_number', '').strip()
+        role = request.POST.get('role', 'other')
+        notes = request.POST.get('notes', '').strip()
+        
+        # Use request.FILES to get the uploaded image
+        photo = request.FILES.get('photo')
+
+        if not full_name or not email or not role:
+            messages.error(request, 'Name, Email, and Role are required.')
+        elif PlatformStaff.objects.filter(email=email).exists():
+            messages.error(request, f'A staff member with email "{email}" already exists.')
+        else:
+            PlatformStaff.objects.create(
+                full_name=full_name,
+                email=email,
+                phone=phone,
+                id_number=id_number,
+                role=role,
+                notes=notes,
+                photo=photo,  # Save the image
+            )
+            messages.success(request, f'Staff member "{full_name}" added successfully.')
+            return redirect('platform_staff_manage')
+
+    return render(request, 'dashboard/platform_staff_form.html', {
+        'roles': roles,
+        'is_edit': False
+    })
+
+@login_required
+def platform_staff_edit(request, staff_id):
+    if request.user.role != 'super_admin':
+        return redirect('dashboard_home')
+
+    from apps.schools.models import PlatformStaff
+    staff = get_object_or_404(PlatformStaff, id=staff_id)
+    roles = PlatformStaff.ROLE_CHOICES
+
+    if request.method == 'POST':
+        full_name = request.POST.get('full_name', '').strip()
+        email = request.POST.get('email', '').strip().lower()
+        phone = request.POST.get('phone', '').strip()
+        id_number = request.POST.get('id_number', '').strip()
+        role = request.POST.get('role', 'other')
+        notes = request.POST.get('notes', '').strip()
+        is_active = request.POST.get('is_active') == 'on'
+        
+        if PlatformStaff.objects.filter(email=email).exclude(id=staff.id).exists():
+            messages.error(request, f'A staff member with email "{email}" already exists.')
+        elif not full_name or not email or not role:
+            messages.error(request, 'Name, Email, and Role are required.')
+        else:
+            staff.full_name = full_name
+            staff.email = email
+            staff.phone = phone
+            staff.id_number = id_number
+            staff.role = role
+            staff.notes = notes
+            staff.is_active = is_active
+            
+            # Only update photo if a NEW file was uploaded
+            if 'photo' in request.FILES:
+                staff.photo = request.FILES['photo']
+                
+            staff.save()
+            messages.success(request, f'Staff member "{staff.full_name}" updated successfully.')
+            return redirect('platform_staff_manage')
+
+    return render(request, 'dashboard/platform_staff_form.html', {
+        'staff': staff,
+        'roles': roles,
+        'is_edit': True
+    })
+    
+@login_required
+def manage_company_profile(request):
+    """Super Admin: Upload signature, logo, and update company info."""
+    if request.user.role != 'super_admin':
+        return redirect('dashboard_home')
+
+    from apps.schools.models import CompanyProfile
+    # Get the company profile, or create it if it doesn't exist
+    company, created = CompanyProfile.objects.get_or_create(id=1)
+
+    if request.method == 'POST':
+        # 1. Update Name
+        company.name = request.POST.get('name', company.name)
+        
+        # 2. Handle Logo Upload
+        if 'logo' in request.FILES:
+            company.logo = request.FILES['logo']
+            
+        # 3. Handle Signature Upload
+        if 'signature_image' in request.FILES:
+            company.signature_image = request.FILES['signature_image']
+            
+        company.save()
+        messages.success(request, 'Company branding updated successfully.')
+        return redirect('manage_company_profile')
+
+    return render(request, 'dashboard/company_profile.html', {'company': company})
+
+@login_required
+def platform_staff_id_card(request, staff_id):
+    """Print-ready view for a Platform Staff ID card."""
+    if request.user.role != 'super_admin':
+        return redirect('dashboard_home')
+
+    from apps.schools.models import PlatformStaff, CompanyProfile
+    staff = get_object_or_404(PlatformStaff, id=staff_id)
+    
+    company, created = CompanyProfile.objects.get_or_create(id=1)
+
+    platform_context = {
+        'name': company.name,
+        'slogan': 'Innovate. Develop. Scale.',
+        'address': 'Bungoma, Kenya',
+        'phone': '+254 796174943',
+        'website': 'www.loytechdevelopers.co.ke',
+        'email': 'samuelusabius14164@gmail.com',
+        'signature': company.signature_image,
+        'logo': company.logo, 
+    }
+
+    return render(request, 'dashboard/platform_staff_id_card.html', {
+        'staff': staff,
+        'platform': platform_context,
+    })

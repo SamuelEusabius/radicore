@@ -25,6 +25,7 @@
         {% include 'partials/icons.html' with name="home" size=18 %}
         <span class="sidebar-link-text">Dashboard</span>
       </a>
+      
 
       <div class="sidebar-section-label">Schools</div>
       <a href="{% url 'schools_manage' %}" class="sidebar-link">
@@ -42,6 +43,16 @@
       <a href="{% url 'super_admin_ledger' %}" class="sidebar-link">
         {% include 'partials/icons.html' with name="credit-card" size=18 %}
         <span class="sidebar-link-text">School Ledger</span>
+      </a>
+
+            <div class="sidebar-section-label">Platform Staff</div>
+      <a href="{% url 'platform_staff_manage' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="briefcase" size=18 %}
+        <span class="sidebar-link-text">Support Staff</span>
+      </a>
+      <a href="{% url 'manage_company_profile' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="settings" size=18 %}
+        <span class="sidebar-link-text">Company Profile</span>
       </a>
 
       <div class="sidebar-section-label">Users</div>

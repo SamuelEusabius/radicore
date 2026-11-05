@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% block title %}Company Profile{% endblock %}
+{% block header_title %}Company Settings{% endblock %}
+
+{% block content %}
+<div style="max-width: 600px; margin: 0 auto;">
+    <div class="card" style="padding: 32px; background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
+        <h3 style="margin: 0 0 24px 0; font-size: 18px; font-weight: 700; color: #0f172a; border-bottom: 1px solid #e2e8f0; padding-bottom: 16px;">Brand & Signature Settings</h3>
+        
+        <!-- enctype is REQUIRED for file uploads to work -->
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            
+            <div style="margin-bottom: 24px;">
+                <label style="display: block; font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; margin-bottom: 8px;">Company Name</label>
+                <input type="text" name="name" value="{{ company.name }}" class="form-input" style="width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px;" required>
+            </div>
+
+            <!-- LOGO UPLOAD SECTION -->
+            <div style="margin-bottom: 24px; padding: 20px; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px;">
+                <label style="display: block; font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; margin-bottom: 12px;">Company Logo</label>
+                
+                {% if company.logo %}
+                    <div style="margin-bottom: 16px; text-align: center; padding: 10px; background: white; border-radius: 6px; border: 1px solid #e2e8f0;">
+                        <img src="{{ company.logo.url }}" alt="Logo" style="max-height: 60px; max-width: 100%; object-fit: contain;">
+                    </div>
+                {% endif %}
+                
+                <input type="file" name="logo" accept="image/*" style="width: 100%; font-size: 14px;">
+                <div style="font-size: 11px; color: #64748b; margin-top: 8px;">Upload a square PNG with transparent background for the ID card.</div>
+            </div>
+
+            <!-- SIGNATURE UPLOAD SECTION -->
+            <div style="margin-bottom: 32px; padding: 20px; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px;">
+                <label style="display: block; font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; margin-bottom: 12px;">Authorized Signature</label>
+                
+                {% if company.signature_image %}
+                    <div style="margin-bottom: 16px; text-align: center; padding: 10px; background: white; border-radius: 6px; border: 1px solid #e2e8f0;">
+                        <img src="{{ company.signature_image.url }}" alt="Signature" style="max-height: 60px; max-width: 100%; object-fit: contain;">
+                    </div>
+                {% endif %}
+                
+                <input type="file" name="signature_image" accept="image/*" style="width: 100%; font-size: 14px;">
+                <div style="font-size: 11px; color: #64748b; margin-top: 8px;">Upload a PNG with a transparent background.</div>
+            </div>
+            
+            <button type="submit" style="background: #10b981; color: white; padding: 14px 24px; border-radius: 8px; font-weight: 600; font-size: 14px; border: none; cursor: pointer; width: 100%; transition: background 0.2s;">
+                Save Branding Settings
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}

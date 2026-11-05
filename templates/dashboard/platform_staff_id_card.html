@@ -1,0 +1,434 @@
+{% extends 'base.html' %}
+{% block title %}ID Card - {{ staff.full_name }}{% endblock %}
+{% block header_title %}Print Staff ID{% endblock %}
+
+{% block content %}
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Libre+Barcode+39&display=swap" rel="stylesheet">
+
+<style>
+    /* Standard CR80 Card Dimensions */
+    .id-card-container {
+        display: flex;
+        gap: 32px;
+        justify-content: center;
+        flex-wrap: wrap;
+        padding: 48px 24px;
+        background: #f8fafc;
+        border-radius: 16px;
+        border: 1px dashed #cbd5e1;
+        margin: 0 auto;
+        max-width: 900px;
+    }
+
+    .id-card {
+        width: 340px;
+        height: 214px;
+        border-radius: 12px;
+        position: relative;
+        overflow: hidden;
+        font-family: 'Inter', sans-serif;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        background: white;
+        color: white;
+    }
+
+    /* ==================== FRONT SIDE ==================== */
+    .front-card {
+        background: linear-gradient(135deg, #101D40 0%, #2457D6 50%, #7555D9 100%);
+    }
+
+    .front-card::before {
+        content: '';
+        position: absolute;
+        top: 0; right: 0; bottom: 0; left: 0;
+        background-image: 
+            radial-gradient(circle at 100% 0%, rgba(32, 196, 216, 0.15) 0%, transparent 50%),
+            radial-gradient(circle at 0% 100%, rgba(117, 85, 217, 0.2) 0%, transparent 50%),
+            repeating-linear-gradient(45deg, rgba(255,255,255,0.02) 0px, rgba(255,255,255,0.02) 2px, transparent 2px, transparent 8px);
+        pointer-events: none;
+    }
+
+    .brand-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 14px 20px;
+        border-bottom: 1px solid rgba(255,255,255,0.15);
+        position: relative;
+        z-index: 2;
+    }
+
+    .brand-logo-text {
+        font-size: 15px;
+        font-weight: 800;
+        letter-spacing: -0.3px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    }
+
+    /* MAGIC FIX FOR LOGO: Blends the white background away */
+    .card-logo-img {
+        height: 26px;
+        width: auto;
+        object-fit: contain;
+        mix-blend-mode: screen; /* Removes white background on dark gradients */
+    }
+
+    .card-title {
+        font-size: 9px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        color: #20C4D8;
+    }
+
+    .front-body {
+        display: flex;
+        padding: 16px 20px;
+        gap: 16px;
+        position: relative;
+        z-index: 2;
+    }
+
+    .staff-photo {
+        width: 78px;
+        height: 100px;
+        border-radius: 8px;
+        background: rgba(255,255,255,0.1);
+        border: 2px solid rgba(32, 196, 216, 0.6);
+        object-fit: cover;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 32px;
+        font-weight: 800;
+        color: rgba(255,255,255,0.6);
+        box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        flex-shrink: 0;
+        overflow: hidden;
+    }
+
+    .staff-details {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        padding-top: 4px;
+    }
+
+    .staff-name {
+        font-size: 17px;
+        font-weight: 800;
+        line-height: 1.1;
+        letter-spacing: -0.3px;
+        text-transform: uppercase;
+        color: white;
+        margin-bottom: 4px;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+    }
+
+    .staff-designation {
+        font-size: 10px;
+        font-weight: 700;
+        color: #20C4D8;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 10px;
+    }
+
+    .info-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px 12px;
+    }
+
+    .info-item label {
+        display: block;
+        font-size: 7.5px;
+        font-weight: 600;
+        color: rgba(255,255,255,0.65);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 2px;
+    }
+
+    .info-item span {
+        display: block;
+        font-size: 10px;
+        font-weight: 700;
+        color: white;
+        font-family: 'Inter', monospace;
+        letter-spacing: 0.5px;
+    }
+
+    /* Signature Area */
+    .signature-box {
+        position: absolute;
+        bottom: 12px;
+        right: 20px;
+        text-align: center;
+        z-index: 2;
+    }
+
+    /* MAGIC FIX FOR SIGNATURE: Blends the white background away and makes dark ink white */
+    .card-signature-img {
+        height: 28px;
+        max-width: 90px;
+        object-fit: contain;
+        display: block;
+        margin: 0 auto 4px auto;
+        mix-blend-mode: screen; 
+        filter: brightness(0) invert(1); 
+        opacity: 0.9;
+    }
+
+    .signature-line {
+        width: 70px;
+        height: 1px;
+        background: rgba(255,255,255,0.3);
+        margin-bottom: 3px;
+    }
+
+    .signature-box label {
+        font-size: 7px;
+        font-weight: 600;
+        color: rgba(255,255,255,0.7);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    /* ==================== BACK SIDE ==================== */
+    .back-card {
+        background: #ffffff;
+        color: #101D40;
+        border: 1px solid #e2e8f0;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .back-card::before {
+        content: '';
+        position: absolute;
+        top: 0; right: 0; bottom: 0; left: 0;
+        background-image: radial-gradient(circle at 50% 50%, rgba(36, 87, 214, 0.03) 0%, transparent 60%);
+        pointer-events: none;
+    }
+
+    .back-header {
+        background: linear-gradient(90deg, #101D40 0%, #2457D6 100%);
+        height: 34px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 16px;
+        color: white;
+        font-weight: 700;
+        font-size: 10px;
+        letter-spacing: 0.5px;
+        flex-shrink: 0;
+        position: relative;
+        z-index: 2;
+    }
+
+    .back-body {
+        padding: 14px 20px;
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        justify-content: space-between;
+        position: relative;
+        z-index: 2;
+    }
+
+    .disclaimer {
+        font-size: 8.5px;
+        line-height: 1.5;
+        color: #475569;
+        text-align: center;
+        margin-bottom: 8px;
+        font-weight: 500;
+    }
+
+    .contact-info {
+        font-size: 9px;
+        color: #2457D6;
+        font-weight: 700;
+        text-align: center;
+        line-height: 1.5;
+        letter-spacing: 0.3px;
+    }
+
+    .back-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        margin-top: auto;
+    }
+
+    /* MAGIC FIX FOR BACK SIGNATURE: Keeps dark ink, removes white background */
+    .back-signature-img {
+        height: 24px;
+        max-width: 80px;
+        object-fit: contain;
+        display: block;
+        margin-bottom: 2px;
+        mix-blend-mode: multiply; /* Removes white background on light paper */
+    }
+
+    .barcode {
+        font-family: 'Libre Barcode 39', cursive;
+        font-size: 32px;
+        color: #101D40;
+        line-height: 0.8;
+        transform: scaleY(1.2);
+    }
+
+    /* ==================== PRINT STYLES ==================== */
+    @media print {
+        @page {
+            size: landscape;
+            margin: 0;
+        }
+        body {
+            background: white;
+            margin: 0;
+            padding: 0;
+        }
+        body * { visibility: hidden; }
+        .print-area, .print-area * { visibility: visible; }
+        .print-area { 
+            position: absolute; 
+            left: 0; 
+            top: 0; 
+            width: 100%; 
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            align-items: center;
+            background: white;
+        }
+        .id-card {
+            box-shadow: none;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        .no-print { display: none !important; }
+    }
+</style>
+
+<div class="print-area">
+    <div class="id-card-container">
+        
+        <!-- ==================== FRONT CARD ==================== -->
+        <div class="id-card front-card">
+            <div class="brand-header">
+                <div class="brand-logo-text">
+                    {% if platform.logo %}
+                        <!-- Uses the new blend mode class -->
+                        <img src="{{ platform.logo.url }}" alt="Logo" class="card-logo-img">
+                    {% else %}
+                        <div style="width: 26px; height: 26px; background: #20C4D8; border-radius: 6px; display: flex; align-items: center; justify-content: center; color: #101D40; font-size: 13px; font-weight: 900;">LT</div>
+                    {% endif %}
+                    {{ platform.name }}
+                </div>
+                <div class="card-title">Staff ID</div>
+            </div>
+
+            <div class="front-body">
+                <div class="staff-photo">
+                    {% if staff.photo %}
+                        <img src="{{ staff.photo.url }}" alt="Photo" style="width: 100%; height: 100%; object-fit: cover;">
+                    {% else %}
+                        {{ staff.full_name|first|upper }}
+                    {% endif %}
+                </div>
+
+                <div class="staff-details">
+                    <div class="staff-name">{{ staff.full_name }}</div>
+                    <div class="staff-designation">{{ staff.get_role_display }}</div>
+                    
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <label>Employee ID</label>
+                            <span>{{ staff.employee_code }}</span>
+                        </div>
+                        <div class="info-item">
+                            <label>National ID</label>
+                            <span>{{ staff.id_number|default:"N/A" }}</span>
+                        </div>
+                        <div class="info-item">
+                            <label>Department</label>
+                            <span>Platform Tech</span>
+                        </div>
+                        <div class="info-item">
+                            <label>Issued</label>
+                            <span>{{ staff.date_joined|date:"M Y" }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Front Signature -->
+            <div class="signature-box">
+                {% if platform.signature %}
+                    <!-- Uses the new blend mode class -->
+                    <img src="{{ platform.signature.url }}" alt="Signature" class="card-signature-img">
+                {% else %}
+                    <div class="signature-line"></div>
+                {% endif %}
+                <label>Authorized Signature</label>
+            </div>
+        </div>
+
+        <!-- ==================== BACK CARD ==================== -->
+        <div class="id-card back-card">
+            <div class="back-header">
+                {{ platform.name }} &bull; {{ platform.slogan }}
+            </div>
+
+            <div class="back-body">
+                <div class="disclaimer">
+                    This Identification Card is the property of {{ platform.name }}.<br>
+                    If found, please hand it to the nearest branch<br>
+                    or drop it at the nearest Police Station.
+                </div>
+
+                <div class="contact-info">
+                    {{ platform.address }}<br>
+                    {{ platform.phone }}<br>
+                    {{ platform.website }} &bull; {{ platform.email }}
+                </div>
+
+                <!-- Back Signature & Barcode -->
+                <div class="back-footer">
+                    <div style="text-align: left;">
+                        {% if platform.signature %}
+                            <!-- Uses the new blend mode class -->
+                            <img src="{{ platform.signature.url }}" alt="Signature" class="back-signature-img">
+                        {% endif %}
+                        <div style="width: 70px; border-bottom: 1px solid #94a3b8;"></div>
+                        <div style="font-size: 7px; font-weight: 700; color: #64748b; margin-top: 3px; text-transform: uppercase;">Auth. Signature</div>
+                    </div>
+                    
+                    <div class="barcode">
+                        *{{ staff.employee_code }}*
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Print Actions -->
+<div class="no-print" style="margin-top: 32px; display: flex; justify-content: center; gap: 12px;">
+    <button onclick="window.print()" class="btn-primary" style="background: #101D40; color: white; padding: 12px 32px; border-radius: 8px; font-weight: 600; font-size: 14px; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; font-family: 'Inter', sans-serif; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+        {% include 'partials/icons.html' with name="printer" size=18 %} Print Official ID
+    </button>
+    <a href="{% url 'platform_staff_manage' %}" style="background: white; color: #475569; padding: 12px 32px; border-radius: 8px; font-weight: 600; font-size: 14px; text-decoration: none; border: 1px solid #cbd5e1; display: inline-flex; align-items: center; transition: background 0.2s;">
+        Back to Staff
+    </a>
+</div>
+{% endblock %}

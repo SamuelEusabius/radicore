@@ -1,0 +1,127 @@
+{% extends 'base.html' %}
+{% block title %}Platform Staff{% endblock %}
+{% block header_title %}Platform Staff{% endblock %}
+
+{% block content %}
+<style>
+    .card { background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; margin-bottom: 24px; }
+    .data-table { width: 100%; border-collapse: collapse; text-align: left; }
+    .data-table th { padding: 16px; font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #e2e8f0; background: #f8fafc; }
+    .data-table td { padding: 16px; border-bottom: 1px solid #e2e8f0; font-size: 14px; color: #0f172a; vertical-align: middle; }
+    .data-table tbody tr:hover { background: #f8fafc; }
+    
+    .badge { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 9999px; font-size: 12px; font-weight: 600; }
+    .badge-success { background: #ecfdf5; color: #059669; }
+    
+    .btn-action { display: inline-flex; align-items: center; gap: 4px; padding: 6px 12px; border: 1px solid #e2e8f0; border-radius: 6px; background: white; text-decoration: none; font-size: 12px; font-weight: 600; color: #475569; transition: all 0.2s; }
+    .btn-action:hover { border-color: #10b981; color: #10b981; background: #ecfdf5; }
+    
+    .btn-primary { background: #10b981; color: white; padding: 10px 16px; border-radius: 8px; font-weight: 600; font-size: 14px; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; border: none; cursor: pointer; transition: background 0.2s; }
+    .btn-primary:hover { background: #059669; }
+</style>
+
+<!-- Top Action Bar (Search & Add Button) -->
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+    <div>
+        <h2 style="margin: 0; font-size: 24px; font-weight: 700; color: #0f172a;">Platform Team</h2>
+        <p style="margin: 4px 0 0 0; font-size: 14px; color: #64748b;">Manage your internal support staff</p>
+    </div>
+    
+    <div style="display: flex; gap: 16px; align-items: center;">
+        <!-- Search Form -->
+        <form method="get" style="display: flex; gap: 8px; width: 300px;">
+            <input type="search" name="q" value="{{ search_query }}" placeholder="Search name, role, or ID..." style="width: 100%; padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; outline: none;">
+            <button type="submit" style="background: #0f172a; color: white; padding: 10px 16px; border-radius: 8px; border: none; cursor: pointer;">
+                {% include 'partials/icons.html' with name="search" size=16 %}
+            </button>
+        </form>
+
+        <a href="{% url 'platform_staff_create' %}" class="btn-primary">
+            {% include 'partials/icons.html' with name="plus" size=16 %} Add New Staff
+        </a>
+    </div>
+</div>
+
+<div class="card" style="overflow: hidden; padding: 0;">
+    <div style="overflow-x: auto;">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>STAFF NAME</th>
+                    <th>EMPLOYEE ID</th>
+                    <th>ROLE & NAT ID</th>
+                    <th>STATUS</th>
+                    <th style="text-align: right;">ACTIONS</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for staff in staff_list %}
+                <tr>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            {% if staff.photo %}
+                                <img src="{{ staff.photo.url }}" alt="{{ staff.full_name }}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; flex-shrink: 0; border: 1px solid #e2e8f0;">
+                            {% else %}
+                                <div style="width: 40px; height: 40px; border-radius: 50%; background: #f1f5f9; color: #0f172a; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; flex-shrink: 0;">
+                                    {{ staff.full_name|first|upper }}
+                                </div>
+                            {% endif %}
+                            <div>
+                                <div style="font-weight: 600; color: #0f172a;">{{ staff.full_name }}</div>
+                                <div style="font-size: 12px; color: #64748b;">{{ staff.email }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <div style="font-family: monospace; font-weight: 700; color: #10b981; background: #ecfdf5; padding: 4px 8px; border-radius: 4px; display: inline-block;">
+                            {{ staff.employee_code }}
+                        </div>
+                    </td>
+                    <td>
+                        <div style="font-weight: 500; color: #475569;">{{ staff.get_role_display }}</div>
+                        <div style="font-size: 12px; color: #64748b;">Nat ID: {{ staff.id_number|default:"—" }}</div>
+                    </td>
+                    <td>
+                        {% if staff.is_active %}
+                        <span class="badge badge-success">Active</span>
+                        {% else %}
+                        <span class="badge" style="background: #f1f5f9; color: #64748b;">Inactive</span>
+                        {% endif %}
+                    </td>
+                    <td style="text-align: right; white-space: nowrap;">
+                        <a href="{% url 'platform_staff_edit' staff.id %}" class="btn-action" style="color: #3b82f6; border-color: #bfdbfe;">
+                            {% include 'partials/icons.html' with name="edit" size=14 %} Edit
+                        </a>
+                        <a href="{% url 'platform_staff_id_card' staff.id %}" target="_blank" class="btn-action" style="margin-left: 4px;">
+                            {% include 'partials/icons.html' with name="printer" size=14 %} Print ID
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" style="text-align: center; padding: 60px 20px;">
+                        <div style="color: #94a3b8; margin-bottom: 16px;">
+                            {% include 'partials/icons.html' with name="users" size=48 %}
+                        </div>
+                        <h3 style="margin: 0 0 8px 0; color: #0f172a; font-size: 16px; font-weight: 600;">
+                            {% if search_query %}
+                                No results found for "{{ search_query }}"
+                            {% else %}
+                                No staff members yet
+                            {% endif %}
+                        </h3>
+                        <p style="margin: 0; color: #64748b; font-size: 14px;">
+                            {% if search_query %}
+                                Try searching by a different name, role, or ID.
+                            {% else %}
+                                Get started by adding your first platform team member.
+                            {% endif %}
+                        </p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
