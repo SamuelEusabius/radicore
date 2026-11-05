@@ -1,132 +1,210 @@
-{% extends "base.html" %}
-{% load static %}
-
-{% block title %}{% if item %}Edit Item{% else %}Add Item{% endif %}{% endblock %}
-{% block header_title %}{% if item %}Edit Item{% else %}Add Item{% endif %}{% endblock %}
-{% block header_sub %}{% if item %}{{ item.name }}{% else %}New inventory item{% endif %}{% endblock %}
+{% extends 'base.html' %}
+{% block title %}{% if item %}Edit Item: {{ item.name }}{% else %}Add New Item{% endif %}{% endblock %}
+{% block header_title %}{% if item %}Edit Item{% else %}Add New Item{% endif %}{% endblock %}
 
 {% block content %}
+<style>
+    .form-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        border: 1px solid #e2e8f0;
+        padding: 32px;
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    .form-label {
+        font-size: 12px;
+        font-weight: 600;
+        color: #64748b;
+        margin-bottom: 8px;
+        display: block;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .form-label .req { color: #ef4444; }
+    .form-input {
+        width: 100%;
+        padding: 12px 14px;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        font-size: 14px;
+        color: #0f172a;
+        background: white;
+        transition: all 0.2s;
+        box-sizing: border-box;
+    }
+    .form-input:focus {
+        border-color: #10b981;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+    }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+    
+    .btn-primary {
+        background: #10b981;
+        color: white;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 14px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        border: none;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+    .btn-primary:hover { background: #059669; }
+    
+    .btn-secondary {
+        background: white;
+        color: #475569;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 14px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid #cbd5e1;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .btn-secondary:hover { background: #f8fafc; border-color: #94a3b8; }
+</style>
 
-<div class="flex flex-wrap items-center justify-between gap-3 mb-6">
-  <a href="{% url 'store_items_list' %}" class="btn btn-secondary">
-    {% include 'partials/icons.html' with name="arrow-right" size=16 %}
-    Back to Items
-  </a>
+<div style="margin-bottom: 24px; max-width: 800px; margin-left: auto; margin-right: auto;">
+    <a href="{% url 'store_items_list' %}" style="display: inline-flex; align-items: center; gap: 6px; color: #64748b; text-decoration: none; font-size: 14px; font-weight: 600;">
+        {% include 'partials/icons.html' with name="arrow-left" size=16 %} Back to Items
+    </a>
 </div>
 
-<div class="card" style="max-width: 720px;">
-
-  {% if messages %}
-    {% for msg in messages %}
-    <div style="padding: var(--s-3); margin-bottom: var(--s-4); border-radius: var(--radius); background: var(--danger-light); color: var(--danger); font-size: var(--text-sm);">
-      {{ msg }}
-    </div>
-    {% endfor %}
-  {% endif %}
-
-  <form method="post" class="space-y-5">
-    {% csrf_token %}
-
-    <div>
-      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
-        Item Name <span style="color: var(--danger);">*</span>
-      </label>
-      <input type="text" name="name" required value="{{ item.name|default:'' }}"
-             placeholder="e.g. A4 Printing Paper (Ream)" class="input w-full">
+<div class="form-card">
+    <div style="margin-bottom: 24px; border-bottom: 1px solid #e2e8f0; padding-bottom: 16px;">
+        <h3 style="margin: 0; font-size: 20px; font-weight: 700; color: #0f172a;">
+            {% if item %}Update Item Details{% else %}Register New Inventory Item{% endif %}
+        </h3>
+        <p style="margin: 4px 0 0 0; font-size: 14px; color: #64748b;">Enter the item information below. Fields marked with <span style="color:#ef4444;">*</span> are required.</p>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-      <div>
-        <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
-          Item Code
-        </label>
-        <input type="text" name="code" value="{{ item.code|default:'' }}"
-               placeholder="e.g. PAP-A4-001" class="input w-full">
-      </div>
+    <form method="post">
+        {% csrf_token %}
 
-      <div>
-        <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
-          Category
-        </label>
-        <select name="category" class="select w-full">
-          <option value="">— None —</option>
-          {% for c in categories %}
-          <option value="{{ c.id }}" {% if item and item.category_id == c.id %}selected{% endif %}>{{ c.name }}</option>
-          {% endfor %}
-        </select>
-      </div>
-    </div>
+        <!-- Row 1: Name & Code -->
+        <div class="grid-2">
+            <div>
+                <label class="form-label">Item Name <span class="req">*</span></label>
+                <input type="text" name="name" required class="form-input" 
+                       value="{% if item %}{{ item.name }}{% elif form_data and form_data.name %}{{ form_data.name }}{% endif %}" 
+                       placeholder="e.g. Maize Corn">
+            </div>
+            <div>
+                <label class="form-label">Item Code</label>
+                <input type="text" name="code" class="form-input" 
+                       value="{% if item %}{{ item.code }}{% elif form_data and form_data.code %}{{ form_data.code }}{% endif %}" 
+                       placeholder="e.g. MAIZE-23">
+            </div>
+        </div>
 
-    <div>
-      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
-        Description
-      </label>
-      <textarea name="description" rows="2" class="textarea w-full"
-                placeholder="Optional details">{{ item.description|default:'' }}</textarea>
-    </div>
+        <!-- Row 2: Category & Supplier -->
+        <div class="grid-2">
+            <div>
+                <label class="form-label">Category</label>
+                <select name="category" class="form-input">
+                    <option value="">— Select Category —</option>
+                    {% for c in categories %}
+                        <option value="{{ c.id }}" {% if item and item.category_id == c.id %}selected{% elif form_data and form_data.category|add:"0" == c.id %}selected{% endif %}>{{ c.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="form-label">Primary Supplier</label>
+                <select name="primary_supplier" class="form-input">
+                    <option value="">— Select Supplier —</option>
+                    {% for s in suppliers %}
+                        <option value="{{ s.id }}" {% if item and item.primary_supplier_id == s.id %}selected{% elif form_data and form_data.primary_supplier|add:"0" == s.id %}selected{% endif %}>{{ s.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
-      <div>
-        <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
-          Unit
-        </label>
-        <input type="text" name="unit" value="{{ item.unit|default:'pcs' }}"
-               placeholder="pcs, ream, kg" class="input w-full">
-      </div>
-      <div>
-        <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
-          Unit Cost (KES)
-        </label>
-        <input type="number" step="0.01" name="unit_cost" min="0"
-               value="{{ item.unit_cost|default:0 }}" class="input w-full">
-      </div>
-      <div>
-        <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
-          Min Stock Alert
-        </label>
-        <input type="number" step="1" name="min_stock" min="0"
-               value="{{ item.min_stock|default:0 }}" class="input w-full">
-      </div>
-    </div>
+        <!-- Row 3: Unit, Cost, Quantity -->
+        <div class="grid-3">
+            <div>
+                <label class="form-label">Unit of Measure <span class="req">*</span></label>
+                <select name="unit" class="form-input" required>
+                    <option value="pcs" {% if item.unit == 'pcs' %}selected{% endif %}>Pieces (pcs)</option>
+                    <option value="kg" {% if item.unit == 'kg' %}selected{% endif %}>Kilograms (kg)</option>
+                    <option value="g" {% if item.unit == 'g' %}selected{% endif %}>Grams (g)</option>
+                    <option value="L" {% if item.unit == 'L' %}selected{% endif %}>Litres (L)</option>
+                    <option value="ml" {% if item.unit == 'ml' %}selected{% endif %}>Millilitres (ml)</option>
+                    <option value="box" {% if item.unit == 'box' %}selected{% endif %}>Boxes</option>
+                    <option value="pkt" {% if item.unit == 'pkt' %}selected{% endif %}>Packets</option>
+                    <option value="roll" {% if item.unit == 'roll' %}selected{% endif %}>Rolls</option>
+                    <option value="ream" {% if item.unit == 'ream' %}selected{% endif %}>Reams</option>
+                </select>
+            </div>
+            <div>
+                <label class="form-label">Unit Cost (KES) <span class="req">*</span></label>
+                <input type="number" name="unit_cost" step="0.01" required class="form-input" 
+                       value="{% if item %}{{ item.unit_cost }}{% elif form_data and form_data.unit_cost %}{{ form_data.unit_cost }}{% else %}0.00{% endif %}" 
+                       placeholder="0.00">
+            </div>
+            <!-- NEW QUANTITY FIELD -->
+            <div>
+                <label class="form-label">Current Quantity <span class="req">*</span></label>
+                <input type="number" name="quantity" step="0.01" required class="form-input" 
+                       value="{% if item %}{{ item.quantity }}{% elif form_data and form_data.quantity %}{{ form_data.quantity }}{% else %}0{% endif %}" 
+                       placeholder="0">
+            </div>
+        </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-      <div>
-        <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
-          Storage Location
-        </label>
-        <input type="text" name="storage_location" value="{{ item.storage_location|default:'' }}"
-               placeholder="e.g. Shelf A3, Store Room 1" class="input w-full">
-      </div>
-      <div>
-        <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">
-          Primary Supplier
-        </label>
-        <select name="primary_supplier" class="select w-full">
-          <option value="">— None —</option>
-          {% for s in suppliers %}
-          <option value="{{ s.id }}" {% if item and item.primary_supplier_id == s.id %}selected{% endif %}>{{ s.name }}</option>
-          {% endfor %}
-        </select>
-      </div>
-    </div>
+        <!-- Row 4: Min Stock & Location -->
+        <div class="grid-2">
+            <div>
+                <label class="form-label">Min Stock Alert</label>
+                <input type="number" name="min_stock" step="0.01" class="form-input" 
+                       value="{% if item %}{{ item.min_stock }}{% elif form_data and form_data.min_stock %}{{ form_data.min_stock }}{% else %}0{% endif %}" 
+                       placeholder="0">
+            </div>
+            <div>
+                <label class="form-label">Storage Location</label>
+                <input type="text" name="storage_location" class="form-input" 
+                       value="{% if item %}{{ item.storage_location }}{% elif form_data and form_data.storage_location %}{{ form_data.storage_location }}{% endif %}" 
+                       placeholder="e.g. Shelf A, Store Room 1">
+            </div>
+        </div>
 
-    <div>
-      <label style="display: flex; align-items: center; gap: var(--s-2); cursor: pointer; font-size: var(--text-sm);">
-        <input type="checkbox" name="is_active" {% if not item or item.is_active %}checked{% endif %}>
-        <span>Item is active</span>
-      </label>
-    </div>
+        <!-- Row 5: Description -->
+        <div style="margin-bottom: 24px;">
+            <label class="form-label">Description</label>
+            <textarea name="description" rows="3" class="form-input" 
+                      placeholder="Optional details about this item...">{% if item %}{{ item.description }}{% elif form_data and form_data.description %}{{ form_data.description }}{% endif %}</textarea>
+        </div>
 
-    <div class="flex justify-end gap-3 pt-4" style="border-top: 1px solid var(--border);">
-      <a href="{% url 'store_items_list' %}" class="btn btn-secondary">Cancel</a>
-      <button type="submit" class="btn btn-primary">
-        {% include 'partials/icons.html' with name="save" size=16 %}
-        Save Item
-      </button>
-    </div>
+        <!-- Row 6: Checkbox -->
+        <div style="margin-bottom: 32px;">
+            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                <input type="checkbox" name="is_active" 
+                       {% if item and item.is_active %}checked{% elif not item %}checked{% endif %}
+                       style="width: 18px; height: 18px; accent-color: #10b981;">
+                <span style="font-size: 14px; color: #475569; font-weight: 500;">This item is active and available for stock movements</span>
+            </label>
+        </div>
 
-  </form>
-
+        <!-- Actions -->
+        <div style="display: flex; justify-content: flex-end; gap: 12px; border-top: 1px solid #e2e8f0; padding-top: 24px;">
+            <a href="{% url 'store_items_list' %}" class="btn-secondary">Cancel</a>
+            <button type="submit" class="btn-primary">
+                {% include 'partials/icons.html' with name="save" size=16 %}
+                {% if item %}Save Changes{% else %}Create Item{% endif %}
+            </button>
+        </div>
+    </form>
 </div>
-
 {% endblock %}

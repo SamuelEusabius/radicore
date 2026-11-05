@@ -164,6 +164,16 @@ def store_items_list(request):
     paginator = Paginator(qs, 25)
     page_obj = paginator.get_page(request.GET.get('page', 1))
 
+    # Calculate total value for each item safely
+    # Calculate total value for each item safely
+    for item in page_obj:
+        try:
+            qty = float(item.quantity or 0)
+            cost = float(item.unit_cost or 0)
+            item.calculated_total = qty * cost
+        except (ValueError, TypeError):
+            item.calculated_total = 0
+
     context = {
         'school': school,
         'items': page_obj,
@@ -178,7 +188,6 @@ def store_items_list(request):
         'out_count': out_count,
     }
     return render(request, 'dashboards/store_keeper/items_list.html', context)
-
 
 @store_keeper_required
 def store_item_form(request, item_id=None):
@@ -200,13 +209,17 @@ def store_item_form(request, item_id=None):
         min_stock = request.POST.get('min_stock') or 0
         primary_supplier_id = request.POST.get('primary_supplier') or None
         is_active = request.POST.get('is_active') == 'on'
+        
+        # NEW: Capture quantity
+        quantity = request.POST.get('quantity') or 0
 
         if not name:
             messages.error(request, 'Item name is required.')
         else:
             try:
                 if item is None:
-                    item = InventoryItem(school=school, quantity=0)
+                    item = InventoryItem(school=school)
+                
                 item.name = name
                 item.code = code
                 item.category_id = category_id
@@ -217,6 +230,10 @@ def store_item_form(request, item_id=None):
                 item.min_stock = float(min_stock)
                 item.primary_supplier_id = primary_supplier_id
                 item.is_active = is_active
+                
+                # NEW: Save quantity
+                item.quantity = float(quantity)
+                
                 item.save()
                 messages.success(request, f'Item "{item.name}" saved.')
                 return redirect('store_items_list')

@@ -1,192 +1,174 @@
-{% extends "base.html" %}
-{% load static %}
-
+{% extends 'base.html' %}
 {% block title %}Inventory Items{% endblock %}
 {% block header_title %}Inventory Items{% endblock %}
-{% block header_sub %}
-  {{ total }} item{{ total|pluralize }} · {{ school.name }}
-{% endblock %}
 
 {% block content %}
+<style>
+    .card { background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; margin-bottom: 24px; }
+    .form-input { width: 100%; padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; color: #0f172a; background: white; transition: all 0.2s; box-sizing: border-box; }
+    .form-input:focus { border-color: #10b981; outline: none; box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15); }
+    
+    .data-table { width: 100%; border-collapse: collapse; text-align: left; }
+    .data-table th { padding: 16px; font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #e2e8f0; background: #f8fafc; }
+    .data-table td { padding: 16px; border-bottom: 1px solid #e2e8f0; font-size: 14px; color: #0f172a; vertical-align: middle; }
+    .data-table tbody tr:hover { background: #f8fafc; }
+    .data-table tbody tr:last-child td { border-bottom: none; }
+    
+    .badge { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 9999px; font-size: 12px; font-weight: 600; }
+    .badge-success { background: #ecfdf5; color: #059669; }
+    .badge-warning { background: #fffbeb; color: #d97706; }
+    .badge-danger { background: #fef2f2; color: #ef4444; }
+    
+    .btn-sm { padding: 6px 12px; font-size: 13px; border-radius: 6px; font-weight: 600; border: 1px solid transparent; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s; }
+    .btn-outline { background: white; border-color: #cbd5e1; color: #475569; }
+    .btn-outline:hover { background: #f8fafc; border-color: #94a3b8; }
+    
+    .btn-primary { background: #10b981; color: white; padding: 10px 16px; border-radius: 8px; font-weight: 600; font-size: 14px; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; border: none; cursor: pointer; transition: background 0.2s; }
+    .btn-primary:hover { background: #059669; }
+</style>
 
-<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-  <div class="stat">
-    <div class="stat-header">
-      <span class="stat-label">Total Items</span>
-      <div class="stat-icon" style="background: var(--primary-light); color: var(--primary);">
-        {% include 'partials/icons.html' with name="briefcase" size=18 %}
-      </div>
+<!-- Top Action Bar -->
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+    <div>
+        <h2 style="margin: 0; font-size: 24px; font-weight: 700; color: #0f172a;">Inventory Items</h2>
+        <p style="margin: 4px 0 0 0; font-size: 14px; color: #64748b;">Manage stock, prices, and quantities</p>
     </div>
-    <div class="stat-value">{{ total }}</div>
-    <div class="stat-meta">in view</div>
-  </div>
-
-  <a href="?status=low" class="stat card-hover" style="text-decoration: none;">
-    <div class="stat-header">
-      <span class="stat-label">Low Stock</span>
-      <div class="stat-icon" style="background: var(--warning-light); color: var(--warning);">
-        {% include 'partials/icons.html' with name="alert-circle" size=18 %}
-      </div>
-    </div>
-    <div class="stat-value" style="color: var(--warning);">{{ low_count }}</div>
-    <div class="stat-meta">below minimum</div>
-  </a>
-
-  <a href="?status=out" class="stat card-hover" style="text-decoration: none;">
-    <div class="stat-header">
-      <span class="stat-label">Out of Stock</span>
-      <div class="stat-icon" style="background: var(--danger-light); color: var(--danger);">
-        {% include 'partials/icons.html' with name="x-circle" size=18 %}
-      </div>
-    </div>
-    <div class="stat-value" style="color: var(--danger);">{{ out_count }}</div>
-    <div class="stat-meta">zero quantity</div>
-  </a>
-
-  <a href="{% url 'store_item_create' %}" class="stat card-hover" style="text-decoration: none;">
-    <div class="stat-header">
-      <span class="stat-label">Add New</span>
-      <div class="stat-icon" style="background: var(--info-light); color: var(--info);">
-        {% include 'partials/icons.html' with name="plus" size=18 %}
-      </div>
-    </div>
-    <div class="stat-value" style="color: var(--info);">+</div>
-    <div class="stat-meta">new item</div>
-  </a>
-</div>
-
-<!-- Filter -->
-<div class="card mb-6">
-  <form method="get" class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
-    <div class="md:col-span-5">
-      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Search</label>
-      <input name="q" value="{{ search }}" placeholder="Name, code, description" class="input w-full">
-    </div>
-    <div class="md:col-span-3">
-      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Category</label>
-      <select name="category" class="select w-full">
-        <option value="">All Categories</option>
-        {% for c in categories %}
-        <option value="{{ c.id }}" {% if category_filter == c.id|stringformat:"s" %}selected{% endif %}>{{ c.name }}</option>
-        {% endfor %}
-      </select>
-    </div>
-    <div class="md:col-span-2">
-      <label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--ink-600);">Status</label>
-      <select name="status" class="select w-full">
-        <option value="">All</option>
-        <option value="low" {% if status_filter == 'low' %}selected{% endif %}>Low Stock</option>
-        <option value="out" {% if status_filter == 'out' %}selected{% endif %}>Out of Stock</option>
-        <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active</option>
-      </select>
-    </div>
-    <div class="md:col-span-2 flex gap-2">
-      <button type="submit" class="btn btn-primary flex-1">
-        {% include 'partials/icons.html' with name="search" size=16 %}
-        Filter
-      </button>
-      {% if search or category_filter or status_filter %}
-      <a href="{% url 'store_items_list' %}" class="btn btn-secondary">
-        {% include 'partials/icons.html' with name="x-circle" size=16 %}
-      </a>
-      {% endif %}
-    </div>
-  </form>
-</div>
-
-<!-- Items table -->
-{% if items %}
-<div class="card" style="padding: 0; overflow: hidden;">
-  <div class="table-wrap">
-    <table class="table">
-      <thead>
-        <tr>
-          <th>Item</th>
-          <th style="width: 160px;">Category</th>
-          <th style="width: 130px;">Stock</th>
-          <th style="width: 130px; text-align: right;">Unit Cost</th>
-          <th style="width: 130px; text-align: right;">Total Value</th>
-          <th style="text-align: right;">Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for item in items %}
-        <tr>
-          <td>
-            <a href="{% url 'store_item_detail' item.id %}"
-               style="font-weight: 600; color: var(--ink-900); text-decoration: none;">
-              {{ item.name }}
-            </a>
-            <div class="text-xs mt-1" style="color: var(--ink-500); font-family: var(--font-mono);">
-              {{ item.code|default:"—" }}
-              {% if item.storage_location %} · {{ item.storage_location }}{% endif %}
-            </div>
-          </td>
-          <td style="color: var(--ink-700); font-size: var(--text-sm);">
-            {{ item.category.name|default:"—" }}
-          </td>
-          <td>
-            {% if item.quantity <= 0 %}
-              <span class="badge badge-danger">{{ item.quantity }} {{ item.unit }}</span>
-            {% elif item.min_stock > 0 and item.quantity <= item.min_stock %}
-              <span class="badge badge-warning">{{ item.quantity }} {{ item.unit }}</span>
-            {% else %}
-              <span class="badge badge-success">{{ item.quantity }} {{ item.unit }}</span>
-            {% endif %}
-          </td>
-          <td style="text-align: right; color: var(--ink-700);">
-            KES {{ item.unit_cost|floatformat:2 }}
-          </td>
-          <td style="text-align: right; font-weight: 600; color: var(--ink-900);">
-            KES {% widthratio item.quantity 1 item.unit_cost %}
-          </td>
-          <td>
-            <div class="table-actions" style="justify-content: flex-end;">
-              <a href="{% url 'store_item_detail' item.id %}" class="view" title="View">
-                {% include 'partials/icons.html' with name="eye" size=14 %}
-              </a>
-              <a href="{% url 'store_item_edit' item.id %}" class="edit" title="Edit">
-                {% include 'partials/icons.html' with name="edit" size=14 %}
-              </a>
-            </div>
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-</div>
-
-{% if page_obj.has_other_pages %}
-<div class="flex justify-center mt-4 gap-2">
-  {% if page_obj.has_previous %}
-  <a href="?page={{ page_obj.previous_page_number }}{% if search %}&q={{ search }}{% endif %}" class="btn btn-secondary">
-    ← Previous
-  </a>
-  {% endif %}
-  <span class="btn btn-secondary" style="cursor: default;">
-    Page {{ page_obj.number }} of {{ paginator.num_pages }}
-  </span>
-  {% if page_obj.has_next %}
-  <a href="?page={{ page_obj.next_page_number }}{% if search %}&q={{ search }}{% endif %}" class="btn btn-secondary">
-    Next →
-  </a>
-  {% endif %}
-</div>
-{% endif %}
-
-{% else %}
-<div class="card">
-  <div class="empty">
-    {% include 'partials/icons.html' with name="briefcase" size=56 %}
-    <h3>No items found</h3>
-    <p>{% if search or category_filter or status_filter %}No items match the current filters.{% else %}Start by adding your first inventory item.{% endif %}</p>
-    <a href="{% url 'store_item_create' %}" class="btn btn-primary">
-      {% include 'partials/icons.html' with name="plus" size=16 %}
-      Add Item
+    <a href="{% url 'store_item_create' %}" class="btn-primary">
+        {% include 'partials/icons.html' with name="plus" size=16 %} Add New Item
     </a>
-  </div>
 </div>
-{% endif %}
 
+<!-- KPI Cards -->
+<div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 24px;">
+    <div class="card" style="padding: 20px; margin-bottom: 0;">
+        <div style="font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Total Items</div>
+        <div style="font-size: 24px; font-weight: 700; color: #0f172a;">{{ total }}</div>
+        <div style="font-size: 12px; color: #64748b; margin-top: 4px;">In view</div>
+    </div>
+    
+    <div class="card" style="padding: 20px; margin-bottom: 0;">
+        <div style="font-size: 12px; font-weight: 600; color: #f59e0b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Low Stock</div>
+        <div style="font-size: 24px; font-weight: 700; color: #f59e0b;">{{ low_count }}</div>
+        <div style="font-size: 12px; color: #64748b; margin-top: 4px;">Below minimum</div>
+    </div>
+    
+    <div class="card" style="padding: 20px; margin-bottom: 0;">
+        <div style="font-size: 12px; font-weight: 600; color: #ef4444; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Out of Stock</div>
+        <div style="font-size: 24px; font-weight: 700; color: #ef4444;">{{ out_count }}</div>
+        <div style="font-size: 12px; color: #64748b; margin-top: 4px;">Zero quantity</div>
+    </div>
+    
+    <div class="card" style="padding: 20px; margin-bottom: 0; display: flex; align-items: center; justify-content: space-between; cursor: pointer;" onclick="window.location.href='{% url 'store_categories' %}'">
+        <div>
+            <div style="font-size: 12px; font-weight: 600; color: #3b82f6; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Categories</div>
+            <div style="font-size: 14px; font-weight: 600; color: #0f172a;">Manage &rarr;</div>
+        </div>
+        <div style="width: 32px; height: 32px; border-radius: 8px; background: #eff6ff; color: #3b82f6; display: flex; align-items: center; justify-content: center;">
+            {% include 'partials/icons.html' with name="grid" size=16 %}
+        </div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="card" style="padding: 20px;">
+    <form method="get" style="display: flex; gap: 16px; align-items: flex-end;">
+        <div style="flex: 2;">
+            <label style="display: block; font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; margin-bottom: 4px;">Search</label>
+            <input type="text" name="q" value="{{ search }}" placeholder="Name, code, description..." class="form-input">
+        </div>
+        
+        <div style="flex: 1;">
+            <label style="display: block; font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; margin-bottom: 4px;">Category</label>
+            <select name="category" class="form-input">
+                <option value="">All Categories</option>
+                {% for c in categories %}
+                    <option value="{{ c.id }}" {% if category_filter == c.id|stringformat:"s" %}selected{% endif %}>{{ c.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div style="flex: 1;">
+            <label style="display: block; font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; margin-bottom: 4px;">Status</label>
+            <select name="status" class="form-input">
+                <option value="">All</option>
+                <option value="low" {% if status_filter == 'low' %}selected{% endif %}>Low Stock</option>
+                <option value="out" {% if status_filter == 'out' %}selected{% endif %}>Out of Stock</option>
+                <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active Only</option>
+            </select>
+        </div>
+
+        <div>
+            <button type="submit" class="btn-primary" style="padding: 10px 24px;">
+                {% include 'partials/icons.html' with name="search" size=16 %} Filter
+            </button>
+            {% if search or category_filter or status_filter %}
+            <a href="{% url 'store_items_list' %}" style="font-size: 13px; color: #64748b; text-decoration: none; margin-left: 12px;">Clear</a>
+            {% endif %}
+        </div>
+    </form>
+</div>
+
+<!-- Table -->
+<div class="card" style="padding: 0; overflow: hidden;">
+    <div style="overflow-x: auto;">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>ITEM DETAILS</th>
+                    <th>CATEGORY</th>
+                    <th>STOCK</th>
+                    <th>UNIT COST</th>
+                    <th>TOTAL VALUE</th>
+                    <th style="text-align: right;">ACTIONS</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                <tr>
+                    <td>
+                        <div style="font-weight: 600; color: #0f172a;">{{ item.name }}</div>
+                        <div style="font-size: 12px; color: #64748b; font-family: monospace;">{{ item.code|default:"No Code" }}</div>
+                    </td>
+                    <td style="color: #64748b;">
+                        {{ item.category.name|default:"—" }}
+                    </td>
+                    <td>
+                        {% if item.quantity <= 0 %}
+                            <span class="badge badge-danger">Out of Stock</span>
+                        {% elif item.min_stock > 0 and item.quantity <= item.min_stock %}
+                            <span class="badge badge-warning">{{ item.quantity|floatformat:2 }} {{ item.unit }}</span>
+                        {% else %}
+                            <span class="badge badge-success">{{ item.quantity|floatformat:2 }} {{ item.unit }}</span>
+                        {% endif %}
+                    </td>
+                    <td style="font-weight: 500;">
+                        KES {{ item.unit_cost|floatformat:2 }}
+                    </td>
+                    <td style="font-weight: 600; color: #0f172a;">
+                        KES {{ item.calculated_total|floatformat:2 }}
+                    </td>
+                    <td style="text-align: right;">
+                        <a href="{% url 'store_item_detail' item.id %}" class="btn-sm btn-outline" title="View Details">
+                            {% include 'partials/icons.html' with name="eye" size=14 %}
+                        </a>
+                        <a href="{% url 'store_item_edit' item.id %}" class="btn-sm btn-outline" title="Edit Item">
+                            {% include 'partials/icons.html' with name="edit" size=14 %}
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" style="text-align: center; padding: 60px 20px;">
+                        <div style="color: #94a3b8; margin-bottom: 16px;">
+                            {% include 'partials/icons.html' with name="briefcase" size=48 %}
+                        </div>
+                        <h3 style="margin: 0 0 8px 0; color: #0f172a; font-size: 16px; font-weight: 600;">No items found</h3>
+                        <p style="margin: 0; color: #64748b; font-size: 14px;">Try adjusting your search or add a new item.</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
 {% endblock %}
