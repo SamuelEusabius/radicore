@@ -54,3 +54,15 @@ def enabled_modules(request):
 
     request._enabled_modules_cache = codes
     return {'enabled_modules': codes}
+from django.utils import timezone
+
+def time_greeting(request):
+    """Provides a dynamic greeting based on the current time."""
+    hour = timezone.localtime().hour
+    if hour < 12:
+        greeting = "Good morning"
+    elif hour < 17:
+        greeting = "Good afternoon"
+    else:
+        greeting = "Good evening"
+    return {'greeting': greeting}

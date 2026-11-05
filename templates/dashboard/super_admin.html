@@ -29,7 +29,9 @@
 <!-- Page Header -->
 <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 24px;">
     <div>
-        <h2 style="margin: 0; font-size: 24px; font-weight: 700; color: #0f172a;">Good morning, {{ request.user.first_name|default:request.user.email }}</h2>
+        <h2 style="margin: 0; font-size: 24px; font-weight: 700; color: #0f172a;">
+            {{ greeting }}, {{ request.user.first_name|default:request.user.email }}
+        </h2>
         <div style="margin-top: 8px;">
             <span style="display: inline-flex; align-items: center; gap: 6px; background: #f3e8ff; color: #7e22ce; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">
                 {% include 'partials/icons.html' with name="shield" size=14 %} Platform Owner

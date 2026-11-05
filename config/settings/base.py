@@ -96,6 +96,7 @@ TEMPLATES = [{
             'apps.schools.context_processors.notifications_context',
             'apps.notifications.context_processors.topbar_badge_count',
             'apps.schools.context_processors.enabled_modules',
+            'apps.schools.context_processors.time_greeting',
         ],
     },
 }]

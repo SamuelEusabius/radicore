@@ -3,88 +3,156 @@
 {% block header_title %}Onboard New School{% endblock %}
 
 {% block content %}
-<div class="card" style="max-width: 800px; margin: 0 auto;">
-  <h3 class="mb-4">School & Principal Setup</h3>
-  <p class="mb-6" style="color: var(--ink-500);">This will create the school and the primary administrator login in one step.</p>
-  
-  <form method="post">
-    {% csrf_token %}
+<style>
+    .form-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        border: 1px solid #e2e8f0;
+        padding: 32px;
+        max-width: 850px;
+        margin: 0 auto;
+    }
+    .form-label {
+        font-size: 12px;
+        font-weight: 600;
+        color: #64748b;
+        margin-bottom: 8px;
+        display: block;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .form-label .req { color: #ef4444; }
+    .form-input {
+        width: 100%;
+        padding: 12px 14px;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        font-size: 14px;
+        color: #0f172a;
+        background: white;
+        transition: all 0.2s;
+        box-sizing: border-box;
+    }
+    .form-input:focus {
+        border-color: #10b981;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+    }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 20px; }
     
-    <!-- SCHOOL DETAILS -->
-    <h4 style="margin: 20px 0 10px; color: var(--primary); border-bottom: 1px solid var(--border); padding-bottom: 8px;">School Information</h4>
-    
-    <div style="margin-bottom: 16px;">
-      <label style="display: block; font-weight: 600; margin-bottom: 6px;">School Name *</label>
-      <input type="text" name="name" value="{{ form_data.name|default:'' }}" required style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px;">
-      <p style="font-size: 12px; color: var(--ink-500); margin-top: 4px;">The school code (e.g., SCH001) will be automatically generated.</p>
-    </div>
+    .section-title {
+        font-size: 14px;
+        font-weight: 700;
+        color: #0f172a;
+        margin: 32px 0 16px 0;
+        padding-bottom: 8px;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    .section-title:first-of-type {
+        margin-top: 0;
+    }
 
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
-      <div>
-        <label style="display: block; font-weight: 600; margin-bottom: 6px;">School Email</label>
-        <input type="email" name="email" value="{{ form_data.email|default:'' }}" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px;">
-      </div>
-      <div>
-        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Phone Number</label>
-        <input type="text" name="phone" value="{{ form_data.phone|default:'' }}" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px;">
-      </div>
-    </div>
+    .btn-primary { background: #10b981; color: white; padding: 12px 24px; border-radius: 8px; font-weight: 600; font-size: 14px; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: background 0.2s; }
+    .btn-primary:hover { background: #059669; }
+    .btn-secondary { background: white; color: #475569; padding: 12px 24px; border-radius: 8px; font-weight: 600; font-size: 14px; text-decoration: none; border: 1px solid #cbd5e1; cursor: pointer; transition: all 0.2s; }
+    .btn-secondary:hover { background: #f8fafc; border-color: #94a3b8; }
+</style>
 
-    <!-- LOCATION CASCADE -->
-    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 24px;">
-      <div>
-        <label style="display: block; font-weight: 600; margin-bottom: 6px;">County</label>
-        <select name="county" id="id_county" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px;">
-          <option value="">— Select County —</option>
-          {% for county in counties %}
-            <option value="{{ county.name }}" {% if form_data.county == county.name %}selected{% endif %}>{{ county.name|upper }}</option>
-          {% endfor %}
-        </select>
-      </div>
-      <div>
-        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Sub-County</label>
-        <select name="sub_county" id="id_sub_county" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px;">
-          <option value="{{ form_data.sub_county|default:'' }}">{{ form_data.sub_county|default:"— Select County first —" }}</option>
-        </select>
-      </div>
-      <div>
-        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Ward</label>
-        <select name="ward" id="id_ward" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px;">
-          <option value="{{ form_data.ward|default:'' }}">{{ form_data.ward|default:"— Select Sub-County first —" }}</option>
-        </select>
-      </div>
-    </div>
+<div style="margin-bottom: 24px; max-width: 850px; margin-left: auto; margin-right: auto;">
+    <a href="{% url 'schools_manage' %}" style="display: inline-flex; align-items: center; gap: 6px; color: #64748b; text-decoration: none; font-size: 14px; font-weight: 600;">
+        {% include 'partials/icons.html' with name="arrow-left" size=16 %} Back to Schools
+    </a>
+</div>
 
-    <!-- PRINCIPAL DETAILS -->
-    <h4 style="margin: 20px 0 10px; color: var(--primary); border-bottom: 1px solid var(--border); padding-bottom: 8px;">Principal Account</h4>
-    
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
-      <div>
-        <label style="display: block; font-weight: 600; margin-bottom: 6px;">First Name</label>
-        <input type="text" name="admin_first_name" value="{{ form_data.admin_first_name|default:'' }}" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px;">
-      </div>
-      <div>
-        <label style="display: block; font-weight: 600; margin-bottom: 6px;">Last Name</label>
-        <input type="text" name="admin_last_name" value="{{ form_data.admin_last_name|default:'' }}" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px;">
-      </div>
-    </div>
-
-    <div style="margin-bottom: 16px;">
-      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Principal Email (Login) *</label>
-      <input type="email" name="admin_email" value="{{ form_data.admin_email|default:'' }}" required style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px;">
-    </div>
-
+<div class="form-card">
     <div style="margin-bottom: 24px;">
-      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Password *</label>
-      <input type="text" name="admin_password" required minlength="6" placeholder="Min 6 characters" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px;">
-      <p style="font-size: 12px; color: var(--ink-500); margin-top: 4px;">Note down this password and share it with the principal securely.</p>
+        <h3 style="margin: 0; font-size: 20px; font-weight: 700; color: #0f172a;">School & Principal Setup</h3>
+        <p style="margin: 4px 0 0 0; font-size: 14px; color: #64748b;">This will create the school and the primary administrator login in one step.</p>
     </div>
+  
+    <form method="post">
+        {% csrf_token %}
+        
+        <!-- SCHOOL DETAILS -->
+        <div class="section-title">School Information</div>
+        
+        <div style="margin-bottom: 20px;">
+            <label class="form-label">School Name <span class="req">*</span></label>
+            <input type="text" name="name" value="{{ form_data.name|default:'' }}" required class="form-input" placeholder="e.g. Nairobi School">
+            <div style="font-size: 12px; color: #64748b; margin-top: 6px;">The school code (e.g., SCH001) will be automatically generated.</div>
+        </div>
 
-    <div style="display: flex; justify-content: flex-end; gap: 12px;">
-      <a href="{% url 'schools_manage' %}" class="btn btn-secondary">Cancel</a>
-      <button type="submit" class="btn btn-primary" style="padding: 12px 32px; font-size: 16px;">Create School & Admin</button>
-    </div>
-  </form>
+        <div class="grid-2">
+            <div>
+                <label class="form-label">School Email</label>
+                <input type="email" name="email" value="{{ form_data.email|default:'' }}" class="form-input" placeholder="info@school.ac.ke">
+            </div>
+            <div>
+                <label class="form-label">Phone Number</label>
+                <input type="text" name="phone" value="{{ form_data.phone|default:'' }}" class="form-input" placeholder="020 123 4567">
+            </div>
+        </div>
+
+        <!-- LOCATION CASCADE -->
+        <div class="grid-3">
+            <div>
+                <label class="form-label">County</label>
+                <select name="county" id="id_county" class="form-input">
+                    <option value="">— Select County —</option>
+                    {% for county in counties %}
+                        <option value="{{ county.name }}" {% if form_data.county == county.name %}selected{% endif %}>{{ county.name|upper }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="form-label">Sub-County</label>
+                <select name="sub_county" id="id_sub_county" class="form-input">
+                    <option value="{{ form_data.sub_county|default:'' }}">{{ form_data.sub_county|default:"— Select County first —" }}</option>
+                </select>
+            </div>
+            <div>
+                <label class="form-label">Ward</label>
+                <select name="ward" id="id_ward" class="form-input">
+                    <option value="{{ form_data.ward|default:'' }}">{{ form_data.ward|default:"— Select Sub-County first —" }}</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- PRINCIPAL DETAILS -->
+        <div class="section-title">Principal Account</div>
+        
+        <div class="grid-2">
+            <div>
+                <label class="form-label">First Name</label>
+                <input type="text" name="admin_first_name" value="{{ form_data.admin_first_name|default:'' }}" class="form-input" placeholder="e.g. John">
+            </div>
+            <div>
+                <label class="form-label">Last Name</label>
+                <input type="text" name="admin_last_name" value="{{ form_data.admin_last_name|default:'' }}" class="form-input" placeholder="e.g. Doe">
+            </div>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <label class="form-label">Principal Email (Login) <span class="req">*</span></label>
+            <input type="email" name="admin_email" value="{{ form_data.admin_email|default:'' }}" required class="form-input" placeholder="principal@school.ac.ke">
+        </div>
+
+        <div style="margin-bottom: 24px;">
+            <label class="form-label">Password <span class="req">*</span></label>
+            <input type="text" name="admin_password" required minlength="6" placeholder="Min 6 characters" class="form-input">
+            <div style="font-size: 12px; color: #64748b; margin-top: 6px;">Note down this password and share it with the principal securely.</div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 12px; border-top: 1px solid #e2e8f0; padding-top: 24px;">
+            <a href="{% url 'schools_manage' %}" class="btn-secondary">Cancel</a>
+            <button type="submit" class="btn-primary">
+                {% include 'partials/icons.html' with name="save" size=16 %}
+                Create School & Admin
+            </button>
+        </div>
+    </form>
 </div>
 
 <script>

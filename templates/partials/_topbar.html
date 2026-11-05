@@ -1,42 +1,68 @@
 {% load static %}
 <header class="topbar">
 
-  <!-- ============ LEFT: School identity ============ -->
+  <!-- ============ LEFT: School / Company identity ============ -->
   <div class="topbar-left">
 
     <button type="button" class="topbar-toggle" id="sidebarToggle" aria-label="Toggle sidebar">
       {% include 'partials/icons.html' with name="menu" size=20 %}
     </button>
 
-    <a href="{% url 'dashboard_home' %}" class="topbar-school-brand" style="display: flex; align-items: center; gap: 12px;">
-      <div style="width: 44px; height: 44px; flex-shrink: 0;">
-        {% include 'partials/_school_logo.html' with size=44 school=current_school %}
-      </div>
+    <a href="{% url 'dashboard_home' %}" class="topbar-school-brand" style="display: flex; align-items: center; gap: 12px; text-decoration: none;">
       
-      <div class="topbar-school-info" style="display: flex; flex-direction: column; justify-content: center;">
-        <div class="topbar-school-name">{{ current_school.name|default:"School" }}</div>
-        <div class="topbar-school-role">
-          {% if user.role == 'store_keeper' %}Store Keeper
-          {% elif user.role == 'security_officer' %}Chief Security Officer
-          {% elif user.role == 'secretary' %}Secretary
-          {% elif user.role == 'principal' %}Principal
-          {% elif user.role == 'deputy_admin' %}Deputy Principal — Admin
-          {% elif user.role == 'deputy_academics' %}Deputy Principal — Academics
-          {% elif user.role == 'director_of_studies' %}Director of Studies
-          {% elif user.role == 'accountant' %}Accountant
-          {% elif user.role == 'teacher' or user.role == 'class_teacher' %}Teacher
-          {% elif user.role == 'parent' %}Parent
-          {% elif user.role == 'student' %}Student
-          {% elif user.role == 'librarian' %}Librarian
-          {% elif user.role == 'lab_technician' %}Lab Technician
-          {% elif user.role == 'nurse' %}Nurse
-          {% elif user.role == 'driver' %}Driver
-          {% elif user.role == 'chief_chef' %}Chief Chef
-          {% elif user.role == 'boarding_master' %}Boarding Master
-          {% elif user.role == 'super_admin' %}Super Admin
-          {% else %}{{ user.role|default:"" }}{% endif %}
+      {% if user.role == 'super_admin' %}
+        <!-- SUPER ADMIN: Shows Company Logo & Name -->
+        <div style="width: 44px; height: 44px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0; overflow: hidden;">
+            {% if platform_company.logo %}
+                <!-- Force render the image with inline styles -->
+                <img src="{{ platform_company.logo.url }}?v=2" alt="Company Logo" style="width: 100%; height: 100%; object-fit: cover; display: block;">
+            {% else %}
+                <div style="color: #64748b;">
+                    {% include 'partials/icons.html' with name="shield" size=24 %}
+                </div>
+            {% endif %}
         </div>
-      </div>
+        
+        <div class="topbar-school-info" style="display: flex; flex-direction: column; justify-content: center;">
+            <div class="topbar-school-name" style="font-weight: 700; color: #0f172a; font-size: 15px; line-height: 1.2;">
+                {{ platform_company.name|default:"Platform Admin" }}
+            </div>
+            <div class="topbar-school-role" style="font-size: 11px; font-weight: 700; color: #10b981; text-transform: uppercase; letter-spacing: 0.5px;">
+                Super Admin
+            </div>
+        </div>
+
+      {% else %}
+        <!-- ALL OTHER ROLES: Shows School Logo & Name -->
+        <div style="width: 44px; height: 44px; flex-shrink: 0;">
+            {% include 'partials/_school_logo.html' with size=44 school=current_school %}
+        </div>
+        
+        <div class="topbar-school-info" style="display: flex; flex-direction: column; justify-content: center;">
+            <div class="topbar-school-name">{{ current_school.name|default:"School" }}</div>
+            <div class="topbar-school-role">
+            {% if user.role == 'store_keeper' %}Store Keeper
+            {% elif user.role == 'security_officer' %}Chief Security Officer
+            {% elif user.role == 'secretary' %}Secretary
+            {% elif user.role == 'principal' %}Principal
+            {% elif user.role == 'deputy_admin' %}Deputy Principal — Admin
+            {% elif user.role == 'deputy_academics' %}Deputy Principal — Academics
+            {% elif user.role == 'director_of_studies' %}Director of Studies
+            {% elif user.role == 'accountant' %}Accountant
+            {% elif user.role == 'teacher' or user.role == 'class_teacher' %}Teacher
+            {% elif user.role == 'parent' %}Parent
+            {% elif user.role == 'student' %}Student
+            {% elif user.role == 'librarian' %}Librarian
+            {% elif user.role == 'lab_technician' %}Lab Technician
+            {% elif user.role == 'nurse' %}Nurse
+            {% elif user.role == 'driver' %}Driver
+            {% elif user.role == 'chief_chef' %}Chief Chef
+            {% elif user.role == 'boarding_master' %}Boarding Master
+            {% else %}{{ user.role|default:"" }}{% endif %}
+            </div>
+        </div>
+      {% endif %}
+      
     </a>
 
   </div>
@@ -66,7 +92,7 @@
       {% endif %}
     </a>
 
-    <a href="{% url 'super_admin_profile' %}" class="topbar-user" title="View Profile">
+    <a href="{% if user.role == 'super_admin' %}{% url 'super_admin_profile' %}{% else %}{% url 'profile_view' %}{% endif %}" class="topbar-user" title="View Profile">
       <div class="topbar-user-avatar">{{ user.email|first|upper }}</div>
       <div class="topbar-user-info">
         <div class="topbar-user-name">{{ user.get_full_name|default:user.email|truncatechars:22 }}</div>
