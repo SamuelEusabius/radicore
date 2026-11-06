@@ -324,3 +324,77 @@ def user_change_password(request, user_id):
     return render(request, 'dashboard/user_change_password.html', {
         'target': target,
     })
+    
+@login_required
+def edit_staff(request, staff_id):
+    """Edit an existing non-teaching staff member."""
+    if request.user.role not in ('principal', 'super_admin', 'deputy_admin'):
+        return redirect('dashboard_home')
+
+    from apps.staff.models import NonTeachingStaff
+    staff = get_object_or_404(NonTeachingStaff, id=staff_id, school=request.user.school)
+    
+    roles = NonTeachingStaff.Role.choices
+
+    if request.method == 'POST':
+        full_name = request.POST.get('full_name', '').strip()
+        id_number = request.POST.get('id_number', '').strip()
+        role = request.POST.get('role', '')
+        phone = request.POST.get('phone', '').strip()
+        email = request.POST.get('email', '').strip()
+        date_of_birth = request.POST.get('date_of_birth') or None
+        hire_date = request.POST.get('hire_date') or None
+        salary = request.POST.get('salary') or None
+        is_active = request.POST.get('is_active') == 'on'
+
+        if not full_name or not id_number or not role:
+            messages.error(request, 'Full Name, National ID, and Role are required.')
+        else:
+            staff.full_name = full_name
+            staff.id_number = id_number
+            staff.role = role
+            staff.phone = phone
+            staff.email = email
+            staff.date_of_birth = date_of_birth
+            staff.hire_date = hire_date
+            staff.salary = salary
+            staff.is_active = is_active
+
+            if 'photo' in request.FILES:
+                staff.photo = request.FILES['photo']
+
+            staff.save()
+            messages.success(request, f'Staff member "{staff.full_name}" updated successfully.')
+            return redirect('staff_list')
+
+    return render(request, 'dashboard/add_staff.html', {
+        'is_edit': True,
+        'staff': staff,
+        'roles': roles,
+        'form_data': {
+            'full_name': staff.full_name,
+            'id_number': staff.id_number,
+            'role': staff.role,
+            'phone': staff.phone,
+            'email': staff.email,
+            'date_of_birth': staff.date_of_birth.strftime('%Y-%m-%d') if staff.date_of_birth else '',
+            'hire_date': staff.hire_date.strftime('%Y-%m-%d') if staff.hire_date else '',
+            'salary': staff.salary,
+            'is_active': staff.is_active,
+        }
+    })
+
+@login_required
+def staff_id_card(request, staff_id):
+    """Print-ready view for a Non-Teaching Staff ID card."""
+    if request.user.role not in ('principal', 'super_admin', 'secretary', 'deputy_admin'):
+        return redirect('dashboard_home')
+
+    from apps.staff.models import NonTeachingStaff
+    school = request.user.school
+    staff = get_object_or_404(NonTeachingStaff, id=staff_id, school=school)
+
+    return render(request, 'dashboard/staff_id_card.html', {
+        'staff': staff,
+        'school': school,
+    })

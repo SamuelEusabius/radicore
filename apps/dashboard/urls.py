@@ -2,6 +2,7 @@ from django.urls import path, include
 from django.views.generic import RedirectView
 from apps.dashboard.views.students import student_bio_page as student_bio_view
 from django.shortcuts import render, redirect, get_object_or_404
+from apps.dashboard.views import users
 from apps.dashboard.views import subscription
 
 from . import views
@@ -200,6 +201,12 @@ urlpatterns = [
      path('super-admin/platform-staff/add/', views.admin_schools.platform_staff_create, name='platform_staff_create'),
      path('super-admin/platform-staff/<int:staff_id>/edit/', views.admin_schools.platform_staff_edit, name='platform_staff_edit'),
      path('super-admin/platform-staff/<int:staff_id>/id-card/', views.admin_schools.platform_staff_id_card, name='platform_staff_id_card'),
+     path('students/<int:student_id>/id-card/', views.students.student_id_card, name='student_id_card'),
+     path('school-settings/id-cards/', views.admin_schools.school_id_settings, name='school_id_settings'),
+     path('teachers/<int:teacher_id>/id-card/', views.teachers.teacher_id_card, name='teacher_id_card'),
+     path('teachers/<int:teacher_id>/edit/', views.teachers.edit_teacher, name='edit_teacher'),
+     path('staff/<int:staff_id>/edit/', views.users.edit_staff, name='edit_staff'),
+     path('staff/<int:staff_id>/id-card/', views.users.staff_id_card, name='staff_id_card'),
     
      path('teacher/my-class/rankings/download/',
          views.class_teacher_rankings_download,

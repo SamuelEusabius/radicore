@@ -193,10 +193,14 @@
             </td>
 
             <td>
-              <div class="table-actions">
-                <a href="{% url 'delete_staff' s.id %}"
-                   class="btn btn-sm btn-danger"
-                   onclick="return confirm('Delete {{ s.full_name|escapejs }}? This cannot be undone.');">
+              <div class="table-actions" style="flex-wrap: wrap; justify-content: flex-end;">
+                <a href="{% url 'edit_staff' s.id %}" class="btn btn-sm btn-secondary" style="color: #3b82f6; border-color: #bfdbfe;" title="Edit Staff">
+                  {% include 'partials/icons.html' with name="edit" size=13 %}
+                </a>
+                <a href="{% url 'staff_id_card' s.id %}" target="_blank" class="btn btn-sm btn-secondary" style="color: #3b82f6; border-color: #bfdbfe;" title="Print ID Card">
+                  {% include 'partials/icons.html' with name="printer" size=13 %} ID
+                </a>
+                <a href="{% url 'delete_staff' s.id %}" class="btn btn-sm btn-danger" onclick="return confirm('Delete {{ s.full_name|escapejs }}?');">
                   {% include 'partials/icons.html' with name="trash" size=13 %}
                 </a>
               </div>

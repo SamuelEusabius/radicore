@@ -189,6 +189,10 @@
         {% include 'partials/icons.html' with name="settings" size=18 %}
         <span class="sidebar-link-text">School Settings</span>
       </a>
+      <a href="{% url 'school_id_settings' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="credit-card" size=18 %}
+        <span class="sidebar-link-text">ID Card Settings</span>
+      </a>
       <a href="{% url 'messages_inbox' %}" class="sidebar-link">
         {% include 'partials/icons.html' with name="mail" size=18 %}
         <span class="sidebar-link-text">Inbox</span>

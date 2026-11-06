@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+{% block title %}ID Card Settings{% endblock %}
+{% block header_title %}ID Card Settings{% endblock %}
+
+{% block content %}
+<style>
+    .form-card { background: white; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); border: 1px solid #e2e8f0; padding: 32px; max-width: 900px; margin: 0 auto; }
+    .form-label { font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 8px; display: block; text-transform: uppercase; letter-spacing: 0.5px; }
+    .form-input { width: 100%; padding: 12px 14px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; color: #0f172a; background: white; }
+    
+    .theme-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; margin-bottom: 24px; }
+    .theme-option { position: relative; cursor: pointer; }
+    .theme-option input { position: absolute; opacity: 0; }
+    .theme-box { height: 70px; border-radius: 8px; border: 3px solid transparent; display: flex; align-items: flex-end; padding: 8px; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .theme-option input:checked ~ .theme-box { border-color: #0f172a; transform: scale(1.05); box-shadow: 0 6px 12px rgba(0,0,0,0.15); }
+    .theme-option span { font-size: 10px; font-weight: 800; color: white; text-shadow: 0 1px 3px rgba(0,0,0,0.8); text-transform: uppercase; }
+    
+    /* 10 Professional Background Artworks */
+    .bg-ocean { background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #3b82f6 100%); }
+    .bg-mesh { background: linear-gradient(45deg, #1e3a8a, #6b21a8, #f472b6, #3b82f6); background-size: 300% 300%; }
+    .bg-hexagon { background: #064e3b; background-image: radial-gradient(circle at 50% 50%, rgba(16,185,129,0.2) 0%, transparent 60%), repeating-linear-gradient(60deg, #047857 0, #047857 2px, transparent 2px, transparent 10px); }
+    .bg-stripes { background: #450a0a; background-image: repeating-linear-gradient(45deg, #b91c1c 0, #b91c1c 2px, transparent 2px, transparent 10px); }
+    .bg-tech { background: #000; background-image: radial-gradient(#1e3a8a 1px, transparent 1px); background-size: 8px 8px; }
+    .bg-sunset { background: linear-gradient(135deg, #7c2d12 0%, #ea580c 50%, #f472b6 100%); }
+    .bg-gold { background: #1c1917; background-image: radial-gradient(circle at 10% 20%, rgba(253,224,71,0.2) 0%, transparent 30%), linear-gradient(135deg, #422006, #a16207); }
+    .bg-forest { background: #14532d; background-image: repeating-linear-gradient(-45deg, #166534 0, #166534 1px, transparent 1px, transparent 6px); }
+    .bg-cyberpunk { background: linear-gradient(135deg, #2e1065 0%, #86198f 50%, #f472b6 100%); }
+    .bg-slate { background: #1e293b; background-image: linear-gradient(0deg, transparent 24%, rgba(148, 163, 184, 0.2) 25%, rgba(148, 163, 184, 0.2) 26%, transparent 27%, transparent 74%, rgba(148, 163, 184, 0.2) 75%, rgba(148, 163, 184, 0.2) 76%, transparent 77%, transparent); }
+</style>
+
+<div class="form-card">
+    <h3 style="margin: 0 0 20px 0; font-size: 18px; font-weight: 700; color: #0f172a; border-bottom: 1px solid #e2e8f0; padding-bottom: 16px;">ID Card Customization</h3>
+    
+    <!-- enctype is CRITICAL for the signature upload to work -->
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <div style="margin-bottom: 24px;">
+            <label class="form-label">Select Background Artwork</label>
+            <div class="theme-grid">
+                {% for code, name in themes %}
+                <label class="theme-option">
+                    <input type="radio" name="id_card_theme" value="{{ code }}" {% if school.id_card_theme == code %}checked{% endif %}>
+                    <div class="theme-box bg-{{ code }}">
+                        <span>{{ name|slice:"3:" }}</span>
+                    </div>
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px;">
+            <div>
+                <label class="form-label">Valid Until Year</label>
+                <input type="text" name="id_card_valid_year" value="{{ school.id_card_valid_year }}" class="form-input" placeholder="e.g. 2026" required>
+            </div>
+            <div>
+                <label class="form-label">Principal Signature</label>
+                {% if school.principal_signature %}
+                    <div style="margin-bottom: 8px; padding: 8px; border: 1px dashed #cbd5e1; background: #f8fafc; text-align: center;">
+                        <img src="{{ school.principal_signature.url }}" alt="Signature" style="max-height: 40px;">
+                    </div>
+                {% endif %}
+                <input type="file" name="principal_signature" accept="image/*" class="form-input" style="padding: 9px 14px;">
+            </div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; border-top: 1px solid #e2e8f0; padding-top: 24px;">
+            <button type="submit" class="btn-primary" style="background: #10b981; color: white; padding: 12px 24px; border-radius: 8px; font-weight: 600; border: none; cursor: pointer;">
+                Save Settings
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

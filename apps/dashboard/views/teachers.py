@@ -719,4 +719,138 @@ def _ct_teacher_and_class(request):
         return teacher, None
     return teacher, teacher.current_class
 
+@login_required
+def teacher_id_card(request, teacher_id):
+    """Print-ready view for a Teacher ID card."""
+    from apps.teachers.models import Teacher
+    
+    # Allow admins and principals to print IDs
+    if request.user.role not in ('principal', 'super_admin', 'secretary', 'deputy_admin'):
+        return redirect('dashboard_home')
 
+    school = request.user.school
+    teacher = get_object_or_404(Teacher, id=teacher_id, school=school)
+
+    return render(request, 'dashboard/teacher_id_card.html', {
+        'teacher': teacher,
+        'school': school,
+    })
+    
+@login_required
+def edit_teacher(request, teacher_id):
+    """Edit an existing teacher."""
+    if request.user.role not in ('principal', 'super_admin'):
+        return redirect('dashboard_home')
+
+    from apps.teachers.models import Teacher
+    from apps.academics.models import ClassLevel
+    from apps.accounts.models import User
+
+    school = request.user.school
+    teacher = get_object_or_404(Teacher, id=teacher_id, school=school)
+    user = teacher.user
+    
+    classes = ClassLevel.objects.filter(school=school).order_by('name')
+    employment_types = Teacher.EmploymentType.choices
+
+    if request.method == 'POST':
+        # --- Basic User Info ---
+        first_name = request.POST.get('first_name', '').strip()
+        last_name = request.POST.get('last_name', '').strip()
+        email = request.POST.get('email', '').strip().lower()
+        phone = request.POST.get('phone', '').strip()
+
+        # --- Teacher Specific Info ---
+        employee_number = request.POST.get('employee_number', '').strip()
+        tsc_number = request.POST.get('tsc_number', '').strip()
+        id_number = request.POST.get('id_number', '').strip()
+        employment_type = request.POST.get('employment_type', '')
+        subject_specialty = request.POST.get('subject_specialty', '').strip()
+        hire_date = request.POST.get('hire_date') or None
+        is_active = request.POST.get('is_active') == 'on'
+        
+        is_class_teacher = request.POST.get('is_class_teacher') == 'on'
+        current_class_id = request.POST.get('current_class') or None
+
+        errors = []
+        
+        # Validations
+        if not first_name or not last_name:
+            errors.append('First and Last names are required.')
+        if not email:
+            errors.append('Email is required.')
+        elif User.objects.filter(email=email).exclude(id=user.id).exists():
+            errors.append(f'Email "{email}" is already in use by another user.')
+            
+        if not employee_number:
+            errors.append('Employee number is required.')
+        elif Teacher.objects.filter(school=school, employee_number=employee_number).exclude(id=teacher.id).exists():
+            errors.append(f'Employee number "{employee_number}" is already in use.')
+
+        if errors:
+            for e in errors:
+                messages.error(request, e)
+            return render(request, 'dashboard/add_teacher.html', {
+                'classes': classes,
+                'employment_types': employment_types,
+                'form_data': request.POST,
+                'is_edit': True,
+                'teacher': teacher,
+            })
+
+        try:
+            # Update User
+            user.first_name = first_name
+            user.last_name = last_name
+            user.email = email
+            user.username = email # If username is tied to email
+            user.phone = phone
+            user.save()
+
+            # Update Teacher
+            teacher.employee_number = employee_number
+            teacher.tsc_number = tsc_number
+            teacher.id_number = id_number
+            teacher.employment_type = employment_type
+            teacher.subject_specialty = subject_specialty
+            teacher.hire_date = hire_date
+            teacher.is_active = is_active
+            
+            teacher.is_class_teacher = is_class_teacher
+            teacher.current_class_id = current_class_id if is_class_teacher else None
+            
+            # Update Photo if uploaded
+            if 'photo' in request.FILES:
+                teacher.photo = request.FILES['photo']
+
+            teacher.save()
+            messages.success(request, f'Teacher "{user.get_full_name()}" updated successfully.')
+            return redirect('teachers_list')
+
+        except Exception as e:
+            messages.error(request, f'An error occurred: {str(e)}')
+
+    # GET Request - Pre-fill context
+    context = {
+        'classes': classes,
+        'employment_types': employment_types,
+        'is_edit': True,
+        'teacher': teacher,
+        # Pre-fill the form data using the teacher object
+        'form_data': {
+            'first_name': user.first_name,
+            'last_name': user.last_name,
+            'email': user.email,
+            'phone': user.phone,
+            'employee_number': teacher.employee_number,
+            'tsc_number': teacher.tsc_number,
+            'id_number': teacher.id_number,
+            'employment_type': teacher.employment_type,
+            'subject_specialty': teacher.subject_specialty,
+            'hire_date': teacher.hire_date.strftime('%Y-%m-%d') if teacher.hire_date else '',
+            'is_active': teacher.is_active,
+            'is_class_teacher': teacher.is_class_teacher,
+            'current_class': teacher.current_class_id,
+        }
+    }
+    return render(request, 'dashboard/add_teacher.html', context)

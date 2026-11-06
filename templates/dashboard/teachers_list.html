@@ -193,7 +193,15 @@
             </td>
 
             <td>
-              <div class="table-actions" style="flex-wrap: wrap;">
+              <div class="table-actions" style="flex-wrap: wrap; justify-content: flex-end;">
+                <a href="{% url 'edit_teacher' t.id %}" class="btn btn-sm btn-secondary" style="color: #3b82f6; border-color: #bfdbfe;" title="Edit Teacher">
+                  {% include 'partials/icons.html' with name="edit" size=13 %}
+                </a>
+                
+                <a href="{% url 'teacher_id_card' t.id %}" target="_blank" class="btn btn-sm btn-secondary" style="color: #3b82f6; border-color: #bfdbfe;" title="Print ID Card">
+                  {% include 'partials/icons.html' with name="printer" size=13 %} ID
+                </a>
+
                 <a href="{% url 'delete_teacher' t.id %}"
                    class="btn btn-sm btn-danger"
                    onclick="return confirm('Delete {{ t.user.get_full_name|default:t.user.email|escapejs }}? This will remove their account.');">

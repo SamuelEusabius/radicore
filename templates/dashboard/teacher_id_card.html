@@ -1,0 +1,428 @@
+{% extends 'base.html' %}
+{% block title %}ID Card - {{ teacher.user.first_name }} {{ teacher.user.last_name }}{% endblock %}
+{% block header_title %}Print Teacher ID{% endblock %}
+
+{% block content %}
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Libre+Barcode+39&display=swap" rel="stylesheet">
+
+<style>
+    .id-card-container {
+        display: flex;
+        gap: 32px;
+        justify-content: center;
+        flex-wrap: wrap;
+        padding: 48px 24px;
+        background: #f8fafc;
+        border-radius: 16px;
+        border: 1px dashed #cbd5e1;
+        margin: 0 auto;
+        max-width: 900px;
+    }
+
+    .id-card {
+        width: 340px;
+        height: 214px;
+        border-radius: 12px;
+        position: relative;
+        overflow: hidden;
+        font-family: 'Inter', sans-serif;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        background: white;
+        color: white;
+    }
+
+    /* ==================== FRONT CARD THEMES ==================== */
+    .front-card {
+        {% if school.id_card_theme == 'mesh' %}
+            background: linear-gradient(45deg, #1e3a8a, #6b21a8, #f472b6, #3b82f6);
+            background-size: 300% 300%;
+            animation: gradientBG 10s ease infinite;
+        {% elif school.id_card_theme == 'hexagon' %}
+            background-color: #064e3b;
+            background-image: radial-gradient(circle at 50% 50%, rgba(16,185,129,0.3) 0%, transparent 60%), repeating-linear-gradient(60deg, #047857 0, #047857 2px, transparent 2px, transparent 10px);
+        {% elif school.id_card_theme == 'stripes' %}
+            background-color: #450a0a;
+            background-image: repeating-linear-gradient(45deg, #b91c1c 0, #b91c1c 2px, transparent 2px, transparent 10px);
+        {% elif school.id_card_theme == 'tech' %}
+            background-color: #000;
+            background-image: radial-gradient(#1e3a8a 1px, transparent 1px);
+            background-size: 8px 8px;
+        {% elif school.id_card_theme == 'sunset' %}
+            background: linear-gradient(135deg, #7c2d12 0%, #ea580c 50%, #f472b6 100%);
+        {% elif school.id_card_theme == 'gold' %}
+            background-color: #1c1917;
+            background-image: radial-gradient(circle at 10% 20%, rgba(253,224,71,0.2) 0%, transparent 30%), linear-gradient(135deg, #422006, #a16207);
+        {% elif school.id_card_theme == 'forest' %}
+            background-color: #14532d;
+            background-image: repeating-linear-gradient(-45deg, #166534 0, #166534 1px, transparent 1px, transparent 6px);
+        {% elif school.id_card_theme == 'cyberpunk' %}
+            background: linear-gradient(135deg, #2e1065 0%, #86198f 50%, #f472b6 100%);
+        {% elif school.id_card_theme == 'slate' %}
+            background-color: #1e293b;
+            background-image: linear-gradient(0deg, transparent 24%, rgba(148, 163, 184, 0.2) 25%, rgba(148, 163, 184, 0.2) 26%, transparent 27%, transparent 74%, rgba(148, 163, 184, 0.2) 75%, rgba(148, 163, 184, 0.2) 76%, transparent 77%, transparent);
+        {% else %}
+            /* Default Ocean */
+            background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #3b82f6 100%);
+        {% endif %}
+    }
+
+    /* Animation for Mesh theme */
+    @keyframes gradientBG {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+    .front-card::before {
+        content: '';
+        position: absolute;
+        top: 0; right: 0; bottom: 0; left: 0;
+        background-image: 
+            radial-gradient(circle at 100% 0%, rgba(255, 255, 255, 0.15) 0%, transparent 50%),
+            repeating-linear-gradient(45deg, rgba(255,255,255,0.02) 0px, rgba(255,255,255,0.02) 2px, transparent 2px, transparent 8px);
+        pointer-events: none;
+    }
+
+    .brand-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 14px 20px;
+        border-bottom: 1px solid rgba(255,255,255,0.15);
+        position: relative;
+        z-index: 2;
+    }
+
+    .brand-logo-text {
+        font-size: 14px;
+        font-weight: 800;
+        letter-spacing: -0.3px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .card-logo-img {
+        height: 24px;
+        width: auto;
+        object-fit: contain;
+        mix-blend-mode: screen; 
+    }
+
+    .card-title {
+        font-size: 9px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        color: rgba(255,255,255,0.8);
+    }
+
+    .front-body {
+        display: flex;
+        padding: 14px 20px;
+        gap: 16px;
+        position: relative;
+        z-index: 2;
+    }
+
+    .staff-photo {
+        width: 75px;
+        height: 95px;
+        border-radius: 8px;
+        background: rgba(255,255,255,0.1);
+        border: 2px solid rgba(255, 255, 255, 0.4);
+        object-fit: cover;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 28px;
+        font-weight: 800;
+        color: rgba(255,255,255,0.6);
+        box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        flex-shrink: 0;
+        overflow: hidden;
+    }
+
+    .staff-details {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        padding-top: 4px;
+    }
+
+    .staff-name {
+        font-size: 16px;
+        font-weight: 800;
+        line-height: 1.1;
+        letter-spacing: -0.3px;
+        text-transform: uppercase;
+        color: white;
+        margin-bottom: 4px;
+    }
+
+    .staff-designation {
+        font-size: 11px;
+        font-weight: 700;
+        color: rgba(255,255,255,0.9);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 8px;
+    }
+
+    .info-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 6px 12px;
+    }
+
+    .info-item label {
+        display: block;
+        font-size: 7.5px;
+        font-weight: 600;
+        color: rgba(255,255,255,0.65);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 1px;
+    }
+
+    .info-item span {
+        display: block;
+        font-size: 10px;
+        font-weight: 700;
+        color: white;
+        font-family: 'Inter', monospace;
+        letter-spacing: 0.5px;
+    }
+
+    .signature-box {
+        position: absolute;
+        bottom: 12px;
+        right: 20px;
+        text-align: center;
+        z-index: 2;
+    }
+
+    .card-signature-img {
+        height: 24px;
+        max-width: 85px;
+        object-fit: contain;
+        display: block;
+        margin: 0 auto 2px auto;
+        mix-blend-mode: screen; 
+        filter: brightness(0) invert(1); 
+        opacity: 0.9;
+    }
+
+    .signature-line {
+        width: 65px;
+        height: 1px;
+        background: rgba(255,255,255,0.3);
+        margin-bottom: 2px;
+    }
+
+    .signature-box label {
+        font-size: 7px;
+        font-weight: 600;
+        color: rgba(255,255,255,0.7);
+        text-transform: uppercase;
+    }
+
+    /* ==================== BACK SIDE ==================== */
+    .back-card {
+        background: #ffffff;
+        color: #0f172a;
+        border: 1px solid #e2e8f0;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .back-header {
+        {% if school.id_card_theme == 'emerald' %}
+            background: linear-gradient(90deg, #064e3b 0%, #047857 100%);
+        {% elif school.id_card_theme == 'royal' %}
+            background: linear-gradient(90deg, #2e1065 0%, #6b21a8 100%);
+        {% elif school.id_card_theme == 'crimson' %}
+            background: linear-gradient(90deg, #450a0a 0%, #b91c1c 100%);
+        {% elif school.id_card_theme == 'slate' %}
+            background: linear-gradient(90deg, #1e293b 0%, #475569 100%);
+        {% elif school.id_card_theme == 'midnight' %}
+            background: linear-gradient(90deg, #000000 0%, #1e3a8a 100%);
+        {% elif school.id_card_theme == 'sunset' %}
+            background: linear-gradient(90deg, #7c2d12 0%, #f472b6 100%);
+        {% elif school.id_card_theme == 'gold' %}
+            background: linear-gradient(90deg, #422006 0%, #fde047 100%);
+        {% elif school.id_card_theme == 'forest' %}
+            background: linear-gradient(90deg, #14532d 0%, #84cc16 100%);
+        {% elif school.id_card_theme == 'cyberpunk' %}
+            background: linear-gradient(90deg, #2e1065 0%, #f472b6 100%);
+        {% else %}
+            background: linear-gradient(90deg, #0f172a 0%, #1e3a8a 100%);
+        {% endif %}
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 16px;
+        color: white;
+        font-weight: 700;
+        font-size: 10px;
+        letter-spacing: 0.5px;
+    }
+
+    .back-body {
+        padding: 12px 16px;
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        justify-content: space-between;
+    }
+
+    .disclaimer {
+        font-size: 8.5px;
+        line-height: 1.5;
+        color: #475569;
+        text-align: center;
+        margin-bottom: 8px;
+        font-weight: 500;
+    }
+
+    .contact-info {
+        font-size: 9px;
+        color: #1e3a8a;
+        font-weight: 700;
+        text-align: center;
+        line-height: 1.5;
+    }
+
+    .back-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        margin-top: auto;
+    }
+
+    .barcode {
+        font-family: 'Libre Barcode 39', cursive;
+        font-size: 30px;
+        color: #0f172a;
+        line-height: 0.8;
+        transform: scaleY(1.2);
+    }
+
+    @media print {
+        @page { size: landscape; margin: 0; }
+        body { background: white; margin: 0; padding: 0; }
+        body * { visibility: hidden; }
+        .print-area, .print-area * { visibility: visible; }
+        .print-area { position: absolute; left: 0; top: 0; width: 100%; display: flex; gap: 20px; justify-content: center; align-items: center; background: white; }
+        .id-card { box-shadow: none; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        .no-print { display: none !important; }
+    }
+</style>
+
+<div class="print-area">
+    <div class="id-card-container">
+        
+        <!-- FRONT CARD -->
+        <div class="id-card front-card">
+            <div class="brand-header">
+                <div class="brand-logo-text">
+                    {% if school.logo %}
+                        <img src="{{ school.logo.url }}" alt="Logo" class="card-logo-img">
+                    {% else %}
+                        <div style="width: 24px; height: 24px; background: rgba(255,255,255,0.2); border-radius: 4px; display: flex; align-items: center; justify-content: center; color: white; font-size: 12px; font-weight: 900;">S</div>
+                    {% endif %}
+                    {{ school.name }}
+                </div>
+                <div class="card-title">Staff ID</div>
+            </div>
+
+            <div class="front-body">
+                <div class="staff-photo">
+                    {% if teacher.photo %}
+                        <img src="{{ teacher.photo.url }}" alt="Photo" style="width: 100%; height: 100%; object-fit: cover;">
+                    {% elif teacher.user.profile_picture %}
+                        <img src="{{ teacher.user.profile_picture.url }}" alt="Photo" style="width: 100%; height: 100%; object-fit: cover;">
+                    {% else %}
+                        {{ teacher.user.first_name|first|upper }}
+                    {% endif %}
+                </div>
+
+                <div class="staff-details">
+                    <div class="staff-name">{{ teacher.user.first_name }} {{ teacher.user.last_name }}</div>
+                    <div class="staff-designation">Teacher</div>
+                    
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <label>Employee No</label>
+                            <span>{{ teacher.employee_number|default:"-" }}</span>
+                        </div>
+                        <div class="info-item">
+                            <label>TSC No</label>
+                            <span>{{ teacher.tsc_number|default:"-" }}</span>
+                        </div>
+                        <div class="info-item">
+                            <label>Specialty</label>
+                            <span style="font-size: 9px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100px;">{{ teacher.subject_specialty|default:"General" }}</span>
+                        </div>
+                        <div class="info-item">
+                            <label>Valid</label>
+                            <span>{{ school.id_card_valid_year|default:"2026" }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="signature-box">
+                {% if school.principal_signature %}
+                    <img src="{{ school.principal_signature.url }}" alt="Signature" class="card-signature-img">
+                {% else %}
+                    <div class="signature-line"></div>
+                {% endif %}
+                <label>Principal</label>
+            </div>
+        </div>
+
+        <!-- BACK CARD -->
+        <div class="id-card back-card">
+            <div class="back-header">
+                {{ school.name }} &bull; {{ school.motto|default:"Knowledge is Power" }}
+            </div>
+
+            <div class="back-body">
+                <div class="disclaimer">
+                    This Identification Card is the property of {{ school.name }}.<br>
+                    If found, please return to the school administration office.<br>
+                    <strong style="color:#ef4444; font-size: 9px; margin-top: 4px; display: block;">If found, please call: {{ school.phone|default:"School Office" }}</strong>
+                </div>
+
+                <div class="contact-info">
+                    {{ school.email }}<br>
+                    {{ school.physical_address|default:"Nairobi, Kenya" }}
+                </div>
+
+                <div class="back-footer">
+                    <div style="text-align: left;">
+                        <div style="width: 60px; border-bottom: 1px solid #94a3b8;"></div>
+                        <div style="font-size: 7px; font-weight: 700; color: #64748b; margin-top: 3px; text-transform: uppercase;">Staff Sign</div>
+                    </div>
+                    
+                    <div class="barcode">
+                        *{{ teacher.employee_number|default:"T-000" }}*
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<div class="no-print" style="margin-top: 32px; display: flex; justify-content: center; gap: 12px;">
+    <button onclick="window.print()" class="btn-primary" style="background: #0f172a; color: white; padding: 12px 32px; border-radius: 8px; font-weight: 600; font-size: 14px; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; font-family: 'Inter', sans-serif; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+        {% include 'partials/icons.html' with name="printer" size=18 %} Print Teacher ID
+    </button>
+    <a href="{% url 'teachers_list' %}" style="background: white; color: #475569; padding: 12px 32px; border-radius: 8px; font-weight: 600; font-size: 14px; text-decoration: none; border: 1px solid #cbd5e1; display: inline-flex; align-items: center; transition: background 0.2s;">
+        Back to Teachers
+    </a>
+</div>
+{% endblock %}

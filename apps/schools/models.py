@@ -103,6 +103,22 @@ class School(models.Model):
     )
     logo = models.ImageField(upload_to='school_logos/', blank=True, null=True)
     motto = models.CharField(max_length=200, blank=True, default='')
+    ID_THEME_CHOICES = [
+        ('ocean', '1. Ocean Blue'),
+        ('emerald', '2. Emerald Green'),
+        ('royal', '3. Royal Purple'),
+        ('crimson', '4. Crimson Red'),
+        ('slate', '5. Modern Slate'),
+        ('midnight', '6. Midnight Black'),
+        ('sunset', '7. Sunset Orange'),
+        ('gold', '8. Golden Luxury'),
+        ('forest', '9. Forest Green'),
+        ('cyberpunk', '10. Cyberpunk Pink'),
+    ]
+    
+    principal_signature = models.ImageField(upload_to='school_signatures/', blank=True, null=True)
+    id_card_theme = models.CharField(max_length=20, choices=ID_THEME_CHOICES, default='ocean')
+    id_card_valid_year = models.CharField(max_length=4, default='2026')
 
     # ============ CLASSIFICATION ============
     school_type = models.CharField(
@@ -652,7 +668,6 @@ class CompanyProfile(models.Model):
     """Global settings for the SaaS Platform"""
     name = models.CharField(max_length=150, default="LoyTech Developers")
     
-    # ADD THIS LINE
     logo = models.ImageField(upload_to='platform/logos/', blank=True, null=True)
     
     signature_image = models.ImageField(upload_to='platform/signatures/', blank=True, null=True)
@@ -662,3 +677,4 @@ class CompanyProfile(models.Model):
 
     def __str__(self):
         return self.name
+    

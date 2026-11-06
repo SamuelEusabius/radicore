@@ -1,8 +1,8 @@
 {% extends 'base.html' %}
 {% load static %}
-{% block title %}Add Teacher{% endblock %}
-{% block header_title %}Add New Teacher{% endblock %}
-{% block header_sub %}{{ current_school.name|default:"School" }} · register a new teaching staff member{% endblock %}
+{% block title %}{% if is_edit %}Edit Teacher{% else %}Add Teacher{% endif %}{% endblock %}
+{% block header_title %}{% if is_edit %}Edit Teacher{% else %}Add New Teacher{% endif %}{% endblock %}
+{% block header_sub %}{{ current_school.name|default:"School" }} · {% if is_edit %}update staff details{% else %}register a new teaching staff member{% endif %}{% endblock %}
 
 {% block content %}
 
@@ -16,8 +16,9 @@
     {% csrf_token %}
 
     <!-- ============================================ -->
-    <!-- LOGIN ACCOUNT                                -->
+    <!-- LOGIN ACCOUNT (Only show for new teachers)   -->
     <!-- ============================================ -->
+    {% if not is_edit %}
     <div class="card mb-6" style="border-left: 4px solid var(--primary); background: var(--primary-soft);">
       <div class="card-title" style="color: var(--primary-dark);">
         {% include 'partials/icons.html' with name="lock" size=18 %}
@@ -41,6 +42,10 @@
         </div>
       </div>
     </div>
+    {% else %}
+    <!-- Hidden email field so the form doesn't break on submit when editing -->
+    <input type="hidden" name="email" value="{{ form_data.email }}">
+    {% endif %}
 
     <!-- ============================================ -->
     <!-- PERSONAL INFO                                -->
@@ -84,8 +89,13 @@
 
         <div class="form-group">
           <label class="form-label">Photo</label>
+          {% if is_edit and teacher.photo %}
+            <div style="margin-bottom: 8px;">
+              <img src="{{ teacher.photo.url }}" style="height: 40px; width: 40px; border-radius: 50%; object-fit: cover;">
+            </div>
+          {% endif %}
           <input type="file" name="photo" accept="image/*" class="input" style="padding: 8px;">
-          <p class="form-hint">JPG or PNG, up to 5MB</p>
+          <p class="form-hint">{% if is_edit %}Upload a new photo to replace the current one.{% else %}JPG or PNG, up to 5MB{% endif %}</p>
         </div>
 
       </div>
@@ -161,12 +171,25 @@
         <select name="current_class" class="select">
           <option value="">— None —</option>
           {% for c in classes %}
-            <option value="{{ c.id }}" {% if form_data.current_class == c.id|stringformat:"s" %}selected{% endif %}>{{ c.name }}</option>
+            <option value="{{ c.id }}" {% if form_data.current_class == c.id|stringformat:"s" or form_data.current_class == c.id %}selected{% endif %}>{{ c.name }}</option>
           {% endfor %}
         </select>
         <p class="form-hint">Only needed if this teacher is a class teacher</p>
       </div>
     </div>
+
+    <!-- Active Status (Only when editing) -->
+    {% if is_edit %}
+    <div class="card mb-6">
+      <label style="display: flex; align-items: center; gap: var(--s-3); cursor: pointer;">
+        <input type="checkbox" name="is_active" {% if form_data.is_active %}checked{% endif %}
+               style="width: 18px; height: 18px; accent-color: var(--primary);">
+        <span style="font-size: var(--text-sm); color: var(--ink-800);">
+          Staff member is currently active
+        </span>
+      </label>
+    </div>
+    {% endif %}
 
     <!-- ============================================ -->
     <!-- ACTIONS                                      -->
@@ -175,7 +198,7 @@
       <a href="{% url 'teachers_list' %}" class="btn btn-secondary">Cancel</a>
       <button type="submit" class="btn btn-primary" style="padding: 12px 32px;">
         {% include 'partials/icons.html' with name="save" size=15 %}
-        <span>Save Teacher</span>
+        <span>{% if is_edit %}Save Changes{% else %}Save Teacher{% endif %}</span>
       </button>
     </div>
 

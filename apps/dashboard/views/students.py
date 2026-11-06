@@ -835,3 +835,21 @@ def bulk_upload_students(request):
             return redirect('bulk_upload_students')
 
     return render(request, 'dashboard/students/bulk_upload.html')
+
+@login_required
+def student_id_card(request, student_id):
+    """Print-ready view for a Student ID card."""
+    from apps.students.models import Student
+    
+    # Allow admins, teachers, and principals to print IDs
+    if request.user.role not in ('principal', 'super_admin', 'secretary', 'teacher', 'deputy_admin'):
+        return redirect('dashboard_home')
+
+    # Ensure they can only print IDs for students in their own school
+    school = request.user.school
+    student = get_object_or_404(Student, id=student_id, school=school)
+
+    return render(request, 'dashboard/student_id_card.html', {
+        'student': student,
+        'school': school,
+    })

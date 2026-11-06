@@ -971,3 +971,29 @@ def platform_staff_id_card(request, staff_id):
         'staff': staff,
         'platform': platform_context,
     })
+    
+@login_required
+def school_id_settings(request):
+    """Principal: Customize school ID cards."""
+    if request.user.role not in ('principal', 'super_admin'):
+        return redirect('dashboard_home')
+
+    school = request.user.school
+
+    if request.method == 'POST':
+        # Handle signature upload
+        if 'principal_signature' in request.FILES:
+            school.principal_signature = request.FILES['principal_signature']
+        
+        # Handle theme and valid year
+        school.id_card_theme = request.POST.get('id_card_theme', 'ocean')
+        school.id_card_valid_year = request.POST.get('id_card_valid_year', '2026')
+        
+        school.save()
+        messages.success(request, 'ID Card settings updated successfully.')
+        return redirect('school_id_settings')
+
+    return render(request, 'dashboard/school_id_settings.html', {
+        'school': school,
+        'themes': school.ID_THEME_CHOICES
+    })
