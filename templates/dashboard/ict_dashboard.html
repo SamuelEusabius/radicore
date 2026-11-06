@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+{% block title %}ICT Dashboard{% endblock %}
+{% block header_title %}ICT Dashboard & System Usage{% endblock %}
+
+{% block content %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+    
+    <!-- Pie Chart Card -->
+    <div class="card" style="padding: 24px; background: white; border-radius: 12px; border: 1px solid #e2e8f0;">
+        <h3 style="margin: 0 0 16px 0; font-size: 16px; font-weight: 700; color: #0f172a;">System Usage Overview</h3>
+        <div style="position: relative; height: 300px; width: 100%; display: flex; justify-content: center;">
+            <canvas id="usageChart"></canvas>
+        </div>
+    </div>
+
+    <!-- KPI Stats -->
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+        <div style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 20px; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <div style="font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase;">Total Students</div>
+                <div style="font-size: 24px; font-weight: 700; color: #0f172a;">{{ total_students }}</div>
+            </div>
+            <div style="background: #ecfdf5; color: #10b981; padding: 12px; border-radius: 8px;">
+                {% include 'partials/icons.html' with name="graduation-cap" size=24 %}
+            </div>
+        </div>
+        
+        <div style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 20px; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <div style="font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase;">Total Teachers</div>
+                <div style="font-size: 24px; font-weight: 700; color: #0f172a;">{{ total_teachers }}</div>
+            </div>
+            <div style="background: #eff6ff; color: #3b82f6; padding: 12px; border-radius: 8px;">
+                {% include 'partials/icons.html' with name="teacher" size=24 %}
+            </div>
+        </div>
+
+        <div style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 20px; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <div style="font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase;">Total Parents</div>
+                <div style="font-size: 24px; font-weight: 700; color: #0f172a;">{{ total_parents }}</div>
+            </div>
+            <div style="background: #fdf4ff; color: #c026d3; padding: 12px; border-radius: 8px;">
+                {% include 'partials/icons.html' with name="users" size=24 %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions Card (Only visible to the ICT Officer) -->
+{% if request.user.role == 'ict_officer' %}
+<div style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 24px; margin-top: 24px;">
+    <h3 style="margin: 0 0 16px 0; font-size: 16px; font-weight: 700; color: #0f172a;">Quick Actions</h3>
+    <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+        <!-- ID Card Settings -->
+        <a href="{% url 'school_id_settings' %}" style="background: #eff6ff; color: #3b82f6; padding: 12px 20px; border-radius: 8px; font-weight: 600; font-size: 14px; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: background 0.2s;">
+            {% include 'partials/icons.html' with name="credit-card" size=18 %} Manage ID Card Themes
+        </a>
+        
+        <!-- Bulk SMS (Only shows if enabled by the Principal) -->
+        {% if 'sms' in enabled_modules %}
+        <a href="{% url 'bulk_sms' %}" style="background: #ecfdf5; color: #10b981; padding: 12px 20px; border-radius: 8px; font-weight: 600; font-size: 14px; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: background 0.2s;">
+            {% include 'partials/icons.html' with name="message-square" size=18 %} Send Bulk SMS
+        </a>
+        {% endif %}
+        
+        <!-- Update Photos -->
+        <a href="{% url 'students_list' %}" style="background: #fffbeb; color: #d97706; padding: 12px 20px; border-radius: 8px; font-weight: 600; font-size: 14px; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: background 0.2s;">
+            {% include 'partials/icons.html' with name="camera" size=18 %} Update Student Photos
+        </a>
+    </div>
+</div>
+{% endif %}
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const ctx = document.getElementById('usageChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Students', 'Teachers', 'Parents'],
+                datasets: [{
+                    data: [{{ total_students }}, {{ total_teachers }}, {{ total_parents }}],
+                    backgroundColor: [
+                        '#10b981', // Emerald
+                        '#3b82f6', // Blue
+                        '#c026d3'  // Purple
+                    ],
+                    borderWidth: 0,
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { 
+                        position: 'bottom', 
+                        labels: { 
+                            font: { family: 'Inter', size: 13 },
+                            padding: 20
+                        } 
+                    }
+                },
+                cutout: '70%',
+                animation: {
+                    animateScale: true,
+                    animateRotate: true
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

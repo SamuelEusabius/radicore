@@ -26,74 +26,77 @@ from apps.core.pdf_utils import build_pdf_context
 @login_required
 def students_list(request):
     """List all students with filters, search, and pagination."""
-    if request.user.role not in ('principal', 'super_admin', 'secretary', 'deputy_admin', 'deputy_academics', 'director_of_studies', 'class_teacher', 'teacher'):
+    # Added 'ict_officer' to allowed roles
+    if request.user.role not in ('principal', 'deputy_admin', 'deputy_academics', 'secretary', 'teacher', 'ict_officer', 'super_admin'):
         return redirect('dashboard_home')
 
     from apps.students.models import Student
     from apps.academics.models import ClassLevel
-    from django.db import models as db_models
-    from django.core.paginator import Paginator
     from django.db.models import Q
+    from django.core.paginator import Paginator
 
     school = request.user.school
-    qs = Student.objects.filter(school=school).order_by('class_level', 'first_name', 'last_name')
+    
+    # Base queryset
+    qs = Student.objects.filter(school=school).select_related('school').order_by('first_name', 'last_name')
 
-    # ---------- Filters ----------
+    # Filters
     search = request.GET.get('q', '').strip()
-    level = request.GET.get('level', '').strip()
     class_filter = request.GET.get('class', '').strip()
     status_filter = request.GET.get('status', '').strip()
 
     if search:
         qs = qs.filter(
             Q(first_name__icontains=search) |
-            Q(middle_name__icontains=search) |
             Q(last_name__icontains=search) |
             Q(admission_number__icontains=search) |
-            Q(upi__icontains=search)
+            Q(upi__icontains=search) |
+            Q(guardian_name__icontains=search)
         )
-    if level:
-        qs = qs.filter(cbc_level=level)
+
     if class_filter:
         qs = qs.filter(class_level=class_filter)
+
     if status_filter == 'active':
-        qs = qs.filter(is_active=True)
-    elif status_filter == 'inactive':
-        qs = qs.filter(is_active=False)
+        qs = qs.filter(is_active=True, is_cleared=False)
     elif status_filter == 'cleared':
         qs = qs.filter(is_cleared=True)
+    elif status_filter == 'boarding':
+        qs = qs.filter(is_boarding=True)
 
-    # ---------- Stats (unfiltered by search, scoped to school) ----------
-    all_school_students = Student.objects.filter(school=school)
+    # Stats (Unfiltered)
+    all_students = Student.objects.filter(school=school)
     stats = {
-        'total': all_school_students.count(),
-        'boys': all_school_students.filter(gender='M').count(),
-        'girls': all_school_students.filter(gender='F').count(),
-        'active': all_school_students.filter(is_active=True).count(),
+        'total': all_students.count(),
+        'active': all_students.filter(is_active=True).count(),
+        'boarding': all_students.filter(is_boarding=True).count(),
+        'cleared': all_students.filter(is_cleared=True).count(),
     }
 
-    # ---------- Pagination ----------
+    # Get list of unique classes for the filter dropdown
+    classes = ClassLevel.objects.filter(school=school).order_by('name').values_list('name', flat=True)
+    
+    # Fallback if ClassLevel is empty but students have class_level text
+    if not classes:
+        classes = Student.objects.filter(school=school).exclude(class_level='').values_list('class_level', flat=True).distinct()
+
+    # Pagination
     paginator = Paginator(qs, 25)
-    page_number = request.GET.get('page', 1)
-    page_obj = paginator.get_page(page_number)
+    page_obj = paginator.get_page(request.GET.get('page', 1))
 
-    # ---------- Class levels for filter ----------
-    classes = ClassLevel.objects.filter(school=school).order_by('order', 'name')
-
-    return render(request, 'dashboard/students_list.html', {
+    context = {
         'students': page_obj,
         'page_obj': page_obj,
         'paginator': paginator,
+        'stats': stats,
         'search': search,
-        'level': level,
         'class_filter': class_filter,
         'status_filter': status_filter,
-        'cbc_levels': Student.CBCLevel.choices,
         'classes': classes,
         'total': qs.count(),
-        'stats': stats,
-    })
-
+    }
+    
+    return render(request, 'dashboard/students_list.html', context)
 
 @login_required
 @student_only
@@ -169,9 +172,8 @@ def generate_next_admission_number(school):
 @login_required
 def add_student(request):
     """Directly add a student to the system."""
-    if request.user.role not in ('principal', 'secretary', 'super_admin', 'deputy_admin'):
+    if request.user.role not in ('principal', 'secretary', 'ict_officer', 'super_admin'):
         return redirect('dashboard_home')
-
     from apps.students.models import Student
     from apps.academics.models import ClassLevel
     from apps.locations.models import County, Constituency, Ward
@@ -503,9 +505,8 @@ def student_biodata_pdf(request, student_id):
 @login_required
 def student_detail(request, student_id):
     """Full student profile — admin/teacher/accountant view."""
-    if request.user.role not in ('principal', 'accountant', 'teacher'):
+    if request.user.role not in ('principal', 'deputy_admin', 'deputy_academics', 'secretary', 'teacher', 'ict_officer'):
         return redirect('dashboard_home')
-
     from apps.students.models import Student
     from apps.finance.models import Invoice, Payment
     from apps.grades.models import Grade
@@ -606,32 +607,29 @@ def student_detail(request, student_id):
 
 @login_required
 def student_bio_page(request, student_id):
-    """Full bio-data page (HTML, printable) for a single student."""
+    """Display a full, printable bio-data page for a student."""
+    # Allowed roles: Principal, Admin, Secretary, Teacher, ICT Officer
+    if request.user.role not in ('principal', 'deputy_admin', 'deputy_academics', 'secretary', 'teacher', 'ict_officer'):
+        return redirect('dashboard_home')
+
     from apps.students.models import Student
-    from django.shortcuts import get_object_or_404
+    from apps.parents.models import Parent
+    from apps.locations.models import County, Constituency, Ward
 
-    student = get_object_or_404(
-        Student.objects.select_related(
-            'school', 'county_fk', 'constituency_fk', 'ward_fk', 'user',
-        ),
-        id=student_id, school=request.user.school,
-    )
+    school = request.user.school
+    student = get_object_or_404(Student, id=student_id, school=school)
 
-    # Parents
-    parents = student.parents.select_related('user') if hasattr(student, 'parents') else []
+    # Fetch linked parents
+    linked_parents = Parent.objects.filter(students=student)
 
-    # Boarding
-    boarding = student.boarding_assignments.filter(status='active').select_related(
-        'dormitory', 'bed'
-    ).first()
-
-    return render(request, 'dashboard/student_bio.html', {
+    context = {
         'student': student,
-        'parents': parents,
-        'boarding': boarding,
-        'school': request.user.school,
-    })
-    
+        'linked_parents': linked_parents,
+        'school': school,
+    }
+
+    return render(request, 'dashboard/student_bio.html', context)
+
 @login_required
 def edit_student(request, student_id):
     """Edit an existing student's details."""
@@ -704,9 +702,8 @@ def edit_student(request, student_id):
 @login_required
 def link_parent_to_student(request, student_id):
     """Manually link an existing parent or create a new one for a student."""
-    if request.user.role not in ('principal', 'secretary', 'super_admin'):
+    if request.user.role not in ('principal', 'secretary', 'ict_officer'):
         return redirect('dashboard_home')
-
     from apps.students.models import Student
     from apps.parents.models import Parent
     from apps.accounts.models import User
@@ -767,9 +764,8 @@ def link_parent_to_student(request, student_id):
 @login_required
 def bulk_upload_students(request):
     """Bulk upload students via CSV."""
-    if request.user.role not in ('principal', 'super_admin', 'deputy_admin'):
+    if request.user.role not in ('principal', 'super_admin', 'deputy_admin', 'ict_officer'):
         return redirect('dashboard_home')
-
     school = request.user.school
 
     if request.method == 'POST':
@@ -842,12 +838,14 @@ def student_id_card(request, student_id):
     from apps.students.models import Student
     
     # Allow admins, teachers, and principals to print IDs
-    if request.user.role not in ('principal', 'super_admin', 'secretary', 'teacher', 'deputy_admin'):
+    # Add 'ict_officer' to the allowed roles
+    if request.user.role not in ('principal','secretary', 'deputy_admin', 'ict_officer'):
         return redirect('dashboard_home')
-
+    
     # Ensure they can only print IDs for students in their own school
     school = request.user.school
     student = get_object_or_404(Student, id=student_id, school=school)
+    
 
     return render(request, 'dashboard/student_id_card.html', {
         'student': student,

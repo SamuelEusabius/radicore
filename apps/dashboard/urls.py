@@ -134,6 +134,12 @@ urlpatterns = [
     path('grades/exams/', views.manage_exams, name='manage_exams'),
     path('grades/enter/', views.enter_grades, name='enter_grades'),
     
+        # ICT Officer Routes
+    path('ict/', users.ict_dashboard, name='ict_dashboard'),
+    path('ict/student/<int:student_id>/photo/', users.ict_upload_student_photo, name='ict_upload_student_photo'),
+    path('ict/teacher/<int:teacher_id>/photo/', users.ict_upload_teacher_photo, name='ict_upload_teacher_photo'),
+    path('ict/staff/<int:staff_id>/photo/', users.ict_upload_staff_photo, name='ict_upload_staff_photo'),
+    
         # ========== CLASS TEACHER ==========
             path('teacher/my-class/grades/',
          views.class_teacher_grades,

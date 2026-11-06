@@ -524,6 +524,7 @@ class SchoolModule(models.Model):
         ANALYTICS      = 'analytics',      'Advanced Analytics'
         PARENT_PORTAL  = 'parent_portal',  'Parent Portal'
         REPORTS        = 'reports',        'Custom Reports'
+        ICT = 'ict', 'ICT & Computer Lab'
 
     # Modules enabled by default for NEW schools
     DEFAULT_ENABLED = {

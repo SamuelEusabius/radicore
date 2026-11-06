@@ -20,10 +20,12 @@
       {% include 'partials/icons.html' with name="upload" size=16 %}
       Bulk Upload
     </a>
+    {% if request.user.role != 'ict_officer' %}
     <a href="{% url 'generate_invoices' %}" class="btn btn-secondary">
       {% include 'partials/icons.html' with name="file-text" size=16 %}
       Generate Invoices
     </a>
+    {% endif %}
   </div>
 
   <form method="get" class="flex gap-2" style="max-width: 400px; width: 100%;">
@@ -148,64 +150,41 @@
 
           <!-- Actions -->
           <td style="text-align: right; white-space: nowrap;">
-            <a href="{% url 'student_detail' s.id %}" 
-               class="btn btn-secondary" 
-               style="padding: var(--s-2) var(--s-3); font-size: var(--text-xs);"
-               title="View Profile">
-              {% include 'partials/icons.html' with name="eye" size=14 %}
-              View
+            <a href="{% url 'student_detail' s.id %}" class="btn btn-secondary" style="padding: var(--s-2) var(--s-3); font-size: var(--text-xs);" title="View Profile">
+              {% include 'partials/icons.html' with name="eye" size=14 %} View
             </a>
-            <a href="{% url 'student_id_card' s.id %}" target="_blank" class="btn btn-secondary" style="padding: var(--s-2) var(--s-3); font-size: var(--text-xs); color: #3b82f6; border-color: #bfdbfe;" title="Print ID Card">
-              {% include 'partials/icons.html' with name="printer" size=14 %} ID
+            <a href="{% url 'student_bio_page' s.id %}" class="btn btn-secondary" style="padding: var(--s-2) var(--s-3); font-size: var(--text-xs);" title="View Bio">
+              {% include 'partials/icons.html' with name="file-text" size=14 %} Bio
             </a>
 
-            <a href="{% url 'student_bio_page' s.id %}" 
-               class="btn btn-secondary" 
-               style="padding: var(--s-2) var(--s-3); font-size: var(--text-xs);"
-               title="View Full Bio Data">
-              {% include 'partials/icons.html' with name="file-text" size=14 %}
-              Bio
-            </a>
-
-            <a href="{% url 'student_biodata_pdf' s.id %}" 
-               target="_blank"
-               class="btn btn-secondary" 
-               style="padding: var(--s-2) var(--s-3); font-size: var(--text-xs);"
-               title="Download Bio Data PDF">
-              {% include 'partials/icons.html' with name="download" size=14 %}
-              PDF
-            </a>
-
-            {% if user.role == 'principal' or user.role == 'super_admin' or user.role == 'secretary' %}
-            
-            <a href="{% url 'edit_student' s.id %}" 
-               class="btn btn-secondary" 
-               style="padding: var(--s-2) var(--s-3); font-size: var(--text-xs);"
-               title="Edit Student Details">
-              {% include 'partials/icons.html' with name="edit" size=14 %}
-              Edit
-            </a>
-
-            <a href="{% url 'link_parent_to_student' s.id %}" 
-               class="btn btn-secondary" 
-               style="padding: var(--s-2) var(--s-3); font-size: var(--text-xs);"
-               title="Link a Parent to this Student">
-              {% include 'partials/icons.html' with name="users" size=14 %}
-              Link Parent
-            </a>
-
-            <a href="{% url 'clear_student' s.id %}" 
-               class="btn btn-sm" 
-               style="background: var(--warning); color: white; padding: 6px 10px; border-radius: 6px; font-size: 12px; text-decoration: none; display: inline-block;"
-               title="Clear Student">
-              Clear
-            </a>
-            <a href="{% url 'delete_student' s.id %}" 
-               class="btn btn-secondary" 
-               style="padding: var(--s-2) var(--s-3); font-size: var(--text-xs); color: var(--danger); border-color: var(--danger-light);"
-               title="Delete Student">
-              {% include 'partials/icons.html' with name="trash" size=14 %}
-            </a>
+            {% if request.user.role == 'ict_officer' %}
+                <!-- ICT Officer Only -->
+                <a href="{% url 'ict_upload_student_photo' s.id %}" class="btn btn-secondary" style="padding: var(--s-2) var(--s-3); font-size: var(--text-xs); color: #3b82f6; border-color: #bfdbfe;" title="Upload Photo">
+                  {% include 'partials/icons.html' with name="camera" size=14 %} Photo
+                </a>
+                <a href="{% url 'link_parent_to_student' s.id %}" class="btn btn-secondary" style="padding: var(--s-2) var(--s-3); font-size: var(--text-xs);" title="Link Parent">
+                  {% include 'partials/icons.html' with name="users" size=14 %} Link
+                </a>
+            {% else %}
+                <!-- Principal / Admin Actions -->
+                <a href="{% url 'student_biodata_pdf' s.id %}" target="_blank" class="btn btn-secondary" style="padding: var(--s-2) var(--s-3); font-size: var(--text-xs);">
+                  {% include 'partials/icons.html' with name="download" size=14 %} PDF
+                </a>
+                
+                {% if user.role == 'principal' or user.role == 'super_admin' or user.role == 'secretary' %}
+                <a href="{% url 'edit_student' s.id %}" class="btn btn-secondary" style="padding: var(--s-2) var(--s-3); font-size: var(--text-xs);">
+                  {% include 'partials/icons.html' with name="edit" size=14 %} Edit
+                </a>
+                <a href="{% url 'link_parent_to_student' s.id %}" class="btn btn-secondary" style="padding: var(--s-2) var(--s-3); font-size: var(--text-xs);">
+                  {% include 'partials/icons.html' with name="users" size=14 %} Link Parent
+                </a>
+                <a href="{% url 'clear_student' s.id %}" class="btn btn-sm" style="background: var(--warning); color: white; padding: 6px 10px; border-radius: 6px; font-size: 12px; text-decoration: none;">
+                  Clear
+                </a>
+                <a href="{% url 'delete_student' s.id %}" class="btn btn-secondary" style="padding: var(--s-2) var(--s-3); font-size: var(--text-xs); color: var(--danger); border-color: var(--danger-light);">
+                  {% include 'partials/icons.html' with name="trash" size=14 %}
+                </a>
+                {% endif %}
             {% endif %}
           </td>
         </tr>

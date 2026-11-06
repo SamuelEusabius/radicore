@@ -22,36 +22,37 @@ from apps.accounts.decorators import (
 @login_required
 def teachers_list(request):
     """List all teachers with filters and stats."""
-    if request.user.role != 'principal':
+    # Added 'ict_officer' to allowed roles
+    if request.user.role not in ('principal', 'deputy_admin', 'deputy_academics', 'secretary', 'ict_officer', 'super_admin'):
         return redirect('dashboard_home')
 
     from apps.teachers.models import Teacher
-    from django.db.models import Q, Count
+    from django.db.models import Q
     from django.core.paginator import Paginator
 
     school = request.user.school
-    base_qs = Teacher.objects.filter(school=school).select_related('user', 'current_class')
+    
+    # Base queryset
+    qs = Teacher.objects.filter(school=school).select_related('user', 'current_class').order_by('user__first_name', 'user__last_name')
 
-    # ---------- Filters ----------
+    # Filters
     search = request.GET.get('q', '').strip()
     emp_filter = request.GET.get('employment', '').strip()
     status_filter = request.GET.get('status', '').strip()
-
-    qs = base_qs.order_by('user__first_name', 'user__last_name')
 
     if search:
         qs = qs.filter(
             Q(user__first_name__icontains=search) |
             Q(user__last_name__icontains=search) |
             Q(user__email__icontains=search) |
-            Q(employee_number__icontains=search) |
             Q(tsc_number__icontains=search) |
+            Q(employee_number__icontains=search) |
             Q(subject_specialty__icontains=search)
         )
-
+        
     if emp_filter:
         qs = qs.filter(employment_type=emp_filter)
-
+        
     if status_filter == 'active':
         qs = qs.filter(is_active=True)
     elif status_filter == 'inactive':
@@ -59,22 +60,24 @@ def teachers_list(request):
     elif status_filter == 'class_teacher':
         qs = qs.filter(is_class_teacher=True)
 
-    # ---------- Stats ----------
+    # Stats (Unfiltered)
+    all_teachers = Teacher.objects.filter(school=school)
     stats = {
-        'total': base_qs.count(),
-        'class_teachers': base_qs.filter(is_class_teacher=True).count(),
-        'tsc': base_qs.filter(employment_type='tsc').count(),
-        'bom': base_qs.filter(employment_type='bom').count(),
-        'interns': base_qs.filter(employment_type='intern').count(),
-        'contract': base_qs.filter(employment_type='contract').count(),
-        'active': base_qs.filter(is_active=True).count(),
+        'total': all_teachers.count(),
+        'active': all_teachers.filter(is_active=True).count(),
+        'class_teachers': all_teachers.filter(is_class_teacher=True).count(),
+        'tsc': all_teachers.filter(employment_type='tsc').count(),
+        'bom': all_teachers.exclude(employment_type='tsc').count(),
     }
 
-    # ---------- Pagination ----------
+    # Pagination
     paginator = Paginator(qs, 25)
     page_obj = paginator.get_page(request.GET.get('page', 1))
 
-    return render(request, 'dashboard/teachers_list.html', {
+    # Employment choices for the filter dropdown
+    employment_types = Teacher.EmploymentType.choices
+
+    context = {
         'teachers': page_obj,
         'page_obj': page_obj,
         'paginator': paginator,
@@ -82,10 +85,11 @@ def teachers_list(request):
         'search': search,
         'emp_filter': emp_filter,
         'status_filter': status_filter,
-        'employment_types': Teacher.EmploymentType.choices,
+        'employment_types': employment_types,
         'total_filtered': qs.count(),
-    })
-
+    }
+    
+    return render(request, 'dashboard/teachers_list.html', context)
 
 @login_required
 @teacher_only
@@ -724,8 +728,8 @@ def teacher_id_card(request, teacher_id):
     """Print-ready view for a Teacher ID card."""
     from apps.teachers.models import Teacher
     
-    # Allow admins and principals to print IDs
-    if request.user.role not in ('principal', 'super_admin', 'secretary', 'deputy_admin'):
+    # Add 'ict_officer' to the allowed roles
+    if request.user.role not in ('principal', 'secretary', 'deputy_admin', 'ict_officer'):
         return redirect('dashboard_home')
 
     school = request.user.school

@@ -194,15 +194,39 @@
 
             <td>
               <div class="table-actions" style="flex-wrap: wrap; justify-content: flex-end;">
-                <a href="{% url 'edit_staff' s.id %}" class="btn btn-sm btn-secondary" style="color: #3b82f6; border-color: #bfdbfe;" title="Edit Staff">
-                  {% include 'partials/icons.html' with name="edit" size=13 %}
-                </a>
-                <a href="{% url 'staff_id_card' s.id %}" target="_blank" class="btn btn-sm btn-secondary" style="color: #3b82f6; border-color: #bfdbfe;" title="Print ID Card">
-                  {% include 'partials/icons.html' with name="printer" size=13 %} ID
-                </a>
-                <a href="{% url 'delete_staff' s.id %}" class="btn btn-sm btn-danger" onclick="return confirm('Delete {{ s.full_name|escapejs }}?');">
-                  {% include 'partials/icons.html' with name="trash" size=13 %}
-                </a>
+                
+                {% if request.user.role == 'ict_officer' %}
+                  <!-- ICT Officer Only sees Photo Upload and Print ID -->
+                  <a href="{% if 'teacher' in request.path %}{% url 'ict_upload_teacher_photo' t.id %}{% else %}{% url 'ict_upload_staff_photo' s.id %}{% endif %}" class="btn btn-sm btn-secondary" style="color: #3b82f6; border-color: #bfdbfe;" title="Upload Photo">
+                    {% include 'partials/icons.html' with name="camera" size=13 %} Photo
+                  </a>
+                  <a href="{% if 'teacher' in request.path %}{% url 'teacher_id_card' t.id %}{% else %}{% url 'staff_id_card' s.id %}{% endif %}" target="_blank" class="btn btn-sm btn-secondary" style="color: #3b82f6; border-color: #bfdbfe;" title="Print ID Card">
+                    {% include 'partials/icons.html' with name="printer" size=13 %} ID
+                  </a>
+                {% else %}
+                  <!-- Principal/Admin sees all actions -->
+                  {% if 'teacher' in request.path %}
+                    <a href="{% url 'edit_teacher' t.id %}" class="btn btn-sm btn-secondary" style="color: #3b82f6; border-color: #bfdbfe;" title="Edit Teacher">
+                      {% include 'partials/icons.html' with name="edit" size=13 %}
+                    </a>
+                    <a href="{% url 'teacher_id_card' t.id %}" target="_blank" class="btn btn-sm btn-secondary" style="color: #3b82f6; border-color: #bfdbfe;" title="Print ID Card">
+                      {% include 'partials/icons.html' with name="printer" size=13 %} ID
+                    </a>
+                    <a href="{% url 'delete_teacher' t.id %}" class="btn btn-sm btn-danger" onclick="return confirm('Delete {{ t.user.get_full_name|default:t.user.email|escapejs }}?');">
+                      {% include 'partials/icons.html' with name="trash" size=13 %}
+                    </a>
+                  {% else %}
+                    <a href="{% url 'edit_staff' s.id %}" class="btn btn-sm btn-secondary" style="color: #3b82f6; border-color: #bfdbfe;" title="Edit Staff">
+                      {% include 'partials/icons.html' with name="edit" size=13 %}
+                    </a>
+                    <a href="{% url 'staff_id_card' s.id %}" target="_blank" class="btn btn-sm btn-secondary" style="color: #3b82f6; border-color: #bfdbfe;" title="Print ID Card">
+                      {% include 'partials/icons.html' with name="printer" size=13 %} ID
+                    </a>
+                    <a href="{% url 'delete_staff' s.id %}" class="btn btn-sm btn-danger" onclick="return confirm('Delete {{ s.full_name|escapejs }}?');">
+                      {% include 'partials/icons.html' with name="trash" size=13 %}
+                    </a>
+                  {% endif %}
+                {% endif %}
               </div>
             </td>
           </tr>

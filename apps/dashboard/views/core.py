@@ -135,6 +135,7 @@ ROLE_DASHBOARD_MAP = {
     'lab_technician':        'dashboard_placeholder',
     'librarian':             'dashboard_placeholder',
     'nurse':                 'dashboard_placeholder',
+    'ict_officer':           'ict_dashboard', 
 
     # end users
     'student':               'dash_student',

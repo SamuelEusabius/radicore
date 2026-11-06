@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block title %}Upload Photo{% endblock %}
+{% block header_title %}Upload Photo{% endblock %}
+
+{% block content %}
+<div style="max-width: 500px; margin: 40px auto; background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 32px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+    <h3 style="margin: 0 0 8px 0; font-size: 18px; font-weight: 700; color: #0f172a;">Upload Photo</h3>
+    <p style="margin: 0 0 24px 0; font-size: 14px; color: #64748b;">Select a new image for <strong>{{ person_name }}</strong>.</p>
+    
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type="file" name="photo" accept="image/*" required class="form-input" style="width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; margin-bottom: 24px;">
+        
+        <div style="display: flex; justify-content: flex-end; gap: 12px;">
+            <a href="{% url return_url %}" style="background: white; color: #475569; padding: 10px 20px; border-radius: 8px; font-weight: 600; text-decoration: none; border: 1px solid #cbd5e1;">Cancel</a>
+            <button type="submit" style="background: #10b981; color: white; padding: 10px 20px; border-radius: 8px; font-weight: 600; border: none; cursor: pointer;">Save Photo</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

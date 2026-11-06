@@ -974,8 +974,9 @@ def platform_staff_id_card(request, staff_id):
     
 @login_required
 def school_id_settings(request):
-    """Principal: Customize school ID cards."""
-    if request.user.role not in ('principal', 'super_admin'):
+    """Principal & ICT Officer: Customize school ID cards."""
+    # ADDED 'ict_officer' to the allowed roles
+    if request.user.role not in ('principal', 'super_admin', 'ict_officer'):
         return redirect('dashboard_home')
 
     school = request.user.school

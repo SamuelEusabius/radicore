@@ -6,6 +6,7 @@ Changing roles here does NOT change the database by itself —
 a migration is required to update the choices stored in User.role.
 """
 from django.db import models
+
 class Role(models.TextChoices):
     # ---------- Platform ----------
     SUPER_ADMIN = 'super_admin', 'Super Admin'
@@ -33,6 +34,7 @@ class Role(models.TextChoices):
     LAB_TECHNICIAN = 'lab_technician', 'Lab Technician'
     LIBRARIAN = 'librarian', 'Librarian'
     NURSE = 'nurse', 'Nurse'
+    ICT_OFFICER = 'ict_officer', 'ICT Officer'
 
     # ---------- End users ----------
     STUDENT = 'student', 'Student'
@@ -66,6 +68,7 @@ OPERATIONS_STAFF = frozenset({
     Role.LAB_TECHNICIAN,
     Role.LIBRARIAN,
     Role.NURSE,
+    Role.ICT_OFFICER, # Added to operations
 })
 
 SCHOOL_STAFF = SCHOOL_LEADERSHIP | TEACHING_STAFF | OPERATIONS_STAFF | frozenset({
@@ -83,6 +86,7 @@ ASSIGNABLE_SCHOOL_ROLES = SCHOOL_STAFF | frozenset({
 LEGACY_ROLE_MAP = {
     'school_admin': Role.PRINCIPAL.value,
 }
+
 # ============================================================
 # ROLE CREATION POLICY
 # ============================================================
@@ -102,12 +106,15 @@ SCHOOL_ADMIN_CREATABLE_ROLES = (
     'librarian',
     'lab_technician',
     'driver',
+    'ict_officer', # <-- ADDED HERE
     'parent',
     'student',
 )
+
 SUPER_ADMIN_CREATABLE_ROLES = (
     'principal',
 )
+
 SCHOOL_ADMIN_ROLE_LABELS = {
     'deputy_admin': 'Deputy Principal — Administration',
     'deputy_academics': 'Deputy Principal — Academics',
@@ -123,6 +130,7 @@ SCHOOL_ADMIN_ROLE_LABELS = {
     'librarian': 'Librarian',
     'lab_technician': 'Lab Technician',
     'driver': 'Driver',
+    'ict_officer': 'ICT Officer', # <-- ADDED HERE
     'parent': 'Parent',
     'student': 'Student',
 }

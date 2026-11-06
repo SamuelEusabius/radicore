@@ -255,7 +255,7 @@ from apps.notifications.services.sms import send_sms
 @login_required
 def bulk_sms(request):
     """Send SMS to parents, students, or staff using the School's AT credentials."""
-    if request.user.role not in ('principal', 'super_admin'):
+    if request.user.role not in ('principal', 'secretary', 'ict_officer'):
         return redirect('dashboard_home')
 
     school = request.user.school

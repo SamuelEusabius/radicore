@@ -208,6 +208,16 @@
           <span class="sidebar-link-text">SMS Settings</span>
         </a>
       {% endif %}
+      {% if 'ict' in enabled_modules %}
+      <a href="{% url 'ict_dashboard' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="activity" size=18 %}
+        <span class="sidebar-link-text"> ICT Dashboard</span>
+      </a>
+        <a href="{% url 'school_id_settings' %}" class="sidebar-link">
+          {% include 'partials/icons.html' with name="credit-card" size=18 %}
+          <span class="sidebar-link-text">ID Card Settings</span>
+        </a>
+      {% endif %}
       
       <a href="{% url 'admin_alerts_list' %}" class="sidebar-link">
         {% include 'partials/icons.html' with name="alert-triangle" size=18 %}
@@ -650,6 +660,46 @@
         <span class="sidebar-link-text">Inbox</span>
       </a>
     {% endif %}
+    <!-- ============================================ -->
+    <!-- ICT OFFICER                                    -->
+    <!-- ============================================ -->
+        {% if user.role == 'ict_officer' %}
+      <div class="sidebar-section-label">Overview</div>
+      <a href="{% url 'ict_dashboard' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="activity" size=18 %}
+        <span class="sidebar-link-text">Dashboard</span>
+      </a>
+      <a href="{% url 'school_id_settings' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="credit-card" size=18 %}
+        <span class="sidebar-link-text">ID Card Settings</span>
+      </a>
+      <div class="sidebar-section-label">People</div>
+      <a href="{% url 'students_list' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="graduation-cap" size=18 %}
+        <span class="sidebar-link-text">Students</span>
+      </a>
+      <a href="{% url 'teachers_list' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="teacher" size=18 %}
+        <span class="sidebar-link-text">Teachers</span>
+      </a>
+      <a href="{% url 'staff_list' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="briefcase" size=18 %}
+        <span class="sidebar-link-text">Non-Teaching Staff</span>
+      </a>
+
+      {% if 'sms' in enabled_modules %}
+      <div class="sidebar-section-label">Communication</div>
+      <a href="{% url 'bulk_sms' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="message-square" size=18 %}
+        <span class="sidebar-link-text">Bulk SMS</span>
+      </a>
+      {% endif %}
+      <div class="sidebar-section-label">My HR</div>
+      <a href="{% url 'my_leave_requests' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="calendar" size=18 %}
+        <span class="sidebar-link-text">My Leave</span>
+      </a>
+    {% endif %}
 
     <!-- ============================================ -->
     <!-- DRIVER                                        -->
@@ -913,7 +963,7 @@
         {% include 'partials/icons.html' with name="message-square" size=18 %}
         <span class="sidebar-link-text">SMS Settings</span>
       </a>
-
+    
       <div class="sidebar-section-label">Notice Board</div>
       <a href="{% url 'secretary_notice_list' %}" class="sidebar-link">
         {% include 'partials/icons.html' with name="bell" size=18 %}

@@ -166,6 +166,13 @@ from .users import (
     user_delete,
     user_change_role,
     user_change_password,
+    edit_staff,             
+    staff_id_card,          
+    ict_dashboard,         
+    ict_upload_student_photo, 
+    ict_upload_teacher_photo, 
+    ict_upload_staff_photo, 
+
 )
 
 from .academics import (

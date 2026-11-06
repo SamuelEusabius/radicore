@@ -27,9 +27,9 @@ User = get_user_model()
 @login_required
 def staff_list(request):
     """List non-teaching staff with filters and stats."""
-    if request.user.role not in ('principal', 'super_admin'):
+    if request.user.role not in ('principal', 'deputy_admin', 'secretary', 'ict_officer'):
         return redirect('dashboard_home')
-
+    
     from apps.staff.models import NonTeachingStaff
 
     school = request.user.school
@@ -387,7 +387,7 @@ def edit_staff(request, staff_id):
 @login_required
 def staff_id_card(request, staff_id):
     """Print-ready view for a Non-Teaching Staff ID card."""
-    if request.user.role not in ('principal', 'super_admin', 'secretary', 'deputy_admin'):
+    if request.user.role not in ('principal', 'secretary', 'deputy_admin', 'ict_officer'):
         return redirect('dashboard_home')
 
     from apps.staff.models import NonTeachingStaff
@@ -397,4 +397,103 @@ def staff_id_card(request, staff_id):
     return render(request, 'dashboard/staff_id_card.html', {
         'staff': staff,
         'school': school,
+    })
+    
+    # ==========================================================
+# ICT OFFICER VIEWS
+# ==========================================================
+
+@login_required
+def ict_dashboard(request):
+    """Dashboard for the ICT Officer showing system usage stats."""
+   # Allow both Principal and ICT Officer
+    if request.user.role not in ('ict_officer', 'principal',):
+        return redirect('dashboard_home')
+    from apps.schools.models import SchoolModule
+    from apps.students.models import Student
+    from apps.teachers.models import Teacher
+    from apps.parents.models import Parent
+
+    school = request.user.school
+
+    # 1. Safely check if the module is enabled.
+    module_obj, created = SchoolModule.objects.get_or_create(
+        school=school,
+        module='ict',
+        defaults={'is_enabled': True}
+    )
+
+    if not module_obj.is_enabled:
+        messages.error(request, "ICT Module is not enabled for this school. Please contact the Principal.")
+        return redirect('dashboard_home')
+
+    # 2. Load the stats (Fixed Parent query to use user__school)
+    context = {
+        'school': school,
+        'total_students': Student.objects.filter(school=school, is_active=True).count(),
+        'total_teachers': Teacher.objects.filter(school=school, is_active=True).count(),
+        'total_parents': Parent.objects.filter(user__school=school).count(),
+    }
+    
+    return render(request, 'dashboard/ict_dashboard.html', context)
+@login_required
+def ict_upload_student_photo(request, student_id):
+    """Allow ICT Officer to update a student's photo."""
+    if request.user.role not in ('ict_officer', 'principal', 'super_admin'):
+        return redirect('dashboard_home')
+
+    from apps.students.models import Student
+    student = get_object_or_404(Student, id=student_id, school=request.user.school)
+
+    if request.method == 'POST' and request.FILES.get('photo'):
+        student.photo = request.FILES['photo']
+        student.save()
+        messages.success(request, f"Photo updated for {student.first_name}.")
+        return redirect('students_list')
+
+    return render(request, 'dashboard/upload_photo.html', {
+        'person_name': f"{student.first_name} {student.last_name}",
+        'return_url': 'students_list'
+    })
+
+
+@login_required
+def ict_upload_teacher_photo(request, teacher_id):
+    """Allow ICT Officer to update a teacher's photo."""
+    if request.user.role not in ('ict_officer', 'principal', 'super_admin'):
+        return redirect('dashboard_home')
+
+    from apps.teachers.models import Teacher
+    teacher = get_object_or_404(Teacher, id=teacher_id, school=request.user.school)
+
+    if request.method == 'POST' and request.FILES.get('photo'):
+        teacher.photo = request.FILES['photo']
+        teacher.save()
+        messages.success(request, f"Photo updated for {teacher.user.get_full_name()}.")
+        return redirect('teachers_list')
+
+    return render(request, 'dashboard/upload_photo.html', {
+        'person_name': f"{teacher.user.get_full_name()}",
+        'return_url': 'teachers_list'
+    })
+
+
+@login_required
+def ict_upload_staff_photo(request, staff_id):
+    """Allow ICT Officer to update a non-teaching staff's photo."""
+    if request.user.role not in ('ict_officer', 'principal', 'super_admin'):
+        return redirect('dashboard_home')
+
+    from apps.staff.models import NonTeachingStaff
+    staff = get_object_or_404(NonTeachingStaff, id=staff_id, school=request.user.school)
+
+    if request.method == 'POST' and request.FILES.get('photo'):
+        staff.photo = request.FILES['photo']
+        staff.save()
+        messages.success(request, f"Photo updated for {staff.full_name}.")
+        return redirect('staff_list')
+
+    return render(request, 'dashboard/upload_photo.html', {
+        'person_name': staff.full_name,
+        'return_url': 'staff_list'
     })
