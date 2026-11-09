@@ -8,65 +8,54 @@ Finance views:
 - Financial reports
 """
 
-from django.shortcuts import render, redirect, get_object_or_404
-from apps.academics.models import ClassLevel
-from apps.finance.models import FeeStructure
-from django.shortcuts import render, redirect, reverse
+from django.shortcuts import render, redirect, get_object_or_404, reverse
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import HttpResponse, JsonResponse
 from django.db.models import Q, Count, Sum, Avg, F
 from django.utils import timezone
 from datetime import date, datetime, timedelta
-from apps.finance.mpesa_models import MpesaTransaction
-from apps.accounts.decorators import (
-    role_required, school_staff_only, accountant_only,
-)
+from collections import defaultdict
+from decimal import Decimal
 
+from apps.academics.models import ClassLevel
+from apps.finance.models import FeeStructure, Invoice, Payment, Expenditure
+from apps.students.models import Student
+from apps.accounts.decorators import role_required, school_staff_only, accountant_only
 from apps.core.pdf_utils import build_pdf_context
+from apps.finance.mpesa_models import MpesaTransaction
 
 
+# ============================================================
+# ACCOUNTANT DASHBOARD
+# ============================================================
 
 @login_required
 @accountant_only
 def accountant_dash(request):
-    from django.db.models import Sum, Count, F
     from django.db.models.functions import TruncMonth
-    from django.utils import timezone
-    from datetime import timedelta
-    from apps.finance.models import Invoice, Payment
-    from apps.students.models import Student
-    from django.urls import reverse
 
     school = request.user.school
 
-    # ---------- Invoices: aggregate in the DB ----------
     invoice_qs = Invoice.objects.filter(student__school=school)
-
     agg = invoice_qs.aggregate(
         total_invoiced=Sum('amount_due'),
         total_paid=Sum('amount_paid'),
         invoice_count=Count('id'),
     )
-
     total_invoiced = agg['total_invoiced'] or 0
     total_paid     = agg['total_paid'] or 0
     outstanding    = total_invoiced - total_paid
     invoice_count  = agg['invoice_count'] or 0
 
     collection_rate = round(
-        (float(total_paid) / float(total_invoiced) * 100) if total_invoiced else 0,
-        1
+        (float(total_paid) / float(total_invoiced) * 100) if total_invoiced else 0, 1
     )
 
-    # ---------- Status counts (single grouped query) ----------
-    status_counts = dict(
-        invoice_qs.values_list('status').annotate(c=Count('id'))
-    )
+    status_counts = dict(invoice_qs.values_list('status').annotate(c=Count('id')))
     overdue_count = status_counts.get('overdue', 0)
     unpaid_count  = status_counts.get('unpaid', 0)
 
-    # ---------- Recent payments (5 latest) ----------
     recent_payments = (
         Payment.objects
         .filter(invoice__student__school=school)
@@ -74,7 +63,6 @@ def accountant_dash(request):
         .order_by('-paid_at')[:5]
     )
 
-    # ---------- Collections trend: last 6 months ----------
     six_months_ago = timezone.now() - timedelta(days=180)
     monthly_rows = (
         Payment.objects
@@ -84,7 +72,6 @@ def accountant_dash(request):
         .annotate(total=Sum('amount_kes'))
         .order_by('month')
     )
-
     totals_by_month = {
         row['month'].strftime('%Y-%m'): float(row['total'] or 0)
         for row in monthly_rows if row['month']
@@ -99,7 +86,6 @@ def accountant_dash(request):
         chart_labels.append(m.strftime('%b'))
         chart_values.append(totals_by_month.get(key, 0))
 
-    # ---------- Top 5 debtors (biggest outstanding balances) ----------
     top_debtors = (
         Student.objects
         .filter(school=school, is_active=True, invoices__isnull=False)
@@ -111,36 +97,26 @@ def accountant_dash(request):
         .filter(balance__gt=0)
         .order_by('-balance')[:5]
     )
-        # ---------- Payment method breakdown (this month) ----------
-    from django.utils import timezone
-    from datetime import timedelta
-    from django.db.models import Sum
 
     month_start = timezone.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-
     method_rows = (
         Payment.objects
-        .filter(
-            invoice__student__school=school,
-            paid_at__gte=month_start,
-        )
+        .filter(invoice__student__school=school, paid_at__gte=month_start)
         .values('method')
         .annotate(total=Sum('amount_kes'))
         .order_by('-total')
     )
-
     method_labels = dict(Payment.Method.choices)
     method_total = sum(float(r['total'] or 0) for r in method_rows)
-
-    method_breakdown = []
-    for r in method_rows:
-        total = float(r['total'] or 0)
-        method_breakdown.append({
+    method_breakdown = [
+        {
             'code': r['method'],
             'label': method_labels.get(r['method'], r['method']),
-            'total': total,
-            'pct': round((total / method_total) * 100, 1) if method_total else 0,
-        })
+            'total': float(r['total'] or 0),
+            'pct': round((float(r['total'] or 0) / method_total) * 100, 1) if method_total else 0,
+        }
+        for r in method_rows
+    ]
 
     return render(request, 'dashboard/accountant.html', {
         'total_invoiced': total_invoiced,
@@ -165,18 +141,13 @@ def accountant_invoices(request):
     if request.user.role not in ('accountant', 'principal'):
         return redirect('dashboard_home')
 
-    from apps.finance.models import Invoice, FeeStructure
-    from apps.students.models import Student
-    from django.db.models import Q, Count
     from django.core.paginator import Paginator
 
     school = request.user.school
-
     base_qs = Invoice.objects.filter(
         student__school=school
     ).select_related('student', 'fee_structure')
 
-    # ---------- Stats (unfiltered) ----------
     stats_agg = base_qs.aggregate(
         total=Count('id'),
         paid=Count('id', filter=Q(status='paid')),
@@ -185,9 +156,7 @@ def accountant_invoices(request):
         overdue=Count('id', filter=Q(status='overdue')),
     )
 
-    # ---------- Filters ----------
     qs = base_qs.order_by('-created_at')
-
     status_filter = request.GET.get('status', '').strip()
     if status_filter in ('paid', 'partial', 'unpaid', 'overdue'):
         qs = qs.filter(status=status_filter)
@@ -206,12 +175,9 @@ def accountant_invoices(request):
     if term_filter:
         qs = qs.filter(fee_structure__name__startswith=f"{term_filter} —")
 
-    # ---------- Pagination ----------
     paginator = Paginator(qs, 25)
-    page_number = request.GET.get('page', 1)
-    page_obj = paginator.get_page(page_number)
+    page_obj = paginator.get_page(request.GET.get('page', 1))
 
-    # ---------- Term choices for filter ----------
     all_fs = FeeStructure.objects.filter(school=school).values_list('name', flat=True)
     terms = set()
     for name in all_fs:
@@ -234,22 +200,17 @@ def accountant_invoices(request):
     })
 
 
+# ============================================================
+# TRANSACTIONS
+# ============================================================
+
 @login_required
 def accountant_transactions(request):
     """School accountant sees all transactions, expenditure, debts, credit."""
     if request.user.role not in ('accountant', 'principal'):
         return redirect('dashboard_home')
 
-    from apps.finance.models import Invoice, Payment, Expenditure
-    from apps.students.models import Student
-    from apps.academics.models import ClassLevel
-    from datetime import date, timedelta
-    from django.db.models import Sum, F
-
-    user = request.user
-    school = user.school
-
-    # ---------- Period selection ----------
+    school = request.user.school
     period = request.GET.get('period', 'month')
     today = date.today()
 
@@ -278,127 +239,91 @@ def accountant_transactions(request):
         end_date = today
         period_label = today.strftime('%B %Y')
 
-    # ---------- Fee Collections ----------
     payments = Payment.objects.filter(
         invoice__student__school=school,
         paid_at__date__gte=start_date,
         paid_at__date__lte=end_date,
     ).select_related('invoice__student')
 
-    total_collected = float(
-        payments.aggregate(t=Sum('amount_kes'))['t'] or 0
-    )
+    total_collected = float(payments.aggregate(t=Sum('amount_kes'))['t'] or 0)
 
-    # Breakdown by method
     method_breakdown = {}
     for row in payments.values('method').annotate(t=Sum('amount_kes')):
         label = dict(Payment.Method.choices).get(row['method'], row['method'])
         method_breakdown[label] = float(row['t'] or 0)
 
-    # ---------- Expenditure ----------
     expenditures = Expenditure.objects.filter(
         school=school,
         spent_on__gte=start_date,
         spent_on__lte=end_date,
     )
+    total_expenditure = float(expenditures.aggregate(t=Sum('amount_kes'))['t'] or 0)
 
-    total_expenditure = float(
-        expenditures.aggregate(t=Sum('amount_kes'))['t'] or 0
-    )
-
-    # Breakdown by category
     category_breakdown = {}
     for row in expenditures.values('category').annotate(t=Sum('amount_kes')):
         label = dict(Expenditure.Category.choices).get(row['category'], row['category'])
         category_breakdown[label] = float(row['t'] or 0)
 
-    # ---------- Debtors ----------
     outstanding_agg = Invoice.objects.filter(
         student__school=school,
         status__in=['unpaid', 'partial', 'overdue'],
     ).aggregate(t=Sum(F('amount_due') - F('amount_paid')))
-
     total_debts = float(outstanding_agg['t'] or 0)
-
     debt_count = Invoice.objects.filter(
         student__school=school,
         status__in=['unpaid', 'partial', 'overdue'],
     ).values('student_id').distinct().count()
 
-    # ---------- Net Position ----------
     net_position = total_collected - total_expenditure
 
-    # ---------- Previous period comparison ----------
     period_days = (end_date - start_date).days + 1
     prev_end = start_date - timedelta(days=1)
     prev_start = prev_end - timedelta(days=period_days - 1)
 
-    prev_payments = Payment.objects.filter(
-        invoice__student__school=school,
-        paid_at__date__gte=prev_start,
-        paid_at__date__lte=prev_end,
-    )
     prev_collected = float(
-        prev_payments.aggregate(t=Sum('amount_kes'))['t'] or 0
-    )
-
-    prev_expenditures = Expenditure.objects.filter(
-        school=school,
-        spent_on__gte=prev_start,
-        spent_on__lte=prev_end,
+        Payment.objects.filter(
+            invoice__student__school=school,
+            paid_at__date__gte=prev_start,
+            paid_at__date__lte=prev_end,
+        ).aggregate(t=Sum('amount_kes'))['t'] or 0
     )
     prev_expenditure = float(
-        prev_expenditures.aggregate(t=Sum('amount_kes'))['t'] or 0
+        Expenditure.objects.filter(
+            school=school, spent_on__gte=prev_start, spent_on__lte=prev_end,
+        ).aggregate(t=Sum('amount_kes'))['t'] or 0
     )
 
-    # Comparison helper
     def delta(curr, prev):
-        curr = float(curr or 0)
-        prev = float(prev or 0)
+        curr, prev = float(curr or 0), float(prev or 0)
         if prev == 0:
             pct = 100 if curr > 0 else 0
-            return {
-                'pct': pct,
-                'abs': curr - prev,
-                'direction': 'up' if curr > prev else ('down' if curr < prev else 'flat'),
-            }
+            return {'pct': pct, 'abs': curr - prev, 'direction': 'up' if curr > prev else ('down' if curr < prev else 'flat')}
         pct = round(((curr - prev) / prev) * 100, 1)
-        return {
-            'pct': pct,
-            'abs': curr - prev,
-            'direction': 'up' if pct > 0 else ('down' if pct < 0 else 'flat'),
-        }
+        return {'pct': pct, 'abs': curr - prev, 'direction': 'up' if pct > 0 else ('down' if pct < 0 else 'flat')}
 
     collected_delta = delta(total_collected, prev_collected)
     expenditure_delta = delta(total_expenditure, prev_expenditure)
     net_delta = delta(net_position, prev_collected - prev_expenditure)
 
-    # ---------- Per-class collection breakdown ----------
     class_breakdown = []
     for cls in ClassLevel.objects.filter(school=school).order_by('order', 'name'):
         class_student_ids = list(
-            Student.objects.filter(
-                school=school, class_level=cls.name, is_active=True
-            ).values_list('id', flat=True)
+            Student.objects.filter(school=school, class_level=cls.name, is_active=True).values_list('id', flat=True)
         )
-        if not class_student_ids:
-            continue
+        if not class_student_ids: continue
 
         class_collected = float(
             Payment.objects.filter(
                 invoice__student_id__in=class_student_ids,
-                paid_at__date__gte=start_date,
-                paid_at__date__lte=end_date,
+                paid_at__date__gte=start_date, paid_at__date__lte=end_date,
             ).aggregate(t=Sum('amount_kes'))['t'] or 0
         )
-
         class_outstanding = float(
             Invoice.objects.filter(
                 student_id__in=class_student_ids,
                 status__in=['unpaid', 'partial', 'overdue'],
             ).aggregate(t=Sum(F('amount_due') - F('amount_paid')))['t'] or 0
         )
-
         class_breakdown.append({
             'class_name': cls.name,
             'students': len(class_student_ids),
@@ -407,106 +332,57 @@ def accountant_transactions(request):
         })
 
     class_breakdown.sort(key=lambda x: x['collected'], reverse=True)
-
-    # ---------- Recent transactions (for table at bottom) ----------
     recent_payments = payments.select_related('invoice__student').order_by('-paid_at')[:20]
 
-    # ---------- Render ----------
     return render(request, 'dashboard/accountant_transactions.html', {
-        'period': period,
-        'period_label': period_label,
-        'start_date': start_date,
-        'end_date': end_date,
-        'start_date_iso': start_date.isoformat(),
-        'end_date_iso': end_date.isoformat(),
-
-        # Summary
-        'total_collected': total_collected,
-        'total_expenditure': total_expenditure,
-        'total_debts': total_debts,
-        'debt_count': debt_count,
-        'net_position': net_position,
-
-        # Breakdowns
-        'method_breakdown': method_breakdown,
-        'category_breakdown': category_breakdown,
+        'period': period, 'period_label': period_label,
+        'start_date': start_date, 'end_date': end_date,
+        'start_date_iso': start_date.isoformat(), 'end_date_iso': end_date.isoformat(),
+        'total_collected': total_collected, 'total_expenditure': total_expenditure,
+        'total_debts': total_debts, 'debt_count': debt_count, 'net_position': net_position,
+        'method_breakdown': method_breakdown, 'category_breakdown': category_breakdown,
         'class_breakdown': class_breakdown,
-
-        # Comparison
-        'prev_collected': prev_collected,
-        'prev_expenditure': prev_expenditure,
-        'prev_start': prev_start,
-        'prev_end': prev_end,
-        'collected_delta': collected_delta,
-        'expenditure_delta': expenditure_delta,
-        'net_delta': net_delta,
-
-        # Recent
+        'prev_collected': prev_collected, 'prev_expenditure': prev_expenditure,
+        'prev_start': prev_start, 'prev_end': prev_end,
+        'collected_delta': collected_delta, 'expenditure_delta': expenditure_delta, 'net_delta': net_delta,
         'recent_payments': recent_payments,
     })
 
 
-@login_required
+# ============================================================
+# STUDENTS & FEES (Accountant)
+# ============================================================
+
 @login_required
 def accountant_students(request):
     """List all students with their fee balances for the accountant."""
-    from apps.students.models import Student
-    from apps.finance.models import Invoice
-    from apps.academics.models import ClassLevel
-    from django.db.models import Sum, Q
-
     if request.user.role not in ('accountant', 'principal'):
         return redirect('dashboard_home')
 
     school = request.user.school
-
-    # Filters
     search = request.GET.get('q', '').strip()
     class_id = request.GET.get('class', '')
     status_filter = request.GET.get('status', '').strip()
 
-    # ---------- All students ----------
-    students_qs = Student.objects.filter(
-        school=school, is_active=True
-    ).order_by('class_level', 'first_name', 'last_name')
+    students_qs = Student.objects.filter(school=school, is_active=True).order_by('class_level', 'first_name', 'last_name')
 
     if search:
         students_qs = students_qs.filter(
-            Q(first_name__icontains=search) |
-            Q(middle_name__icontains=search) |
-            Q(last_name__icontains=search) |
-            Q(admission_number__icontains=search) |
-            Q(upi__icontains=search)
+            Q(first_name__icontains=search) | Q(middle_name__icontains=search) |
+            Q(last_name__icontains=search) | Q(admission_number__icontains=search) | Q(upi__icontains=search)
         )
-
     if class_id:
-        try:
-            cls = ClassLevel.objects.get(id=class_id, school=school)
-            students_qs = students_qs.filter(class_level=cls.name)
-        except ClassLevel.DoesNotExist:
-            pass
+        cls = ClassLevel.objects.filter(id=class_id, school=school).first()
+        if cls:
+            students_qs = students_qs.filter(class_level__iexact=cls.name)
 
-    # ---------- Batch invoice totals (much faster than per-student loop) ----------
     student_ids = list(students_qs.values_list('id', flat=True))
-
     invoice_totals = (
-        Invoice.objects
-        .filter(student_id__in=student_ids)
-        .values('student_id')
-        .annotate(
-            inv=Sum('amount_due'),
-            pd=Sum('amount_paid'),
-        )
+        Invoice.objects.filter(student_id__in=student_ids).values('student_id')
+        .annotate(inv=Sum('amount_due'), pd=Sum('amount_paid'))
     )
-    invoice_map = {
-        row['student_id']: {
-            'invoiced': float(row['inv'] or 0),
-            'paid': float(row['pd'] or 0),
-        }
-        for row in invoice_totals
-    }
+    invoice_map = {row['student_id']: {'invoiced': float(row['inv'] or 0), 'paid': float(row['pd'] or 0)} for row in invoice_totals}
 
-    # ---------- Build student rows ----------
     student_list = []
     grand_invoiced = 0
     grand_paid = 0
@@ -517,94 +393,71 @@ def accountant_students(request):
         total_paid = totals['paid']
         balance = total_invoiced - total_paid
 
-        # Determine status
-        if total_invoiced == 0:
-            status = 'none'
-        elif balance <= 0:
-            status = 'paid'
-        elif total_paid > 0:
-            status = 'partial'
-        else:
-            status = 'unpaid'
+        if total_invoiced == 0: status = 'none'
+        elif balance <= 0: status = 'paid'
+        elif total_paid > 0: status = 'partial'
+        else: status = 'unpaid'
 
-        # Apply status filter
         if status_filter and status != status_filter:
             continue
 
         student_list.append({
-            'student': s,
-            'invoiced': total_invoiced,
-            'paid': total_paid,
-            'balance': balance,
-            'status': status,
+            'student': s, 'invoiced': total_invoiced, 'paid': total_paid,
+            'balance': balance, 'status': status,
         })
-
         grand_invoiced += total_invoiced
         grand_paid += total_paid
-
-    grand_balance = grand_invoiced - grand_paid
-
-    classes = ClassLevel.objects.filter(school=school).order_by('order', 'name')
 
     return render(request, 'dashboard/accountant_students.html', {
         'students_data': student_list,
         'total_students': len(student_list),
         'grand_invoiced': grand_invoiced,
         'grand_paid': grand_paid,
-        'grand_balance': grand_balance,
-        'classes': classes,
-        'search': search,
-        'class_id': class_id,
-        'status_filter': status_filter,
+        'grand_balance': grand_invoiced - grand_paid,
+        'classes': ClassLevel.objects.filter(school=school).order_by('order', 'name'),
+        'search': search, 'class_id': class_id, 'status_filter': status_filter,
     })
 
 
+# ============================================================
+# GENERATE INVOICES
+# ============================================================
+
 @login_required
 def generate_invoices(request):
-    """
-    Generate invoices in 3 modes:
-      - Single student (custom or class-default amount)
-      - Single class (all active students)
-      - All classes (bulk by term)
-    """
+    """Generate invoices in 3 modes: single, class, bulk."""
     if request.user.role not in ('accountant', 'principal'):
         return redirect('dashboard_home')
 
+    from django.db import transaction
     from apps.finance.models import FeeStructure, Invoice
     from apps.students.models import Student
     from apps.academics.models import ClassLevel
-    from django.db import transaction
     from collections import defaultdict
-    from decimal import Decimal
 
     school = request.user.school
 
-    # ---- Group fee structures by term ----
+    # ---- Build unique terms list ----
     all_fs = FeeStructure.objects.filter(school=school).order_by('name')
-    terms = defaultdict(list)
+    terms_set = set()
     for fs in all_fs:
+        # Take everything before the em-dash if it exists, otherwise use the whole name
         term_part = fs.name.split(' — ', 1)[0] if ' — ' in fs.name else fs.name
-        terms[term_part].append(fs)
-    term_choices = sorted(terms.keys())
-
+        terms_set.add(term_part)
+    term_choices = sorted(terms_set)
+    
     classes = ClassLevel.objects.filter(school=school).order_by('order', 'name')
 
-    # ---- Helper: compute total fee for a class + term ----
-    def class_term_total(class_name, term_prefix):
+    # ---- Helper: find fee structures for a class + term prefix ----
+    def get_fee_structures(class_name, term_prefix):
+        # Case-insensitive contains search
         qs = FeeStructure.objects.filter(
-            school=school,
-            class_level=class_name,
-            name__startswith=f"{term_prefix} —",
+            school=school, 
+            class_level__name__iexact=class_name, 
+            name__icontains=term_prefix
         )
-        if not qs.exists():
-            return None, None, None
-        total = sum(float(f.amount_kes) for f in qs)
-        anchor = qs.first()
-        return float(total), anchor, anchor.due_date
+        return qs
 
-    # ==========================================================
-    # POST — do the generation
-    # ==========================================================
     if request.method == 'POST':
         mode = request.POST.get('mode', 'bulk')
         term_name = request.POST.get('term', '').strip()
@@ -615,242 +468,158 @@ def generate_invoices(request):
             messages.error(request, 'Please select or type a term.')
             return redirect('generate_invoices')
 
-        # ---------------------------------------------------
+        # ==========================================================
         # MODE: SINGLE STUDENT
-        # ---------------------------------------------------
+        # ==========================================================
         if mode == 'single':
             student_id = request.POST.get('student_id')
             custom_amount = request.POST.get('custom_amount', '').strip()
             override_amount = request.POST.get('override_amount', '').strip()
 
-            try:
-                student = Student.objects.get(
-                    id=student_id, school=school, is_active=True
-                )
-            except Student.DoesNotExist:
+            student = Student.objects.filter(id=student_id, school=school, is_active=True).first()
+            if not student:
                 messages.error(request, 'Student not found.')
                 return redirect('generate_invoices')
 
-            # Determine amount
+            term_fs = get_fee_structures(student.class_level, term_prefix)
+            
+            if not term_fs.exists():
+                messages.error(request, f'No fee structure for {student.class_level}.')
+                return redirect('generate_invoices')
+
             if override_amount and custom_amount:
-                # Custom amount from modal
                 try:
                     amount = float(custom_amount)
                 except (ValueError, TypeError):
                     messages.error(request, 'Invalid custom amount.')
                     return redirect('generate_invoices')
-                # Use first matching FS as anchor if available
-                anchor = FeeStructure.objects.filter(
-                    school=school, class_level=student.class_level,
-                    name__startswith=f"{term_prefix} —"
-                ).first()
-                if not anchor:
-                    messages.error(
-                        request,
-                        f'No fee structure exists for {student.class_level} — '
-                        f'please use matrix draft first.'
-                    )
-                    return redirect('generate_invoices')
-                due_date = anchor.due_date
+                anchor = term_fs.first()
             else:
-                # Use class default
-                amount, anchor, due_date = class_term_total(
-                    student.class_level, term_prefix
-                )
-                if amount is None:
-                    messages.error(
-                        request,
-                        f'No fee structure for {student.class_level} '
-                        f'in term "{term_prefix}".'
-                    )
-                    return redirect('generate_invoices')
+                amount = sum(float(f.amount_kes) for f in term_fs)
+                anchor = term_fs.first()
 
             invoice, created = Invoice.objects.get_or_create(
-                student=student,
-                fee_structure=anchor,
-                defaults={'amount_due': amount, 'due_date': due_date},
+                student=student, fee_structure=anchor,
+                defaults={'amount_due': amount, 'due_date': anchor.due_date},
             )
-            if created:
-                messages.success(
-                    request,
-                    f'✅ Invoice created for {student.full_name}: '
-                    f'KES {amount:,.0f} ({term_prefix}).'
-                )
-            else:
-                invoice.amount_due = amount
-                invoice.due_date = due_date
-                invoice.save(update_fields=['amount_due', 'due_date'])
-                invoice.update_status()
-                messages.info(
-                    request,
-                    f'Invoice updated for {student.full_name}: '
-                    f'KES {amount:,.0f}.'
-                )
+            invoice.amount_due = amount
+            invoice.due_date = anchor.due_date
+            invoice.save(update_fields=['amount_due', 'due_date'])
+            invoice.update_status()
+
+            messages.success(request, f'Invoice {"created" if created else "updated"} for {student.full_name}.')
             return redirect('accountant_invoices')
 
-        # ---------------------------------------------------
+        # ==========================================================
         # MODE: SINGLE CLASS
-        # ---------------------------------------------------
+        # ==========================================================
         if mode == 'class':
             class_name = request.POST.get('class_name', '').strip()
-            if not class_name:
-                messages.error(request, 'Please pick a class.')
+            term_fs = get_fee_structures(class_name, term_prefix)
+            
+            if not term_fs.exists():
+                messages.error(request, f'No fee structure for {class_name} matching "{term_prefix}".')
                 return redirect('generate_invoices')
 
-            amount, anchor, due_date = class_term_total(class_name, term_prefix)
-            if amount is None:
-                messages.error(
-                    request,
-                    f'No fee structure for {class_name} in "{term_prefix}".'
-                )
-                return redirect('generate_invoices')
+            amount = sum(float(f.amount_kes) for f in term_fs)
+            anchor = term_fs.first()
+            due_date = anchor.due_date
 
-            students = Student.objects.filter(
-                school=school, class_level=class_name, is_active=True,
-            )
-
+            students = Student.objects.filter(school=school, class_level__iexact=class_name, is_active=True)
             created_count = 0
-            updated_count = 0
-            total_billed = 0
 
             with transaction.atomic():
                 for s in students:
                     inv, was_created = Invoice.objects.get_or_create(
-                        student=s,
-                        fee_structure=anchor,
+                        student=s, fee_structure=anchor,
                         defaults={'amount_due': amount, 'due_date': due_date},
                     )
                     if was_created:
                         created_count += 1
-                        total_billed += amount
-                    elif float(inv.amount_due) != amount:
-                        inv.amount_due = amount
-                        inv.due_date = due_date
-                        inv.save(update_fields=['amount_due', 'due_date'])
                         inv.update_status()
-                        updated_count += 1
 
-            msg = f'✅ {class_name} ({term_prefix}): {created_count} created'
-            if updated_count:
-                msg += f', {updated_count} updated'
-            msg += f'. Total billed: KES {total_billed:,.0f}.'
-            messages.success(request, msg)
+            messages.success(request, f'{class_name}: {created_count} invoices created.')
             return redirect('accountant_invoices')
 
-        # ---------------------------------------------------
-        # MODE: ALL CLASSES (bulk)
-        # ---------------------------------------------------
-        matching_fs = FeeStructure.objects.filter(
-            school=school,
-            name__startswith=f"{term_prefix} —",
-        )
-
-        if not matching_fs.exists():
-            messages.error(
-                request, f'No fee structures found for term "{term_prefix}".'
+        # ==========================================================
+        # MODE: BULK (ALL CLASSES)
+        # ==========================================================
+        if mode == 'bulk':
+            # Find all fee structures matching the term prefix
+            matching_fs = FeeStructure.objects.filter(
+                school=school, name__icontains=term_prefix
             )
-            return redirect('generate_invoices')
 
-        by_class = defaultdict(list)
-        for fs in matching_fs:
-            by_class[fs.class_level].append(fs)
+            if not matching_fs.exists():
+                messages.error(request, f'No fee structures found for "{term_prefix}".')
+                return redirect('generate_invoices')
 
-        created_count = 0
-        updated_count = 0
-        classes_processed = 0
-        total_billed = 0
+            # Group by class
+            by_class = defaultdict(list)
+            for fs in matching_fs:
+                by_class[fs.class_level.name].append(fs)
 
-        with transaction.atomic():
-            for class_name, fee_list in by_class.items():
-                total_fee = sum(float(f.amount_kes) for f in fee_list)
-                if total_fee <= 0:
-                    continue
+            created_count = 0
+            classes_processed = 0
+            total_billed = 0
 
-                anchor_fs = fee_list[0]
-                due_date = anchor_fs.due_date
+            with transaction.atomic():
+                for class_name, fee_list in by_class.items():
+                    total_fee = sum(float(f.amount_kes) for f in fee_list)
+                    if total_fee <= 0: continue
+                    anchor_fs = fee_list[0]
+                    due_date = anchor_fs.due_date
+                    
+                    students = Student.objects.filter(school=school, class_level__iexact=class_name, is_active=True)
+                    
+                    for student in students:
+                        inv, was_created = Invoice.objects.get_or_create(
+                            student=student, fee_structure=anchor_fs,
+                            defaults={'amount_due': total_fee, 'due_date': due_date},
+                        )
+                        if was_created:
+                            created_count += 1
+                            total_billed += total_fee
+                            inv.update_status()
+                    classes_processed += 1
 
-                students = Student.objects.filter(
-                    school=school, class_level=class_name, is_active=True,
-                )
-
-                for student in students:
-                    inv, was_created = Invoice.objects.get_or_create(
-                        student=student,
-                        fee_structure=anchor_fs,
-                        defaults={'amount_due': total_fee, 'due_date': due_date},
-                    )
-                    if was_created:
-                        created_count += 1
-                        total_billed += total_fee
-                    elif float(inv.amount_due) != total_fee:
-                        inv.amount_due = total_fee
-                        inv.due_date = due_date
-                        inv.save(update_fields=['amount_due', 'due_date'])
-                        inv.update_status()
-                        updated_count += 1
-
-                classes_processed += 1
-
-        msg = f'✅ Bulk ({term_prefix}): {created_count} created'
-        if updated_count:
-            msg += f', {updated_count} updated'
-        msg += f' across {classes_processed} classes.'
-        messages.success(request, msg)
-        return redirect('accountant_invoices')
+            messages.success(request, f'Bulk ({term_prefix}): {created_count} invoices created across {classes_processed} classes.')
+            return redirect('accountant_invoices')
 
     # ==========================================================
-    # GET — render form + optional preview
+    # GET — render form + preview
     # ==========================================================
     preview_term = request.GET.get('term', '').strip()
-
     preview = None
+    
     if preview_term:
-        matching = FeeStructure.objects.filter(
-            school=school, name__startswith=f"{preview_term} —"
-        )
-        by_class = defaultdict(lambda: {'items': [], 'total': 0.0, 'due_date': None})
+        matching = FeeStructure.objects.filter(school=school, name__icontains=preview_term)
+        by_class = defaultdict(lambda: {'total': 0.0, 'due_date': None})
         for fs in matching:
-            by_class[fs.class_level]['items'].append({
-                'name': fs.name.split(' — ', 1)[-1] if ' — ' in fs.name else fs.name,
-                'amount': float(fs.amount_kes),
-            })
-            by_class[fs.class_level]['total'] += float(fs.amount_kes)
-            if not by_class[fs.class_level]['due_date']:
-                by_class[fs.class_level]['due_date'] = fs.due_date
+            by_class[fs.class_level.name]['total'] += float(fs.amount_kes)
+            if not by_class[fs.class_level.name]['due_date']:
+                by_class[fs.class_level.name]['due_date'] = fs.due_date
 
         preview_classes = []
         grand_total = 0
         total_students = 0
         for class_name, data in by_class.items():
-            count = Student.objects.filter(
-                school=school, class_level=class_name, is_active=True
-            ).count()
-            if count == 0:
-                continue
+            count = Student.objects.filter(school=school, class_level__iexact=class_name, is_active=True).count()
+            if count == 0: continue
             class_total = data['total'] * count
             grand_total += class_total
             total_students += count
             preview_classes.append({
-                'class_name': class_name,
-                'items': data['items'],
-                'per_student': data['total'],
-                'student_count': count,
-                'class_total': class_total,
-                'due_date': data['due_date'],
+                'class_name': class_name, 'per_student': data['total'],
+                'student_count': count, 'class_total': class_total, 'due_date': data['due_date'],
             })
         preview_classes.sort(key=lambda x: x['class_name'])
-
         preview = {
-            'term': preview_term,
-            'classes': preview_classes,
-            'total_students': total_students,
-            'grand_total': grand_total,
+            'term': preview_term, 'classes': preview_classes,
+            'total_students': total_students, 'grand_total': grand_total,
         }
 
-       # Students for single-student dropdown
-    all_students = Student.objects.filter(
-        school=school, is_active=True
-    ).order_by('class_level', 'first_name', 'last_name')
+    all_students = Student.objects.filter(school=school, is_active=True).order_by('class_level', 'first_name', 'last_name')
 
     return render(request, 'dashboard/generate_invoices.html', {
         'term_choices': term_choices,
@@ -860,23 +629,17 @@ def generate_invoices(request):
         'preview_term': preview_term,
     })
 
-
 @login_required
 def invoice_student_quick(request, student_id):
     """Quick-invoice a single student from the Students & Fees page."""
     if request.user.role not in ('accountant', 'principal'):
         return redirect('dashboard_home')
 
-    from apps.students.models import Student
-    from apps.finance.models import FeeStructure, Invoice
-    from collections import defaultdict
-
     school = request.user.school
     student = get_object_or_404(Student, id=student_id, school=school)
 
-    # Get available terms for the student's class
     fs_qs = FeeStructure.objects.filter(
-        school=school, class_level=student.class_level
+        school=school, class_level__name__iexact=student.class_level
     ).order_by('name')
 
     terms = defaultdict(lambda: {'total': 0.0, 'anchor': None})
@@ -900,19 +663,16 @@ def invoice_student_quick(request, student_id):
             messages.error(request, 'Please pick a term.')
             return redirect('invoice_student_quick', student_id=student.id)
 
-        # Determine anchor
         term_fs = fs_qs.filter(name__startswith=f"{term_name} —")
         if not term_fs.exists():
             messages.error(request, f'No fees for "{term_name}".')
             return redirect('invoice_student_quick', student_id=student.id)
         anchor = term_fs.first()
 
-        # Determine amount
         if override and custom_amount:
             try:
                 amount = float(custom_amount)
-                if amount <= 0:
-                    raise ValueError
+                if amount <= 0: raise ValueError
             except (ValueError, TypeError):
                 messages.error(request, 'Invalid custom amount.')
                 return redirect('invoice_student_quick', student_id=student.id)
@@ -920,27 +680,25 @@ def invoice_student_quick(request, student_id):
             amount = sum(float(f.amount_kes) for f in term_fs)
 
         invoice, created = Invoice.objects.get_or_create(
-            student=student,
-            fee_structure=anchor,
+            student=student, fee_structure=anchor,
             defaults={'amount_due': amount, 'due_date': anchor.due_date},
         )
-        if created:
-            messages.success(
-                request,
-                f'✅ Invoice created for {student.full_name}: KES {amount:,.0f}.'
-            )
-        else:
-            invoice.amount_due = amount
-            invoice.due_date = anchor.due_date
-            invoice.save(update_fields=['amount_due', 'due_date'])
-            invoice.update_status()
-            messages.info(request, f'Invoice updated: KES {amount:,.0f}.')
+        invoice.amount_due = amount
+        invoice.due_date = anchor.due_date
+        invoice.save(update_fields=['amount_due', 'due_date'])
+        invoice.update_status()
+
+        messages.success(request, f'Invoice {"created" if created else "updated"} for {student.full_name}.')
         return redirect('accountant_students')
+
     return render(request, 'dashboard/invoice_student_quick.html', {
-        'student': student,
-        'term_options': term_options,
+        'student': student, 'term_options': term_options,
     })
 
+
+# ============================================================
+# PAYMENTS
+# ============================================================
 
 @login_required
 def record_payment(request, invoice_id):
@@ -948,11 +706,7 @@ def record_payment(request, invoice_id):
     if request.user.role not in ('accountant', 'principal'):
         return redirect('dashboard_home')
 
-    from apps.finance.models import Invoice, Payment
-
-    invoice = get_object_or_404(
-        Invoice, id=invoice_id, student__school=request.user.school
-    )
+    invoice = get_object_or_404(Invoice, id=invoice_id, student__school=request.user.school)
 
     if request.method == 'POST':
         amount = request.POST.get('amount', '').strip()
@@ -961,51 +715,40 @@ def record_payment(request, invoice_id):
         notes = request.POST.get('notes', '').strip()
 
         errors = []
-
         try:
             amount = float(amount)
-            if amount <= 0:
-                errors.append('Amount must be greater than zero.')
+            if amount <= 0: errors.append('Amount must be greater than zero.')
         except (ValueError, TypeError):
             errors.append('Please enter a valid amount.')
             amount = 0
 
         if method not in [c[0] for c in Payment.Method.choices]:
             errors.append('Invalid payment method.')
-
         if method in ('mpesa', 'airtel', 'bank', 'cheque') and not external_ref:
             errors.append(f'Please enter the {method.upper()} transaction reference.')
 
         if errors:
-            for e in errors:
-                messages.error(request, e)
+            for e in errors: messages.error(request, e)
             return redirect('record_payment', invoice_id=invoice.id)
 
         try:
             payment = Payment.objects.create(
-                invoice=invoice,
-                amount_kes=amount,
-                method=method,
-                external_reference=external_ref,
-                notes=notes,
-                recorded_by=request.user,
+                invoice=invoice, amount_kes=amount, method=method,
+                external_reference=external_ref, notes=notes, recorded_by=request.user,
             )
-            messages.success(
-                request,
-                f'Payment recorded. Transaction: {payment.reference} '
-                f'(KES {amount:,.2f} via {payment.get_method_display()})'
-            )
+            messages.success(request, f'Payment recorded. Reference: {payment.reference}')
             return redirect('accountant_invoices')
         except Exception as e:
-            messages.error(request, f'Error recording payment: {e}')
-            return redirect('record_payment', invoice_id=invoice.id)
+            messages.error(request, f'Error: {e}')
 
-    # GET — render form
     return render(request, 'dashboard/record_payment.html', {
-        'invoice': invoice,
-        'methods': Payment.Method.choices,
+        'invoice': invoice, 'methods': Payment.Method.choices,
     })
 
+
+# ============================================================
+# FINANCIAL REPORT
+# ============================================================
 
 @login_required
 def financial_report_pdf(request):
@@ -1013,20 +756,12 @@ def financial_report_pdf(request):
     if request.user.role not in ('accountant', 'principal'):
         return redirect('dashboard_home')
 
-    from apps.finance.models import Invoice, Payment, Expenditure
-    from apps.students.models import Student
-    from apps.academics.models import ClassLevel
-    from django.db.models import Sum, F
-    from django.utils import timezone
-    from datetime import date, timedelta
     from apps.core.pdf_utils import html_to_pdf_response
     from django.template.loader import render_to_string
 
-    user = request.user
-    school = user.school
+    school = request.user.school
     today = date.today()
 
-    # ---------- Period selection ----------
     period = request.GET.get('period', 'month')
     if period == 'custom':
         try:
@@ -1049,140 +784,93 @@ def financial_report_pdf(request):
         end_date = today
         period_label = today.strftime('%B %Y')
 
-    # ---------- Collections ----------
     payments = Payment.objects.filter(
         invoice__student__school=school,
-        paid_at__date__gte=start_date,
-        paid_at__date__lte=end_date,
+        paid_at__date__gte=start_date, paid_at__date__lte=end_date,
     ).select_related('invoice__student')
-
     total_collected = float(payments.aggregate(t=Sum('amount_kes'))['t'] or 0)
+    method_breakdown = {
+        dict(Payment.Method.choices).get(r['method'], r['method']): float(r['t'] or 0)
+        for r in payments.values('method').annotate(t=Sum('amount_kes'))
+    }
 
-    method_breakdown = {}
-    for row in payments.values('method').annotate(t=Sum('amount_kes')):
-        label = dict(Payment.Method.choices).get(row['method'], row['method'])
-        method_breakdown[label] = float(row['t'] or 0)
-
-    # ---------- Expenditure ----------
     expenditures = Expenditure.objects.filter(
-        school=school,
-        spent_on__gte=start_date,
-        spent_on__lte=end_date,
+        school=school, spent_on__gte=start_date, spent_on__lte=end_date,
     )
     total_expenditure = float(expenditures.aggregate(t=Sum('amount_kes'))['t'] or 0)
-
-    category_breakdown = {}
-    for row in expenditures.values('category').annotate(t=Sum('amount_kes')):
-        label = dict(Expenditure.Category.choices).get(row['category'], row['category'])
-        category_breakdown[label] = float(row['t'] or 0)
+    category_breakdown = {
+        dict(Expenditure.Category.choices).get(r['category'], r['category']): float(r['t'] or 0)
+        for r in expenditures.values('category').annotate(t=Sum('amount_kes'))
+    }
 
     net_position = total_collected - total_expenditure
-
-    # ---------- Outstanding ----------
     outstanding_agg = Invoice.objects.filter(
-        student__school=school,
-        status__in=['unpaid', 'partial', 'overdue'],
+        student__school=school, status__in=['unpaid', 'partial', 'overdue'],
     ).aggregate(t=Sum(F('amount_due') - F('amount_paid')))
     total_outstanding = float(outstanding_agg['t'] or 0)
 
-    # ---------- Per-class breakdown ----------
     class_breakdown = []
     for cls in ClassLevel.objects.filter(school=school).order_by('order', 'name'):
-        class_students = list(
-            Student.objects.filter(
-                school=school, class_level=cls.name, is_active=True
-            ).values_list('id', flat=True)
-        )
-        if not class_students:
-            continue
-
+        class_students = list(Student.objects.filter(school=school, class_level=cls.name, is_active=True).values_list('id', flat=True))
+        if not class_students: continue
         class_collected = float(
             Payment.objects.filter(
                 invoice__student_id__in=class_students,
-                paid_at__date__gte=start_date,
-                paid_at__date__lte=end_date,
+                paid_at__date__gte=start_date, paid_at__date__lte=end_date,
             ).aggregate(t=Sum('amount_kes'))['t'] or 0
         )
-
-        class_breakdown.append({
-            'class_name': cls.name,
-            'students': len(class_students),
-            'collected': class_collected,
-        })
-
+        class_breakdown.append({'class_name': cls.name, 'students': len(class_students), 'collected': class_collected})
     class_breakdown.sort(key=lambda x: x['collected'], reverse=True)
 
-    # ---------- Previous period ----------
     period_days = (end_date - start_date).days + 1
     prev_end = start_date - timedelta(days=1)
     prev_start = prev_end - timedelta(days=period_days - 1)
 
-    prev_collected = float(
-        Payment.objects.filter(
-            invoice__student__school=school,
-            paid_at__date__gte=prev_start,
-            paid_at__date__lte=prev_end,
-        ).aggregate(t=Sum('amount_kes'))['t'] or 0
-    )
-    prev_expenditure = float(
-        Expenditure.objects.filter(
-            school=school, spent_on__gte=prev_start, spent_on__lte=prev_end,
-        ).aggregate(t=Sum('amount_kes'))['t'] or 0
-    )
+    prev_collected = float(Payment.objects.filter(
+        invoice__student__school=school,
+        paid_at__date__gte=prev_start, paid_at__date__lte=prev_end,
+    ).aggregate(t=Sum('amount_kes'))['t'] or 0)
+    prev_expenditure = float(Expenditure.objects.filter(
+        school=school, spent_on__gte=prev_start, spent_on__lte=prev_end,
+    ).aggregate(t=Sum('amount_kes'))['t'] or 0)
 
     html_string = render_to_string('pdf/financial_report.html',
         build_pdf_context(
-            school=school,
-            generated_by=user,
-            period_label=period_label,
-            start_date=start_date,
-            end_date=end_date,
-            prev_start=prev_start,
-            prev_end=prev_end,
-            total_collected=total_collected,
-            total_expenditure=total_expenditure,
-            total_outstanding=total_outstanding,
-            net_position=net_position,
-            prev_collected=prev_collected,
-            prev_expenditure=prev_expenditure,
-            method_breakdown=method_breakdown,
-            category_breakdown=category_breakdown,
+            school=school, generated_by=request.user,
+            period_label=period_label, start_date=start_date, end_date=end_date,
+            prev_start=prev_start, prev_end=prev_end,
+            total_collected=total_collected, total_expenditure=total_expenditure,
+            total_outstanding=total_outstanding, net_position=net_position,
+            prev_collected=prev_collected, prev_expenditure=prev_expenditure,
+            method_breakdown=method_breakdown, category_breakdown=category_breakdown,
             class_breakdown=class_breakdown,
         )
     )
+    return html_to_pdf_response(html_string, f'financial_report_{start_date.isoformat()}_{end_date.isoformat()}.pdf')
 
-    filename = f'financial_report_{start_date.isoformat()}_{end_date.isoformat()}.pdf'
-    return html_to_pdf_response(html_string, filename)
 
+# ============================================================
+# CLASS FEE STATEMENT
+# ============================================================
 
 @login_required
 @role_required('accountant', 'principal')
 def class_fee_statement(request):
     """Shows fee summary for one class + per-student breakdown."""
-    from apps.students.models import Student
-    from apps.finance.models import Invoice
-    from apps.academics.models import ClassLevel
-
     school = request.user.school
     classes = ClassLevel.objects.filter(school=school).order_by('order', 'name')
 
-    # ---------- Class selector ----------
     class_id = request.GET.get('class')
     if not class_id and classes.exists():
         class_id = classes.first().id
 
     selected_class = None
     if class_id:
-        try:
-            selected_class = ClassLevel.objects.get(id=class_id, school=school)
-        except ClassLevel.DoesNotExist:
-            pass
+        selected_class = ClassLevel.objects.filter(id=class_id, school=school).first()
 
-    # ---------- Search + Status filter ----------
     search = request.GET.get('q', '').strip()
     status_filter = request.GET.get('status', '')
 
-    # ---------- Students + invoices ----------
     students_data = []
     class_invoiced = 0
     class_paid = 0
@@ -1190,17 +878,13 @@ def class_fee_statement(request):
 
     if selected_class:
         students_qs = Student.objects.filter(
-            school=school,
-            class_level=selected_class.name,
-            is_active=True,
+            school=school, class_level__iexact=selected_class.name, is_active=True,
         ).order_by('first_name', 'last_name')
 
         if search:
             students_qs = students_qs.filter(
-                models.Q(first_name__icontains=search) |
-                models.Q(middle_name__icontains=search) |
-                models.Q(last_name__icontains=search) |
-                models.Q(admission_number__icontains=search)
+                Q(first_name__icontains=search) | Q(middle_name__icontains=search) |
+                Q(last_name__icontains=search) | Q(admission_number__icontains=search)
             )
 
         for s in students_qs:
@@ -1209,124 +893,73 @@ def class_fee_statement(request):
             total_paid = sum(i.amount_paid for i in invoices) or 0
             balance = total_invoiced - total_paid
 
-            if total_invoiced == 0:
-                status = 'none'
-            elif balance <= 0:
-                status = 'paid'
-            elif any(i.status == 'overdue' for i in invoices):
-                status = 'overdue'
-            elif total_paid > 0:
-                status = 'partial'
-            else:
-                status = 'unpaid'
+            if total_invoiced == 0: status = 'none'
+            elif balance <= 0: status = 'paid'
+            elif any(i.status == 'overdue' for i in invoices): status = 'overdue'
+            elif total_paid > 0: status = 'partial'
+            else: status = 'unpaid'
 
             counts[status] = counts.get(status, 0) + 1
-
-            # Apply status filter
-            if status_filter and status != status_filter:
-                continue
+            if status_filter and status != status_filter: continue
 
             students_data.append({
-                'student': s,
-                'invoiced': total_invoiced,
-                'paid': total_paid,
-                'balance': balance,
-                'status': status,
-                'invoice_count': invoices.count(),
+                'student': s, 'invoiced': total_invoiced, 'paid': total_paid,
+                'balance': balance, 'status': status, 'invoice_count': invoices.count(),
             })
-
             class_invoiced += total_invoiced
             class_paid += total_paid
 
-    class_balance = class_invoiced - class_paid
-
     return render(request, 'dashboard/class_fee_statement.html', {
-        'classes': classes,
-        'selected_class': selected_class,
-        'students_data': students_data,
-        'total_students': len(students_data),
-        'class_invoiced': class_invoiced,
-        'class_paid': class_paid,
-        'class_balance': class_balance,
-        'counts': counts,
-        'search': search,
-        'status_filter': status_filter,
+        'classes': classes, 'selected_class': selected_class,
+        'students_data': students_data, 'total_students': len(students_data),
+        'class_invoiced': class_invoiced, 'class_paid': class_paid,
+        'class_balance': class_invoiced - class_paid, 'counts': counts,
+        'search': search, 'status_filter': status_filter,
     })
 
 
 @login_required
 @role_required('accountant', 'principal')
 def class_fee_statement_pdf(request, class_id):
-    """Generate PDF of class fee statement (A4 landscape)."""
-    from apps.students.models import Student
-    from apps.finance.models import Invoice
-    from apps.academics.models import ClassLevel
+    """Generate PDF of class fee statement."""
     from apps.core.pdf_utils import html_to_pdf_response
     from django.template.loader import render_to_string
 
     school = request.user.school
-
-    try:
-        selected_class = ClassLevel.objects.get(id=class_id, school=school)
-    except ClassLevel.DoesNotExist:
+    selected_class = ClassLevel.objects.filter(id=class_id, school=school).first()
+    if not selected_class:
         messages.error(request, 'Class not found.')
         return redirect('class_fee_statement')
 
-    students = Student.objects.filter(
-        school=school,
-        class_level=selected_class.name,
-        is_active=True,
-    ).order_by('first_name', 'last_name')
+    students = Student.objects.filter(school=school, class_level__iexact=selected_class.name, is_active=True).order_by('first_name', 'last_name')
 
     students_data = []
     class_invoiced = 0
     class_paid = 0
-
     for s in students:
         invoices = Invoice.objects.filter(student=s)
         total_invoiced = sum(i.amount_due for i in invoices) or 0
         total_paid = sum(i.amount_paid for i in invoices) or 0
         balance = total_invoiced - total_paid
-
-        if total_invoiced == 0:
-            status = 'none'
-        elif balance <= 0:
-            status = 'paid'
-        elif total_paid > 0:
-            status = 'partial'
-        else:
-            status = 'unpaid'
-
-        students_data.append({
-            'student': s,
-            'invoiced': total_invoiced,
-            'paid': total_paid,
-            'balance': balance,
-            'status': status,
-        })
-
+        status = 'none' if total_invoiced == 0 else ('paid' if balance <= 0 else ('partial' if total_paid > 0 else 'unpaid'))
+        students_data.append({'student': s, 'invoiced': total_invoiced, 'paid': total_paid, 'balance': balance, 'status': status})
         class_invoiced += total_invoiced
         class_paid += total_paid
 
-    class_balance = class_invoiced - class_paid
-
     html_string = render_to_string('pdf/class_fee_statement.html',
         build_pdf_context(
-            school=school,
-            generated_by=request.user,
-            selected_class=selected_class,
-            students_data=students_data,
-            total_students=len(students_data),
-            class_invoiced=class_invoiced,
-            class_paid=class_paid,
-            class_balance=class_balance,
-            printed_by=request.user,
+            school=school, generated_by=request.user, selected_class=selected_class,
+            students_data=students_data, total_students=len(students_data),
+            class_invoiced=class_invoiced, class_paid=class_paid,
+            class_balance=class_invoiced - class_paid, printed_by=request.user,
         )
     )
+    return html_to_pdf_response(html_string, f'class_statement_{selected_class.name.replace(" ", "_")}.pdf')
 
-    filename = f'class_statement_{selected_class.name.replace(" ", "_")}.pdf'
-    return html_to_pdf_response(html_string, filename)
 
+# ============================================================
+# FEE STRUCTURE CRUD
+# ============================================================
 
 @login_required
 def fee_structure_list(request):
@@ -1334,50 +967,39 @@ def fee_structure_list(request):
     if request.user.role not in ('accountant', 'principal', 'super_admin'):
         return redirect('dashboard_home')
 
-    school = request.user.school
-    
-    # Get all fee structures for this school
-    fees = FeeStructure.objects.filter(school=school).select_related('class_level')
-
-    # Group them by Class Level
+    fees = FeeStructure.objects.filter(school=request.user.school).select_related('class_level')
     grouped_fees = {}
     for fee in fees:
         cls_name = fee.class_level.name if fee.class_level else "Unassigned"
-        
         if cls_name not in grouped_fees:
             grouped_fees[cls_name] = {
                 'class_name': cls_name,
                 'class_id': fee.class_level.id if fee.class_level else None,
-                'items': [],
-                'total': 0
+                'items': [], 'total': 0,
             }
-        
         grouped_fees[cls_name]['items'].append(fee)
         grouped_fees[cls_name]['total'] += fee.amount_kes
 
     return render(request, 'dashboard/fee_structure_list.html', {
-        'grouped_fees': grouped_fees.values(),
-        'total_items': fees.count(),
+        'grouped_fees': grouped_fees.values(), 'total_items': fees.count(),
     })
+
+
 @login_required
 @role_required('accountant', 'principal')
 def fee_structure_add(request):
-    """Create a new fee structure."""
-    from apps.finance.models import FeeStructure
-    from apps.academics.models import ClassLevel
-
     school = request.user.school
     classes = ClassLevel.objects.filter(school=school).order_by('order', 'name')
 
     if request.method == 'POST':
         name = request.POST.get('name', '').strip()
-        class_level = request.POST.get('class_level', '').strip()
+        class_val = request.POST.get('class_level', '').strip()
         amount = request.POST.get('amount_kes', '').strip()
         due_date = request.POST.get('due_date') or None
 
         errors = []
         if not name: errors.append('Name is required.')
-        if not class_level: errors.append('Class is required.')
+        if not class_val: errors.append('Class is required.')
         try:
             amount = float(amount)
             if amount <= 0: errors.append('Amount must be greater than zero.')
@@ -1388,43 +1010,51 @@ def fee_structure_add(request):
         if errors:
             for e in errors: messages.error(request, e)
             return render(request, 'dashboard/fee_structure_form.html', {
-                'classes': classes,
-                'action': 'add',
-                'form_data': request.POST,
+                'classes': classes, 'action': 'add', 'form_data': request.POST,
             })
 
+        if class_val.isdigit():
+            cls = ClassLevel.objects.filter(id=class_val, school=school).first()
+        else:
+            cls = ClassLevel.objects.filter(name__iexact=class_val, school=school).first()
+
+        if not cls:
+            messages.error(request, 'Invalid class.')
+            return redirect('fee_structure_add')
+
         FeeStructure.objects.create(
-            school=school,
-            name=name,
-            class_level=class_level,
-            amount_kes=amount,
-            due_date=due_date,
+            school=school, name=name, class_level=cls,
+            amount_kes=amount, due_date=due_date,
         )
-        messages.success(request, f'✅ Fee structure "{name}" created for {class_level}.')
+        messages.success(request, f'Fee structure "{name}" created for {cls.name}.')
         return redirect('fee_structure_list')
 
-    return render(request, 'dashboard/fee_structure_form.html', {
-        'classes': classes,
-        'action': 'add',
-    })
+    return render(request, 'dashboard/fee_structure_form.html', {'classes': classes, 'action': 'add'})
 
 
 @login_required
 @role_required('accountant', 'principal')
 def fee_structure_edit(request, fee_id):
-    """Edit an existing fee structure."""
-    from apps.finance.models import FeeStructure
-    from apps.academics.models import ClassLevel
-
     school = request.user.school
     fs = get_object_or_404(FeeStructure, id=fee_id, school=school)
     classes = ClassLevel.objects.filter(school=school).order_by('order', 'name')
 
     if request.method == 'POST':
         fs.name = request.POST.get('name', fs.name).strip()
-        fs.class_level = request.POST.get('class_level', fs.class_level).strip()
-        fs.due_date = request.POST.get('due_date') or fs.due_date
 
+        class_val = request.POST.get('class_level')
+        if class_val:
+            if class_val.isdigit():
+                cls = ClassLevel.objects.filter(id=class_val, school=school).first()
+            else:
+                cls = ClassLevel.objects.filter(name__iexact=class_val, school=school).first()
+            if cls:
+                fs.class_level = cls
+            else:
+                messages.error(request, 'Invalid class selected.')
+                return redirect('fee_structure_edit', fee_id=fs.id)
+
+        fs.due_date = request.POST.get('due_date') or fs.due_date
         try:
             fs.amount_kes = float(request.POST.get('amount_kes', fs.amount_kes))
         except (ValueError, TypeError):
@@ -1432,46 +1062,27 @@ def fee_structure_edit(request, fee_id):
             return redirect('fee_structure_edit', fee_id=fs.id)
 
         fs.save()
-        messages.success(request, f'✅ Fee structure "{fs.name}" updated.')
+        messages.success(request, f'Fee structure "{fs.name}" updated.')
         return redirect('fee_structure_list')
 
     return render(request, 'dashboard/fee_structure_form.html', {
-        'classes': classes,
-        'fee_structure': fs,
-        'action': 'edit',
+        'classes': classes, 'fee_structure': fs, 'action': 'edit',
     })
 
 
 @login_required
 @role_required('accountant', 'principal')
 def fee_structure_delete(request, fee_id):
-    """Delete a fee structure."""
-    from apps.finance.models import FeeStructure
-
     fs = get_object_or_404(FeeStructure, id=fee_id, school=request.user.school)
-
-    if request.method == 'POST':
-        name = fs.name
-        fs.delete()
-        messages.success(request, f'🗑️ Fee structure "{name}" deleted.')
-        return redirect('fee_structure_list')
-
-    return render(request, 'dashboard/fee_structure_delete.html', {'fee_structure': fs})
+    name = fs.name
+    fs.delete()
+    messages.success(request, f'Fee structure "{name}" deleted.')
+    return redirect('fee_structure_list')
 
 
 @login_required
 @role_required('accountant', 'principal')
 def fee_structure_bulk(request):
-    """
-    Bulk-draft fee structures across ALL classes.
-
-    The user enters a fee name, amount, and due date, and selects which classes
-    should receive this fee. All selected classes get a FeeStructure created
-    with the same amount.
-    """
-    from apps.finance.models import FeeStructure
-    from apps.academics.models import ClassLevel
-
     school = request.user.school
     classes = ClassLevel.objects.filter(school=school).order_by('order', 'name')
 
@@ -1479,7 +1090,7 @@ def fee_structure_bulk(request):
         name = request.POST.get('name', '').strip()
         amount = request.POST.get('amount_kes', '').strip()
         due_date = request.POST.get('due_date') or None
-        selected_class_ids = request.POST.getlist('classes')  # list of class IDs
+        selected_class_ids = request.POST.getlist('classes')
         skip_existing = request.POST.get('skip_existing') == 'on'
 
         errors = []
@@ -1495,51 +1106,35 @@ def fee_structure_bulk(request):
         if errors:
             for e in errors: messages.error(request, e)
             return render(request, 'dashboard/fee_structure_bulk.html', {
-                'classes': classes,
-                'form_data': request.POST,
+                'classes': classes, 'form_data': request.POST,
             })
 
         created = 0
         skipped = 0
-
         for class_id in selected_class_ids:
-            try:
-                cls = ClassLevel.objects.get(id=class_id, school=school)
-            except ClassLevel.DoesNotExist:
-                continue
+            cls = ClassLevel.objects.filter(id=class_id, school=school).first()
+            if not cls: continue
 
-            # Check for existing fee with same name + class
-            exists = FeeStructure.objects.filter(
-                school=school,
-                name=name,
-                class_level=cls.name,
-            ).exists()
-
+            exists = FeeStructure.objects.filter(school=school, name=name, class_level=cls).exists()
             if exists and skip_existing:
                 skipped += 1
                 continue
 
             FeeStructure.objects.create(
-                school=school,
-                name=name,
-                class_level=cls.name,
-                amount_kes=amount,
-                due_date=due_date,
+                school=school, name=name, class_level=cls,
+                amount_kes=amount, due_date=due_date,
             )
             created += 1
 
-        messages.success(
-            request,
-            f'✅ Created {created} fee structure{{created|pluralize}}'
-            + (f' · Skipped {skipped} duplicate{{skipped|pluralize}}' if skipped else '')
-            + '.'
-        )
+        messages.success(request, f'Created {created} fee structures.' + (f' Skipped {skipped} duplicates.' if skipped else ''))
         return redirect('fee_structure_list')
 
-    return render(request, 'dashboard/fee_structure_bulk.html', {
-        'classes': classes,
-    })
+    return render(request, 'dashboard/fee_structure_bulk.html', {'classes': classes})
 
+
+# ============================================================
+# FEE STRUCTURE MATRIX (SINGLE SOURCE OF TRUTH)
+# ============================================================
 
 @login_required
 def fee_structure_matrix(request):
@@ -1548,23 +1143,12 @@ def fee_structure_matrix(request):
         return redirect('dashboard_home')
 
     import json
-    from django.utils import timezone
-    from datetime import timedelta
-    from apps.academics.models import ClassLevel
-
     school = request.user.school
     classes = ClassLevel.objects.filter(school=school).order_by('order', 'name')
+    classes_json = json.dumps([{'id': c.id, 'name': c.name} for c in classes])
 
-    classes_json = json.dumps([
-        {'id': c.id, 'name': c.name} for c in classes
-    ])
-
-    # Default term name suggestion
     today = timezone.now().date()
-    year = today.year
-    default_term_name = f"Term {((today.month - 1) // 4) + 1} {year}"
-
-    # Default due date = 30 days from now
+    default_term_name = f"Term {((today.month - 1) // 4) + 1} {today.year}"
     default_due_date = (today + timedelta(days=30)).strftime('%Y-%m-%d')
 
     return render(request, 'dashboard/fee_structure_matrix.html', {
@@ -1579,15 +1163,11 @@ def fee_structure_matrix_save(request):
     """Receives the matrix JSON and creates FeeStructure rows."""
     if request.method != 'POST':
         return JsonResponse({'success': False, 'error': 'POST required'}, status=405)
-
     if request.user.role not in ('accountant', 'principal'):
         return JsonResponse({'success': False, 'error': 'Not authorized'}, status=403)
 
     import json
     from django.db import transaction
-    from datetime import datetime
-    from apps.finance.models import FeeStructure
-    from apps.academics.models import ClassLevel
 
     try:
         payload = json.loads(request.body)
@@ -1598,26 +1178,16 @@ def fee_structure_matrix_save(request):
     due_date_str = (payload.get('due_date') or '').strip()
     rows = payload.get('rows') or []
 
-    if not term_name:
-        return JsonResponse({'success': False, 'error': 'Term name is required'}, status=400)
-
-    if not due_date_str:
-        return JsonResponse({'success': False, 'error': 'Due date is required'}, status=400)
+    if not term_name or not due_date_str or not rows:
+        return JsonResponse({'success': False, 'error': 'Missing fields'}, status=400)
 
     try:
         due_date = datetime.strptime(due_date_str, '%Y-%m-%d').date()
     except ValueError:
-        return JsonResponse({'success': False, 'error': 'Invalid date format'}, status=400)
-
-    if not rows:
-        return JsonResponse({'success': False, 'error': 'No fee items provided'}, status=400)
+        return JsonResponse({'success': False, 'error': 'Invalid date'}, status=400)
 
     school = request.user.school
-
-    # Validate class IDs belong to this school
-    valid_class_ids = set(
-        ClassLevel.objects.filter(school=school).values_list('id', flat=True)
-    )
+    valid_class_ids = set(ClassLevel.objects.filter(school=school).values_list('id', flat=True))
 
     created = 0
     updated = 0
@@ -1626,9 +1196,7 @@ def fee_structure_matrix_save(request):
         with transaction.atomic():
             for row in rows:
                 item_name = (row.get('name') or '').strip()
-                if not item_name:
-                    continue
-
+                if not item_name: continue
                 amounts = row.get('amounts') or {}
                 full_name = f"{term_name} — {item_name}"
 
@@ -1639,152 +1207,85 @@ def fee_structure_matrix_save(request):
                     except (ValueError, TypeError):
                         continue
 
-                    if amount_val <= 0:
-                        continue
-                    if cls_id not in valid_class_ids:
+                    if amount_val <= 0 or cls_id not in valid_class_ids:
                         continue
 
                     cls = ClassLevel.objects.get(id=cls_id)
-
                     obj, was_created = FeeStructure.objects.update_or_create(
-                        school=school,
-                        name=full_name,
-                        class_level=cls.name,
-                        defaults={
-                            'amount_kes': amount_val,
-                            'due_date': due_date,
-                        },
+                        school=school, name=full_name, class_level=cls,
+                        defaults={'amount_kes': amount_val, 'due_date': due_date},
                     )
-                    if was_created:
-                        created += 1
-                    else:
-                        updated += 1
+                    if was_created: created += 1
+                    else: updated += 1
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
 
-    return JsonResponse({
-        'success': True,
-        'created': created,
-        'updated': updated,
-        'message': f'{created} created, {updated} updated.',
-    })
+    return JsonResponse({'success': True, 'created': created, 'updated': updated, 'message': f'{created} created, {updated} updated.'})
 
 
 @login_required
 def fee_structure_class_pdf(request, class_name):
     """Generate a PDF of all fee items for a specific class."""
     from django.template.loader import render_to_string
-    from apps.core.pdf_utils import html_to_pdf_response, build_pdf_context
-    
+    from apps.core.pdf_utils import html_to_pdf_response
+
     school = request.user.school
     fees = FeeStructure.objects.filter(school=school, class_level__name=class_name)
-    
     total = sum(fee.amount_kes for fee in fees)
-    
-    context = build_pdf_context(
-        school=school,
-        generated_by=request.user,
-        class_name=class_name,
-        fees=fees,
-        total=total,
-    )
-    
+    context = build_pdf_context(school=school, generated_by=request.user, class_name=class_name, fees=fees, total=total)
     html_string = render_to_string('pdf/fee_structure.html', context)
     return html_to_pdf_response(html_string, f'Fee_Structure_{class_name}.pdf')
 
+
+# ============================================================
+# EXPENDITURES
+# ============================================================
+
 @login_required
 def expenditure_list(request):
-    """List all expenditures with filters, pagination, and category summary."""
-    from apps.finance.models import Expenditure
-    from django.db.models import Sum, Count
     from django.core.paginator import Paginator
-    from collections import defaultdict
     from django.utils.dateparse import parse_date
 
     school = request.user.school
+    base_qs = Expenditure.objects.filter(school=school).select_related('recorded_by').order_by('-spent_on', '-created_at')
 
-    base_qs = Expenditure.objects.filter(
-        school=school
-    ).select_related('recorded_by').order_by('-spent_on', '-created_at')
-
-    # ---------- Filters ----------
     category = request.GET.get('category', '').strip()
     date_from = request.GET.get('from', '').strip()
     date_to = request.GET.get('to', '').strip()
     search = request.GET.get('q', '').strip()
 
     qs = base_qs
-
-    if category:
-        qs = qs.filter(category=category)
-
+    if category: qs = qs.filter(category=category)
     if date_from:
         d = parse_date(date_from)
-        if d:
-            qs = qs.filter(spent_on__gte=d)
-
+        if d: qs = qs.filter(spent_on__gte=d)
     if date_to:
         d = parse_date(date_to)
-        if d:
-            qs = qs.filter(spent_on__lte=d)
-
+        if d: qs = qs.filter(spent_on__lte=d)
     if search:
-        qs = qs.filter(
-            models.Q(description__icontains=search) |
-            models.Q(paid_to__icontains=search) |
-            models.Q(reference__icontains=search)
-        )
+        qs = qs.filter(Q(description__icontains=search) | Q(paid_to__icontains=search) | Q(reference__icontains=search))
 
-    # ---------- Aggregate ----------
-    agg = qs.aggregate(
-        total=Sum('amount_kes'),
-        count=Count('id'),
-    )
-    total = float(agg['total'] or 0)
-    count = agg['count'] or 0
-
-    # ---------- Category breakdown ----------
-    category_totals = (
-        qs.values('category')
-        .annotate(subtotal=Sum('amount_kes'), cnt=Count('id'))
-        .order_by('-subtotal')
-    )
+    agg = qs.aggregate(total=Sum('amount_kes'), count=Count('id'))
     category_labels = dict(Expenditure.Category.choices)
     category_summary = [
-        {
-            'code': row['category'],
-            'label': category_labels.get(row['category'], row['category']),
-            'total': float(row['subtotal'] or 0),
-            'count': row['cnt'],
-        }
-        for row in category_totals
+        {'code': row['category'], 'label': category_labels.get(row['category'], row['category']), 'total': float(row['subtotal'] or 0), 'count': row['cnt']}
+        for row in qs.values('category').annotate(subtotal=Sum('amount_kes'), cnt=Count('id')).order_by('-subtotal')
     ]
 
-    # ---------- Pagination ----------
     paginator = Paginator(qs, 25)
     page_obj = paginator.get_page(request.GET.get('page', 1))
 
     return render(request, 'dashboard/expenditure_list.html', {
-        'expenditures': page_obj,
-        'page_obj': page_obj,
-        'paginator': paginator,
-        'total': total,
-        'count': count,
-        'categories': Expenditure.Category.choices,
-        'category_summary': category_summary,
-        'category_filter': category,
-        'date_from': date_from,
-        'date_to': date_to,
-        'search': search,
+        'expenditures': page_obj, 'page_obj': page_obj, 'paginator': paginator,
+        'total': float(agg['total'] or 0), 'count': agg['count'] or 0,
+        'categories': Expenditure.Category.choices, 'category_summary': category_summary,
+        'category_filter': category, 'date_from': date_from, 'date_to': date_to, 'search': search,
     })
 
 
 @login_required
 @role_required('accountant', 'principal')
 def expenditure_add(request):
-    """Add new expenditure."""
-    from apps.finance.models import Expenditure
-
     if request.method == 'POST':
         category = request.POST.get('category', '')
         description = request.POST.get('description', '').strip()
@@ -1809,28 +1310,22 @@ def expenditure_add(request):
             for e in errors: messages.error(request, e)
         else:
             Expenditure.objects.create(
-                school=request.user.school,
-                category=category, description=description,
-                amount_kes=amount, spent_on=spent_on,
-                paid_to=paid_to, payment_method=payment_method,
-                reference=reference, notes=notes,
+                school=request.user.school, category=category, description=description,
+                amount_kes=amount, spent_on=spent_on, paid_to=paid_to,
+                payment_method=payment_method, reference=reference, notes=notes,
                 recorded_by=request.user,
             )
-            messages.success(request, f'✅ Expenditure of KES {amount:,.2f} recorded.')
+            messages.success(request, f'Expenditure of KES {amount:,.2f} recorded.')
             return redirect('expenditure_list')
 
     return render(request, 'dashboard/expenditure_form.html', {
-        'categories': Expenditure.Category.choices,
-        'action': 'add',
+        'categories': Expenditure.Category.choices, 'action': 'add',
     })
 
 
 @login_required
 @role_required('accountant', 'principal')
 def expenditure_edit(request, expenditure_id):
-    """Edit existing expenditure."""
-    from apps.finance.models import Expenditure
-
     exp = get_object_or_404(Expenditure, id=expenditure_id, school=request.user.school)
 
     if request.method == 'POST':
@@ -1841,57 +1336,44 @@ def expenditure_edit(request, expenditure_id):
         exp.payment_method = request.POST.get('payment_method', exp.payment_method)
         exp.reference = request.POST.get('reference', '').strip()
         exp.notes = request.POST.get('notes', '').strip()
-
         try:
             exp.amount_kes = float(request.POST.get('amount_kes', exp.amount_kes))
         except (ValueError, TypeError):
             messages.error(request, 'Invalid amount.')
             return redirect('expenditure_edit', expenditure_id=exp.id)
-
         exp.save()
-        messages.success(request, '✅ Expenditure updated.')
+        messages.success(request, 'Expenditure updated.')
         return redirect('expenditure_list')
 
     return render(request, 'dashboard/expenditure_form.html', {
-        'categories': Expenditure.Category.choices,
-        'expenditure': exp,
-        'action': 'edit',
+        'categories': Expenditure.Category.choices, 'expenditure': exp, 'action': 'edit',
     })
 
 
 @login_required
 @role_required('accountant', 'principal')
 def expenditure_delete(request, expenditure_id):
-    """Delete expenditure."""
-    from apps.finance.models import Expenditure
-
     exp = get_object_or_404(Expenditure, id=expenditure_id, school=request.user.school)
-
     if request.method == 'POST':
         desc = exp.description
         exp.delete()
-        messages.success(request, f'🗑️ Expenditure "{desc}" deleted.')
+        messages.success(request, f'Expenditure "{desc}" deleted.')
         return redirect('expenditure_list')
-
     return render(request, 'dashboard/expenditure_delete.html', {'expenditure': exp})
 
 
 @login_required
 @role_required('accountant', 'principal')
 def expenditure_pdf(request):
-    """Generate PDF of expenditures with filters."""
-    from apps.finance.models import Expenditure
     from apps.core.pdf_utils import html_to_pdf_response
     from django.template.loader import render_to_string
 
     school = request.user.school
     qs = Expenditure.objects.filter(school=school).order_by('-spent_on')
 
-    # Apply same filters
     category = request.GET.get('category', '')
     date_from = request.GET.get('from', '')
     date_to = request.GET.get('to', '')
-
     if category: qs = qs.filter(category=category)
     if date_from:
         try: qs = qs.filter(spent_on__gte=date_from)
@@ -1901,8 +1383,6 @@ def expenditure_pdf(request):
         except: pass
 
     total = sum(e.amount_kes for e in qs)
-
-    # Group by category for summary
     category_totals = {}
     for e in qs:
         cat = e.get_category_display()
@@ -1910,30 +1390,19 @@ def expenditure_pdf(request):
 
     html_string = render_to_string('pdf/expenditure_statement.html',
         build_pdf_context(
-            school=school,
-            generated_by=request.user,
-            expenditures=qs,
-            total=total,
-            count=qs.count(),
-            category_totals=category_totals,
-            category_filter=category,
-            date_from=date_from,
-            date_to=date_to,
+            school=school, generated_by=request.user, expenditures=qs,
+            total=total, count=qs.count(), category_totals=category_totals,
+            category_filter=category, date_from=date_from, date_to=date_to,
             printed_by=request.user,
         )
     )
-
-    filename = 'expenditure_statement.pdf'
-    return html_to_pdf_response(html_string, filename)
+    return html_to_pdf_response(html_string, 'expenditure_statement.pdf')
 
 
 @login_required
 def add_expenditure(request):
-    """Accountant adds an expenditure entry."""
     if request.user.role not in ('accountant', 'principal'):
         return redirect('dashboard_home')
-
-    from apps.finance.models import Expenditure
 
     if request.method == 'POST':
         category = request.POST.get('category')
@@ -1946,33 +1415,22 @@ def add_expenditure(request):
         notes = request.POST.get('notes', '').strip()
 
         errors = []
-        if not category:
-            errors.append('Category is required.')
-        if not description:
-            errors.append('Description is required.')
+        if not category: errors.append('Category is required.')
+        if not description: errors.append('Description is required.')
         try:
             amount = float(amount)
-            if amount <= 0:
-                errors.append('Amount must be greater than zero.')
+            if amount <= 0: errors.append('Amount must be greater than zero.')
         except (ValueError, TypeError):
             errors.append('Invalid amount.')
-        if not spent_on:
-            errors.append('Date is required.')
+        if not spent_on: errors.append('Date is required.')
 
         if errors:
-            for e in errors:
-                messages.error(request, e)
+            for e in errors: messages.error(request, e)
         else:
             Expenditure.objects.create(
-                school=request.user.school,
-                category=category,
-                description=description,
-                amount_kes=amount,
-                spent_on=spent_on,
-                paid_to=paid_to,
-                payment_method=payment_method,
-                reference=reference,
-                notes=notes,
+                school=request.user.school, category=category, description=description,
+                amount_kes=amount, spent_on=spent_on, paid_to=paid_to,
+                payment_method=payment_method, reference=reference, notes=notes,
                 recorded_by=request.user,
             )
             messages.success(request, f'Expenditure of KES {amount:,.2f} recorded.')
@@ -1983,15 +1441,9 @@ def add_expenditure(request):
     })
 
 
-
-import json
-from decimal import Decimal
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-from django.utils import timezone
-from apps.students.models import Student
-from apps.finance.mpesa_models import MpesaTransaction
-from apps.finance.services.mpesa import stk_push
+# ============================================================
+# PARENT M-PESA PAYMENT
+# ============================================================
 
 @login_required
 def parent_mpesa_payment(request):
@@ -2000,6 +1452,8 @@ def parent_mpesa_payment(request):
         return redirect('dashboard_home')
 
     from apps.parents.models import Parent
+    from apps.finance.services.mpesa import stk_push
+
     parent_profile = get_object_or_404(Parent, user=request.user)
     children = parent_profile.students.all()
 
@@ -2007,50 +1461,45 @@ def parent_mpesa_payment(request):
         messages.warning(request, "No students are linked to your account. Please contact the school.")
         return redirect('dashboard_home')
 
-    # Get the preselected child ID from URL (e.g., from the wallet page)
     preselected_child_id = request.GET.get('child_id')
-    
-    # Default to the first child if none is selected
     selected_child = children.first()
     if preselected_child_id and str(preselected_child_id).isdigit():
         selected_child = children.filter(id=preselected_child_id).first() or selected_child
+
     if request.method == 'POST':
         student_id = request.POST.get('student_id')
         if not student_id or not str(student_id).isdigit():
             messages.error(request, "Invalid student selected.")
             return redirect('parent_mpesa_payment')
+
         amount = request.POST.get('amount')
         phone = request.POST.get('phone')
-        purpose = request.POST.get('purpose') # 'fees' or 'wallet'
+        purpose = request.POST.get('purpose')
 
         student = get_object_or_404(Student, id=student_id, parents=parent_profile)
-        
-        # Format phone to 254...
+
         if phone.startswith('0'):
             phone = '254' + phone[1:]
         elif phone.startswith('+'):
             phone = phone[1:]
 
         school = request.user.school
-        
+
         if not hasattr(school, 'mpesa_config') or not school.mpesa_config.paybill_number:
             messages.error(request, "School M-Pesa Paybill is not configured. Please contact the accountant.")
             return redirect('parent_mpesa_payment')
 
-        # Generate Account Reference
         account_ref = student.admission_number
         if purpose == 'wallet':
             account_ref += '-WAL'
-            
+
         if not school.mpesa_config.consumer_key or not school.mpesa_config.consumer_secret:
-            messages.error(request, "The school has not configured their M-Pesa Daraja API keys yet. Please contact the school accountant.")
+            messages.error(request, "The school has not configured their M-Pesa Daraja API keys yet.")
             return redirect('parent_mpesa_payment')
 
         try:
             response = stk_push(
-                phone=phone,
-                amount=Decimal(amount),
-                account_ref=account_ref,
+                phone=phone, amount=Decimal(amount), account_ref=account_ref,
                 description=f"{purpose.title()} Payment - {student.first_name}",
                 shortcode=school.mpesa_config.paybill_number,
                 passkey=school.mpesa_config.passkey,
@@ -2058,91 +1507,15 @@ def parent_mpesa_payment(request):
                 consumer_secret=school.mpesa_config.consumer_secret,
                 callback_url=school.mpesa_config.callback_url,
             )
-            
             if response and response.get('CheckoutRequestID'):
                 messages.success(request, f"STK Push sent for {student.first_name}. Please enter your M-Pesa PIN.")
             else:
                 messages.error(request, f"Failed to initiate: {response}")
-                
         except Exception as e:
             messages.error(request, f"Error: {str(e)}")
 
         return redirect(f"/dashboard/parent/pay/?child_id={student.id}")
 
     return render(request, 'dashboard/parent_mpesa_payment.html', {
-        'children': children,
-        'selected_child': selected_child,
-        'school': request.user.school,
-    })
-    
-    from apps.academics.models import ClassLevel
-
-@login_required
-def fee_structure_matrix(request):
-    """Accountant drafts fee structures for a whole class at once."""
-    if request.user.role not in ('accountant', 'principal', 'super_admin'):
-        return redirect('dashboard_home')
-
-    school = request.user.school
-    classes = ClassLevel.objects.filter(school=school).order_by('order', 'name')
-    
-    selected_class_id = request.GET.get('class_id')
-    selected_year = request.GET.get('year', '2026')
-    selected_term = request.GET.get('term', 'Term 1')
-
-    selected_class = None
-    existing_fees = []
-    
-    if selected_class_id:
-        selected_class = ClassLevel.objects.filter(id=selected_class_id, school=school).first()
-        if selected_class:
-            existing_fees = FeeStructure.objects.filter(
-                school=school, 
-                class_level=selected_class, 
-                academic_year=selected_year,
-                term=selected_term
-            ).order_by('id')
-
-    if request.method == 'POST' and selected_class:
-        # Delete existing fees for this class/year/term to replace them with the new draft
-        FeeStructure.objects.filter(
-            school=school, class_level=selected_class, 
-            academic_year=selected_year, term=selected_term
-        ).delete()
-
-        # Save the new items from the form arrays
-        item_names = request.POST.getlist('item_name[]')
-        item_amounts = request.POST.getlist('item_amount[]')
-        item_dates = request.POST.getlist('item_date[]')
-
-        saved_count = 0
-        for i in range(len(item_names)):
-            name = item_names[i].strip()
-            amount = item_amounts[i].strip()
-            due_date = item_dates[i].strip() or None
-            
-            if name and amount:
-                FeeStructure.objects.create(
-                    school=school,
-                    class_level=selected_class,
-                    name=name,
-                    amount_kes=amount,
-                    due_date=due_date,
-                    academic_year=selected_year,
-                    term=selected_term
-                )
-                saved_count += 1
-
-        messages.success(request, f'Saved {saved_count} fee items for {selected_class.name} ({selected_term} {selected_year}).')
-        return redirect(f"{reverse('fee_structure_matrix')}?class_id={selected_class.id}&year={selected_year}&term={selected_term}")
-
-    return render(request, 'dashboard/fee_structure_matrix.html', {
-        'classes': classes,
-        'selected_class': selected_class,
-        'selected_class_id': selected_class_id,
-        'selected_year': selected_year,
-        'selected_term': selected_term,
-        'existing_fees': existing_fees,
-        'terms': ['Term 1', 'Term 2', 'Term 3'],
-        'years': [2025, 2026, 2027]
+        'children': children, 'selected_child': selected_child, 'school': request.user.school,
     })

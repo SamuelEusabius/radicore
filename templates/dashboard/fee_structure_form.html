@@ -1,78 +1,126 @@
 {% extends 'base.html' %}
 {% block title %}{% if action == 'edit' %}Edit Fee Structure{% else %}Add Fee Structure{% endif %}{% endblock %}
 {% block header_title %}{% if action == 'edit' %}Edit Fee Structure{% else %}Add Fee Structure{% endif %}{% endblock %}
-{% block header_sub %}{{ current_school.name }} — Set fees per class{% endblock %}
 
 {% block content %}
+<style>
+    .form-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        border: 1px solid #e2e8f0;
+        padding: 32px;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+    .form-label {
+        font-size: 12px;
+        font-weight: 600;
+        color: #64748b;
+        margin-bottom: 8px;
+        display: block;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .form-label .req { color: #ef4444; }
+    .form-input {
+        width: 100%;
+        padding: 12px 14px;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        font-size: 14px;
+        color: #0f172a;
+        background: white;
+        transition: all 0.2s;
+        box-sizing: border-box;
+    }
+    .form-input:focus {
+        border-color: #10b981;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+    }
+    
+    .btn-primary {
+        background: #10b981; color: white; padding: 12px 24px; border-radius: 8px;
+        font-weight: 600; font-size: 14px; border: none; cursor: pointer;
+        display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+        transition: background 0.2s;
+    }
+    .btn-primary:hover { background: #059669; }
+    
+    .btn-secondary {
+        background: white; color: #475569; padding: 12px 24px; border-radius: 8px;
+        font-weight: 600; font-size: 14px; text-decoration: none; border: 1px solid #cbd5e1;
+        display: inline-flex; align-items: center; justify-content: center;
+        transition: all 0.2s;
+    }
+    .btn-secondary:hover { background: #f8fafc; border-color: #94a3b8; }
+</style>
 
-<div class="max-w-2xl mx-auto bg-white shadow-sm border border-gray-200 p-8">
-
-  <form method="post" style="display: flex; flex-direction: column; gap: 16px;">
-    {% csrf_token %}
-
-    <!-- ================= FEE NAME ================= -->
-    <div>
-      <label style="display: block; font-size: 13px; font-weight: 500; color: #374151; margin-bottom: 6px;">
-        Fee Name <span style="color: #dc2626;">*</span>
-      </label>
-      <input type="text" name="name" required
-             value="{% if form_data and form_data.name %}{{ form_data.name }}{% elif fee_structure %}{{ fee_structure.name }}{% endif %}"
-             placeholder="e.g. Term 1 Fees 2026"
-             style="width: 100%; border: 1px solid #d1d5db; padding: 10px; font-size: 14px;">
-      <p style="font-size: 11px; color: #6b7280; margin-top: 4px;">
-        Use a clear name like "Term 1 2026 — Tuition"
-      </p>
-    </div>
-
-    <!-- ================= CLASS ================= -->
-    <div>
-      <label style="display: block; font-size: 13px; font-weight: 500; color: #374151; margin-bottom: 6px;">
-        Class <span style="color: #dc2626;">*</span>
-      </label>
-      <select name="class_level" required
-              style="width: 100%; border: 1px solid #d1d5db; padding: 10px; font-size: 14px;">
-        <option value="">— Select class —</option>
-        {% for c in classes %}
-          <option value="{{ c.name }}"
-            {% if fee_structure and fee_structure.class_level == c.name %}selected{% endif %}
-            {% if form_data and form_data.class_level == c.name %}selected{% endif %}>
-            {{ c.name }}
-          </option>
-        {% endfor %}
-      </select>
-    </div>
-
-    <!-- ================= AMOUNT + DUE DATE ================= -->
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-      <div>
-        <label style="display: block; font-size: 13px; font-weight: 500; color: #374151; margin-bottom: 6px;">
-          Amount (KES) <span style="color: #dc2626;">*</span>
-        </label>
-        <input type="number" name="amount_kes" step="0.01" min="1" required
-               value="{% if form_data and form_data.amount_kes %}{{ form_data.amount_kes }}{% elif fee_structure %}{{ fee_structure.amount_kes }}{% endif %}"
-               style="width: 100%; border: 1px solid #d1d5db; padding: 10px; font-size: 14px;">
-      </div>
-      <div>
-        <label style="display: block; font-size: 13px; font-weight: 500; color: #374151; margin-bottom: 6px;">
-          Due Date <span style="color: #dc2626;">*</span>
-        </label>
-        <input type="date" name="due_date" required
-               value="{% if form_data and form_data.due_date %}{{ form_data.due_date }}{% elif fee_structure %}{{ fee_structure.due_date|date:'Y-m-d' }}{% endif %}"
-               style="width: 100%; border: 1px solid #d1d5db; padding: 10px; font-size: 14px;">
-      </div>
-    </div>
-
-    <!-- ================= ACTIONS ================= -->
-    <div style="display: flex; gap: 12px; justify-content: flex-end; padding-top: 12px; border-top: 1px solid #e5e7eb;">
-      <a href="{% url 'fee_structure_list' %}" class="pro-btn pro-btn-secondary">Cancel</a>
-      <button type="submit" class="pro-btn pro-btn-primary">
-        {% include 'partials/icons.html' with name="save" size=15 %}
-        <span>{% if action == 'edit' %}Update Fee{% else %}Save Fee{% endif %}</span>
-      </button>
-    </div>
-
-  </form>
-
+<div style="margin-bottom: 24px; max-width: 600px; margin-left: auto; margin-right: auto;">
+    <a href="{% url 'fee_structure_list' %}" style="display: inline-flex; align-items: center; gap: 6px; color: #64748b; text-decoration: none; font-size: 14px; font-weight: 600;">
+        {% include 'partials/icons.html' with name="arrow-left" size=16 %} Back to Fee Structures
+    </a>
 </div>
 
+<div class="form-card">
+    <div style="margin-bottom: 24px; border-bottom: 1px solid #e2e8f0; padding-bottom: 16px;">
+        <h3 style="margin: 0; font-size: 20px; font-weight: 700; color: #0f172a;">
+            {% if action == 'edit' %}Update Fee Structure{% else %}Create New Fee Structure{% endif %}
+        </h3>
+        <p style="margin: 4px 0 0 0; font-size: 14px; color: #64748b;">
+            Configure the billing amount and due date for a specific class.
+        </p>
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+
+        <!-- Fee Name -->
+        <div style="margin-bottom: 20px;">
+            <label class="form-label">Fee Name <span class="req">*</span></label>
+            <input type="text" name="name" required class="form-input" 
+                   value="{{ fee_structure.name|default:form_data.name|default:'' }}" 
+                   placeholder="e.g. Term 1 2026 — Tuition">
+        </div>
+
+        <!-- Class Level -->
+        <div style="margin-bottom: 20px;">
+            <label class="form-label">Class / Grade <span class="req">*</span></label>
+<select name="class_level" required class="form-input">
+    <option value="">— Select Class —</option>
+    {% for c in classes %}
+        <option value="{{ c.id }}" {% if fee_structure.class_level_id == c.id %}selected{% endif %}>{{ c.name }}</option>
+    {% endfor %}
+</select>
+            <div style="font-size: 12px; color: #64748b; margin-top: 6px;">This fee will apply to all students in the selected class.</div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px;">
+            <!-- Amount -->
+            <div>
+                <label class="form-label">Amount (KES) <span class="req">*</span></label>
+                <input type="number" name="amount_kes" step="0.01" required class="form-input" 
+                       value="{{ fee_structure.amount_kes|default:form_data.amount_kes|default:'' }}" 
+                       placeholder="e.g. 15000">
+            </div>
+
+            <!-- Due Date -->
+            <div>
+                <label class="form-label">Due Date <span class="req">*</span></label>
+                <input type="date" name="due_date" required class="form-input" 
+                       value="{{ fee_structure.due_date|date:'Y-m-d'|default:form_data.due_date|default:'' }}">
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div style="display: flex; justify-content: flex-end; gap: 12px; border-top: 1px solid #e2e8f0; padding-top: 24px;">
+            <a href="{% url 'fee_structure_list' %}" class="btn-secondary">Cancel</a>
+            <button type="submit" class="btn-primary">
+                {% include 'partials/icons.html' with name="save" size=16 %}
+                {% if action == 'edit' %}Save Changes{% else %}Create Fee Structure{% endif %}
+            </button>
+        </div>
+    </form>
+</div>
 {% endblock %}

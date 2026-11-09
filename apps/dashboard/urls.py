@@ -338,9 +338,8 @@ urlpatterns = [
     path('accountant/fee-structures/<int:fee_id>/edit/',
          views.fee_structure_edit, name='fee_structure_edit'),
 
-    path('accountant/fee-structures/<int:fs_id>/delete/',
+     path('accountant/fee-structures/<int:fee_id>/delete/',
          views.fee_structure_delete, name='fee_structure_delete'),
-
     # Fee Structure Matrix (bulk draft editor)
     path('accountant/fee-structures/matrix/',
          views.fee_structure_matrix, name='fee_structure_matrix'),

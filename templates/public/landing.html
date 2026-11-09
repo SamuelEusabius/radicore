@@ -276,7 +276,7 @@
   .stat-label { font-size: var(--text-xs); color: var(--ink-500); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; }
 
   /* ============================================================
-     FEATURES
+     PREMIUM FEATURES (CLASSIC DESIGN)
      ============================================================ */
   .features { padding: var(--s-10) var(--s-6); max-width: 1200px; margin: 0 auto; }
   .section-header { text-align: center; max-width: 700px; margin: 0 auto var(--s-10); }
@@ -285,12 +285,77 @@
   .section-desc { font-size: var(--text-md); color: var(--ink-600); line-height: 1.7; margin: 0; }
 
   .feature-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s-5); }
-  .feature-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; transition: all var(--t-base); box-shadow: var(--shadow-xs); display: flex; flex-direction: column; }
-  .feature-card:hover { border-color: var(--primary); box-shadow: var(--shadow-md); transform: translateY(-3px); }
-  .feature-image { width: 100%; height: 180px; object-fit: cover; display: block; border-bottom: 1px solid var(--border); }
-  .feature-body { padding: var(--s-5) var(--s-6) var(--s-6); flex: 1; }
-  .feature-title { font-family: var(--font-heading); font-size: var(--text-lg); font-weight: 700; color: var(--ink-900); margin: 0 0 var(--s-2); letter-spacing: -0.01em; }
-  .feature-desc { font-size: var(--text-sm); color: var(--ink-600); line-height: 1.65; margin: 0; }
+  
+  /* The Classic Card */
+  .feature-card { 
+    position: relative; 
+    border-radius: 16px; 
+    overflow: hidden; 
+    height: 380px; 
+    box-shadow: 0 10px 30px -10px rgba(0,0,0,0.2); 
+    transition: transform 0.3s ease, box-shadow 0.3s ease; 
+    display: block;
+    text-decoration: none;
+  }
+  .feature-card:hover { 
+    transform: translateY(-5px); 
+    box-shadow: 0 20px 40px -10px rgba(0,0,0,0.3); 
+  }
+  
+  .feature-img { 
+    width: 100%; 
+    height: 100%; 
+    object-fit: cover; 
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+  }
+  
+  .feature-overlay { 
+    position: absolute; 
+    inset: 0; 
+    background: linear-gradient(to top, rgba(15, 23, 42, 0.95) 0%, rgba(15, 23, 42, 0.4) 50%, transparent 100%); 
+    z-index: 2;
+  }
+  
+  .feature-content { 
+    position: absolute; 
+    bottom: 0; 
+    left: 0; 
+    right: 0; 
+    padding: 32px; 
+    z-index: 3;
+  }
+  
+  .feature-icon-box {
+    width: 40px; 
+    height: 40px; 
+    background: rgba(255, 255, 255, 0.15); 
+    border: 1px solid rgba(255, 255, 255, 0.3); 
+    border-radius: 10px; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    margin-bottom: 16px; 
+    backdrop-filter: blur(10px);
+    color: white;
+  }
+  
+  .feature-title { 
+    font-family: var(--font-heading); 
+    font-size: 20px; 
+    font-weight: 700; 
+    color: white; 
+    margin: 0 0 8px 0; 
+    letter-spacing: -0.01em;
+  }
+  
+  .feature-desc { 
+    font-size: 14px; 
+    color: #cbd5e1; 
+    margin: 0; 
+    line-height: 1.6; 
+  }
 
   /* ============================================================
      CTA BAND
@@ -311,7 +376,6 @@
     .hero-btn-primary { padding-right: 44px; }
     .stats-inner { grid-template-columns: repeat(2, 1fr); }
     .feature-grid { grid-template-columns: 1fr; }
-    .feature-image { height: 200px; }
     .section-title { font-size: 30px; }
     .cta-band { background-attachment: scroll; padding: 60px var(--s-6); }
     .cta-band h2 { font-size: 28px; }
@@ -332,304 +396,214 @@
 
 {% block content %}
 
-<!-- ============================================================
-     HERO SLIDESHOW
-     ============================================================ -->
+<!-- HERO SLIDESHOW -->
 <section class="hero-slideshow" id="heroSlideshow">
 
-  <!-- SLIDE 1 — Main Hero -->
+  <!-- SLIDE 1 -->
   <div class="hero-slide active" style="background-image: url('{% static "images/landing/hero-students-tablets.jpg" %}');">
     <div class="hero-slide-inner">
       <div class="hero-content">
-        <div class="hero-badge">
-          <span class="hero-badge-dot"></span>
-          Trusted by schools across Kenya
-        </div>
-        <h1 class="hero-title">
-          Run your entire<span class="line-green">school from one place.</span>
-        </h1>
-        <p class="hero-subtitle">
-          Admissions, attendance, fees, exams, and parent communication —
-          all in one modern platform.
-        </p>
+        <div class="hero-badge"><span class="hero-badge-dot"></span>Trusted by schools across Kenya</div>
+        <h1 class="hero-title">Run your entire<span class="line-green">school from one place.</span></h1>
+        <p class="hero-subtitle">Admissions, attendance, fees, exams, and parent communication — all in one modern platform.</p>
         <div class="hero-cta">
-          <a href="{% url 'school_signup' %}" class="hero-btn-primary">
-            <span>Get Started Free</span>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
-          </a>
+          <a href="{% url 'school_signup' %}" class="hero-btn-primary"><span>Get Started Free</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></a>
           <a href="#features" class="hero-btn-secondary">See Features</a>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- SLIDE 2 — Classroom -->
+  <!-- SLIDE 2 -->
   <div class="hero-slide" style="background-image: url('{% static "images/landing/feature-classroom.jpg" %}');">
     <div class="hero-slide-inner">
       <div class="hero-content">
-        <div class="hero-badge">
-          <span class="hero-badge-dot"></span>
-          Built for how schools work
-        </div>
-        <h1 class="hero-title">
-          Every teacher.<span class="line-green">Every class. Organized.</span>
-        </h1>
-        <p class="hero-subtitle">
-          Timetables, class lists, exam entry, and automatic ranking — sorted in minutes, not hours.
-        </p>
+        <div class="hero-badge"><span class="hero-badge-dot"></span>Built for how schools work</div>
+        <h1 class="hero-title">Every teacher.<span class="line-green">Every class. Organized.</span></h1>
+        <p class="hero-subtitle">Timetables, class lists, exam entry, and automatic ranking — sorted in minutes, not hours.</p>
         <div class="hero-cta">
-          <a href="{% url 'school_signup' %}" class="hero-btn-primary">
-            <span>Start Free Trial</span>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
-          </a>
+          <a href="{% url 'school_signup' %}" class="hero-btn-primary"><span>Start Free Trial</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></a>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- SLIDE 3 — Rural classroom -->
+  <!-- SLIDE 3 -->
   <div class="hero-slide" style="background-image: url('{% static "images/landing/feature-rural-classroom.jpg" %}');">
     <div class="hero-slide-inner">
       <div class="hero-content">
-        <div class="hero-badge">
-          <span class="hero-badge-dot"></span>
-          For every school
-        </div>
-        <h1 class="hero-title">
-          From rural primary<span class="line-green">to urban academy.</span>
-        </h1>
-        <p class="hero-subtitle">
-          Whether you have 50 students or 5,000 — the same powerful platform scales with you.
-        </p>
+        <div class="hero-badge"><span class="hero-badge-dot"></span>For every school</div>
+        <h1 class="hero-title">From rural primary<span class="line-green">to urban academy.</span></h1>
+        <p class="hero-subtitle">Whether you have 50 students or 5,000 — the same powerful platform scales with you.</p>
         <div class="hero-cta">
-          <a href="{% url 'school_signup' %}" class="hero-btn-primary">
-            <span>Get Started</span>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
-          </a>
+          <a href="{% url 'school_signup' %}" class="hero-btn-primary"><span>Get Started</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></a>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- SLIDE 4 — Dashboard -->
+  <!-- SLIDE 4 -->
   <div class="hero-slide" style="background-image: url('{% static "images/landing/feature-dashboard.jpg" %}');">
     <div class="hero-slide-inner">
       <div class="hero-content">
-        <div class="hero-badge">
-          <span class="hero-badge-dot"></span>
-          Real-time insights
-        </div>
-        <h1 class="hero-title">
-          Decisions backed<span class="line-green">by real data.</span>
-        </h1>
-        <p class="hero-subtitle">
-          Live dashboards for fees, attendance, exam performance, and staff. Updated as things happen.
-        </p>
+        <div class="hero-badge"><span class="hero-badge-dot"></span>Real-time insights</div>
+        <h1 class="hero-title">Decisions backed<span class="line-green">by real data.</span></h1>
+        <p class="hero-subtitle">Live dashboards for fees, attendance, exam performance, and staff. Updated as things happen.</p>
         <div class="hero-cta">
-          <a href="{% url 'school_signup' %}" class="hero-btn-primary">
-            <span>See It in Action</span>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
-          </a>
+          <a href="{% url 'school_signup' %}" class="hero-btn-primary"><span>See It in Action</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></a>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- SLIDE 5 — Library -->
+  <!-- SLIDE 5 -->
   <div class="hero-slide" style="background-image: url('{% static "images/landing/feature-library.jpg" %}');">
     <div class="hero-slide-inner">
       <div class="hero-content">
-        <div class="hero-badge">
-          <span class="hero-badge-dot"></span>
-          Library &amp; Resources
-        </div>
-        <h1 class="hero-title">
-          Track every book.<span class="line-green">Every borrower.</span>
-        </h1>
-        <p class="hero-subtitle">
-          Issue, return, and overdue management built in. Know what's in the library at any moment.
-        </p>
+        <div class="hero-badge"><span class="hero-badge-dot"></span>Library &amp; Resources</div>
+        <h1 class="hero-title">Track every book.<span class="line-green">Every borrower.</span></h1>
+        <p class="hero-subtitle">Issue, return, and overdue management built in. Know what's in the library at any moment.</p>
         <div class="hero-cta">
-          <a href="{% url 'school_signup' %}" class="hero-btn-primary">
-            <span>Explore Library</span>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
-          </a>
+          <a href="{% url 'school_signup' %}" class="hero-btn-primary"><span>Explore Library</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></a>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- SLIDE 6 — Nurse / Health -->
+  <!-- SLIDE 6 -->
   <div class="hero-slide" style="background-image: url('{% static "images/landing/feature-nurse-student.jpg" %}');">
     <div class="hero-slide-inner">
       <div class="hero-content">
-        <div class="hero-badge">
-          <span class="hero-badge-dot"></span>
-          Health &amp; Wellness
-        </div>
-        <h1 class="hero-title">
-          Your school clinic,<span class="line-green">digitized.</span>
-        </h1>
-        <p class="hero-subtitle">
-          Health visits, medicine stock, and medical records — all in one secure place.
-        </p>
+        <div class="hero-badge"><span class="hero-badge-dot"></span>Health &amp; Wellness</div>
+        <h1 class="hero-title">Your school clinic,<span class="line-green">digitized.</span></h1>
+        <p class="hero-subtitle">Health visits, medicine stock, and medical records — all in one secure place.</p>
         <div class="hero-cta">
-          <a href="{% url 'school_signup' %}" class="hero-btn-primary">
-            <span>See Health Module</span>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
-          </a>
+          <a href="{% url 'school_signup' %}" class="hero-btn-primary"><span>See Health Module</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></a>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Navigation dots -->
   <div class="hero-dots" id="heroDots">
-    <button type="button" class="hero-dot active" data-slide="0" aria-label="Slide 1"></button>
-    <button type="button" class="hero-dot" data-slide="1" aria-label="Slide 2"></button>
-    <button type="button" class="hero-dot" data-slide="2" aria-label="Slide 3"></button>
-    <button type="button" class="hero-dot" data-slide="3" aria-label="Slide 4"></button>
-    <button type="button" class="hero-dot" data-slide="4" aria-label="Slide 5"></button>
-    <button type="button" class="hero-dot" data-slide="5" aria-label="Slide 6"></button>
+    <button type="button" class="hero-dot active" data-slide="0"></button>
+    <button type="button" class="hero-dot" data-slide="1"></button>
+    <button type="button" class="hero-dot" data-slide="2"></button>
+    <button type="button" class="hero-dot" data-slide="3"></button>
+    <button type="button" class="hero-dot" data-slide="4"></button>
+    <button type="button" class="hero-dot" data-slide="5"></button>
   </div>
 
-  <!-- Pause / Play -->
   <button type="button" class="hero-toggle" id="heroToggle" aria-label="Pause slideshow">
-    <svg id="heroPauseIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-      <line x1="9" y1="5" x2="9" y2="19"></line>
-      <line x1="15" y1="5" x2="15" y2="19"></line>
-    </svg>
-    <svg id="heroPlayIcon" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
-      <polygon points="6,4 20,12 6,20"></polygon>
-    </svg>
+    <svg id="heroPauseIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="9" y1="5" x2="9" y2="19"></line><line x1="15" y1="5" x2="15" y2="19"></line></svg>
+    <svg id="heroPlayIcon" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;"><polygon points="6,4 20,12 6,20"></polygon></svg>
   </button>
 
 </section>
 
-<!-- ============================================================
-     TRUST BAR
-     ============================================================ -->
+<!-- TRUST BAR -->
 <section class="trust-bar">
   <div class="trust-inner">
     <p class="trust-label">Built for</p>
     <div class="trust-items">
-      <span class="trust-item">Public Schools</span>
-      <span class="trust-item">·</span>
-      <span class="trust-item">Private Academies</span>
-      <span class="trust-item">·</span>
-      <span class="trust-item">Junior Secondary</span>
-      <span class="trust-item">·</span>
-      <span class="trust-item">Senior Schools</span>
-      <span class="trust-item">·</span>
+      <span class="trust-item">Public Schools</span><span class="trust-item">·</span>
+      <span class="trust-item">Private Academies</span><span class="trust-item">·</span>
+      <span class="trust-item">Junior Secondary</span><span class="trust-item">·</span>
+      <span class="trust-item">Senior Schools</span><span class="trust-item">·</span>
       <span class="trust-item">Mixed &amp; Single Gender</span>
     </div>
   </div>
 </section>
 
-<!-- ============================================================
-     STATS BAR
-     ============================================================ -->
+<!-- STATS BAR -->
 <section class="stats-bar">
   <div class="stats-inner">
-    <div>
-      <div class="stat-num">50+</div>
-      <div class="stat-label">Schools Onboarded</div>
-    </div>
-    <div>
-      <div class="stat-num">25K+</div>
-      <div class="stat-label">Students Managed</div>
-    </div>
-    <div>
-      <div class="stat-num">KES 50M+</div>
-      <div class="stat-label">Fees Collected</div>
-    </div>
-    <div>
-      <div class="stat-num">99.9%</div>
-      <div class="stat-label">Uptime</div>
-    </div>
+    <div><div class="stat-num">50+</div><div class="stat-label">Schools Onboarded</div></div>
+    <div><div class="stat-num">25K+</div><div class="stat-label">Students Managed</div></div>
+    <div><div class="stat-num">KES 50M+</div><div class="stat-label">Fees Collected</div></div>
+    <div><div class="stat-num">99.9%</div><div class="stat-label">Uptime</div></div>
   </div>
 </section>
 
-<!-- ============================================================
-     FEATURES
-     ============================================================ -->
+<!-- PREMIUM FEATURES GRID -->
 <section class="features" id="features">
   <div class="section-header">
     <span class="section-eyebrow">Features</span>
     <h2 class="section-title">Everything your school needs</h2>
-    <p class="section-desc">
-      From student admission to fee collection to exam results — one integrated platform.
-    </p>
+    <p class="section-desc">From student admission to fee collection to exam results — one integrated platform.</p>
   </div>
 
   <div class="feature-grid">
 
+    <!-- Feature 1 -->
     <div class="feature-card">
-      <img src="{% static 'images/landing/feature-fees.jpg' %}" alt="Fee management" class="feature-image" loading="lazy">
-      <div class="feature-body">
+      <img src="{% static 'images/landing/feature-fees.jpg' %}" alt="Fee management" class="feature-img" loading="lazy">
+      <div class="feature-overlay"></div>
+      <div class="feature-content">
+        <div class="feature-icon-box">{% include 'partials/icons.html' with name="credit-card" size=20 %}</div>
         <h3 class="feature-title">Fee Management</h3>
-        <p class="feature-desc">
-          Draft fee structures, generate invoices in bulk, accept M-Pesa, and track every payment end-to-end.
-        </p>
+        <p class="feature-desc">Draft fee structures, generate invoices in bulk, accept M-Pesa, and track every payment end-to-end.</p>
       </div>
     </div>
 
+    <!-- Feature 2 -->
     <div class="feature-card">
-      <img src="{% static 'images/landing/feature-classroom.jpg' %}" alt="Academics" class="feature-image" loading="lazy">
-      <div class="feature-body">
+      <img src="{% static 'images/landing/feature-classroom.jpg' %}" alt="Academics" class="feature-img" loading="lazy">
+      <div class="feature-overlay"></div>
+      <div class="feature-content">
+        <div class="feature-icon-box">{% include 'partials/icons.html' with name="book-open" size=20 %}</div>
         <h3 class="feature-title">Academics &amp; Exams</h3>
-        <p class="feature-desc">
-          Timetables, class lists, exam entry, automatic ranking, and printable report cards in one click.
-        </p>
+        <p class="feature-desc">Timetables, class lists, exam entry, automatic ranking, and printable report cards in one click.</p>
       </div>
     </div>
 
+    <!-- Feature 3 -->
     <div class="feature-card">
-      <img src="{% static 'images/landing/feature-dashboard.jpg' %}" alt="Reports and analytics" class="feature-image" loading="lazy">
-      <div class="feature-body">
+      <img src="{% static 'images/landing/feature-dashboard.jpg' %}" alt="Reports and analytics" class="feature-img" loading="lazy">
+      <div class="feature-overlay"></div>
+      <div class="feature-content">
+        <div class="feature-icon-box">{% include 'partials/icons.html' with name="bar-chart" size=20 %}</div>
         <h3 class="feature-title">Analytics &amp; Reports</h3>
-        <p class="feature-desc">
-          Live dashboards for fees, attendance, performance, and staff — updated as things happen.
-        </p>
+        <p class="feature-desc">Live dashboards for fees, attendance, performance, and staff — updated as things happen.</p>
       </div>
     </div>
 
+    <!-- Feature 4 -->
     <div class="feature-card">
-      <img src="{% static 'images/landing/feature-library.jpg' %}" alt="Library management" class="feature-image" loading="lazy">
-      <div class="feature-body">
+      <img src="{% static 'images/landing/feature-library.jpg' %}" alt="Library management" class="feature-img" loading="lazy">
+      <div class="feature-overlay"></div>
+      <div class="feature-content">
+        <div class="feature-icon-box">{% include 'partials/icons.html' with name="book" size=20 %}</div>
         <h3 class="feature-title">Library Management</h3>
-        <p class="feature-desc">
-          Catalog books, issue to students, track returns, and flag overdue loans automatically.
-        </p>
+        <p class="feature-desc">Catalog books, issue to students, track returns, and flag overdue loans automatically.</p>
       </div>
     </div>
 
+    <!-- Feature 5 -->
     <div class="feature-card">
-      <img src="{% static 'images/landing/feature-nurse.jpg' %}" alt="Health records" class="feature-image" loading="lazy">
-      <div class="feature-body">
+      <img src="{% static 'images/landing/feature-nurse.jpg' %}" alt="Health records" class="feature-img" loading="lazy">
+      <div class="feature-overlay"></div>
+      <div class="feature-content">
+        <div class="feature-icon-box">{% include 'partials/icons.html' with name="heart" size=20 %}</div>
         <h3 class="feature-title">Health &amp; Wellness</h3>
-        <p class="feature-desc">
-          Log visits, manage medicine stock, and keep secure medical records for every student.
-        </p>
+        <p class="feature-desc">Log visits, manage medicine stock, and keep secure medical records for every student.</p>
       </div>
     </div>
 
+    <!-- Feature 6 -->
     <div class="feature-card">
-      <img src="{% static 'images/landing/feature-inventory.jpg' %}" alt="Store and inventory" class="feature-image" loading="lazy">
-      <div class="feature-body">
+      <img src="{% static 'images/landing/feature-inventory.jpg' %}" alt="Store and inventory" class="feature-img" loading="lazy">
+      <div class="feature-overlay"></div>
+      <div class="feature-content">
+        <div class="feature-icon-box">{% include 'partials/icons.html' with name="briefcase" size=20 %}</div>
         <h3 class="feature-title">Store &amp; Inventory</h3>
-        <p class="feature-desc">
-          Track stock in and out, get low-stock alerts, and value your inventory at any moment.
-        </p>
+        <p class="feature-desc">Track stock in and out, get low-stock alerts, and value your inventory at any moment.</p>
       </div>
     </div>
 
   </div>
 </section>
 
-<!-- ============================================================
-     CTA BAND
-     ============================================================ -->
+<!-- CTA BAND -->
 <section class="cta-band">
   <div class="cta-band-inner">
     <h2>Ready to transform your school?</h2>

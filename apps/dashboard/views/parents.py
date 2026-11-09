@@ -118,14 +118,14 @@ def parent_dash(request):
     try:
         children = request.user.parent_profile.students.all()
 
-        from apps.finance.models import Invoice
+        from apps.finance.models import Invoice, FeeStructure
         from django.db.models import Sum
 
         invoices = Invoice.objects.filter(
             student__in=children
         ).select_related('student', 'fee_structure').order_by('-created_at')
 
-        # Aggregates
+        # Aggregates from actual invoices
         agg = invoices.aggregate(
             due=Sum('amount_due'),
             paid=Sum('amount_paid'),
@@ -133,6 +133,7 @@ def parent_dash(request):
         total_invoiced = float(agg['due'] or 0)
         total_paid = float(agg['paid'] or 0)
         total_due = total_invoiced - total_paid
+
 
         stats = {
             'children_count': children.count(),
@@ -198,9 +199,9 @@ def parent_child_detail(request, student_id):
 
     exam_summaries = []
     for exam, grade_list in exams_map.items():
-        total = sum(g.marks for g in grade_list)
-        out_of = sum(g.out_of for g in grade_list) or 1
-        avg = round((float(total) / float(out_of)) * 100, 1) if grade_list else 0
+        total_marks = sum(float(g.marks) for g in grade_list)
+        total_out_of = sum(float(g.out_of or 100) for g in grade_list) or 1
+        avg = round((total_marks / total_out_of) * 100, 1) if grade_list else 0
 
         if avg >= 80:
             cbc, cbc_label, cbc_color = 'EE', 'Exceeding Expectation', 'green'
@@ -234,14 +235,14 @@ def parent_child_detail(request, student_id):
     # ---------- Invoices + Total Due ----------
     invoices = Invoice.objects.filter(student=child).select_related('fee_structure')
     total_due = sum(i.balance for i in invoices)
-
+    
     # ---------- Fee Structure for child's class ----------
     fee_rows = []
     fee_total = 0
     if child.class_level:
         fs_qs = FeeStructure.objects.filter(
             school=child.school,
-            class_level=child.class_level,
+            class_level__name__iexact=child.class_level, 
         ).order_by('name')
         for fs in fs_qs:
             # Extract item name from "Term 1 2026 — Tuition" format

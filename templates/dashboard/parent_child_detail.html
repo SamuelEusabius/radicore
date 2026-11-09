@@ -5,330 +5,331 @@
 
 {% block content %}
 
-<a href="{% url 'parent_children' %}"
-   class="inline-flex items-center gap-1 text-sm text-teal-700 hover:underline mb-4">
-  ← Back to My Children
-</a>
+<!-- Back Link -->
+<div style="margin-bottom: 24px;">
+    <a href="{% url 'parent_children' %}" style="display: inline-flex; align-items: center; gap: 6px; color: #64748b; text-decoration: none; font-size: 14px; font-weight: 600;">
+        {% include 'partials/icons.html' with name="arrow-left" size=16 %} Back to My Children
+    </a>
+</div>
 
 <!-- ============ CHILD HEADER CARD ============ -->
-<div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5 mb-6">
-  <div class="flex items-center gap-5 flex-wrap">
-
-    {% if child.photo %}
-      <img src="{{ child.photo.url }}" class="w-20 h-20 rounded-full object-cover">
-    {% else %}
-      <div class="w-20 h-20 rounded-full bg-teal-100 text-teal-700 flex items-center justify-center text-2xl font-bold">
-        {{ child.first_name|first|upper }}{{ child.last_name|first|upper }}
-      </div>
-    {% endif %}
-
-    <div class="flex-1 min-w-0">
-      <h2 class="text-lg font-bold text-gray-900">{{ child.full_name }}</h2>
-      <p class="text-sm text-gray-500 mt-0.5">
-        {{ child.admission_number }} · {{ child.class_level|default:"No class" }}
-      </p>
-      <div class="mt-2 flex gap-2 flex-wrap">
-        <span class="text-xs px-2 py-0.5 bg-gray-100 text-gray-700 rounded">
-          {{ child.get_gender_display }}
-        </span>
-        {% if child.upi %}
-        <span class="text-xs px-2 py-0.5 bg-gray-100 text-gray-700 rounded font-mono">
-          UPI: {{ child.upi }}
-        </span>
+<div class="card" style="padding: 24px; margin-bottom: 24px; background: white; border-radius: 12px; border: 1px solid #e2e8f0; display: flex; align-items: center; gap: 24px; flex-wrap: wrap;">
+    
+    <!-- Avatar -->
+    <div style="flex-shrink: 0;">
+        {% if child.photo %}
+            <img src="{{ child.photo.url }}" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid #e2e8f0;">
+        {% else %}
+            <div style="width: 80px; height: 80px; border-radius: 50%; background: #ecfdf5; color: #059669; display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: 700; border: 2px solid #d1fae5;">
+                {{ child.first_name|first|upper }}{{ child.last_name|first|upper }}
+            </div>
         {% endif %}
-      </div>
     </div>
 
-    <!-- Outstanding balance highlight -->
-    <div class="text-right">
-      <div class="text-xs text-gray-500 uppercase tracking-wide">Fee Balance</div>
-      <div class="text-2xl font-bold tabular-nums mt-1 {% if total_due > 0 %}text-red-600{% else %}text-green-600{% endif %}">
-        KES {{ total_due|floatformat:0 }}
-      </div>
-      {% if total_due > 0 %}
-            {% if total_due > 0 %}
-      <button type="button"
-              onclick="alert('M-Pesa payment is coming soon!\n\nFor now, please pay at the school office or via bank transfer.\nYour balance will be updated by the accountant.')"
-              class="mt-2 text-xs px-3 py-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded transition">
-        💳 Pay Now
-      </button>
-      {% endif %}
-      {% endif %}
+    <!-- Details -->
+    <div style="flex: 1; min-width: 200px;">
+        <h2 style="margin: 0 0 4px 0; font-size: 24px; font-weight: 700; color: #0f172a;">{{ child.full_name }}</h2>
+        <p style="margin: 0; font-size: 14px; color: #64748b;">
+            {{ child.admission_number }} &middot; {{ child.class_level|default:"No class" }}
+        </p>
+        <div style="margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap;">
+            <span style="font-size: 12px; font-weight: 600; padding: 4px 10px; background: #f1f5f9; color: #475569; border-radius: 6px;">
+                {{ child.get_gender_display }}
+            </span>
+            {% if child.upi %}
+            <span style="font-size: 12px; font-weight: 600; padding: 4px 10px; background: #f1f5f9; color: #475569; border-radius: 6px; font-family: monospace;">
+                UPI: {{ child.upi }}
+            </span>
+            {% endif %}
+        </div>
     </div>
 
-  </div>
+    <!-- Fee Balance Highlight -->
+    <div style="text-align: right; min-width: 150px;">
+        <div style="font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Fee Balance</div>
+        <div style="font-size: 28px; font-weight: 700; margin-top: 4px; {% if total_due > 0 %}color: #ef4444;{% else %}color: #10b981;{% endif %}">
+            KES {{ total_due|floatformat:0 }}
+        </div>
+        
+        {% if total_due > 0 %}
+        <a href="{% url 'parent_mpesa_payment' %}" style="margin-top: 8px; display: inline-flex; align-items: center; gap: 6px; background: #10b981; color: white; padding: 8px 16px; border-radius: 6px; font-size: 13px; font-weight: 600; text-decoration: none; transition: background 0.2s;">
+            {% include 'partials/icons.html' with name="credit-card" size=14 %} Pay Now
+        </a>
+        {% endif %}
+    </div>
 </div>
 
 <!-- ============ TABS ============ -->
 <div x-data="{ tab: 'overview' }" x-cloak>
 
-  <div class="bg-white rounded-xl border border-gray-100 shadow-sm mb-6">
-    <div class="flex border-b border-gray-100 overflow-x-auto">
-      <button @click="tab = 'overview'"
-              :class="tab === 'overview' ? 'border-teal-600 text-teal-700 font-semibold' : 'border-transparent text-gray-500 hover:text-gray-700'"
-              class="px-5 py-3 text-sm border-b-2 transition whitespace-nowrap">
-        Overview
-      </button>
-      <button @click="tab = 'grades'"
-              :class="tab === 'grades' ? 'border-teal-600 text-teal-700 font-semibold' : 'border-transparent text-gray-500 hover:text-gray-700'"
-              class="px-5 py-3 text-sm border-b-2 transition whitespace-nowrap">
-        Grades
-      </button>
-      <button @click="tab = 'attendance'"
-              :class="tab === 'attendance' ? 'border-teal-600 text-teal-700 font-semibold' : 'border-transparent text-gray-500 hover:text-gray-700'"
-              class="px-5 py-3 text-sm border-b-2 transition whitespace-nowrap">
-        Attendance
-      </button>
-      <button @click="tab = 'fees'"
-              :class="tab === 'fees' ? 'border-teal-600 text-teal-700 font-semibold' : 'border-transparent text-gray-500 hover:text-gray-700'"
-              class="px-5 py-3 text-sm border-b-2 transition whitespace-nowrap">
-        Fees
-      </button>
-      <button @click="tab = 'statement'"
-              :class="tab === 'statement' ? 'border-teal-600 text-teal-700 font-semibold' : 'border-transparent text-gray-500 hover:text-gray-700'"
-              class="px-5 py-3 text-sm border-b-2 transition whitespace-nowrap">
-        Statement
-      </button>
+    <!-- Tab Navigation -->
+    <div class="card" style="padding: 0; margin-bottom: 24px; background: white; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden;">
+        <div style="display: flex; overflow-x: auto; border-bottom: 1px solid #e2e8f0;">
+            <button @click="tab = 'overview'" :class="tab === 'overview' ? 'border-b-2 border-emerald-600 text-emerald-700 font-bold bg-emerald-50' : 'text-gray-500 hover:text-gray-700 font-medium'" style="padding: 16px 24px; font-size: 14px; border: none; background: transparent; cursor: pointer; white-space: nowrap;">
+                Overview
+            </button>
+            <button @click="tab = 'grades'" :class="tab === 'grades' ? 'border-b-2 border-emerald-600 text-emerald-700 font-bold bg-emerald-50' : 'text-gray-500 hover:text-gray-700 font-medium'" style="padding: 16px 24px; font-size: 14px; border: none; background: transparent; cursor: pointer; white-space: nowrap;">
+                Grades
+            </button>
+            <button @click="tab = 'attendance'" :class="tab === 'attendance' ? 'border-b-2 border-emerald-600 text-emerald-700 font-bold bg-emerald-50' : 'text-gray-500 hover:text-gray-700 font-medium'" style="padding: 16px 24px; font-size: 14px; border: none; background: transparent; cursor: pointer; white-space: nowrap;">
+                Attendance
+            </button>
+            <button @click="tab = 'fees'" :class="tab === 'fees' ? 'border-b-2 border-emerald-600 text-emerald-700 font-bold bg-emerald-50' : 'text-gray-500 hover:text-gray-700 font-medium'" style="padding: 16px 24px; font-size: 14px; border: none; background: transparent; cursor: pointer; white-space: nowrap;">
+                Fees
+            </button>
+            <button @click="tab = 'statement'" :class="tab === 'statement' ? 'border-b-2 border-emerald-600 text-emerald-700 font-bold bg-emerald-50' : 'text-gray-500 hover:text-gray-700 font-medium'" style="padding: 16px 24px; font-size: 14px; border: none; background: transparent; cursor: pointer; white-space: nowrap;">
+                Statement
+            </button>
+        </div>
     </div>
-  </div>
 
-  <!-- ============ TAB: OVERVIEW ============ -->
-  <div x-show="tab === 'overview'" x-transition>
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-
-      <div class="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
-        <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Grades Recorded</div>
-        <div class="text-2xl font-bold text-gray-900 tabular-nums">{{ exam_summaries|length }}</div>
-        <div class="text-xs text-gray-500 mt-1">exam{{ exam_summaries|length|pluralize }}</div>
-      </div>
-
-            <div class="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
-        <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Attendance</div>
-        <div class="text-2xl font-bold text-gray-900 tabular-nums">
-          {% if attendance_pct %}{{ attendance_pct }}%{% else %}—{% endif %}
-        </div>
-        <div class="text-xs text-gray-500 mt-1">last 30 days</div>
-      </div>
-
-      <div class="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
-        <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Fee Balance</div>
-        <div class="text-2xl font-bold tabular-nums {% if total_due > 0 %}text-red-600{% else %}text-green-600{% endif %}">
-          KES {{ total_due|floatformat:0 }}
-        </div>
-        <div class="text-xs text-gray-500 mt-1">
-          {% if total_due > 0 %}outstanding{% else %}all cleared{% endif %}
-        </div>
-      </div>
-
-    </div>
-  </div>
-
-  <!-- ============ TAB: GRADES ============ -->
-  <div x-show="tab === 'grades'" x-transition>
-    <div class="space-y-4">
-      {% for summary in exam_summaries %}
-      <div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-        <div class="p-5 border-b border-gray-100 flex items-center justify-between flex-wrap gap-2">
-          <div>
-            <h3 class="font-semibold text-gray-900">{{ summary.exam.name }}</h3>
-            <p class="text-xs text-gray-500 mt-0.5">{{ summary.exam.term }} {{ summary.exam.year }}</p>
-          </div>
-          <div class="text-right">
-            <div class="text-xs text-gray-500">Average</div>
-            <div class="text-lg font-bold tabular-nums
-              {% if summary.avg >= 80 %}text-green-600
-              {% elif summary.avg >= 65 %}text-blue-600
-              {% elif summary.avg >= 50 %}text-yellow-600
-              {% else %}text-red-600{% endif %}">
-              {{ summary.avg }}%
+    <!-- ============ TAB: OVERVIEW ============ -->
+    <div x-show="tab === 'overview'" x-transition>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+            
+            <div style="background: white; padding: 24px; border-radius: 12px; border: 1px solid #e2e8f0;">
+                <div style="font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Grades Recorded</div>
+                <div style="font-size: 28px; font-weight: 700; color: #0f172a;">{{ exam_summaries|length }}</div>
+                <div style="font-size: 12px; color: #64748b; margin-top: 4px;">exam{{ exam_summaries|length|pluralize }}</div>
             </div>
-            <div class="text-xs font-bold
-              {% if summary.avg >= 80 %}text-green-600
-              {% elif summary.avg >= 65 %}text-blue-600
-              {% elif summary.avg >= 50 %}text-yellow-600
-              {% else %}text-red-600{% endif %}">
-              {{ summary.cbc }}
+
+            <div style="background: white; padding: 24px; border-radius: 12px; border: 1px solid #e2e8f0;">
+                <div style="font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Attendance</div>
+                <div style="font-size: 28px; font-weight: 700; color: #0f172a;">
+                    {% if attendance_pct %}{{ attendance_pct }}%{% else %}—{% endif %}
+                </div>
+                <div style="font-size: 12px; color: #64748b; margin-top: 4px;">last 30 days</div>
             </div>
-          </div>
-        </div>
-        <div class="divide-y divide-gray-50">
-          {% for g in summary.grades %}
-          <div class="px-5 py-3 flex items-center justify-between">
-            <div class="text-sm font-medium text-gray-900">{{ g.subject.name }}</div>
-            <div class="text-sm tabular-nums
-              {% if g.percentage >= 80 %}text-green-600 font-semibold
-              {% elif g.percentage >= 65 %}text-blue-600
-              {% elif g.percentage >= 50 %}text-yellow-600
-              {% else %}text-red-600{% endif %}">
-              {{ g.marks|floatformat:0 }}/{{ g.out_of|floatformat:0 }} ({{ g.percentage|floatformat:0 }}%)
+
+            <div style="background: white; padding: 24px; border-radius: 12px; border: 1px solid #e2e8f0;">
+                <div style="font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Fee Balance</div>
+                <div style="font-size: 28px; font-weight: 700; {% if total_due > 0 %}color: #ef4444;{% else %}color: #10b981;{% endif %}">
+                    KES {{ total_due|floatformat:0 }}
+                </div>
+                <div style="font-size: 12px; color: #64748b; margin-top: 4px;">
+                    {% if total_due > 0 %}outstanding{% else %}all cleared{% endif %}
+                </div>
             </div>
-          </div>
-          {% endfor %}
+
         </div>
-      </div>
-      {% empty %}
-      <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-12 text-center">
-        <div class="text-4xl mb-2 opacity-30">📊</div>
-        <p class="text-sm text-gray-500">No grades recorded yet.</p>
-      </div>
-      {% endfor %}
-    </div>
-  </div>
-
-  <!-- ============ TAB: ATTENDANCE ============ -->
-  <div x-show="tab === 'attendance'" x-transition>
-    <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
-      <h3 class="font-semibold text-gray-900 mb-4">Last 30 Days</h3>
-      <div class="grid grid-cols-3 gap-4 text-center">
-        <div class="p-4 bg-green-50 rounded-lg">
-          <div class="text-2xl font-bold text-green-600 tabular-nums">{{ present_30 }}</div>
-          <div class="text-xs text-green-700 font-medium mt-1">Present</div>
-        </div>
-        <div class="p-4 bg-red-50 rounded-lg">
-          <div class="text-2xl font-bold text-red-600 tabular-nums">{{ absent_30 }}</div>
-          <div class="text-xs text-red-700 font-medium mt-1">Absent</div>
-        </div>
-        <div class="p-4 bg-yellow-50 rounded-lg">
-          <div class="text-2xl font-bold text-yellow-600 tabular-nums">{{ late_30 }}</div>
-          <div class="text-xs text-yellow-700 font-medium mt-1">Late</div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ============ TAB: FEES ============ -->
-  <div x-show="tab === 'fees'" x-transition>
-    <div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-      <div class="p-5 border-b border-gray-100">
-        <h3 class="font-semibold text-gray-900">Fee Structure — {{ child.class_level }}</h3>
-        <p class="text-xs text-gray-500 mt-0.5">Current fees for this class</p>
-      </div>
-
-      {% if fee_rows %}
-      <table class="w-full text-sm">
-        <thead class="bg-gray-50">
-          <tr>
-            <th class="text-left px-5 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">Fee Item</th>
-            <th class="text-right px-5 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">Amount (KES)</th>
-            <th class="text-right px-5 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">Due Date</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for row in fee_rows %}
-          <tr class="border-t border-gray-50">
-            <td class="px-5 py-3 font-medium text-gray-900">{{ row.name }}</td>
-            <td class="px-5 py-3 text-right tabular-nums">{{ row.amount|floatformat:0 }}</td>
-            <td class="px-5 py-3 text-right text-xs text-gray-500">{{ row.due_date|date:"d M Y" }}</td>
-          </tr>
-          {% endfor %}
-          <tr class="border-t-2 border-teal-600 bg-teal-50">
-            <td class="px-5 py-3 font-bold text-teal-800">Total</td>
-            <td class="px-5 py-3 text-right font-bold text-teal-800 tabular-nums">{{ fee_total|floatformat:0 }}</td>
-            <td></td>
-          </tr>
-        </tbody>
-      </table>
-      {% else %}
-      <div class="p-12 text-center">
-        <div class="text-4xl mb-2 opacity-30">📋</div>
-        <p class="text-sm text-gray-500">No fee structure set for {{ child.class_level }} yet.</p>
-      </div>
-      {% endif %}
-    </div>
-  </div>
-
-  <!-- ============ TAB: STATEMENT ============ -->
-  <div x-show="tab === 'statement'" x-transition>
-
-    <!-- Period selector -->
-    <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 mb-4">
-      <div class="flex items-center justify-between flex-wrap gap-3">
-        <div class="flex gap-2 flex-wrap">
-          <a href="?period=term"
-             class="px-3 py-1.5 text-xs rounded-md transition
-             {% if period == 'term' %}bg-teal-600 text-white{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %}">
-            This Term
-          </a>
-          <a href="?period=year"
-             class="px-3 py-1.5 text-xs rounded-md transition
-             {% if period == 'year' %}bg-teal-600 text-white{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %}">
-            This Year
-          </a>
-          <a href="?period=all"
-             class="px-3 py-1.5 text-xs rounded-md transition
-             {% if period == 'all' %}bg-teal-600 text-white{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %}">
-            All Time
-          </a>
-        </div>
-
-        <a href="{% url 'parent_child_statement_pdf' child.id %}?period={{ period }}"
-           target="_blank"
-           class="pro-btn pro-btn-primary">
-          {% include 'partials/icons.html' with name="download" size=15 %}
-          <span>Download Statement PDF</span>
-        </a>
-      </div>
     </div>
 
-    <!-- Summary -->
-    <div class="grid grid-cols-3 gap-4 mb-4">
-      <div class="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
-        <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">Total Invoiced</div>
-        <div class="text-xl font-bold tabular-nums">KES {{ period_invoiced|floatformat:0 }}</div>
-      </div>
-      <div class="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
-        <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">Total Paid</div>
-        <div class="text-xl font-bold text-green-600 tabular-nums">KES {{ period_paid|floatformat:0 }}</div>
-      </div>
-      <div class="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
-        <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">Balance</div>
-        <div class="text-xl font-bold tabular-nums {% if period_balance > 0 %}text-red-600{% else %}text-green-600{% endif %}">
-          KES {{ period_balance|floatformat:0 }}
+    <!-- ============ TAB: GRADES ============ -->
+    <div x-show="tab === 'grades'" x-transition>
+        <div style="display: flex; flex-direction: column; gap: 16px;">
+            {% for summary in exam_summaries %}
+            <div style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden;">
+                <div style="padding: 20px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px;">
+                    <div>
+                        <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: #0f172a;">{{ summary.exam.name }}</h3>
+                        <p style="margin: 4px 0 0 0; font-size: 13px; color: #64748b;">{{ summary.exam.term }} {{ summary.exam.year }}</p>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="font-size: 12px; color: #64748b;">Average</div>
+                        <div style="font-size: 20px; font-weight: 700; 
+                            {% if summary.avg >= 80 %}color: #10b981;
+                            {% elif summary.avg >= 65 %}color: #3b82f6;
+                            {% elif summary.avg >= 50 %}color: #f59e0b;
+                            {% else %}color: #ef4444;{% endif %}">
+                            {{ summary.avg }}%
+                        </div>
+                        <div style="font-size: 12px; font-weight: 700;
+                            {% if summary.avg >= 80 %}color: #10b981;
+                            {% elif summary.avg >= 65 %}color: #3b82f6;
+                            {% elif summary.avg >= 50 %}color: #f59e0b;
+                            {% else %}color: #ef4444;{% endif %}">
+                            {{ summary.cbc }}
+                        </div>
+                    </div>
+                </div>
+                <div style="display: flex; flex-direction: column;">
+                    {% for g in summary.grades %}
+                    <div style="padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9;">
+                        <div style="font-size: 14px; font-weight: 500; color: #0f172a;">{{ g.subject.name }}</div>
+                        <div style="font-size: 14px; font-weight: 600;
+                            {% if g.percentage >= 80 %}color: #10b981;
+                            {% elif g.percentage >= 65 %}color: #3b82f6;
+                            {% elif g.percentage >= 50 %}color: #f59e0b;
+                            {% else %}color: #ef4444;{% endif %}">
+                            {{ g.marks|floatformat:0 }}/{{ g.out_of|floatformat:0 }} ({{ g.percentage|floatformat:0 }}%)
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% empty %}
+            <div style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 60px 20px; text-align: center;">
+                <div style="color: #94a3b8; margin-bottom: 16px;">
+                    {% include 'partials/icons.html' with name="bar-chart" size=48 %}
+                </div>
+                <h3 style="margin: 0 0 8px 0; font-size: 16px; font-weight: 600; color: #0f172a;">No grades recorded yet</h3>
+                <p style="margin: 0; font-size: 14px; color: #64748b;">Grades will appear here once teachers submit them.</p>
+            </div>
+            {% endfor %}
         </div>
-      </div>
     </div>
 
-    <!-- Ledger -->
-    <div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-      <div class="p-5 border-b border-gray-100">
-        <h3 class="font-semibold text-gray-900">Transaction Ledger</h3>
-      </div>
-      <table class="w-full text-sm">
-        <thead class="bg-gray-50">
-          <tr>
-            <th class="text-left px-5 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">Date</th>
-            <th class="text-left px-5 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">Description</th>
-            <th class="text-right px-5 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">Charge</th>
-            <th class="text-right px-5 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">Payment</th>
-            <th class="text-right px-5 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">Balance</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for row in ledger %}
-          <tr class="border-t border-gray-50">
-            <td class="px-5 py-3 text-xs text-gray-700">{{ row.date|date:"d M Y" }}</td>
-            <td class="px-5 py-3 text-sm text-gray-900">{{ row.description }}</td>
-            <td class="px-5 py-3 text-right tabular-nums {% if row.charge %}text-red-600{% endif %}">
-              {% if row.charge %}{{ row.charge|floatformat:0 }}{% else %}—{% endif %}
-            </td>
-            <td class="px-5 py-3 text-right tabular-nums {% if row.payment %}text-green-600{% endif %}">
-              {% if row.payment %}{{ row.payment|floatformat:0 }}{% endif %}
-            </td>
-            <td class="px-5 py-3 text-right font-semibold tabular-nums">{{ row.balance|floatformat:0 }}</td>
-          </tr>
-          {% empty %}
-          <tr>
-            <td colspan="5" class="p-12 text-center">
-              <div class="text-4xl mb-2 opacity-30">📄</div>
-              <p class="text-sm text-gray-500">No transactions in this period.</p>
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+    <!-- ============ TAB: ATTENDANCE ============ -->
+    <div x-show="tab === 'attendance'" x-transition>
+        <div style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 24px;">
+            <h3 style="margin: 0 0 20px 0; font-size: 16px; font-weight: 700; color: #0f172a;">Last 30 Days</h3>
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; text-align: center;">
+                <div style="padding: 24px; background: #ecfdf5; border-radius: 12px; border: 1px solid #d1fae5;">
+                    <div style="font-size: 28px; font-weight: 700; color: #059669;">{{ present_30 }}</div>
+                    <div style="font-size: 13px; font-weight: 600; color: #047857; margin-top: 4px;">Present</div>
+                </div>
+                <div style="padding: 24px; background: #fef2f2; border-radius: 12px; border: 1px solid #fee2e2;">
+                    <div style="font-size: 28px; font-weight: 700; color: #dc2626;">{{ absent_30 }}</div>
+                    <div style="font-size: 13px; font-weight: 600; color: #b91c1c; margin-top: 4px;">Absent</div>
+                </div>
+                <div style="padding: 24px; background: #fffbeb; border-radius: 12px; border: 1px solid #fef3c7;">
+                    <div style="font-size: 28px; font-weight: 700; color: #d97706;">{{ late_30 }}</div>
+                    <div style="font-size: 13px; font-weight: 600; color: #b45309; margin-top: 4px;">Late</div>
+                </div>
+            </div>
+        </div>
     </div>
 
-  </div>
+    <!-- ============ TAB: FEES ============ -->
+    <div x-show="tab === 'fees'" x-transition>
+        
+        <!-- Informational Banner if no invoices exist -->
+        {% if total_due == 0 %}
+        <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 12px; padding: 16px 20px; margin-bottom: 20px; display: flex; align-items: center; gap: 12px;">
+            <div style="color: #3b82f6;">
+                {% include 'partials/icons.html' with name="info" size=20 %}
+            </div>
+            <div>
+                <div style="font-size: 14px; font-weight: 700; color: #1e3a8a;">No invoices generated yet</div>
+                <div style="font-size: 13px; color: #1e40af; margin-top: 2px;">
+                    The fee structure below shows the expected fees for this class. The school has not yet generated an invoice for this term. Your current balance is <strong>KES 0</strong>.
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <div style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden;">
+            <div style="padding: 20px; border-bottom: 1px solid #e2e8f0;">
+                <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: #0f172a;">Fee Structure — {{ child.class_level }}</h3>
+                <p style="margin: 4px 0 0 0; font-size: 13px; color: #64748b;">Current fees for this class</p>
+            </div>
+
+            {% if fee_rows %}
+            <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                <thead style="background: #f8fafc;">
+                    <tr>
+                        <th style="padding: 16px; font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; border-bottom: 1px solid #e2e8f0;">Fee Item</th>
+                        <th style="padding: 16px; font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; border-bottom: 1px solid #e2e8f0; text-align: right;">Amount (KES)</th>
+                        <th style="padding: 16px; font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; border-bottom: 1px solid #e2e8f0; text-align: right;">Due Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in fee_rows %}
+                    <tr style="border-bottom: 1px solid #f1f5f9;">
+                        <td style="padding: 16px; font-size: 14px; font-weight: 500; color: #0f172a;">{{ row.name }}</td>
+                        <td style="padding: 16px; font-size: 14px; text-align: right; color: #0f172a;">{{ row.amount|floatformat:0 }}</td>
+                        <td style="padding: 16px; font-size: 13px; text-align: right; color: #64748b;">{{ row.due_date|date:"d M Y" }}</td>
+                    </tr>
+                    {% endfor %}
+                    <tr style="background: #ecfdf5;">
+                        <td style="padding: 16px; font-size: 14px; font-weight: 700; color: #047857;">Total Expected</td>
+                        <td style="padding: 16px; font-size: 14px; text-align: right; font-weight: 700; color: #047857;">{{ fee_total|floatformat:0 }}</td>
+                        <td></td>
+                    </tr>
+                </tbody>
+            </table>
+            {% else %}
+            <div style="padding: 60px 20px; text-align: center;">
+                <div style="color: #94a3b8; margin-bottom: 16px;">
+                    {% include 'partials/icons.html' with name="file-text" size=48 %}
+                </div>
+                <h3 style="margin: 0 0 8px 0; font-size: 16px; font-weight: 600; color: #0f172a;">No fee structure set</h3>
+                <p style="margin: 0; font-size: 14px; color: #64748b;">No fee structure has been set for {{ child.class_level }} yet.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- ============ TAB: STATEMENT ============ -->
+    <div x-show="tab === 'statement'" x-transition>
+
+        <!-- Period Selector -->
+        <div style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 16px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <a href="?period=term" style="padding: 8px 16px; font-size: 13px; font-weight: 600; border-radius: 6px; text-decoration: none; {% if period == 'term' %}background: #10b981; color: white;{% else %}background: #f1f5f9; color: #475569;{% endif %}">
+                    This Term
+                </a>
+                <a href="?period=year" style="padding: 8px 16px; font-size: 13px; font-weight: 600; border-radius: 6px; text-decoration: none; {% if period == 'year' %}background: #10b981; color: white;{% else %}background: #f1f5f9; color: #475569;{% endif %}">
+                    This Year
+                </a>
+                <a href="?period=all" style="padding: 8px 16px; font-size: 13px; font-weight: 600; border-radius: 6px; text-decoration: none; {% if period == 'all' %}background: #10b981; color: white;{% else %}background: #f1f5f9; color: #475569;{% endif %}">
+                    All Time
+                </a>
+            </div>
+
+            <a href="{% url 'parent_child_statement_pdf' child.id %}?period={{ period }}" target="_blank" style="display: inline-flex; align-items: center; gap: 6px; background: #0f172a; color: white; padding: 8px 16px; border-radius: 6px; font-size: 13px; font-weight: 600; text-decoration: none;">
+                {% include 'partials/icons.html' with name="download" size=14 %} Download PDF
+            </a>
+        </div>
+
+        <!-- Summary Cards -->
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 16px;">
+            <div style="background: white; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0;">
+                <div style="font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase;">Total Invoiced</div>
+                <div style="font-size: 22px; font-weight: 700; color: #0f172a; margin-top: 4px;">KES {{ period_invoiced|floatformat:0 }}</div>
+            </div>
+            <div style="background: white; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0;">
+                <div style="font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase;">Total Paid</div>
+                <div style="font-size: 22px; font-weight: 700; color: #10b981; margin-top: 4px;">KES {{ period_paid|floatformat:0 }}</div>
+            </div>
+            <div style="background: white; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0;">
+                <div style="font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase;">Balance</div>
+                <div style="font-size: 22px; font-weight: 700; {% if period_balance > 0 %}color: #ef4444;{% else %}color: #10b981;{% endif %} margin-top: 4px;">
+                    KES {{ period_balance|floatformat:0 }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Ledger Table -->
+        <div style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden;">
+            <div style="padding: 20px; border-bottom: 1px solid #e2e8f0;">
+                <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: #0f172a;">Transaction Ledger</h3>
+            </div>
+            <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                <thead style="background: #f8fafc;">
+                    <tr>
+                        <th style="padding: 16px; font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase;">Date</th>
+                        <th style="padding: 16px; font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase;">Description</th>
+                        <th style="padding: 16px; font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; text-align: right;">Charge</th>
+                        <th style="padding: 16px; font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; text-align: right;">Payment</th>
+                        <th style="padding: 16px; font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; text-align: right;">Balance</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in ledger %}
+                    <tr style="border-bottom: 1px solid #f1f5f9;">
+                        <td style="padding: 16px; font-size: 13px; color: #64748b; white-space: nowrap;">{{ row.date|date:"d M Y" }}</td>
+                        <td style="padding: 16px; font-size: 14px; color: #0f172a;">{{ row.description }}</td>
+                        <td style="padding: 16px; font-size: 14px; font-weight: 500; text-align: right; {% if row.charge %}color: #ef4444;{% endif %}">
+                            {% if row.charge %}{{ row.charge|floatformat:0 }}{% else %}—{% endif %}
+                        </td>
+                        <td style="padding: 16px; font-size: 14px; font-weight: 500; text-align: right; {% if row.payment %}color: #10b981;{% endif %}">
+                            {% if row.payment %}{{ row.payment|floatformat:0 }}{% else %}—{% endif %}
+                        </td>
+                        <td style="padding: 16px; font-size: 14px; font-weight: 700; text-align: right; color: #0f172a;">{{ row.balance|floatformat:0 }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" style="padding: 60px 20px; text-align: center; color: #64748b;">
+                            No transactions in this period.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+    </div>
 
 </div>
 

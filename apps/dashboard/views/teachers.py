@@ -625,13 +625,25 @@ def class_teacher_view_student(request, student_id):
         student=student
     ).select_related('subject', 'exam').order_by('-exam__year', '-exam__id')[:10]
 
-    # Fees
-    invoice_agg = Invoice.objects.filter(student=student).aggregate(
-        total_due=Sum('amount_due'), total_paid=Sum('amount_paid')
-    )
-    total_due = invoice_agg['total_due'] or 0
-    total_paid = invoice_agg['total_paid'] or 0
+    # Fees Snapshot (Matches Parent Portal Logic)
+    from apps.finance.models import Invoice, FeeStructure
+    from django.db.models import Sum
+    
+    invoices = Invoice.objects.filter(student=student)
+    total_due = invoices.aggregate(Sum('amount_due'))['amount_due__sum'] or 0
+    total_paid = invoices.aggregate(Sum('amount_paid'))['amount_paid__sum'] or 0
     outstanding = total_due - total_paid
+
+    # FALLBACK: If no invoices exist, use the Fee Structure for the student's class
+    if not invoices.exists() and student.class_level:
+        fs_qs = FeeStructure.objects.filter(
+            school=student.school,
+            class_level__name__iexact=student.class_level,
+        )
+        fallback_billed = sum(fs.amount_kes for fs in fs_qs)
+        if fallback_billed > 0:
+            total_due = float(fallback_billed)
+            outstanding = total_due - total_paid
 
         # Co-curricular activities
     activities = student.activities.all()[:10] if hasattr(student, 'activities') else []

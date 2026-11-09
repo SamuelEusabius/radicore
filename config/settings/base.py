@@ -270,3 +270,15 @@ DEFAULT_CURRENCY = 'KES'
 SCHOOL_TRIAL_DAYS = 30
 SCHOOL_TRIAL_MAX_STUDENTS = 450
 SCHOOL_TRIAL_MAX_TEACHERS = 50
+
+# ==========================================================
+# CELERY BEAT SCHEDULE (Automated Tasks)
+# ==========================================================
+from celery.schedules import crontab
+
+CELERY_BEAT_SCHEDULE = {
+    'mark-overdue-invoices-daily': {
+        'task': 'apps.finance.tasks.mark_overdue_invoices',
+        'schedule': crontab(hour=0, minute=0),  # Runs at midnight every day
+    },
+}

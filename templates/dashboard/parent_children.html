@@ -1,49 +1,139 @@
 {% extends 'base.html' %}
 {% block title %}My Children{% endblock %}
 {% block header_title %}My Children{% endblock %}
-{% block header_sub %}{{ children|length }} child{{ children|length|pluralize }} linked{% endblock %}
 
 {% block content %}
+<style>
+    .child-card {
+        background: white;
+        border-radius: 16px;
+        border: 1px solid #e2e8f0;
+        padding: 32px 24px;
+        text-align: center;
+        transition: all 0.2s ease;
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    .child-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+        border-color: #cbd5e1;
+    }
+    
+    .child-avatar {
+        width: 90px;
+        height: 90px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid #ecfdf5;
+        background: #f8fafc;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 32px;
+        font-weight: 700;
+        color: #059669;
+        margin-bottom: 20px;
+    }
 
-<div class="max-w-4xl mx-auto">
+    .child-name {
+        font-size: 18px;
+        font-weight: 800;
+        color: #0f172a;
+        margin: 0 0 4px 0;
+        line-height: 1.2;
+    }
 
-  {% if children %}
-  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-    {% for c in children %}
-    <div class="pro-card">
-      <div style="text-align: center;">
-        {% if c.photo %}
-          <img src="{{ c.photo.url }}" alt="{{ c.full_name }}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 40px; margin: 0 auto 12px; display: block;">
-        {% else %}
-          <div class="pro-avatar {% if c.gender == 'M' %}pro-avatar-boy{% else %}pro-avatar-girl{% endif %}" style="width: 80px; height: 80px; font-size: 28px; margin: 0 auto 12px;">
-            {{ c.initials }}
-          </div>
-        {% endif %}
+    .child-meta {
+        font-size: 13px;
+        color: #64748b;
+        margin: 0 0 20px 0;
+    }
+    
+    .child-badge {
+        display: inline-block;
+        padding: 4px 10px;
+        background: #f1f5f9;
+        color: #475569;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 600;
+        margin-bottom: 24px;
+    }
+    
+    .btn-view {
+        background: #0f172a;
+        color: white;
+        padding: 10px 24px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: background 0.2s;
+        width: 100%;
+        justify-content: center;
+    }
+    .btn-view:hover {
+        background: #1e293b;
+    }
+</style>
 
-        <h3 style="font-weight: 700; font-family: 'Poppins', sans-serif; font-size: 15px; margin: 0;">
-          {{ c.full_name }}
-        </h3>
-        <div style="font-size: 12px; color: #6b7280; margin-top: 4px;">
-          {{ c.admission_number }}
-          {% if c.class_level %} · {{ c.class_level }}{% endif %}
-        </div>
-
-        <a href="{% url 'parent_child_detail' c.id %}" class="pro-btn pro-btn-primary" style="margin-top: 16px; display: inline-flex;">
-          {% include 'partials/icons.html' with name="eye" size=15 %}
-          <span>View Details</span>
-        </a>
-      </div>
+<div style="max-width: 1200px; margin: 0 auto;">
+    
+    <!-- Header -->
+    <div style="margin-bottom: 32px;">
+        <h2 style="margin: 0; font-size: 24px; font-weight: 700; color: #0f172a;">Student Profiles</h2>
+        <p style="margin: 4px 0 0 0; font-size: 14px; color: #64748b;">View academic progress and fee statements for your children.</p>
     </div>
-    {% endfor %}
-  </div>
-  {% else %}
-  <div class="pro-empty">
-    {% include 'partials/icons.html' with name="users" size=64 %}
-    <h3>No children linked</h3>
-    <p>Contact your school administrator to link your children to this account.</p>
-  </div>
-  {% endif %}
 
+    <!-- Children Grid -->
+    {% if children %}
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 24px;">
+        {% for child in children %}
+        <div class="child-card">
+            <!-- Photo -->
+            {% if child.photo %}
+                <img src="{{ child.photo.url }}" class="child-avatar" alt="{{ child.first_name }}">
+            {% else %}
+                <div class="child-avatar">
+                    {{ child.first_name|first|upper }}{{ child.last_name|first|upper }}
+                </div>
+            {% endif %}
+
+            <!-- Details -->
+            <h3 class="child-name">{{ child.first_name }} {{ child.last_name }}</h3>
+            <p class="child-meta">ADM: {{ child.admission_number }}</p>
+            
+            <div class="child-badge">
+                {{ child.class_level|default:"No Class Assigned" }}
+            </div>
+
+            <!-- Action -->
+            <a href="{% url 'parent_child_detail' child.id %}" class="btn-view">
+                {% include 'partials/icons.html' with name="eye" size=16 %} View Details
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    
+    <!-- Empty State -->
+    <div style="background: white; border-radius: 16px; border: 1px solid #e2e8f0; padding: 80px 20px; text-align: center;">
+        <div style="width: 80px; height: 80px; background: #f1f5f9; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px auto; color: #64748b;">
+            {% include 'partials/icons.html' with name="users" size=40 %}
+        </div>
+        <h3 style="margin: 0 0 8px 0; font-size: 20px; font-weight: 700; color: #0f172a;">No children linked</h3>
+        <p style="margin: 0; font-size: 14px; color: #64748b; max-width: 400px; margin-left: auto; margin-right: auto;">
+            Your account is not currently linked to any students. Please contact the school administration to link your children to this profile.
+        </p>
+    </div>
+    {% endif %}
+    
 </div>
 
 {% endblock %}

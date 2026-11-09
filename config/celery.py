@@ -55,3 +55,12 @@ app.conf.beat_schedule = {
 def debug_task(self):
     """Simple test task — used to verify Celery worker is running."""
     print(f'Celery worker is alive. Request: {self.request!r}')
+    
+import os
+from celery import Celery
+
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings.dev')
+
+app = Celery('school_ms')
+app.config_from_object('django.conf:settings', namespace='CELERY')
+app.autodiscover_tasks()
