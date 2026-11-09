@@ -405,37 +405,80 @@ def staff_id_card(request, staff_id):
 
 @login_required
 def ict_dashboard(request):
-    """Dashboard for the ICT Officer showing system usage stats."""
-   # Allow both Principal and ICT Officer
-    if request.user.role not in ('ict_officer', 'principal',):
+    """Premium Analytics Dashboard for the ICT Officer and Principal."""
+    if request.user.role not in ('ict_officer', 'principal', 'super_admin'):
         return redirect('dashboard_home')
+
     from apps.schools.models import SchoolModule
     from apps.students.models import Student
     from apps.teachers.models import Teacher
+    from apps.staff.models import NonTeachingStaff
     from apps.parents.models import Parent
+    from apps.attendance.models import Attendance
+    from apps.finance.models import Invoice
+    from django.utils import timezone
+    from django.db.models import Sum
 
     school = request.user.school
 
-    # 1. Safely check if the module is enabled.
+    # 1. Safely check if the module is enabled
     module_obj, created = SchoolModule.objects.get_or_create(
-        school=school,
-        module='ict',
-        defaults={'is_enabled': True}
+        school=school, module='ict', defaults={'is_enabled': True}
     )
-
     if not module_obj.is_enabled:
-        messages.error(request, "ICT Module is not enabled for this school. Please contact the Principal.")
+        messages.error(request, "ICT Module is not enabled for this school.")
         return redirect('dashboard_home')
 
-    # 2. Load the stats (Fixed Parent query to use user__school)
+    # 2. Student Population
+    students = Student.objects.filter(school=school, is_active=True)
+    male_students = students.filter(gender='M').count()
+    female_students = students.filter(gender='F').count()
+
+    # 3. Staff Distribution
+    teachers = Teacher.objects.filter(school=school, is_active=True).count()
+    staff = NonTeachingStaff.objects.filter(school=school, is_active=True).count()
+    ict_staff = NonTeachingStaff.objects.filter(school=school, role='ict_officer').count()
+
+    # 4. Today's Attendance (Fixed: using student__school)
+    today = timezone.localdate()
+    attendance_today = Attendance.objects.filter(student__school=school, date=today)
+    present = attendance_today.filter(status='present').count()
+    absent = attendance_today.filter(status='absent').count()
+    late = attendance_today.filter(status='late').count()
+
+    # 5. Fee Collection
+    invoices = Invoice.objects.filter(student__school=school)
+    total_invoiced = invoices.aggregate(Sum('amount_due'))['amount_due__sum'] or 0
+    total_paid = invoices.aggregate(Sum('amount_paid'))['amount_paid__sum'] or 0
+    outstanding = total_invoiced - total_paid
+
+    # 6. System Users
+    parents = Parent.objects.filter(user__school=school).count()
+
     context = {
         'school': school,
-        'total_students': Student.objects.filter(school=school, is_active=True).count(),
-        'total_teachers': Teacher.objects.filter(school=school, is_active=True).count(),
-        'total_parents': Parent.objects.filter(user__school=school).count(),
+        'total_students': male_students + female_students,
+        'male_students': male_students,
+        'female_students': female_students,
+        
+        'total_staff': teachers + staff,
+        'teaching_staff': teachers,
+        'non_teaching_staff': staff - ict_staff,
+        'ict_staff': ict_staff,
+
+        'present': present,
+        'absent': absent,
+        'late': late,
+
+        'total_invoiced': total_invoiced,
+        'total_paid': total_paid,
+        'outstanding': outstanding,
+
+        'total_parents': parents,
     }
     
     return render(request, 'dashboard/ict_dashboard.html', context)
+
 @login_required
 def ict_upload_student_photo(request, student_id):
     """Allow ICT Officer to update a student's photo."""
@@ -496,4 +539,99 @@ def ict_upload_staff_photo(request, staff_id):
     return render(request, 'dashboard/upload_photo.html', {
         'person_name': staff.full_name,
         'return_url': 'staff_list'
+    })
+    
+
+@login_required
+def ict_manage_users(request):
+    """Restricted User Management for ICT Officer."""
+    if request.user.role != 'ict_officer':
+        return redirect('dashboard_home')
+
+    from apps.accounts.models import User
+    from django.db.models import Q
+
+    school = request.user.school
+    
+    # Define who the ICT Officer CANNOT manage
+    restricted_roles = ['principal', 'deputy_admin', 'deputy_academics', 'accountant', 'super_admin', 'secretary']
+    
+    # Base queryset: Only users in this school, excluding restricted roles
+    qs = User.objects.filter(school=school).exclude(role__in=restricted_roles).order_by('role', 'email')
+
+    # Search
+    search = request.GET.get('q', '').strip()
+    if search:
+        qs = qs.filter(
+            Q(first_name__icontains=search) |
+            Q(last_name__icontains=search) |
+            Q(email__icontains=search)
+        )
+
+    # Handle Actions (Password Reset & Deactivate)
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        user_id = request.POST.get('user_id')
+        target_user = get_object_or_404(User, id=user_id, school=school)
+        
+        # Security Check: Block hacking attempts
+        if target_user.role in restricted_roles:
+            messages.error(request, "You do not have permission to modify this user.")
+            return redirect('ict_manage_users')
+
+        if action == 'reset_password':
+            new_password = request.POST.get('new_password', '').strip()
+            if not new_password or len(new_password) < 6:
+                messages.error(request, "Password must be at least 6 characters.")
+            else:
+                target_user.set_password(new_password)
+                target_user.save()
+                messages.success(request, f"Password reset for {target_user.email}.")
+                
+        elif action == 'toggle_active':
+            target_user.is_active = not target_user.is_active
+            target_user.save()
+            status = "activated" if target_user.is_active else "deactivated"
+            messages.success(request, f"Account {status} for {target_user.email}.")
+
+        return redirect('ict_manage_users')
+
+    return render(request, 'dashboard/ict_manage_users.html', {
+        'users': qs,
+        'search': search,
+    })
+    
+@login_required
+def ict_user_change_password(request, user_id):
+    """ICT Officer: Dedicated page to change a user's password."""
+    if request.user.role != 'ict_officer':
+        return redirect('dashboard_home')
+
+    from apps.accounts.models import User
+
+    school = request.user.school
+    target_user = get_object_or_404(User, id=user_id, school=school)
+    
+    # Strict Security Check
+    restricted_roles = ['principal', 'deputy_admin', 'deputy_academics', 'accountant', 'super_admin', 'secretary']
+    if target_user.role in restricted_roles:
+        messages.error(request, "You do not have permission to modify this user.")
+        return redirect('ict_manage_users')
+
+    if request.method == 'POST':
+        new_password = request.POST.get('new_password', '').strip()
+        confirm_password = request.POST.get('confirm_password', '').strip()
+
+        if not new_password or len(new_password) < 8:
+            messages.error(request, 'Password must be at least 8 characters.')
+        elif new_password != confirm_password:
+            messages.error(request, 'Passwords do not match.')
+        else:
+            target_user.set_password(new_password)
+            target_user.save()
+            messages.success(request, f"Password successfully changed for {target_user.get_full_name() or target_user.email}.")
+            return redirect('ict_manage_users')
+
+    return render(request, 'dashboard/ict_user_change_password.html', {
+        'target_user': target_user,
     })

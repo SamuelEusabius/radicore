@@ -6,6 +6,39 @@
 
 {% block content %}
 
+<style>
+    /* Premium Table Styles */
+    .manage-users-table { width: 100%; border-collapse: collapse; text-align: left; }
+    .manage-users-table th { font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; padding: 16px; border-bottom: 2px solid #e2e8f0; background: #f8fafc; }
+    .manage-users-table td { padding: 16px; border-bottom: 1px solid #e2e8f0; vertical-align: middle; }
+    .manage-users-table tbody tr:hover { background: #f8fafc; }
+    
+    /* Typography */
+    .manage-users-table .user-name { font-size: 16px; font-weight: 700; color: #0f172a; line-height: 1.2; }
+    .manage-users-table .user-email { font-size: 14px; color: #64748b; margin-top: 4px; }
+    .manage-users-table .user-phone { font-size: 14px; font-weight: 500; color: #475569; font-family: monospace; }
+    
+    /* Badges */
+    .manage-users-table .user-role { font-size: 13px; font-weight: 600; padding: 6px 12px; border-radius: 999px; display: inline-block; }
+    .manage-users-table .user-status { font-size: 13px; font-weight: 700; padding: 4px 10px; border-radius: 999px; display: inline-block; }
+    
+    /* Badge Colors */
+    .badge-primary { background: #eff6ff; color: #2563eb; }
+    .badge-info { background: #f0fdfa; color: #0d9488; }
+    .badge-success { background: #ecfdf5; color: #059669; }
+    .badge-warning { background: #fffbeb; color: #d97706; }
+    .badge-neutral { background: #f1f5f9; color: #475569; }
+
+    /* Action Buttons */
+    .table-actions { display: flex; justify-content: flex-end; gap: 8px; }
+    .btn-icon { width: 36px; height: 36px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid #e2e8f0; background: white; color: #475569; cursor: pointer; transition: all 0.2s; text-decoration: none; }
+    .btn-icon:hover { background: #f8fafc; border-color: #cbd5e1; }
+    .btn-icon.danger { color: #ef4444; border-color: #fca5a5; background: #fef2f2; }
+    .btn-icon.danger:hover { background: #fee2e2; }
+    .btn-icon.success { color: #10b981; border-color: #a7f3d0; background: #ecfdf5; }
+    .btn-icon.success:hover { background: #d1fae5; }
+</style>
+
 <!-- ============================================ -->
 <!-- STATS CARDS                                  -->
 <!-- ============================================ -->
@@ -122,7 +155,7 @@
 <div class="card" style="padding: 0; overflow: hidden;">
   {% if users %}
     <div style="overflow-x: auto;">
-      <table class="table">
+      <table class="manage-users-table">
         <thead>
           <tr>
             <th>User</th>
@@ -137,22 +170,22 @@
           {% for u in users %}
           <tr>
             <td>
-              <div style="display: flex; align-items: center; gap: var(--s-3);">
-                <div class="avatar avatar-sm" style="background: {% if u.role == 'principal' %}#7C3AED{% elif u.role == 'teacher' %}#2563EB{% elif u.role == 'accountant' %}#059669{% elif u.role == 'super_admin' %}#0A8A5F{% else %}#64748B{% endif %};">
+              <div style="display: flex; align-items: center; gap: 16px;">
+                <div style="width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 700; color: white; flex-shrink: 0; background: {% if u.role == 'principal' %}#7C3AED{% elif u.role == 'teacher' %}#2563EB{% elif u.role == 'accountant' %}#059669{% elif u.role == 'super_admin' %}#0A8A5F{% else %}#64748B{% endif %};">
                   {{ u.email|first|upper }}
                 </div>
                 <div style="min-width: 0;">
-                  <div style="font-weight: 600; color: var(--ink-900);">
+                  <div class="user-name">
                     {% if u.get_full_name %}{{ u.get_full_name }}{% else %}{{ u.email|truncatechars:30 }}{% endif %}
                   </div>
-                  <div style="font-size: var(--text-xs); color: var(--ink-500); overflow: hidden; text-overflow: ellipsis;">
+                  <div class="user-email">
                     {{ u.email }}
                   </div>
                 </div>
               </div>
             </td>
             <td>
-              <span class="badge
+              <span class="user-role
                 {% if u.role == 'super_admin' %}badge-primary
                 {% elif u.role == 'principal' %}badge-primary
                 {% elif u.role == 'teacher' %}badge-info
@@ -164,46 +197,46 @@
               </span>
             </td>
             <td>
-              <span class="font-mono" style="font-size: var(--text-xs); color: var(--ink-600);">
+              <span class="user-phone">
                 {{ u.phone|default:"—" }}
               </span>
             </td>
             {% if is_super_admin %}
-              <td style="font-size: var(--text-sm); color: var(--ink-700);">
+              <td style="font-size: 14px; color: #475569;">
                 {{ u.school.name|default:"—" }}
               </td>
             {% endif %}
             <td style="text-align: center;">
               {% if u.is_active %}
-                <span class="badge badge-success">Active</span>
+                <span class="user-status badge-success">Active</span>
               {% else %}
-                <span class="badge badge-neutral">Inactive</span>
+                <span class="user-status badge-neutral">Inactive</span>
               {% endif %}
             </td>
             <td>
               <div class="table-actions">
-                <a href="{% url 'user_change_role' u.id %}" class="btn btn-sm btn-secondary" title="Change role">
-                  {% include 'partials/icons.html' with name="edit" size=13 %}
+                <a href="{% url 'user_change_role' u.id %}" class="btn-icon" title="Change role">
+                  {% include 'partials/icons.html' with name="edit" size=16 %}
                 </a>
-                <a href="{% url 'user_change_password' u.id %}" class="btn btn-sm btn-secondary" title="Change Password">
-  🔑 
-</a>
+                
+                <a href="{% url 'user_change_password' u.id %}" class="btn-icon" title="Change Password" style="color: #3b82f6; border-color: #bfdbfe; background: #eff6ff;">
+                  {% include 'partials/icons.html' with name="key" size=16 %}
+                </a>
 
                 <form method="post" action="{% url 'user_deactivate' u.id %}" style="display: inline;">
                   {% csrf_token %}
                   <input type="hidden" name="action" value="{% if u.is_active %}deactivate{% else %}activate{% endif %}">
-                  <button type="submit" class="btn btn-sm {% if u.is_active %}btn-secondary{% else %}btn-success{% endif %}"
-                          title="{% if u.is_active %}Deactivate{% else %}Activate{% endif %}">
+                  <button type="submit" class="btn-icon {% if u.is_active %}danger{% else %}success{% endif %}" title="{% if u.is_active %}Deactivate{% else %}Activate{% endif %}">
                     {% if u.is_active %}
-                      {% include 'partials/icons.html' with name="lock" size=13 %}
+                      {% include 'partials/icons.html' with name="lock" size=16 %}
                     {% else %}
-                      {% include 'partials/icons.html' with name="check-circle" size=13 %}
+                      {% include 'partials/icons.html' with name="check-circle" size=16 %}
                     {% endif %}
                   </button>
                 </form>
 
-                <a href="{% url 'user_delete' u.id %}" class="btn btn-sm btn-danger" title="Delete">
-                  {% include 'partials/icons.html' with name="trash" size=13 %}
+                <a href="{% url 'user_delete' u.id %}" class="btn-icon danger" title="Delete">
+                  {% include 'partials/icons.html' with name="trash" size=16 %}
                 </a>
               </div>
             </td>
@@ -237,10 +270,12 @@
     {% endif %}
 
   {% else %}
-    <div class="empty" style="border: none; border-radius: 0;">
-      {% include 'partials/icons.html' with name="users" size=56 %}
-      <h3>No users found</h3>
-      <p>Create your first user account to get started.</p>
+    <div class="empty" style="border: none; border-radius: 0; padding: 60px 20px; text-align: center;">
+      <div style="color: #94a3b8; margin-bottom: 16px;">
+          {% include 'partials/icons.html' with name="users" size=48 %}
+      </div>
+      <h3 style="margin: 0 0 8px 0; font-size: 18px; color: #0f172a; font-weight: 600;">No users found</h3>
+      <p style="margin: 0 0 24px 0; color: #64748b; font-size: 14px;">Create your first user account to get started.</p>
       <a href="{% url 'create_user' %}" class="btn btn-primary">
         {% include 'partials/icons.html' with name="user-plus" size=15 %}
         <span>Create User</span>

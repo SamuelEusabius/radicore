@@ -632,10 +632,6 @@ def admin_student_detail(request, student_id):
     return redirect('admin_attendance_overview')
 
 
-# ==========================================================
-# SCHOOL MODULE TOGGLES (Modular Feature Toggles)
-# ==========================================================
-
 @login_required
 def school_modules_manage(request, school_id):
     """Super Admin: toggle modules for a specific school."""
@@ -643,8 +639,9 @@ def school_modules_manage(request, school_id):
         messages.error(request, 'Access denied.')
         return redirect('dashboard_home')
 
-    from apps.schools.models import School, SchoolModule
+    from apps.schools.models import School, SchoolModule, SchoolSubscription
     from django.utils import timezone
+    from decimal import Decimal
 
     school = get_object_or_404(School, id=school_id)
 
@@ -679,6 +676,24 @@ def school_modules_manage(request, school_id):
                 row.disabled_by = request.user
                 row.save()
                 disabled_count += 1
+
+        # --- ICT BILLING LOGIC ---
+        # Check if 'ict' module was submitted (enabled)
+        ict_enabled = request.POST.get('module_ict') == 'on'
+        
+        try:
+            # Access the school's subscription
+            active_sub = SchoolSubscription.objects.filter(school=school).first()
+            
+            if active_sub:
+                if ict_enabled:
+                    active_sub.ict_module_fee = Decimal('2000.00')
+                else:
+                    active_sub.ict_module_fee = Decimal('0.00')
+                active_sub.save()
+        except Exception as e:
+            messages.warning(request, f'Note: Could not update ICT billing: {e}')
+        # --- END ICT BILLING LOGIC ---
 
         messages.success(
             request,

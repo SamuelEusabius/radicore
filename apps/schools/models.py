@@ -105,15 +105,15 @@ class School(models.Model):
     motto = models.CharField(max_length=200, blank=True, default='')
     ID_THEME_CHOICES = [
         ('ocean', '1. Ocean Blue'),
-        ('emerald', '2. Emerald Green'),
-        ('royal', '3. Royal Purple'),
-        ('crimson', '4. Crimson Red'),
-        ('slate', '5. Modern Slate'),
-        ('midnight', '6. Midnight Black'),
-        ('sunset', '7. Sunset Orange'),
-        ('gold', '8. Golden Luxury'),
-        ('forest', '9. Forest Green'),
-        ('cyberpunk', '10. Cyberpunk Pink'),
+        ('midnight', '2. Midnight Dark'),
+        ('tech', '3. Tech Matrix'),
+        ('royal', '4. Royal Purple'),
+        ('gold', '5. Gold Luxury'),
+        ('crimson', '6. Crimson Red'),
+        ('emerald', '7. Emerald Green'),
+        ('sunset', '8. Sunset Glow'),
+        ('cyberpunk', '9. Cyberpunk Pink'),
+        ('crisp', '10. Crisp Light'),
     ]
     
     principal_signature = models.ImageField(upload_to='school_signatures/', blank=True, null=True)
@@ -332,6 +332,12 @@ class SchoolSubscription(models.Model):
         max_digits=12, decimal_places=2, default=0
     )
 
+    # ---------- Module Add-ons ----------
+    ict_module_fee = models.DecimalField(
+        max_digits=10, decimal_places=2, default=0.00,
+        help_text="Additional fee for the ICT Module (KES 2,000)"
+    )
+
     # ---------- Trial ----------
     trial_started_at = models.DateTimeField(auto_now_add=True)
     trial_ends_at = models.DateTimeField(null=True, blank=True)
@@ -364,6 +370,11 @@ class SchoolSubscription(models.Model):
 
     def __str__(self):
         return f"{self.school.name} — {self.get_status_display()}"
+
+    def total_amount_due(self):
+        """Calculates the total amount due including module add-ons."""
+        base_price = self.plan.price_kes if self.plan else 0
+        return base_price + self.ict_module_fee
 
     # ==========================================================
     # HELPERS

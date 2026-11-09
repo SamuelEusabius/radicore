@@ -686,6 +686,10 @@
         {% include 'partials/icons.html' with name="briefcase" size=18 %}
         <span class="sidebar-link-text">Non-Teaching Staff</span>
       </a>
+      <a href="{% url 'ict_manage_users' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="user-plus" size=18 %}
+        <span class="sidebar-link-text">Manage Users</span>
+      </a>
 
       {% if 'sms' in enabled_modules %}
       <div class="sidebar-section-label">Communication</div>
@@ -698,6 +702,10 @@
       <a href="{% url 'my_leave_requests' %}" class="sidebar-link">
         {% include 'partials/icons.html' with name="calendar" size=18 %}
         <span class="sidebar-link-text">My Leave</span>
+      </a>
+      <a href="{% url 'my_professionalism' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="award" size=18 %}
+        <span class="sidebar-link-text">My Professionalism</span>
       </a>
     {% endif %}
 

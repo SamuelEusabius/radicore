@@ -94,6 +94,11 @@ def subscription_view(request):
                 total, duration_days, savings = SchoolSubscription.calculate_price(
                     plan, billing_cycle, contract_years
                 )
+                
+                # --- ADD ICT MODULE FEE TO THE TOTAL ---
+                ict_fee = subscription.ict_module_fee if subscription else 0
+                total += ict_fee
+                
                 subscription.plan = plan
                 subscription.billing_cycle = billing_cycle
                 subscription.contract_years = contract_years if billing_cycle == 'contract' else 0
@@ -129,6 +134,11 @@ def subscription_view(request):
             except SubscriptionPlan.DoesNotExist:
                 messages.error(request, 'Invalid plan selected.')
 
+    # --- CALCULATE BILLING DISPLAY VARIABLES ---
+    base_price = subscription.plan.price_kes if (subscription and subscription.plan) else 0
+    ict_fee = subscription.ict_module_fee if subscription else 0
+    total_due = base_price + ict_fee
+
     return render(request, 'dashboard/subscription.html', {
         'school': school,
         'schools': all_schools,
@@ -136,8 +146,11 @@ def subscription_view(request):
         'subscription': subscription,
         'pricing_matrix': pricing_matrix,
         'is_super_admin': user.role == 'super_admin',
+        # Add the new billing context here
+        'base_price': base_price,
+        'ict_fee': ict_fee,
+        'total_due': total_due,
     })
-
 
 @login_required
 def subscription_edit_admin(request, school_id):

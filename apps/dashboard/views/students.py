@@ -832,22 +832,120 @@ def bulk_upload_students(request):
 
     return render(request, 'dashboard/students/bulk_upload.html')
 
+import qrcode
+import base64
+from io import BytesIO
+from django.urls import reverse
+
 @login_required
 def student_id_card(request, student_id):
     """Print-ready view for a Student ID card."""
     from apps.students.models import Student
     
-    # Allow admins, teachers, and principals to print IDs
-    # Add 'ict_officer' to the allowed roles
-    if request.user.role not in ('principal','secretary', 'deputy_admin', 'ict_officer'):
+    if request.user.role not in ('principal', 'super_admin', 'secretary', 'teacher', 'deputy_admin', 'ict_officer'):
         return redirect('dashboard_home')
-    
-    # Ensure they can only print IDs for students in their own school
+
     school = request.user.school
     student = get_object_or_404(Student, id=student_id, school=school)
-    
+
+    # 1. Generate the absolute URL for the student bio page
+    # (We will use a public URL so security guards can scan it without logging in)
+    bio_url = request.build_absolute_uri(f'/student-bio/{student.id}/')
+
+    # 2. Generate the QR Code
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_L,
+        box_size=10,
+        border=1,
+    )
+    qr.add_data(bio_url)
+    qr.make(fit=True)
+    img = qr.make_image(fill_color="#0f172a", back_color="white")
+
+    # 3. Convert to Base64 string
+    buffer = BytesIO()
+    img.save(buffer, format="PNG")
+    qr_base64 = base64.b64encode(buffer.getvalue()).decode('utf-8')
 
     return render(request, 'dashboard/student_id_card.html', {
         'student': student,
         'school': school,
+        'qr_code': qr_base64,
+    })
+
+def public_student_bio(request, student_id):
+    """A public, mobile-friendly bio-data page for QR code scanning."""
+    from apps.students.models import Student
+    
+    # No login required for this view, but we only show non-sensitive info
+    student = get_object_or_404(Student, id=student_id)
+
+    return render(request, 'public/student_bio.html', {
+        'student': student,
+    })
+    
+import qrcode
+import base64
+from io import BytesIO
+
+@login_required
+def bulk_print_student_ids(request):
+    """Generate a print-ready page for multiple student IDs filtered by class."""
+    if request.user.role not in ('principal', 'super_admin', 'secretary', 'ict_officer', 'deputy_admin'):
+        return redirect('dashboard_home')
+
+    from apps.students.models import Student
+    from apps.academics.models import ClassLevel
+
+    school = request.user.school
+    classes = ClassLevel.objects.filter(school=school).order_by('name')
+    
+    selected_class_id = request.GET.get('class_id', '').strip()
+    selected_class_name = ""
+    students_data = []
+
+    if selected_class_id:
+        # Fetch the class to get its exact name
+        selected_class = ClassLevel.objects.filter(id=selected_class_id, school=school).first()
+        
+        if selected_class:
+            selected_class_name = selected_class.name
+            
+            # Query students using the exact name
+            students_qs = Student.objects.filter(
+                school=school, 
+                class_level=selected_class_name, 
+                is_active=True
+            )
+            
+            for student in students_qs:
+                bio_url = request.build_absolute_uri(f'/student-bio/{student.id}/')
+                qr = qrcode.QRCode(version=1, error_correction=qrcode.constants.ERROR_CORRECT_L, box_size=10, border=1)
+                qr.add_data(bio_url)
+                qr.make(fit=True)
+                img = qr.make_image(fill_color="#0f172a", back_color="white")
+                
+                buffer = BytesIO()
+                img.save(buffer, format="PNG")
+                qr_base64 = base64.b64encode(buffer.getvalue()).decode('utf-8')
+                
+                students_data.append({
+                    'student': student,
+                    'qr_code': qr_base64
+                })
+
+    # CHUNK THE STUDENTS INTO GROUPS OF 4 for Duplex
+    chunked_students = []
+    for i in range(0, len(students_data), 4):
+        chunk = students_data[i:i + 4]
+        chunked_students.append(chunk)
+
+    return render(request, 'dashboard/bulk_id_print.html', {
+        'school': school,
+        'classes': classes,
+        'selected_class_id': selected_class_id,
+        'selected_class_name': selected_class_name,
+        'chunked_students': chunked_students,
+        'total_students': len(students_data),
     })

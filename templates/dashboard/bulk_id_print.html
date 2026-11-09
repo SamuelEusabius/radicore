@@ -1,0 +1,239 @@
+{% extends 'base.html' %}
+{% block title %}Bulk Print Student IDs{% endblock %}
+{% block header_title %}Bulk Print Student IDs{% endblock %}
+
+{% block content %}
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+    /* =========================================
+       UI SELECTION STYLES (Hidden on Print)
+       ========================================= */
+    .selection-card { background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 32px; max-width: 600px; margin: 40px auto; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+    .form-select { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; margin-bottom: 20px; font-family: 'Inter', sans-serif; }
+    .btn-generate { background: #10b981; color: white; padding: 12px 24px; border-radius: 8px; font-weight: 600; border: none; cursor: pointer; width: 100%; }
+
+    /* =========================================
+       PRINT GRID STYLES (Screen Preview)
+       ========================================= */
+    .preview-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; justify-content: center; padding: 20px; }
+
+    /* Standard CR80 Card Dimensions */
+    .id-card { width: 340px; height: 214px; border-radius: 12px; position: relative; overflow: hidden; font-family: 'Inter', sans-serif; box-shadow: 0 4px 6px rgba(0,0,0,0.1); background: white; color: white; }
+
+    /* --- FRONT CARD THEMES --- */
+    .front-card {
+        {% if school.id_card_theme == 'midnight' %} background: #000000; border: 1px solid #333;
+        {% elif school.id_card_theme == 'tech' %} background-color: #000; background-image: radial-gradient(#1e3a8a 1px, transparent 1px); background-size: 8px 8px;
+        {% elif school.id_card_theme == 'royal' %} background: linear-gradient(135deg, #2e1065 0%, #6b21a8 50%, #a855f7 100%);
+        {% elif school.id_card_theme == 'gold' %} background: #1c1917; border: 2px solid #fde047; color: #fde047;
+        {% elif school.id_card_theme == 'crimson' %} background: linear-gradient(135deg, #450a0a 0%, #b91c1c 50%, #ef4444 100%);
+        {% elif school.id_card_theme == 'emerald' %} background: linear-gradient(135deg, #064e3b 0%, #047857 50%, #10b981 100%);
+        {% elif school.id_card_theme == 'sunset' %} background: linear-gradient(135deg, #7c2d12 0%, #ea580c 50%, #f472b6 100%);
+        {% elif school.id_card_theme == 'cyberpunk' %} background: linear-gradient(135deg, #2e1065 0%, #86198f 50%, #f472b6 100%);
+        {% elif school.id_card_theme == 'crisp' %} background: #f8fafc; border: 1px solid #cbd5e1; color: #0f172a;
+        {% else %} background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #3b82f6 100%); {% endif %}
+    }
+    .front-card::before { content: ''; position: absolute; top: 0; right: 0; bottom: 0; left: 0; background-image: radial-gradient(circle at 100% 0%, rgba(255, 255, 255, 0.15) 0%, transparent 50%), repeating-linear-gradient(45deg, rgba(255,255,255,0.03) 0px, rgba(255,255,255,0.03) 2px, transparent 2px, transparent 8px); pointer-events: none; }
+    
+    {% if school.id_card_theme == 'crisp' %}
+    .front-card .brand-header { border-bottom: 1px solid #e2e8f0; }
+    .front-card .card-title { color: #64748b; }
+    .front-card .staff-name { color: #0f172a; text-shadow: none; }
+    .front-card .staff-designation { color: #3b82f6; }
+    .front-card .info-item label { color: #64748b; }
+    .front-card .info-item span { color: #0f172a; }
+    .front-card .signature-box label { color: #64748b; }
+    .front-card .signature-line { background: #cbd5e1; }
+    .front-card .brand-logo-text { color: #0f172a; }
+    {% endif %}
+
+    .brand-header { display: flex; justify-content: space-between; align-items: center; padding: 14px 20px; border-bottom: 1px solid rgba(255,255,255,0.15); position: relative; z-index: 2; }
+    .brand-logo-text { font-size: 14px; font-weight: 800; letter-spacing: -0.3px; display: flex; align-items: center; gap: 8px; }
+    .card-logo-img { height: 24px; width: auto; object-fit: contain; mix-blend-mode: screen; }
+    {% if school.id_card_theme == 'crisp' or school.id_card_theme == 'gold' %}
+    .card-logo-img { mix-blend-mode: normal; }
+    {% endif %}
+    .card-title { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: rgba(255,255,255,0.8); }
+
+    .front-body { display: flex; padding: 14px 20px; gap: 16px; position: relative; z-index: 2; }
+    .staff-photo { width: 75px; height: 95px; border-radius: 8px; background: rgba(255,255,255,0.1); border: 2px solid rgba(255, 255, 255, 0.4); object-fit: cover; display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: 800; color: rgba(255,255,255,0.6); box-shadow: 0 4px 6px rgba(0,0,0,0.2); flex-shrink: 0; overflow: hidden; }
+    .staff-details { flex: 1; display: flex; flex-direction: column; justify-content: flex-start; padding-top: 4px; }
+    .staff-name { font-size: 17px; font-weight: 800; line-height: 1.1; letter-spacing: -0.3px; text-transform: uppercase; color: white; margin-bottom: 4px; text-shadow: 0 1px 2px rgba(0,0,0,0.3); }
+    .staff-designation { font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.9); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px; }
+    .info-item label { display: block; font-size: 7.5px; font-weight: 600; color: rgba(255,255,255,0.65); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 1px; }
+    .info-item span { display: block; font-size: 10px; font-weight: 700; color: white; font-family: 'Inter', monospace; letter-spacing: 0.5px; }
+    .signature-box { position: absolute; bottom: 12px; right: 20px; text-align: center; z-index: 2; }
+    .card-signature-img { height: 24px; max-width: 85px; object-fit: contain; display: block; margin: 0 auto 2px auto; background: white; padding: 2px 4px; border-radius: 4px; }
+    .signature-line { width: 65px; height: 1px; background: rgba(255,255,255,0.3); margin-bottom: 2px; }
+    .signature-box label { font-size: 7px; font-weight: 600; color: rgba(255,255,255,0.7); text-transform: uppercase; }
+
+    /* --- BACK CARD --- */
+    .back-card { background: #ffffff; color: #0f172a; border: 1px solid #e2e8f0; display: flex; flex-direction: column; }
+    .back-header {
+        {% if school.id_card_theme == 'midnight' or school.id_card_theme == 'tech' %} background: #000; color: white;
+        {% elif school.id_card_theme == 'royal' %} background: #6b21a8; color: white;
+        {% elif school.id_card_theme == 'gold' %} background: #1c1917; color: #fde047; border-bottom: 2px solid #fde047;
+        {% elif school.id_card_theme == 'crimson' %} background: #b91c1c; color: white;
+        {% elif school.id_card_theme == 'emerald' %} background: #047857; color: white;
+        {% elif school.id_card_theme == 'sunset' %} background: #ea580c; color: white;
+        {% elif school.id_card_theme == 'cyberpunk' %} background: #86198f; color: white;
+        {% elif school.id_card_theme == 'crisp' %} background: #f1f5f9; color: #0f172a; border-bottom: 1px solid #cbd5e1;
+        {% else %} background: #1e3a8a; color: white; {% endif %}
+        height: 32px; display: flex; align-items: center; justify-content: center; padding: 0 16px; font-weight: 700; font-size: 10px; letter-spacing: 0.5px;
+    }
+    .back-body { padding: 12px 16px; display: flex; flex-direction: column; flex: 1; justify-content: space-between; }
+    .disclaimer { font-size: 8.5px; line-height: 1.5; color: #475569; text-align: center; margin-bottom: 8px; font-weight: 500; }
+    .contact-info { font-size: 9px; color: #1e3a8a; font-weight: 700; text-align: center; line-height: 1.5; }
+    .back-footer { display: flex; justify-content: space-between; align-items: flex-end; margin-top: auto; }
+
+    /* =========================================
+       PRINT MEDIA QUERY (Duplex Logic)
+       ========================================= */
+    @media print {
+        @page { size: A4 portrait; margin: 10mm; }
+        body { background: white; margin: 0; padding: 0; }
+        
+        /* Hide screen elements */
+        .no-print, .selection-card, .preview-grid, header, aside, nav, .topbar { display: none !important; }
+
+        /* Show the dedicated print blocks */
+        .print-page { display: block !important; }
+
+        /* Setup the 2x2 Grid for A4 page */
+        .print-grid {
+            display: grid !important;
+            grid-template-columns: 1fr 1fr !important;
+            grid-template-rows: 1fr 1fr !important;
+            gap: 15px;
+            padding: 0;
+            margin: 0 auto;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            max-width: 210mm;
+            page-break-inside: avoid;
+        }
+
+        .id-card {
+            display: flex !important;
+            flex-direction: column !important;
+            box-shadow: none !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+            margin: 0 auto;
+            transform: scale(0.95); /* Ensures 2x2 fits A4 */
+        }
+
+        /* Force page breaks */
+        .page-break {
+            page-break-after: always !important;
+            break-after: page !important;
+            height: 0;
+            display: block;
+        }
+        
+        .page-break:last-child {
+            page-break-after: auto !important;
+            break-after: auto !important;
+        }
+    }
+</style>
+
+<!-- UI TO SELECT CLASS (Hidden on print) -->
+<div class="selection-card no-print">
+    <h3 style="margin: 0 0 16px 0; font-size: 20px; font-weight: 700; color: #0f172a; display: flex; justify-content: center; align-items: center; gap: 8px;">
+        {% include 'partials/icons.html' with name="printer" size=24 %} Bulk Print ID Cards
+    </h3>
+    <p style="color: #64748b; font-size: 14px; margin-bottom: 24px;">Select a class to generate and print all student ID cards for that group.</p>
+    
+    <!-- Use class_id instead of class name for accurate matching -->
+    <form method="get">
+        <select name="class_id" class="form-select">
+            <option value="">— Select a Class —</option>
+            {% for c in classes %}
+                <option value="{{ c.id }}" {% if selected_class_id == c.id|stringformat:"s" %}selected{% endif %}>{{ c.name }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit" class="btn-generate">
+            Generate IDs
+        </button>
+    </form>
+
+    {% if selected_class_id %}
+        <div style="margin-top: 24px; display: flex; gap: 12px; justify-content: center;">
+            <button onclick="window.print()" class="btn-primary" style="background: #0f172a; color: white; padding: 12px 32px; border-radius: 8px; font-weight: 600; font-size: 14px; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;">
+                {% include 'partials/icons.html' with name="printer" size=18 %} Print All ({{ total_students }})
+            </button>
+            <a href="{% url 'students_list' %}" style="background: white; color: #475569; padding: 12px 32px; border-radius: 8px; font-weight: 600; font-size: 14px; text-decoration: none; border: 1px solid #cbd5e1; display: inline-flex; align-items: center;">
+                Cancel
+            </a>
+        </div>
+    {% endif %}
+</div>
+
+<!-- ACTUAL PRINT LAYOUT (Duplex Logic) -->
+<div class="print-page" style="display: none;">
+    
+    {% for chunk in chunked_students %}
+        <!-- FRONTS PAGE (Page 1, Page 3, Page 5...) -->
+        <div class="print-grid">
+            {% for data in chunk %}
+                <div class="id-card front-card">
+                    <div class="brand-header">
+                        <div class="brand-logo-text">
+                            {% if school.logo %}<img src="{{ school.logo.url }}" alt="Logo" class="card-logo-img">{% endif %}
+                            {{ school.name }}
+                        </div>
+                        <div class="card-title">Student ID</div>
+                    </div>
+                    <div class="front-body">
+                        <div class="staff-photo">{% if data.student.photo %}<img src="{{ data.student.photo.url }}" style="width:100%; height:100%; object-fit:cover;">{% else %}{{ data.student.first_name|first|upper }}{% endif %}</div>
+                        <div class="staff-details">
+                            <div class="staff-name">{{ data.student.first_name }} {{ data.student.last_name }}</div>
+                            <div class="staff-designation">Grade: {{ data.student.class_level }}</div>
+                            <div class="info-grid">
+                                <div class="info-item"><label>Admission No</label><span>{{ data.student.admission_number }}</span></div>
+                                <div class="info-item"><label>Gender</label><span>{{ data.student.get_gender_display }}</span></div>
+                                <div class="info-item"><label>Guardian</label><span>{{ data.student.guardian_name|truncatechars:12 }}</span></div>
+                                <div class="info-item"><label>Valid</label><span>{{ school.id_card_valid_year|default:"2026" }}</span></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="signature-box">
+                        {% if school.principal_signature %}<img src="{{ school.principal_signature.url }}" class="card-signature-img">{% else %}<div class="signature-line"></div>{% endif %}
+                        <label>Principal</label>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        
+        <!-- PAGE BREAK (Forces the Backs to page 2) -->
+        <div class="page-break"></div>
+
+        <!-- BACKS PAGE (Page 2, Page 4, Page 6...) -->
+        <div class="print-grid">
+            {% for data in chunk %}
+                <div class="id-card back-card">
+                    <div class="back-header">{{ school.name }} &bull; {{ school.motto|default:"Knowledge is Power" }}</div>
+                    <div class="back-body">
+                        <div class="disclaimer">This Identification Card is the property of {{ school.name }}.<br>If found, please return to the school administration office.</div>
+                        <div class="contact-info">{{ school.email }}<br>{{ school.phone|default:"School Office" }}</div>
+                        <div class="back-footer">
+                            <div style="text-align: left;"><div style="width: 60px; border-bottom: 1px solid #94a3b8;"></div><div style="font-size: 7px; font-weight: 700; color: #64748b; margin-top: 3px;">STUDENT SIGN</div></div>
+                            <div style="text-align: right;"><img src="data:image/png;base64,{{ data.qr_code }}" style="width: 45px; height: 45px;"></div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <!-- PAGE BREAK for next batch of students -->
+        {% if not forloop.last %}
+            <div class="page-break"></div>
+        {% endif %}
+    {% endfor %}
+</div>
+
+{% endblock %}

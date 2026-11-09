@@ -723,21 +723,45 @@ def _ct_teacher_and_class(request):
         return teacher, None
     return teacher, teacher.current_class
 
+import qrcode
+import base64
+from io import BytesIO
+
 @login_required
 def teacher_id_card(request, teacher_id):
     """Print-ready view for a Teacher ID card."""
     from apps.teachers.models import Teacher
     
-    # Add 'ict_officer' to the allowed roles
-    if request.user.role not in ('principal', 'secretary', 'deputy_admin', 'ict_officer'):
+    if request.user.role not in ('principal', 'super_admin', 'secretary', 'deputy_admin', 'ict_officer'):
         return redirect('dashboard_home')
 
     school = request.user.school
     teacher = get_object_or_404(Teacher, id=teacher_id, school=school)
 
+    # 1. Generate the absolute URL for the teacher bio page (or use a placeholder for now)
+    # We will point it to a public teacher bio page
+    bio_url = request.build_absolute_uri(f'/teacher-bio/{teacher.id}/')
+
+    # 2. Generate the QR Code
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_L,
+        box_size=10,
+        border=1,
+    )
+    qr.add_data(bio_url)
+    qr.make(fit=True)
+    img = qr.make_image(fill_color="#0f172a", back_color="white")
+
+    # 3. Convert to Base64 string
+    buffer = BytesIO()
+    img.save(buffer, format="PNG")
+    qr_base64 = base64.b64encode(buffer.getvalue()).decode('utf-8')
+
     return render(request, 'dashboard/teacher_id_card.html', {
         'teacher': teacher,
         'school': school,
+        'qr_code': qr_base64,
     })
     
 @login_required
@@ -858,3 +882,12 @@ def edit_teacher(request, teacher_id):
         }
     }
     return render(request, 'dashboard/add_teacher.html', context)
+
+def public_teacher_bio(request, teacher_id):
+    """A public, mobile-friendly bio-data page for Teacher QR code scanning."""
+    from apps.teachers.models import Teacher
+    teacher = get_object_or_404(Teacher, id=teacher_id)
+
+    return render(request, 'public/teacher_bio.html', {
+        'teacher': teacher,
+    })

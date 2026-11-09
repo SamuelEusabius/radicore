@@ -3,7 +3,7 @@
 {% block header_title %}Print Student ID{% endblock %}
 
 {% block content %}
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Libre+Barcode+39&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
 <style>
     /* Standard CR80 Card Dimensions */
@@ -34,54 +34,53 @@
 
     /* ==================== FRONT CARD THEMES ==================== */
     .front-card {
-        {% if school.id_card_theme == 'mesh' %}
-            background: linear-gradient(45deg, #1e3a8a, #6b21a8, #f472b6, #3b82f6);
-            background-size: 300% 300%;
-            animation: gradientBG 10s ease infinite;
-        {% elif school.id_card_theme == 'hexagon' %}
-            background-color: #064e3b;
-            background-image: radial-gradient(circle at 50% 50%, rgba(16,185,129,0.3) 0%, transparent 60%), repeating-linear-gradient(60deg, #047857 0, #047857 2px, transparent 2px, transparent 10px);
-        {% elif school.id_card_theme == 'stripes' %}
-            background-color: #450a0a;
-            background-image: repeating-linear-gradient(45deg, #b91c1c 0, #b91c1c 2px, transparent 2px, transparent 10px);
+        {% if school.id_card_theme == 'midnight' %}
+            background: #000000; border: 1px solid #333;
         {% elif school.id_card_theme == 'tech' %}
-            background-color: #000;
-            background-image: radial-gradient(#1e3a8a 1px, transparent 1px);
-            background-size: 8px 8px;
+            background-color: #000; background-image: radial-gradient(#1e3a8a 1px, transparent 1px); background-size: 8px 8px;
+        {% elif school.id_card_theme == 'royal' %}
+            background: linear-gradient(135deg, #2e1065 0%, #6b21a8 50%, #a855f7 100%);
+        {% elif school.id_card_theme == 'gold' %}
+            background: #1c1917; border: 2px solid #fde047; color: #fde047;
+        {% elif school.id_card_theme == 'crimson' %}
+            background: linear-gradient(135deg, #450a0a 0%, #b91c1c 50%, #ef4444 100%);
+        {% elif school.id_card_theme == 'emerald' %}
+            background: linear-gradient(135deg, #064e3b 0%, #047857 50%, #10b981 100%);
         {% elif school.id_card_theme == 'sunset' %}
             background: linear-gradient(135deg, #7c2d12 0%, #ea580c 50%, #f472b6 100%);
-        {% elif school.id_card_theme == 'gold' %}
-            background-color: #1c1917;
-            background-image: radial-gradient(circle at 10% 20%, rgba(253,224,71,0.2) 0%, transparent 30%), linear-gradient(135deg, #422006, #a16207);
-        {% elif school.id_card_theme == 'forest' %}
-            background-color: #14532d;
-            background-image: repeating-linear-gradient(-45deg, #166534 0, #166534 1px, transparent 1px, transparent 6px);
         {% elif school.id_card_theme == 'cyberpunk' %}
             background: linear-gradient(135deg, #2e1065 0%, #86198f 50%, #f472b6 100%);
-        {% elif school.id_card_theme == 'slate' %}
-            background-color: #1e293b;
-            background-image: linear-gradient(0deg, transparent 24%, rgba(148, 163, 184, 0.2) 25%, rgba(148, 163, 184, 0.2) 26%, transparent 27%, transparent 74%, rgba(148, 163, 184, 0.2) 75%, rgba(148, 163, 184, 0.2) 76%, transparent 77%, transparent);
+        {% elif school.id_card_theme == 'crisp' %}
+            background: #f8fafc; border: 1px solid #cbd5e1; color: #0f172a;
         {% else %}
-            /* Default Ocean */
+            /* Ocean Blue Default */
             background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #3b82f6 100%);
         {% endif %}
     }
 
-    /* Animation for Mesh theme */
-    @keyframes gradientBG {
-        0% { background-position: 0% 50%; }
-        50% { background-position: 100% 50%; }
-        100% { background-position: 0% 50%; }
-    }
+    /* Premium Geometric Pattern Overlay */
     .front-card::before {
         content: '';
         position: absolute;
         top: 0; right: 0; bottom: 0; left: 0;
         background-image: 
             radial-gradient(circle at 100% 0%, rgba(255, 255, 255, 0.15) 0%, transparent 50%),
-            repeating-linear-gradient(45deg, rgba(255,255,255,0.02) 0px, rgba(255,255,255,0.02) 2px, transparent 2px, transparent 8px);
+            repeating-linear-gradient(45deg, rgba(255,255,255,0.03) 0px, rgba(255,255,255,0.03) 2px, transparent 2px, transparent 8px);
         pointer-events: none;
     }
+
+    /* Crisp Theme Overrides for Text Colors */
+    {% if school.id_card_theme == 'crisp' %}
+    .front-card .brand-header { border-bottom: 1px solid #e2e8f0; }
+    .front-card .card-title { color: #64748b; }
+    .front-card .staff-name { color: #0f172a; text-shadow: none; }
+    .front-card .staff-designation { color: #3b82f6; }
+    .front-card .info-item label { color: #64748b; }
+    .front-card .info-item span { color: #0f172a; }
+    .front-card .signature-box label { color: #64748b; }
+    .front-card .signature-line { background: #cbd5e1; }
+    .front-card .brand-logo-text { color: #0f172a; }
+    {% endif %}
 
     .brand-header {
         display: flex;
@@ -108,6 +107,9 @@
         object-fit: contain;
         mix-blend-mode: screen; 
     }
+    {% if school.id_card_theme == 'crisp' or school.id_card_theme == 'gold' %}
+    .card-logo-img { mix-blend-mode: normal; }
+    {% endif %}
 
     .card-title {
         font-size: 9px;
@@ -152,13 +154,14 @@
     }
 
     .staff-name {
-        font-size: 16px;
+        font-size: 17px;
         font-weight: 800;
         line-height: 1.1;
         letter-spacing: -0.3px;
         text-transform: uppercase;
         color: white;
         margin-bottom: 4px;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.3);
     }
 
     .staff-designation {
@@ -208,7 +211,7 @@
         max-width: 85px;
         object-fit: contain;
         display: block;
-        margin: 0 auto 2px auto;/
+        margin: 0 auto 2px auto;
         background: white;
         padding: 2px 4px;
         border-radius: 4px;
@@ -238,34 +241,20 @@
     }
 
     .back-header {
-        /* Matches the theme gradient for the back header */
-        {% if school.id_card_theme == 'emerald' %}
-            background: linear-gradient(90deg, #064e3b 0%, #047857 100%);
-        {% elif school.id_card_theme == 'royal' %}
-            background: linear-gradient(90deg, #2e1065 0%, #6b21a8 100%);
-        {% elif school.id_card_theme == 'crimson' %}
-            background: linear-gradient(90deg, #450a0a 0%, #b91c1c 100%);
-        {% elif school.id_card_theme == 'slate' %}
-            background: linear-gradient(90deg, #1e293b 0%, #475569 100%);
-        {% elif school.id_card_theme == 'midnight' %}
-            background: linear-gradient(90deg, #000000 0%, #1e3a8a 100%);
-        {% elif school.id_card_theme == 'sunset' %}
-            background: linear-gradient(90deg, #7c2d12 0%, #f472b6 100%);
-        {% elif school.id_card_theme == 'gold' %}
-            background: linear-gradient(90deg, #422006 0%, #fde047 100%);
-        {% elif school.id_card_theme == 'forest' %}
-            background: linear-gradient(90deg, #14532d 0%, #84cc16 100%);
-        {% elif school.id_card_theme == 'cyberpunk' %}
-            background: linear-gradient(90deg, #2e1065 0%, #f472b6 100%);
-        {% else %}
-            background: linear-gradient(90deg, #0f172a 0%, #1e3a8a 100%);
-        {% endif %}
+        {% if school.id_card_theme == 'midnight' or school.id_card_theme == 'tech' %} background: #000; color: white;
+        {% elif school.id_card_theme == 'royal' %} background: #6b21a8; color: white;
+        {% elif school.id_card_theme == 'gold' %} background: #1c1917; color: #fde047; border-bottom: 2px solid #fde047;
+        {% elif school.id_card_theme == 'crimson' %} background: #b91c1c; color: white;
+        {% elif school.id_card_theme == 'emerald' %} background: #047857; color: white;
+        {% elif school.id_card_theme == 'sunset' %} background: #ea580c; color: white;
+        {% elif school.id_card_theme == 'cyberpunk' %} background: #86198f; color: white;
+        {% elif school.id_card_theme == 'crisp' %} background: #f1f5f9; color: #0f172a; border-bottom: 1px solid #cbd5e1;
+        {% else %} background: #1e3a8a; color: white; {% endif %}
         height: 32px;
         display: flex;
         align-items: center;
         justify-content: center;
         padding: 0 16px;
-        color: white;
         font-weight: 700;
         font-size: 10px;
         letter-spacing: 0.5px;
@@ -303,22 +292,27 @@
         margin-top: auto;
     }
 
-    .barcode {
-        font-family: 'Libre Barcode 39', cursive;
-        font-size: 30px;
-        color: #0f172a;
-        line-height: 0.8;
-        transform: scaleY(1.2);
-    }
-
-    /* ==================== PRINT STYLES ==================== */
+    /* ==================== DUPLEX PRINT STYLES ==================== */
     @media print {
-        @page { size: landscape; margin: 0; }
+        @page { size: portrait; margin: 0; }
         body { background: white; margin: 0; padding: 0; }
         body * { visibility: hidden; }
         .print-area, .print-area * { visibility: visible; }
-        .print-area { position: absolute; left: 0; top: 0; width: 100%; display: flex; gap: 20px; justify-content: center; align-items: center; background: white; }
-        .id-card { box-shadow: none; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        
+        .print-area { 
+            position: absolute; left: 0; top: 0; width: 100%; 
+            display: flex; flex-direction: column; gap: 20px; align-items: center; background: white;
+        }
+        
+        .id-card {
+            box-shadow: none;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+            page-break-after: always; 
+            page-break-inside: avoid;
+            margin: 0 auto;
+        }
+        .id-card:last-child { page-break-after: auto; }
         .no-print { display: none !important; }
     }
 </style>
@@ -375,7 +369,7 @@
             </div>
 
             <!-- Front Signature -->
- <div class="signature-box">
+            <div class="signature-box">
                 {% if school.principal_signature %}
                     <img src="{{ school.principal_signature.url }}" alt="Signature" class="card-signature-img">
                 {% else %}
@@ -403,15 +397,16 @@
                     {{ school.physical_address|default:"Nairobi, Kenya" }}
                 </div>
 
-                <!-- Back Barcode -->
+                <!-- Back QR Code -->
                 <div class="back-footer">
                     <div style="text-align: left;">
                         <div style="width: 60px; border-bottom: 1px solid #94a3b8;"></div>
                         <div style="font-size: 7px; font-weight: 700; color: #64748b; margin-top: 3px; text-transform: uppercase;">Student Sign</div>
                     </div>
                     
-                    <div class="barcode">
-                        *{{ student.admission_number }}*
+                    <div style="text-align: right;">
+                        <img src="data:image/png;base64,{{ qr_code }}" alt="QR Code" style="width: 45px; height: 45px; border-radius: 4px;">
+                        <div style="font-size: 6px; color: #64748b; text-align: center; margin-top: 2px;">Scan to Verify</div>
                     </div>
                 </div>
             </div>

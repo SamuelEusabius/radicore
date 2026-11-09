@@ -139,6 +139,11 @@ urlpatterns = [
     path('ict/student/<int:student_id>/photo/', users.ict_upload_student_photo, name='ict_upload_student_photo'),
     path('ict/teacher/<int:teacher_id>/photo/', users.ict_upload_teacher_photo, name='ict_upload_teacher_photo'),
     path('ict/staff/<int:staff_id>/photo/', users.ict_upload_staff_photo, name='ict_upload_staff_photo'),
+    path('student-bio/<int:student_id>/', views.students.public_student_bio, name='public_student_bio'),
+    path('teacher-bio/<int:teacher_id>/', views.teachers.public_teacher_bio, name='public_teacher_bio'),
+    path('students/bulk-print-ids/', views.students.bulk_print_student_ids, name='bulk_print_student_ids'),
+    path('ict/users/', users.ict_manage_users, name='ict_manage_users'),
+    path('ict/users/<int:user_id>/change-password/', users.ict_user_change_password, name='ict_user_change_password'),
     
         # ========== CLASS TEACHER ==========
             path('teacher/my-class/grades/',
