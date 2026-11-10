@@ -81,29 +81,32 @@
     width: 100%;
     border-collapse: collapse;
     margin-bottom: 10px;
+    table-layout: fixed; /* CRITICAL: Fixes the column squishing */
   }
   table.data thead th {
     background: #1a2332;
     color: #ffffff;
-    padding: 8px 5px;
+    padding: 6px 3px; /* Reduced padding to fit */
     text-align: left;
-    font-size: 8px;
+    font-size: 7px; /* Smaller font to fit subject names */
     text-transform: uppercase;
     letter-spacing: 0.04em;
     border: 1px solid #0f172a;
+    word-wrap: break-word;
   }
   table.data thead th.center { text-align: center; }
 
   table.data tbody td {
-    padding: 7px 5px;
-    font-size: 9px;
+    padding: 5px 3px; /* Reduced padding */
+    font-size: 8px;
     border: 1px solid #e5e7eb;
     vertical-align: middle;
-    background: #ffffff;      /* ← pure white default */
+    background: #ffffff;      
+    word-wrap: break-word;
   }
   table.data tbody td.center { text-align: center; }
 
-  /* Light cream for top 3 only — same as class results sheet */
+  /* Light cream for top 3 only */
   table.data tbody tr.top-3 td {
     background: #fef9c3;
     color: #111827;
@@ -119,10 +122,10 @@
     color: #004d40;
   }
 
-  /* ============ BADGES (matching class results sheet) ============ */
+  /* ============ BADGES ============ */
   .badge {
     display: inline-block;
-    padding: 3px 8px;
+    padding: 2px 6px;
     border-radius: 3px;
     font-size: 8px;
     font-weight: 700;
@@ -261,16 +264,16 @@
   <table class="data">
     <thead>
       <tr>
-        <th class="center" style="width: 30px;">#</th>
-        <th class="center" style="width: 60px;">Adm No</th>
-        <th style="min-width: 120px;">Student Name</th>
+        <th class="center" style="width: 3%;">#</th>
+        <th class="center" style="width: 9%;">Adm No</th>
+        <th style="width: 20%;">Student Name</th>
         {% for sub in subjects %}
           <th class="center">{{ sub.name }}</th>
         {% endfor %}
-        <th class="center">Total</th>
-        <th class="center">Avg %</th>
-        <th class="center">Grade</th>
-        <th class="center">Rank</th>
+        <th class="center" style="width: 5%;">Total</th>
+        <th class="center" style="width: 5%;">Avg %</th>
+        <th class="center" style="width: 5%;">Grade</th>
+        <th class="center" style="width: 5%;">Rank</th>
       </tr>
     </thead>
     <tbody>
@@ -278,7 +281,7 @@
       <tr {% if row.rank <= 3 %}class="top-3"{% endif %}>
         <td class="center"><strong>{{ forloop.counter }}</strong></td>
         <td class="center">{{ row.student.admission_number }}</td>
-        <td><strong>{{ row.student.first_name }} {{ row.student.last_name }}</strong></td>
+        <td style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><strong>{{ row.student.first_name }} {{ row.student.last_name }}</strong></td>
         {% for mark in row.marks %}
           <td class="center">
             {% if mark is not None %}{{ mark }}{% else %}<span style="color:#9ca3af;">—</span>{% endif %}
@@ -313,7 +316,7 @@
   <table class="data">
     <thead>
       <tr>
-        <th class="center" style="width: 30px;">#</th>
+        <th class="center" style="width: 40px;">#</th>
         <th>Subject</th>
         <th>Best Student</th>
         <th class="center">Mark</th>
@@ -360,7 +363,7 @@
   <table class="data">
     <thead>
       <tr>
-        <th class="center" style="width: 60px;">Rank</th>
+        <th class="center" style="width: 80px;">Rank</th>
         <th>Stream</th>
         <th class="center">Students</th>
         <th class="center">Mean Score</th>
@@ -442,7 +445,7 @@
   <table class="data">
     <thead>
       <tr>
-        <th class="center" style="width: 40px;">Rank</th>
+        <th class="center" style="width: 50px;">Rank</th>
         <th>Subject</th>
         <th class="center">Mean</th>
         <th class="center">Highest</th>

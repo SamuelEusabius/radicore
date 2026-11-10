@@ -85,45 +85,44 @@
   .results-table {
     width: 100%;
     border-collapse: collapse;
-    table-layout: auto;
+    table-layout: fixed; /* CRITICAL: Forces exact equal column widths */
     margin-bottom: 8px;
   }
   .results-table th {
     background: #00695c;
     color: white;
-    font-size: 7pt;
-    padding: 6px 4px;
+    font-size: 6.5pt; /* Reduced font size */
+    padding: 5px 2px; /* Reduced padding */
     text-align: center;
     font-weight: bold;
     border: 1px solid #004d40;
     word-wrap: break-word;
     white-space: normal;
     vertical-align: middle;
-    line-height: 1.2;
+    line-height: 1.1;
   }
   .results-table th.left {
     text-align: left;
   }
-  .results-table th.subject-col {
-    /* Minimum width for subject columns — allows wrapping */
-    min-width: 60px;
-    max-width: 90px;
-  }
   .results-table td {
-    padding: 5px 4px;
-    font-size: 7.5pt;
+    padding: 4px 2px; /* Reduced padding */
+    font-size: 7pt; /* Reduced font size to prevent wrapping */
     border: 1px solid #d1d5db;
     text-align: center;
     word-wrap: break-word;
     white-space: normal;
+    vertical-align: middle;
   }
   .results-table td.left {
     text-align: left;
+    padding-left: 4px;
   }
   .results-table td.student-name {
     font-weight: 600;
     color: #111827;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   .results-table tr:nth-child(even) td {
     background: #f9fafb;
@@ -172,19 +171,21 @@
 </div>
 
 <!-- RESULTS TABLE -->
+<!-- The width math below ensures everything fits perfectly on A4 Landscape -->
 <table class="results-table">
   <thead>
     <tr>
-      <th style="width: 22px;">#</th>
-      <th class="left" style="width: 55px;">Adm No</th>
-      <th class="left" style="min-width: 110px;">Student Name</th>
+      <!-- # is 3%, Adm is 9%, Name is 20%. Remaining ~68% is dynamically split among subjects in CSS -->
+      <th style="width: 3%;">#</th>
+      <th class="left" style="width: 9%;">Adm No</th>
+      <th class="left" style="width: 20%;">Student Name</th>
       {% for sub in subjects %}
-        <th class="subject-col">{{ sub.name }}</th>
+        <th>{{ sub.name }}</th>
       {% endfor %}
-      <th style="width: 38px;">Total</th>
-      <th style="width: 38px;">Avg %</th>
-      <th style="width: 35px;">Grade</th>
-      <th style="width: 30px;">Rank</th>
+      <th style="width: 5%;">Total</th>
+      <th style="width: 5%;">Avg %</th>
+      <th style="width: 5%;">Grade</th>
+      <th style="width: 5%;">Rank</th>
     </tr>
   </thead>
   <tbody>
@@ -192,7 +193,7 @@
     <tr {% if row.rank <= 3 and row.rank > 0 %}class="top-3"{% endif %}>
       <td>{{ forloop.counter }}</td>
       <td class="left">{{ row.student.admission_number }}</td>
-      <td class="left student-name">{{ row.student.first_name }} {{ row.student.last_name }}</td>
+      <td class="left student-name" title="{{ row.student.first_name }} {{ row.student.last_name }}">{{ row.student.first_name }} {{ row.student.last_name }}</td>
       {% for cell in row.subject_cells %}
         <td class="grade-{{ cell.grade }}">
           {% if cell.pct is not None %}{{ cell.pct|floatformat:0 }}{% else %}—{% endif %}
