@@ -56,6 +56,7 @@ LOCAL_APPS = [
     'apps.secretary',
     'apps.boarding',
     'apps.locations',
+    "kenyan_counties",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS

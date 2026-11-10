@@ -176,7 +176,7 @@ def add_student(request):
         return redirect('dashboard_home')
     from apps.students.models import Student
     from apps.academics.models import ClassLevel
-    from apps.locations.models import County, Constituency, Ward
+    from kenyan_counties.models import County, Constituency, Ward
 
     school = request.user.school
     classes = ClassLevel.objects.filter(school=school).order_by('order', 'name')
@@ -614,7 +614,7 @@ def student_bio_page(request, student_id):
 
     from apps.students.models import Student
     from apps.parents.models import Parent
-    from apps.locations.models import County, Constituency, Ward
+    from kenyan_counties.models import County, Constituency, Ward
 
     school = request.user.school
     student = get_object_or_404(Student, id=student_id, school=school)

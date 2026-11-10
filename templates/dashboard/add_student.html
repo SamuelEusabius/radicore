@@ -153,7 +153,7 @@
         <select name="county_fk" id="id_county" class="form-input">
           <option value="">— Select County —</option>
           {% for county in counties %}
-            <option value="{{ county.id }}" {% if form_data.county_fk_id == county.id %}selected{% endif %}>{{ county.name|upper }}</option>
+            <option value="{{ county.code }}" {% if form_data.county_fk_id == county.code %}selected{% endif %}>{{ county.name|upper }}</option>
           {% endfor %}
         </select>
       </div>
@@ -161,12 +161,22 @@
         <label class="form-label">Constituency</label>
         <select name="constituency_fk" id="id_constituency" class="form-input">
           <option value="">— Select Constituency —</option>
+          {% if edit_constituencies %}
+            {% for c in edit_constituencies %}
+              <option value="{{ c.id }}" {% if form_data.constituency_fk_id == c.id %}selected{% endif %}>{{ c.name|upper }}</option>
+            {% endfor %}
+          {% endif %}
         </select>
       </div>
       <div>
         <label class="form-label">Ward</label>
         <select name="ward_fk" id="id_ward" class="form-input">
           <option value="">— Select Ward —</option>
+          {% if edit_wards %}
+            {% for w in edit_wards %}
+              <option value="{{ w.id }}" {% if form_data.ward_fk_id == w.id %}selected{% endif %}>{{ w.name|upper }}</option>
+            {% endfor %}
+          {% endif %}
         </select>
       </div>
     </div>
@@ -244,11 +254,9 @@
             .then(res => res.json())
             .then(data => {
                constituencySelect.innerHTML = '<option value="">— Select Constituency —</option>';
-               if (data.results) {
-                 data.results.forEach(item => {
-                   constituencySelect.innerHTML += `<option value="${item.id}">${item.name}</option>`;
-                 });
-               }
+               data.forEach(item => {
+                 constituencySelect.innerHTML += `<option value="${item.id}">${item.name.toUpperCase()}</option>`;
+               });
             });
         }
       });
@@ -264,11 +272,9 @@
             .then(res => res.json())
             .then(data => {
                wardSelect.innerHTML = '<option value="">— Select Ward —</option>';
-               if (data.results) {
-                 data.results.forEach(item => {
-                   wardSelect.innerHTML += `<option value="${item.id}">${item.name}</option>`;
-                 });
-               }
+               data.forEach(item => {
+                 wardSelect.innerHTML += `<option value="${item.id}">${item.name.toUpperCase()}</option>`;
+               });
             });
         }
       });

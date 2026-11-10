@@ -1,6 +1,7 @@
 from django.db import models
 from apps.schools.managers import TenantManager
 from django.conf import settings
+from kenyan_counties.models import County, Constituency, Ward
 
 
 class Student(models.Model):
@@ -36,18 +37,14 @@ class Student(models.Model):
         null=True, blank=True,
         related_name='student_profile'
     )
-    
-        # ============ CLEARANCE ============
-    is_cleared = models.BooleanField(default=False)
-    cleared_at = models.DateTimeField(null=True, blank=True)
-    clearance_reason = models.CharField(max_length=200, blank=True, default='')
-    leaving_certificate_notes = models.TextField(blank=True, default='')
-        # ============ CLEARANCE ============
+
+    # ============ CLEARANCE ============
     is_cleared = models.BooleanField(default=False)
     cleared_at = models.DateTimeField(null=True, blank=True)
     clearance_reason = models.CharField(max_length=200, blank=True, default='')
     leaving_certificate_notes = models.TextField(blank=True, default='')
     leaving_certificate_content = models.TextField(blank=True, default='', help_text="Rich HTML body content")
+
     # ============ IDENTIFICATION ============
     upi = models.CharField(max_length=50, blank=True, null=True)
     parent_id_number = models.CharField(max_length=20, blank=True, null=True)
@@ -88,20 +85,20 @@ class Student(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     objects = TenantManager()
-    
-        # ============ LOCATION (Kenyan cascade) ============
+
+    # ============ LOCATION (Kenyan cascade) ============
     county_fk = models.ForeignKey(
-        'locations.County', on_delete=models.SET_NULL,
+        County, on_delete=models.SET_NULL,
         null=True, blank=True, related_name='students',
         db_column='county_fk_id'
     )
     constituency_fk = models.ForeignKey(
-        'locations.Constituency', on_delete=models.SET_NULL,
+        Constituency, on_delete=models.SET_NULL,
         null=True, blank=True, related_name='students',
         db_column='constituency_fk_id'
     )
     ward_fk = models.ForeignKey(
-        'locations.Ward', on_delete=models.SET_NULL,
+        Ward, on_delete=models.SET_NULL,
         null=True, blank=True, related_name='students',
         db_column='ward_fk_id'
     )
@@ -122,6 +119,7 @@ class Student(models.Model):
         default=False,
         help_text="Whether this student is a boarding student"
     )
+
     class Meta:
         ordering = ['first_name', 'last_name']
         unique_together = [('school', 'admission_number')]
@@ -152,17 +150,7 @@ class Student(models.Model):
         """
         Generate the next admission number in format:
         00001B for boys, 00001G for girls.
-
-        Logic:
-        - Scans all existing admission numbers for this school
-        - Finds the highest number used
-        - Adds 1 (or starts at `start_from` if fresh)
-        - Suffixes with B (boy) or G (girl)
-
-        If the last admission number was for the OTHER gender,
-        we keep incrementing (so 00001B → 00002G → 00003B, etc.)
         """
-        # Get all existing admission numbers for this school
         existing = Student.objects.filter(school=school).values_list(
             'admission_number', flat=True
         )
@@ -172,7 +160,6 @@ class Student(models.Model):
         for adm in existing:
             if not adm:
                 continue
-            # Extract leading digits (stop at first non-digit)
             digits = ''
             for ch in adm:
                 if ch.isdigit():
@@ -222,8 +209,7 @@ class CoCurricularActivity(models.Model):
 
     def __str__(self):
         return f"{self.name} — {self.student.full_name}"
-    
-    
+
 
 # ==========================================================
 # STUDENT MOVEMENT LOG (in/out during school hours)
@@ -260,22 +246,18 @@ class StudentMovement(models.Model):
     reason = models.CharField(max_length=25, choices=StudentMovementReason.choices)
     reason_notes = models.TextField(blank=True, default='')
 
-    # Who authorized (deputy, nurse, principal)
     authorized_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
         null=True, blank=True, related_name='student_movements_authorized',
     )
-    # Who physically released/received the student (security, teacher on duty)
     released_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
         null=True, blank=True, related_name='student_movements_released',
     )
 
-    # Guardian notification
     guardian_notified = models.BooleanField(default=False)
     guardian_notified_at = models.DateTimeField(null=True, blank=True)
 
-    # For OUT entries — was the student expected back?
     expected_return_time = models.TimeField(null=True, blank=True)
     actual_return_time = models.TimeField(null=True, blank=True)
 
@@ -382,8 +364,3 @@ class StudentAdminCase(models.Model):
 
     def __str__(self):
         return f"{self.student} — {self.title} ({self.get_status_display()})"
-    
-        # For physical document tracking
-    previous_school_marks = models.CharField(max_length=50, blank=True, null=True)
-    previous_school_mean_grade = models.CharField(max_length=10, blank=True, null=True)
-    parent_id_number = models.CharField(max_length=20, blank=True, null=True)

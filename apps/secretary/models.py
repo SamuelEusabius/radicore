@@ -391,15 +391,15 @@ class AdmissionApplication(models.Model):
 
     # ============ LOCATION (Kenyan cascade) ============
     county_fk = models.ForeignKey(
-        'locations.County', on_delete=models.SET_NULL,
+        'kenyan_counties.County', on_delete=models.SET_NULL,
         null=True, blank=True, related_name='admission_apps',
     )
     constituency_fk = models.ForeignKey(
-        'locations.Constituency', on_delete=models.SET_NULL,
+        'kenyan_counties.Constituency', on_delete=models.SET_NULL,
         null=True, blank=True, related_name='admission_apps',
     )
     ward_fk = models.ForeignKey(
-        'locations.Ward', on_delete=models.SET_NULL,
+        'kenyan_counties.Ward', on_delete=models.SET_NULL,
         null=True, blank=True, related_name='admission_apps',
     )
     sub_county = models.CharField(max_length=50, blank=True, default='')
@@ -433,16 +433,16 @@ class AdmissionApplication(models.Model):
     parent_id_number = models.CharField(max_length=30, blank=True, default='')
     parent_occupation = models.CharField(max_length=100, blank=True, default='')
     parent_county_fk = models.ForeignKey(
-        'locations.County', on_delete=models.SET_NULL,
+        'kenyan_counties.County', on_delete=models.SET_NULL,
         null=True, blank=True, related_name='parent_admission_apps',
     )
     parent_sub_county = models.CharField(max_length=50, blank=True, default='')
     parent_constituency_fk = models.ForeignKey(
-        'locations.Constituency', on_delete=models.SET_NULL,
+        'kenyan_counties.Constituency', on_delete=models.SET_NULL,
         null=True, blank=True, related_name='parent_admission_apps',
     )
     parent_ward_fk = models.ForeignKey(
-        'locations.Ward', on_delete=models.SET_NULL,
+        'kenyan_counties.Ward', on_delete=models.SET_NULL,
         null=True, blank=True, related_name='parent_admission_apps',
     )
     parent_location = models.CharField(max_length=100, blank=True, default='')

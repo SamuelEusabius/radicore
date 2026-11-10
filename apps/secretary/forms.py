@@ -213,7 +213,7 @@ class AdmissionApplicationForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        from apps.locations.models import County, Constituency, Ward
+        from kenyan_counties.models import County, Constituency, Ward
         
         self.fields['county_fk'].queryset = County.objects.all().order_by('name')
         self.fields['parent_county_fk'].queryset = County.objects.all().order_by('name')

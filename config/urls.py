@@ -2,13 +2,14 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from apps.dashboard.views import locations_api
 
 from apps.accounts.views import logout_view, school_blocked
 from apps.accounts.views import logout_view, school_blocked, change_password, profile_view
 from apps.accounts.views import logout_view, school_blocked, change_password, profile_view, super_admin_profile
 
 urlpatterns = [
-    path('api/', include('apps.locations.urls')),
+# path('api/', include('apps.locations.urls')),  # deprecated — using kenyan_counties
     path('admin/', admin.site.urls),
     path('accounts/password/change/', change_password, name='change_password'),
     path('accounts/profile/', profile_view, name='profile_view'),
@@ -37,7 +38,9 @@ urlpatterns = [
     path('dashboard/', include('apps.dashboard.urls')),
     path('', include('apps.schools.public_urls')),
     path('accounts/super-admin/profile/', super_admin_profile, name='super_admin_profile'),
-        path('unallocated/', include('apps.finance.unallocated_urls')),
+    path('unallocated/', include('apps.finance.unallocated_urls')),
+    path('api/locations/constituencies/', locations_api.get_constituencies, name='api_constituencies'),
+    path('api/locations/wards/', locations_api.get_wards, name='api_wards'),
 ]
 
 if settings.DEBUG:

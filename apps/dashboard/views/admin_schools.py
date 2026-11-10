@@ -9,14 +9,14 @@ Admin & Schools views (Super Admin scope):
 """
 
 from django.shortcuts import render, redirect, get_object_or_404
-from apps.locations.models import County
+from kenyan_counties.models import County
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import HttpResponse, JsonResponse
 from django.db.models import Q, Count, Sum
 from django.utils import timezone
 from django.contrib.auth import get_user_model
-from apps.locations.models import County, Constituency, Ward
+from kenyan_counties.models import County, Constituency, Ward
 
 from apps.accounts.roles import (
     Role,
@@ -258,7 +258,7 @@ def school_add(request):
 
     from apps.accounts.models import User
     from apps.schools.models import School, SchoolSubscription
-    from apps.locations.models import County
+    from kenyan_counties.models import County
     from django.utils import timezone
     from datetime import timedelta
 

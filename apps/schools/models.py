@@ -665,16 +665,6 @@ class PlatformStaff(models.Model):
                     break
 
         super().save(*args, **kwargs)
-class CompanyProfile(models.Model):
-    """Global settings for the SaaS Platform"""
-    name = models.CharField(max_length=150, default="LoyTech Developers")
-    signature_image = models.ImageField(upload_to='platform/signatures/', blank=True, null=True)
-    
-    class Meta:
-        verbose_name_plural = "Company Profile"
-
-    def __str__(self):
-        return self.nam    
     
 class CompanyProfile(models.Model):
     """Global settings for the SaaS Platform"""
