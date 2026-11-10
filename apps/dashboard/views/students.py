@@ -26,7 +26,6 @@ from apps.core.pdf_utils import build_pdf_context
 @login_required
 def students_list(request):
     """List all students with filters, search, and pagination."""
-    # Added 'ict_officer' to allowed roles
     if request.user.role not in ('principal', 'deputy_admin', 'deputy_academics', 'secretary', 'teacher', 'ict_officer', 'super_admin'):
         return redirect('dashboard_home')
 
@@ -37,10 +36,8 @@ def students_list(request):
 
     school = request.user.school
     
-    # Base queryset
     qs = Student.objects.filter(school=school).select_related('school').order_by('first_name', 'last_name')
 
-    # Filters
     search = request.GET.get('q', '').strip()
     class_filter = request.GET.get('class', '').strip()
     status_filter = request.GET.get('status', '').strip()
@@ -64,7 +61,6 @@ def students_list(request):
     elif status_filter == 'boarding':
         qs = qs.filter(is_boarding=True)
 
-    # Stats (Unfiltered)
     all_students = Student.objects.filter(school=school)
     stats = {
         'total': all_students.count(),
@@ -73,14 +69,11 @@ def students_list(request):
         'cleared': all_students.filter(is_cleared=True).count(),
     }
 
-    # Get list of unique classes for the filter dropdown
     classes = ClassLevel.objects.filter(school=school).order_by('name').values_list('name', flat=True)
     
-    # Fallback if ClassLevel is empty but students have class_level text
     if not classes:
         classes = Student.objects.filter(school=school).exclude(class_level='').values_list('class_level', flat=True).distinct()
 
-    # Pagination
     paginator = Paginator(qs, 25)
     page_obj = paginator.get_page(request.GET.get('page', 1))
 
@@ -106,17 +99,12 @@ def student_dash(request):
     from apps.attendance.models import Attendance
     from apps.finance.models import Invoice
 
-    # Get the student profile
     try:
         student = request.user.student_profile
     except Student.DoesNotExist:
-        # Profile not linked → show friendly page (NO redirect)
         return render(request, 'dashboard/student_unlinked.html', {})
 
-    # Grades
     grades = Grade.objects.filter(student=student).select_related('subject', 'exam').order_by('-exam__year', '-exam__id')
-
-    # Attendance summary
     attendance_qs = Attendance.objects.filter(student=student).order_by('-date')
     total_days = attendance_qs.count()
     present_days = attendance_qs.filter(status='P').count()
@@ -124,13 +112,11 @@ def student_dash(request):
     late_days = attendance_qs.filter(status='L').count()
     attendance_rate = round((present_days / total_days) * 100, 1) if total_days else 0
 
-    # Average grade
     if grades:
         avg_percentage = sum(g.percentage for g in grades) / len(grades)
     else:
         avg_percentage = 0
 
-    # Invoices
     invoices = Invoice.objects.filter(student=student).select_related('fee_structure')
     total_due = sum(i.balance for i in invoices)
 
@@ -150,24 +136,31 @@ def student_dash(request):
 
 
 def generate_next_admission_number(school):
-    """Generate the next admission number starting from 1."""
+    """Generate the next admission number starting from the school's configured baseline."""
     from apps.students.models import Student
-    from django.db.models import Max
     import re
 
-    # Get all admission numbers for this school
-    numbers = Student.objects.filter(school=school).exclude(admission_number__isnull=True).exclude(admission_number='').values_list('admission_number', flat=True)
+    numbers = (
+        Student.objects.filter(school=school)
+        .exclude(admission_number__isnull=True)
+        .exclude(admission_number='')
+        .values_list('admission_number', flat=True)
+    )
     
     highest_num = 0
     for num in numbers:
-        # Extract just the digits if there is a prefix (e.g., ADM-5 -> 5)
         match = re.search(r'(\d+)$', str(num))
         if match:
             val = int(match.group(1))
             if val > highest_num:
                 highest_num = val
                 
+    baseline = school.starting_admission_number or 1
+    if highest_num < baseline:
+        return str(baseline)
+        
     return str(highest_num + 1)
+
 
 @login_required
 def add_student(request):
@@ -183,6 +176,11 @@ def add_student(request):
     counties = County.objects.all().order_by('name')
 
     if request.method == 'POST':
+        print("\n\n--- DIAGNOSTIC INCOMING DATA ---")
+        print("Sub County received:", request.POST.get('sub_county'))
+        print("Location received:", request.POST.get('location'))
+        print("Guardian Email received:", request.POST.get('guardian_email'))
+        print("--------------------------------\n\n")
         # --- 1. Personal Details ---
         first_name = request.POST.get('first_name', '').strip()
         middle_name = request.POST.get('middle_name', '').strip()
@@ -195,12 +193,16 @@ def add_student(request):
         # --- 2. Guardian Details ---
         guardian_name = request.POST.get('guardian_name', '').strip()
         guardian_phone = request.POST.get('guardian_phone', '').strip()
+        guardian_email = request.POST.get('guardian_email', '').strip()
+        guardian_relationship = request.POST.get('guardian_relationship', '').strip()
         parent_id_number = request.POST.get('parent_id_number', '').strip()
         
         # --- 3. Location (IDs from dropdowns) ---
         county_id = request.POST.get('county_fk') or None
         constituency_id = request.POST.get('constituency_fk') or None
         ward_id = request.POST.get('ward_fk') or None
+        sub_county = request.POST.get('sub_county', '').strip()
+        location = request.POST.get('location', '').strip()
         village = request.POST.get('village', '').strip()
         
         # --- 4. Documents & Previous School ---
@@ -246,10 +248,14 @@ def add_student(request):
                 admission_date=admission_date,
                 guardian_name=guardian_name,
                 guardian_phone=guardian_phone,
+                guardian_email=guardian_email,
+                guardian_relationship=guardian_relationship,
                 parent_id_number=parent_id_number,
                 county_fk_id=county_id,
                 constituency_fk_id=constituency_id,
                 ward_fk_id=ward_id,
+                sub_county=sub_county,
+                location=location,
                 village=village,
                 birth_certificate_number=birth_certificate_number,
                 upi=upi,
@@ -276,36 +282,6 @@ def add_student(request):
         'counties': counties,
         'next_admission_number': generate_next_admission_number(school),
     })
-
-def generate_next_admission_number(school):
-    """Generate the next admission number starting from the school's configured baseline."""
-    from apps.students.models import Student
-    import re
-
-    numbers = (
-        Student.objects.filter(school=school)
-        .exclude(admission_number__isnull=True)
-        .exclude(admission_number='')
-        .values_list('admission_number', flat=True)
-    )
-    
-    highest_num = 0
-    for num in numbers:
-        match = re.search(r'(\d+)$', str(num))
-        if match:
-            val = int(match.group(1))
-            if val > highest_num:
-                highest_num = val
-                
-    # The baseline is the number the Principal set in Settings
-    baseline = school.starting_admission_number or 1
-
-    # If the highest number found is less than the baseline, 
-    # it means we are starting a new series.
-    if highest_num < baseline:
-        return str(baseline)
-        
-    return str(highest_num + 1)
 
 
 @login_required
@@ -342,7 +318,7 @@ def clear_student(request, student_id):
         student.cleared_at = timezone.now()
         student.clearance_reason = request.POST.get('clearance_reason', '').strip()
         student.leaving_certificate_notes = request.POST.get('certificate_notes', '').strip()
-        student.is_active = False  # soft-deactivate
+        student.is_active = False
         student.save()
 
         messages.success(request, f'✅ {student.full_name} has been cleared.')
@@ -382,7 +358,6 @@ def leaving_certificate_pdf(request, student_id):
     student = get_object_or_404(Student, id=student_id, school=request.user.school)
 
     if request.method == 'POST':
-        # Save the edited content before generating
         content = request.POST.get('content_html', '').strip()
         reason = request.POST.get('clearance_reason', '').strip()
 
@@ -391,15 +366,11 @@ def leaving_certificate_pdf(request, student_id):
         if reason:
             student.clearance_reason = reason
 
-        # Optional extra fields
         student.leaving_certificate_notes = request.POST.get('certificate_notes', '').strip()
-
         student.save()
 
-    # Fallback content if none provided
     content = student.leaving_certificate_content
     if not content:
-        # Build default content
         content = f"""
         <p style="text-align: justify;">This is to certify that <strong>{student.full_name}</strong>
         {f"(Admission No: <strong>{student.admission_number}</strong>)" if student.admission_number else ""}
@@ -413,13 +384,10 @@ def leaving_certificate_pdf(request, student_id):
         <p style="text-align: justify;">We wish the student every success in their future endeavours.</p>
         """
 
-    # ---------- Base64 images for xhtml2pdf ----------
     from apps.core.pdf_utils import get_school_logo_data_uri
 
-    # School logo → base64
     school_logo_b64 = get_school_logo_data_uri(student.school, max_width=120)
 
-    # Coat of arms → base64
     import os as _os
     from django.conf import settings as dj_settings
     import base64 as b64
@@ -445,7 +413,6 @@ def leaving_certificate_pdf(request, student_id):
         )
     )
 
-
     filename = f'leaving_certificate_{student.admission_number}.pdf'
     return html_to_pdf_response(html_string, filename)
 
@@ -469,15 +436,12 @@ def student_biodata_pdf(request, student_id):
 
     student = get_object_or_404(Student, id=student_id, school=request.user.school)
 
-    # School logo
     school_logo_b64 = get_school_logo_data_uri(student.school, max_width=120)
 
-    # Student photo
     student_photo_b64 = None
     if student.photo:
         student_photo_b64 = image_to_base64(student.photo, max_width=240)
 
-    # Kenya coat of arms (from static images)
     coat_of_arms_b64 = None
     coat_path = os.path.join(str(dj_settings.BASE_DIR), 'static', 'images', 'coat_of_arms.png')
     if os.path.exists(coat_path):
@@ -517,16 +481,13 @@ def student_detail(request, student_id):
 
     school = request.user.school
 
-    # Super admin can see any student (but no school = no scope, use student's school)
     if not school:
       return redirect('dashboard_home')
     else:
         student = get_object_or_404(Student, id=student_id, school=school)
 
-    # ---------- Parents ----------
     parents = Parent.objects.filter(students=student).select_related('user')
 
-    # ---------- Siblings (share a parent) ----------
     sibling_ids = set()
     for p in parents:
         for sib in p.students.all():
@@ -534,7 +495,6 @@ def student_detail(request, student_id):
                 sibling_ids.add(sib.id)
     siblings = Student.objects.filter(id__in=sibling_ids)
 
-    # ---------- Fees ----------
     invoices = Invoice.objects.filter(
         student=student
     ).select_related('fee_structure').order_by('-created_at')
@@ -547,17 +507,14 @@ def student_detail(request, student_id):
     total_paid = float(invoice_agg['total_paid'] or 0)
     total_balance = total_invoiced - total_paid
 
-    # ---------- Payments ----------
     payments = Payment.objects.filter(
         invoice__student=student
     ).select_related('invoice').order_by('-paid_at')[:20]
 
-    # ---------- Grades ----------
     grades = Grade.objects.filter(
         student=student
     ).select_related('subject', 'exam').order_by('-exam__year', '-exam__id', 'subject__name')
 
-    # Average percentage
     if grades:
         total_marks = sum(float(g.marks) for g in grades)
         total_out_of = sum(float(g.out_of) for g in grades) or 1
@@ -565,7 +522,6 @@ def student_detail(request, student_id):
     else:
         avg_percentage = 0
 
-    # ---------- Attendance (last 30 days) ----------
     thirty_days_ago = date.today() - timedelta(days=30)
     recent_attendance = Attendance.objects.filter(
         student=student, date__gte=thirty_days_ago
@@ -578,7 +534,6 @@ def student_detail(request, student_id):
     total_marked_30 = present_30 + absent_30 + late_30 + excused_30
     attendance_rate = round((present_30 / total_marked_30) * 100, 1) if total_marked_30 else 0
 
-    # All-time attendance rate
     all_att = Attendance.objects.filter(student=student)
     all_att_total = all_att.count()
     all_att_present = all_att.filter(status='P').count()
@@ -608,18 +563,15 @@ def student_detail(request, student_id):
 @login_required
 def student_bio_page(request, student_id):
     """Display a full, printable bio-data page for a student."""
-    # Allowed roles: Principal, Admin, Secretary, Teacher, ICT Officer
     if request.user.role not in ('principal', 'deputy_admin', 'deputy_academics', 'secretary', 'teacher', 'ict_officer'):
         return redirect('dashboard_home')
 
     from apps.students.models import Student
     from apps.parents.models import Parent
-    from kenyan_counties.models import County, Constituency, Ward
 
     school = request.user.school
     student = get_object_or_404(Student, id=student_id, school=school)
 
-    # Fetch linked parents
     linked_parents = Parent.objects.filter(students=student)
 
     context = {
@@ -638,7 +590,7 @@ def edit_student(request, student_id):
 
     from apps.students.models import Student
     from apps.academics.models import ClassLevel
-    from apps.locations.models import County
+    from kenyan_counties.models import County
 
     school = request.user.school
     student = get_object_or_404(Student, id=student_id, school=school)
@@ -646,26 +598,32 @@ def edit_student(request, student_id):
     counties = County.objects.all().order_by('name')
 
     if request.method == 'POST':
-        # Update basic details
         student.first_name = request.POST.get('first_name', '').strip()
         student.middle_name = request.POST.get('middle_name', '').strip()
         student.last_name = request.POST.get('last_name', '').strip()
         student.gender = request.POST.get('gender', 'M')
         student.date_of_birth = request.POST.get('date_of_birth') or None
         student.class_level = request.POST.get('class_level')
+        
+        # Save the new fields properly
         student.guardian_name = request.POST.get('guardian_name', '').strip()
         student.guardian_phone = request.POST.get('guardian_phone', '').strip()
+        student.guardian_email = request.POST.get('guardian_email', '').strip()
+        student.guardian_relationship = request.POST.get('guardian_relationship', '').strip()
+        
         student.parent_id_number = request.POST.get('parent_id_number', '').strip()
         student.birth_certificate_number = request.POST.get('birth_certificate_number', '').strip()
         student.upi = request.POST.get('upi', '').strip()
         student.is_boarding = request.POST.get('is_boarding') == 'on'
         
-        # Handle location safely (only if they are valid IDs)
+        student.sub_county = request.POST.get('sub_county', '').strip()
+        student.location = request.POST.get('location', '').strip()
+        student.village = request.POST.get('village', '').strip()
+        
         if request.POST.get('county_fk'): student.county_fk_id = request.POST.get('county_fk')
         if request.POST.get('constituency_fk'): student.constituency_fk_id = request.POST.get('constituency_fk')
         if request.POST.get('ward_fk'): student.ward_fk_id = request.POST.get('ward_fk')
 
-        # Handle photo upload
         if 'photo' in request.FILES:
             student.photo = request.FILES['photo']
 
@@ -673,8 +631,6 @@ def edit_student(request, student_id):
         messages.success(request, f"Student {student.full_name} updated successfully.")
         return redirect('students_list')
 
-    # For GET, we need to pass the student data back to the form
-    # The template expects 'form_data', so we mock it
     form_data = {
         'first_name': student.first_name,
         'middle_name': student.middle_name,
@@ -684,17 +640,25 @@ def edit_student(request, student_id):
         'class_level': student.class_level,
         'guardian_name': student.guardian_name,
         'guardian_phone': student.guardian_phone,
+        'guardian_email': student.guardian_email,
+        'guardian_relationship': student.guardian_relationship,
         'parent_id_number': student.parent_id_number,
         'birth_certificate_number': student.birth_certificate_number,
         'upi': student.upi,
         'is_boarding': student.is_boarding,
+        'sub_county': student.sub_county,
+        'location': student.location,
+        'village': student.village,
+        'county_fk_id': student.county_fk_id,
+        'constituency_fk_id': student.constituency_fk_id,
+        'ward_fk_id': student.ward_fk_id,
     }
 
     return render(request, 'dashboard/add_student.html', {
         'classes': classes,
         'counties': counties,
         'form_data': form_data,
-        'is_edit': True, # We can use this to change the title/button
+        'is_edit': True,
         'student': student,
     })
 
@@ -711,7 +675,6 @@ def link_parent_to_student(request, student_id):
     school = request.user.school
     student = get_object_or_404(Student, id=student_id, school=school)
     
-    # Get all parents in this school
     existing_parents = Parent.objects.filter(user__school=school).select_related('user')
 
     if request.method == 'POST':
@@ -749,7 +712,6 @@ def link_parent_to_student(request, student_id):
             
             return redirect('students_list')
 
-    # Create a list of parents to pass to the Javascript for searching
     parent_data = []
     for p in existing_parents:
         label = f"{p.first_name} {p.last_name} | Phone: {p.phone or '—'} | ID: {p.id_number or '—'}"
@@ -783,7 +745,6 @@ def bulk_upload_students(request):
 
             with transaction.atomic():
                 for row_num, row in enumerate(reader, start=2):
-                    # Required fields
                     adm_num = row.get('admission_number', '').strip()
                     first_name = row.get('first_name', '').strip()
                     last_name = row.get('last_name', '').strip()
@@ -798,7 +759,6 @@ def bulk_upload_students(request):
                         errors.append(f"Row {row_num}: Student with ADM {adm_num} already exists.")
                         continue
 
-                    # Create student
                     Student.objects.create(
                         school=school,
                         admission_number=adm_num,
@@ -819,7 +779,7 @@ def bulk_upload_students(request):
             if success_count > 0:
                 messages.success(request, f'Successfully imported {success_count} students.')
             if errors:
-                for err in errors[:5]: # Show first 5 errors
+                for err in errors[:5]:
                     messages.warning(request, err)
                 if len(errors) > 5:
                     messages.warning(request, f"...and {len(errors) - 5} more errors.")
@@ -848,11 +808,8 @@ def student_id_card(request, student_id):
     school = request.user.school
     student = get_object_or_404(Student, id=student_id, school=school)
 
-    # 1. Generate the absolute URL for the student bio page
-    # (We will use a public URL so security guards can scan it without logging in)
     bio_url = request.build_absolute_uri(f'/student-bio/{student.id}/')
 
-    # 2. Generate the QR Code
     qr = qrcode.QRCode(
         version=1,
         error_correction=qrcode.constants.ERROR_CORRECT_L,
@@ -863,7 +820,6 @@ def student_id_card(request, student_id):
     qr.make(fit=True)
     img = qr.make_image(fill_color="#0f172a", back_color="white")
 
-    # 3. Convert to Base64 string
     buffer = BytesIO()
     img.save(buffer, format="PNG")
     qr_base64 = base64.b64encode(buffer.getvalue()).decode('utf-8')
@@ -878,7 +834,6 @@ def public_student_bio(request, student_id):
     """A public, mobile-friendly bio-data page for QR code scanning."""
     from apps.students.models import Student
     
-    # No login required for this view, but we only show non-sensitive info
     student = get_object_or_404(Student, id=student_id)
 
     return render(request, 'public/student_bio.html', {
@@ -906,13 +861,11 @@ def bulk_print_student_ids(request):
     students_data = []
 
     if selected_class_id:
-        # Fetch the class to get its exact name
         selected_class = ClassLevel.objects.filter(id=selected_class_id, school=school).first()
         
         if selected_class:
             selected_class_name = selected_class.name
             
-            # Query students using the exact name
             students_qs = Student.objects.filter(
                 school=school, 
                 class_level=selected_class_name, 
@@ -927,7 +880,7 @@ def bulk_print_student_ids(request):
                 img = qr.make_image(fill_color="#0f172a", back_color="white")
                 
                 buffer = BytesIO()
-                img.save(buffer, format="PNG")
+                img.save(format="PNG")
                 qr_base64 = base64.b64encode(buffer.getvalue()).decode('utf-8')
                 
                 students_data.append({
@@ -935,7 +888,6 @@ def bulk_print_student_ids(request):
                     'qr_code': qr_base64
                 })
 
-    # CHUNK THE STUDENTS INTO GROUPS OF 4 for Duplex
     chunked_students = []
     for i in range(0, len(students_data), 4):
         chunk = students_data[i:i + 4]

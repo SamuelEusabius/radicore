@@ -75,6 +75,7 @@ class Student(models.Model):
     guardian_name = models.CharField(max_length=100, blank=True)
     guardian_phone = models.CharField(max_length=20, blank=True)
     guardian_relationship = models.CharField(max_length=30, blank=True)
+    guardian_email = models.EmailField(max_length=100, blank=True, null=True)
 
     # ============ SPECIAL NEEDS ============
     has_special_needs = models.BooleanField(default=False)

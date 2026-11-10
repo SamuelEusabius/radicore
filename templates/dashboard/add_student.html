@@ -14,6 +14,17 @@
         border-bottom: 1px solid var(--border);
         padding-bottom: 8px;
         margin: 32px 0 16px 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .form-section-title::before {
+        content: '';
+        display: inline-block;
+        width: 4px;
+        height: 16px;
+        background: var(--primary);
+        border-radius: 2px;
     }
     .form-label {
         display: block;
@@ -42,8 +53,27 @@
         outline: none;
         box-shadow: 0 0 0 3px rgba(10, 138, 95, 0.1);
     }
-    .form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
-    .form-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+
+    /* RESPONSIVE GRID SYSTEM */
+    .form-grid-2, .form-grid-3, .form-grid-4 { 
+        display: grid; 
+        grid-template-columns: 1fr; /* Mobile: 1 column */
+        gap: 16px; 
+        margin-bottom: 16px; 
+    }
+
+    /* Tablet View */
+    @media (min-width: 640px) {
+        .form-grid-2, .form-grid-3 { grid-template-columns: 1fr 1fr; }
+        .form-grid-4 { grid-template-columns: 1fr 1fr; }
+    }
+
+    /* Desktop View */
+    @media (min-width: 768px) {
+        .form-grid-2 { grid-template-columns: 1fr 1fr; }
+        .form-grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+        .form-grid-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+    }
 </style>
 
 <div class="card" style="max-width: 1000px; margin: 0 auto; padding: 32px;">
@@ -60,7 +90,6 @@
   </div>
   {% endif %}
 
-  <!-- Added enctype for file uploads -->
   <form method="post" enctype="multipart/form-data">
     {% csrf_token %}
 
@@ -70,7 +99,7 @@
     <!-- PHOTO UPLOAD -->
     <div style="margin-bottom: 24px; display: flex; align-items: center; gap: 16px; background: #f8fafc; padding: 16px; border-radius: 8px; border: 1px solid var(--border);">
         {% if form_data.photo_url %}
-             <img src="{{ form_data.photo_url }}" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover;">
+             <img src="{{ form_data.photo_url }}" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary);">
         {% else %}
             <div style="width: 80px; height: 80px; border-radius: 50%; background: white; border: 2px dashed #cbd5e1; display: flex; align-items: center; justify-content: center; color: #94a3b8; flex-shrink: 0;">
                 <svg width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
@@ -180,7 +209,17 @@
         </select>
       </div>
     </div>
-    <div class="form-grid-3">
+    
+    <!-- SUB-COUNTY & LOCATION GRID (4 Columns on Desktop) -->
+    <div class="form-grid-4">
+      <div>
+        <label class="form-label">Sub-County</label>
+        <input type="text" name="sub_county" class="form-input" value="{{ form_data.sub_county|default:'' }}">
+      </div>
+      <div>
+        <label class="form-label">Location</label>
+        <input type="text" name="location" class="form-input" value="{{ form_data.location|default:'' }}">
+      </div>
       <div>
         <label class="form-label">Village</label>
         <input type="text" name="village" class="form-input" value="{{ form_data.village|default:'' }}">
@@ -215,18 +254,48 @@
         <label class="form-label">Phone *</label>
         <input type="text" name="guardian_phone" class="form-input" value="{{ form_data.guardian_phone|default:'' }}" required>
       </div>
+      <div>
+        <label class="form-label">Relationship</label>
+        <input type="text" name="guardian_relationship" class="form-input" value="{{ form_data.guardian_relationship|default:'' }}" placeholder="e.g. Father, Mother, Uncle">
+      </div>
+    </div>
+    
+    <!-- GUARDIAN EMAIL -->
+    <div class="form-grid-3">
+      <div>
+        <label class="form-label">Guardian Email</label>
+        <input type="email" name="guardian_email" class="form-input" value="{{ form_data.guardian_email|default:'' }}" placeholder="e.g. parent@gmail.com">
+      </div>
     </div>
 
     <!-- 6. Boarding -->
     <h4 class="form-section-title">6. Boarding</h4>
-    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; margin-bottom: 16px;">
-        <input type="checkbox" name="is_boarding" {% if form_data.is_boarding %}checked{% endif %} style="width: 18px; height: 18px;">
+    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; margin-bottom: 16px; padding: 16px; background: #f8fafc; border: 1px solid var(--border); border-radius: 6px;">
+        <input type="checkbox" name="is_boarding" {% if form_data.is_boarding %}checked{% endif %} style="width: 18px; height: 18px; accent-color: var(--primary);">
         This is a boarding (hostel) student — auto-assign a bed on admission
     </label>
 
     <!-- Action Buttons -->
-    <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 40px; border-top: 1px solid var(--border); padding-top: 24px;">
-      <a href="{% url 'students_list' %}" class="btn btn-secondary">Cancel</a>
+    <div class="action-buttons-container" style="display: flex; flex-direction: column; gap: 12px; margin-top: 40px; border-top: 1px solid var(--border); padding-top: 24px; width: 100%;">
+      <style>
+        @media (min-width: 768px) {
+          .action-buttons-container {
+            flex-direction: row !important;
+            justify-content: flex-end !important;
+          }
+          .action-buttons-container a, .action-buttons-container button {
+            width: auto !important;
+          }
+        }
+        .action-buttons-container a, .action-buttons-container button {
+          text-align: center;
+          justify-content: center;
+          display: flex;
+          align-items: center;
+          width: 100%;
+        }
+      </style>
+      <a href="{% url 'students_list' %}" class="btn btn-secondary" style="padding: 12px 32px; font-size: 16px;">Cancel</a>
       <button type="submit" class="btn btn-primary" style="padding: 12px 32px; font-size: 16px;">
         {% if is_edit %}Save Changes{% else %}Save & Print Bio-Data{% endif %}
       </button>
