@@ -55,6 +55,11 @@
         <span class="sidebar-link-text">Company Profile</span>
       </a>
 
+      <a href="{% url 'security_dashboard' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="shield" size=18 %}
+        <span class="sidebar-link-text">Security Monitoring</span>
+      </a>
+
       <div class="sidebar-section-label">Users</div>
       <a href="{% url 'manage_users' %}" class="sidebar-link">
         {% include 'partials/icons.html' with name="users" size=18 %}
@@ -673,6 +678,12 @@
         {% include 'partials/icons.html' with name="credit-card" size=18 %}
         <span class="sidebar-link-text">ID Card Settings</span>
       </a>
+
+      <a href="{% url 'security_dashboard' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="shield" size=18 %}
+        <span class="sidebar-link-text">Security Monitoring</span>
+      </a>
+      
       <div class="sidebar-section-label">People</div>
       <a href="{% url 'students_list' %}" class="sidebar-link">
         {% include 'partials/icons.html' with name="graduation-cap" size=18 %}

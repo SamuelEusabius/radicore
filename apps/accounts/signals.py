@@ -16,17 +16,17 @@ def create_secure_session(sender, request, user, **kwargs):
     if killed:
         print(f">>> KILLED {killed} OLD SESSIONS FOR {user.email} <<<")
 
-    # 2. Create a new session
+    # 2. Create a new session (safely handle users without a school, e.g. Super Admin)
     session = UserSession(
         user=user,
-        school=user.school,
+        school=user.school if getattr(user, 'school', None) else None,
         ip_address=request.META.get('REMOTE_ADDR'),
         device=request.META.get('HTTP_USER_AGENT', 'Unknown')[:255]
     )
     raw_key = session.generate_key()
     session.save()
     
-    print(f">>> NEW SESSION: {user.email} from {session.ip_address} <<<")
+    print(f">>> NEW SESSION: {user.email} from {session.ip_address} (School: {session.school.name if session.school else 'Global'}) <<<")
 
     # 3. Attach the raw key so middleware can read it
     request._rc_raw_session_key = raw_key

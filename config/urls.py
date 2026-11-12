@@ -19,6 +19,11 @@ urlpatterns = [
     # Blocked page (no auth required by middleware)
     path('school-blocked/', school_blocked, name='school_blocked'),
     path('wallet/', include('apps.finance.wallet_urls')),
+    
+        # Security Monitoring
+    path('dashboard/security/', views.security_dashboard, name='security_dashboard'),
+    path('dashboard/security/kill-session/<int:session_id>/', views.force_logout_session, name='force_logout_session'),
+    path('dashboard/security/kill-user/<int:user_id>/', views.force_logout_user_all, name='force_logout_user_all'),
 
     # Custom logout BEFORE allauth
     path('accounts/logout/', logout_view, name='account_logout'),

@@ -9,14 +9,16 @@ class SecureSessionMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
-        # 1. Skip middleware for static files, media, and the login page
+        # 1. Skip middleware for static files, media, and login/logout paths
         if (request.path.startswith('/static/') or 
             request.path.startswith('/media/') or 
             request.path.startswith('/accounts/login') or
+            request.path.startswith('/accounts/logout') or
             request.path == '/login/' or 
             request.path == '/'):
+            
             response = self.get_response(request)
-            # Attach cookie if a new session was just created during login
+            # Attach cookie if a new session was just created
             raw_key = getattr(request, '_rc_raw_session_key', None)
             if raw_key:
                 response.set_cookie(
@@ -43,20 +45,23 @@ class SecureSessionMiddleware:
             current_ip = request.META.get('REMOTE_ADDR')
             current_device = request.META.get('HTTP_USER_AGENT', 'Unknown')[:255]
 
-            if not current_ip or session.ip_address != current_ip or session.device != current_device:
-                session.is_active = False
-                session.save()
-                logout(request)
-                response = redirect('/accounts/login/')
-                response.delete_cookie('rc_session_key')
-                return response
+            # Bypass IP/device check for Super Admin (platform-level user)
+            if session.user.role != 'super_admin':
+                if not current_ip or session.ip_address != current_ip or session.device != current_device:
+                    session.is_active = False
+                    session.save()
+                    logout(request)
+                    response = redirect('/accounts/login/')
+                    response.delete_cookie('rc_session_key')
+                    return response
 
             # 5. Attach user
             request.user = session.user
             request.secure_session = session
             session.save()
 
-        except Exception:
+        except Exception as e:
+            # Key is invalid or session was killed
             logout(request)
             response = redirect('/accounts/login/')
             response.delete_cookie('rc_session_key')
@@ -64,7 +69,7 @@ class SecureSessionMiddleware:
 
         response = self.get_response(request)
         
-        # Attach cookie if a new session was just created (post-login)
+        # Attach cookie if a new session was just created
         raw_key_new = getattr(request, '_rc_raw_session_key', None)
         if raw_key_new:
             response.set_cookie(

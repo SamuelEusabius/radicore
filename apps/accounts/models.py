@@ -138,7 +138,7 @@ class UserSession(models.Model):
     Stores the 95-character opaque key system for secure login.
     """
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='active_sessions')
-    school = models.ForeignKey('schools.School', on_delete=models.CASCADE)
+    school = models.ForeignKey('schools.School', on_delete=models.CASCADE, null=True, blank=True)
     
     # We only store the SHA-256 hash. The raw key is only sent to the user's cookie.
     key_hash = models.CharField(max_length=64, unique=True, db_index=True)
