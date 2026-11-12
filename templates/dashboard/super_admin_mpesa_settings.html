@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+{% block title %}Platform M-Pesa Settings{% endblock %}
+{% block header_title %}Platform M-Pesa Settings{% endblock %}
+{% block header_sub %}Super Admin · Receive Subscription Payments{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 800px; margin: 0 auto; padding: 32px;">
+
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; border-bottom: 2px solid var(--primary); padding-bottom: 16px;">
+        <div>
+            <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: var(--ink-900);">Safaricom Daraja API Configuration</h3>
+            <p style="margin: 4px 0 0 0; font-size: 13px; color: var(--ink-500);">
+                Enter your Platform's Paybill details. This allows schools to pay you their SaaS subscriptions.
+            </p>
+        </div>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div style="padding: 12px 16px; border-radius: 6px; margin-bottom: 16px; font-weight: 600; font-size: 13px;
+                {% if message.tags == 'error' %}background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca;
+                {% else %}background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0;{% endif %}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <form method="POST">
+        {% csrf_token %}
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+            <div>
+                <label class="form-label">Paybill Number / Shortcode *</label>
+                <input type="text" name="paybill_number" value="{{ config.paybill_number|default:'' }}" class="form-input" required placeholder="e.g. 400200">
+            </div>
+            <div>
+                <label class="form-label">Account Type *</label>
+                <select name="account_type" class="form-input" required style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                    <option value="paybill" {% if config.account_type == 'paybill' %}selected{% endif %}>Paybill</option>
+                    <option value="till" {% if config.account_type == 'till' %}selected{% endif %}>Till Number (Buy Goods)</option>
+                </select>
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+            <div>
+                <label class="form-label">Consumer Key *</label>
+                <input type="text" name="consumer_key" value="{{ config.consumer_key|default:'' }}" class="form-input" required placeholder="From Daraja Portal">
+            </div>
+            <div>
+                <label class="form-label">Consumer Secret *</label>
+                <input type="text" name="consumer_secret" value="{{ config.consumer_secret|default:'' }}" class="form-input" required placeholder="From Daraja Portal">
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+            <div>
+                <label class="form-label">Passkey *</label>
+                <input type="password" name="passkey" value="{{ config.passkey|default:'' }}" class="form-input" required placeholder="Lipa na M-Pesa Online Passkey">
+            </div>
+            <div>
+                <label class="form-label">Environment</label>
+                <select name="environment" class="form-input" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                    <option value="sandbox" {% if config.environment == 'sandbox' %}selected{% endif %}>Sandbox (Testing)</option>
+                    <option value="production" {% if config.environment == 'production' %}selected{% endif %}>Production (Live)</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Callback URL (Read Only) -->
+        <div style="margin-bottom: 24px; background: #f8fafc; padding: 16px; border-radius: 8px; border: 1px solid var(--border);">
+            <label class="form-label" style="color: var(--primary);">Safaricom Callback URL (Paste this in Daraja)</label>
+            <div style="display: flex; gap: 8px; margin-top: 6px;">
+                <input type="text" readonly value="{{ config.callback_url|default:'' }}" class="form-input" style="background: #e2e8f0; font-family: monospace; font-size: 12px; flex: 1;">
+            </div>
+            <p style="margin: 6px 0 0 0; font-size: 12px; color: var(--ink-500);">
+                This URL is auto-generated based on your current domain. Copy it into your Safaricom Daraja app settings.
+            </p>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; border-top: 1px solid var(--border); padding-top: 24px;">
+            <button type="submit" class="btn btn-primary" style="padding: 12px 32px; font-size: 15px;">
+                Save Platform Settings
+            </button>
+        </div>
+    </form>
+
+</div>
+{% endblock %}

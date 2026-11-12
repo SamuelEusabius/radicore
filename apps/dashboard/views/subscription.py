@@ -512,25 +512,53 @@ def subscription_payment(request):
 
 @login_required
 def super_admin_mpesa_settings(request):
-    """Super Admin enters their SaaS Paybill/Till details."""
+    """Configure platform-wide M-Pesa settings."""
     if request.user.role != 'super_admin':
         return redirect('dashboard_home')
 
-    config, created = PlatformMpesaConfig.objects.get_or_create(pk=1)
+    from apps.finance.mpesa_models import PlatformMpesaConfig
+    # Get or create the platform config
+    config, created = PlatformMpesaConfig.objects.get_or_create(
+        id=1,
+        defaults={
+            'paybill_number': '000000', # Temporary fallback to prevent crash on creation
+            'consumer_key': '',
+            'consumer_secret': '',
+            'passkey': '',
+            'callback_url': request.build_absolute_uri('/api/finance/mpesa/platform-callback/'),
+        }
+    )
 
     if request.method == 'POST':
-        config.paybill_number = request.POST.get('paybill_number')
-        config.account_type = request.POST.get('account_type')
-        config.consumer_key = request.POST.get('consumer_key')
-        config.consumer_secret = request.POST.get('consumer_secret')
-        config.passkey = request.POST.get('passkey')
-        config.callback_url = request.build_absolute_uri('/api/finance/mpesa/platform-callback/')
-        config.save()
-        messages.success(request, 'SaaS M-Pesa Settings saved successfully!')
-        return redirect('super_admin_mpesa_settings')
+        paybill = request.POST.get('paybill_number', '').strip()
+        consumer_key = request.POST.get('consumer_key', '').strip()
+        consumer_secret = request.POST.get('consumer_secret', '').strip()
+        passkey = request.POST.get('passkey', '').strip()
+        
+        # VALIDATION: Check for empty values before saving
+        if not paybill:
+            messages.error(request, "Paybill Number / Shortcode is required.")
+        elif not consumer_key or not consumer_secret:
+            messages.error(request, "Consumer Key and Secret are required.")
+        elif not passkey:
+            messages.error(request, "Passkey is required.")
+        else:
+            config.paybill_number = paybill
+            config.consumer_key = consumer_key
+            config.consumer_secret = consumer_secret
+            config.passkey = passkey
+            config.callback_url = request.build_absolute_uri('/api/finance/mpesa/platform-callback/')
+            
+            if 'environment' in request.POST:
+                config.environment = request.POST.get('environment')
+                
+            config.save()
+            messages.success(request, "Platform M-Pesa settings updated successfully.")
+            return redirect('super_admin_mpesa_settings')
 
-    return render(request, 'dashboard/platform_mpesa_settings.html', {'config': config})
-
+    return render(request, 'dashboard/super_admin_mpesa_settings.html', {
+        'config': config,
+    })
 
 @login_required
 def initiate_subscription_payment(request, school_id):
