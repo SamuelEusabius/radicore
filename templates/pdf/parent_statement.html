@@ -26,6 +26,13 @@
   * { box-sizing: border-box; }
   body { font-family: Helvetica, Arial, sans-serif; font-size: 9.5pt; color: #1a1a1a; margin: 0; padding: 0; }
 
+  /* NEW: BOUNDARY LINE FOR THE HEADER */
+  .header-boundary {
+    border-bottom: 3px solid #00695c;
+    padding-bottom: 12px;
+    margin-bottom: 20px;
+  }
+
   .header { border-bottom: 2px solid #00695c; padding-bottom: 8px; margin-bottom: 14px; }
   .header-table { width: 100%; border-collapse: collapse; }
   .header-table td { vertical-align: top; padding: 0; }
@@ -78,7 +85,11 @@
 </head>
 <body>
 
-{% include 'pdf/_report_header.html' %}
+<!-- HEADER WITH BOUNDARY LINE -->
+<div class="header-boundary">
+    {% include 'pdf/_report_header.html' %}
+</div>
+
 <div class="title-block">
   <p class="title-main">Fee Statement</p>
   <p class="title-sub">{{ period_label }}</p>
