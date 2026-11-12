@@ -1,177 +1,236 @@
 {% extends 'base.html' %}
 {% block title %}Super Admin Dashboard{% endblock %}
-{% block header_title %}Platform Dashboard{% endblock %}
+{% block header_title %}Platform Admin{% endblock %}
+{% block header_sub %}SUPER ADMIN{% endblock %}
 
 {% block content %}
 <style>
-    .card { background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; margin-bottom: 24px; }
-    .kpi-card { background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 24px; display: flex; flex-direction: column; text-decoration: none; transition: transform 0.2s, box-shadow 0.2s; }
-    .kpi-card:hover { transform: translateY(-2px); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
-    .kpi-title { font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
-    .kpi-value { font-size: 28px; font-weight: 700; color: #0f172a; }
-    .kpi-sub { font-size: 12px; color: #64748b; margin-top: 6px; }
+    .dash-grid {
+        display: grid;
+        gap: 20px;
+        margin-bottom: 24px;
+    }
     
-    .quick-action { background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 24px; display: flex; flex-direction: column; align-items: center; text-align: center; text-decoration: none; transition: all 0.2s; cursor: pointer; }
-    .quick-action:hover { border-color: #10b981; background: #f8fafc; }
-    .qa-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px; }
-    .qa-title { font-size: 15px; font-weight: 700; color: #0f172a; margin-bottom: 4px; }
-    .qa-sub { font-size: 13px; color: #64748b; }
+    .stats-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+    
+    .main-grid {
+        grid-template-columns: 2fr 1fr;
+        align-items: start;
+    }
 
-    .data-table { width: 100%; border-collapse: collapse; text-align: left; }
-    .data-table th { padding: 16px; font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #e2e8f0; background: #f8fafc; }
-    .data-table td { padding: 16px; border-bottom: 1px solid #e2e8f0; font-size: 14px; color: #0f172a; vertical-align: middle; }
-    .data-table tbody tr:hover { background: #f8fafc; }
-    
-    .badge { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 9999px; font-size: 12px; font-weight: 600; }
-    .badge-warning { background: #fffbeb; color: #d97706; }
+    .quick-actions-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+    }
+
+    .stat-card {
+        background: white;
+        padding: 24px;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        display: flex;
+        flex-direction: column;
+        position: relative;
+    }
+    .stat-icon {
+        position: absolute;
+        top: 24px;
+        right: 24px;
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .action-card {
+        background: white;
+        padding: 24px;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        text-align: center;
+        text-decoration: none;
+        color: var(--ink-900);
+        transition: transform 0.2s, box-shadow 0.2s;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+    }
+    .action-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+
+    .system-links {
+        background: white;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        overflow: hidden;
+    }
+    .system-link-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 20px;
+        text-decoration: none;
+        color: var(--ink-900);
+        border-bottom: 1px solid var(--border);
+        transition: background 0.2s;
+    }
+    .system-link-item:last-child {
+        border-bottom: none;
+    }
+    .system-link-item:hover {
+        background: #f8fafc;
+    }
+
+    /* RESPONSIVE BREAKPOINTS */
+    @media (max-width: 1024px) {
+        .stats-grid { grid-template-columns: repeat(2, 1fr); }
+        .main-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 768px) {
+        .stats-grid { grid-template-columns: 1fr; }
+        .quick-actions-grid { grid-template-columns: 1fr; }
+    }
 </style>
 
-<!-- Page Header -->
-<div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 24px;">
-    <div>
-        <h2 style="margin: 0; font-size: 24px; font-weight: 700; color: #0f172a;">
-            {{ greeting }}, {{ request.user.first_name|default:request.user.email }}
-        </h2>
-        <div style="margin-top: 8px;">
-            <span style="display: inline-flex; align-items: center; gap: 6px; background: #f3e8ff; color: #7e22ce; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">
-                {% include 'partials/icons.html' with name="shield" size=14 %} Platform Owner
-            </span>
-            <span style="font-size: 13px; color: #64748b; margin-left: 8px;">Aggregate view — no tenant data mixed in.</span>
+<!-- Welcome Banner -->
+<div style="background: #ecfdf5; border-left: 4px solid var(--primary); padding: 16px; border-radius: 8px; margin-bottom: 24px;">
+    <p style="margin: 0; font-weight: 600; color: #047857; font-size: 14px;">
+        Successfully signed in as ADMINISTRATOR.
+    </p>
+</div>
+
+<!-- Greeting -->
+<h2 style="margin: 0 0 4px 0; font-size: 24px; font-weight: 700; color: var(--ink-900);">Good evening, {{ user.first_name|upper }}</h2>
+<div style="display: inline-flex; align-items: center; gap: 6px; margin-bottom: 24px;">
+    <span style="background: #f3e8ff; color: #7e22ce; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; text-transform: uppercase;">
+        Platform Owner
+    </span>
+    <span style="font-size: 13px; color: var(--ink-500);">Aggregate view — no tenant data mixed in.</span>
+</div>
+
+<!-- STATS ROW -->
+<div class="dash-grid stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon" style="background: #eff6ff; color: #3b82f6;">
+            {% include 'partials/icons.html' with name="home" size=18 %}
         </div>
+        <div style="font-size: 12px; font-weight: 700; color: var(--ink-500); text-transform: uppercase; letter-spacing: 0.5px;">Total Schools</div>
+        <div style="font-size: 32px; font-weight: 800; color: var(--ink-900); margin-top: 8px;">{{ school_count }}</div>
+        <div style="font-size: 13px; color: var(--ink-500); margin-top: 4px;">{{ active_count }} active · {{ inactive_count }} inactive</div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon" style="background: #ecfdf5; color: #10b981;">
+            {% include 'partials/icons.html' with name="check-circle" size=18 %}
+        </div>
+        <div style="font-size: 12px; font-weight: 700; color: var(--ink-500); text-transform: uppercase; letter-spacing: 0.5px;">Active Schools</div>
+        <div style="font-size: 32px; font-weight: 800; color: #10b981; margin-top: 8px;">{{ active_count }}</div>
+        <div style="font-size: 13px; color: var(--ink-500); margin-top: 4px;">Currently running on the platform</div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon" style="background: #fef2f2; color: #ef4444;">
+            {% include 'partials/icons.html' with name="x-circle" size=18 %}
+        </div>
+        <div style="font-size: 12px; font-weight: 700; color: var(--ink-500); text-transform: uppercase; letter-spacing: 0.5px;">Inactive Schools</div>
+        <div style="font-size: 32px; font-weight: 800; color: #ef4444; margin-top: 8px;">{{ inactive_count }}</div>
+        <div style="font-size: 13px; color: var(--ink-500); margin-top: 4px;">Awaiting activation or suspended</div>
+    </div>
+
+    <div class="stat-card" style="cursor: pointer;" onclick="window.location.href='{% url 'super_admin_performance' %}'">
+        <div class="stat-icon" style="background: #f3e8ff; color: #a855f7;">
+            {% include 'partials/icons.html' with name="bar-chart" size=18 %}
+        </div>
+        <div style="font-size: 12px; font-weight: 700; color: var(--ink-500); text-transform: uppercase; letter-spacing: 0.5px;">Analytics</div>
+        <div style="font-size: 20px; font-weight: 800; color: var(--ink-900); margin-top: 8px;">View Report &rarr;</div>
+        <div style="font-size: 13px; color: var(--ink-500); margin-top: 4px;">Platform-wide performance metrics</div>
     </div>
 </div>
 
-<!-- KPI Cards -->
-<div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 32px;">
+<!-- MAIN CONTENT ROW (Quick Actions + System Links) -->
+<div class="dash-grid main-grid">
     
-    <a href="{% url 'schools_manage' %}" class="kpi-card">
-        <div class="kpi-title">Total Schools <span style="color: #3b82f6; background: #eff6ff; padding: 6px; border-radius: 8px;">{% include 'partials/icons.html' with name="school" size=16 %}</span></div>
-        <div class="kpi-value">{{ school_count }}</div>
-        <div class="kpi-sub">{{ active_count }} active &middot; {{ inactive_count }} inactive</div>
-    </a>
-
-    <div class="kpi-card">
-        <div class="kpi-title">Active Schools <span style="color: #10b981; background: #ecfdf5; padding: 6px; border-radius: 8px;">{% include 'partials/icons.html' with name="check-circle" size=16 %}</span></div>
-        <div class="kpi-value" style="color: #10b981;">{{ active_count }}</div>
-        <div class="kpi-sub">Currently running on the platform</div>
-    </div>
-
-    <div class="kpi-card">
-        <div class="kpi-title">Inactive Schools <span style="color: #ef4444; background: #fef2f2; padding: 6px; border-radius: 8px;">{% include 'partials/icons.html' with name="x-circle" size=16 %}</span></div>
-        <div class="kpi-value" style="color: #ef4444;">{{ inactive_count }}</div>
-        <div class="kpi-sub">Awaiting activation or suspended</div>
-    </div>
-
-    <a href="{% url 'super_admin_performance' %}" class="kpi-card">
-        <div class="kpi-title">Analytics <span style="color: #8b5cf6; background: #f3e8ff; padding: 6px; border-radius: 8px;">{% include 'partials/icons.html' with name="bar-chart" size=16 %}</span></div>
-        <div class="kpi-value" style="font-size: 20px;">View Report &rarr;</div>
-        <div class="kpi-sub">Platform-wide performance metrics</div>
-    </a>
-</div>
-
-<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px;">
-    
-    <!-- Left Column: Quick Actions & Payments -->
-    <div style="display: flex; flex-direction: column; gap: 24px;">
-        
-        <div>
-            <h3 style="margin: 0 0 16px 0; font-size: 16px; font-weight: 700; color: #0f172a;">Quick Actions</h3>
-            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
-                <a href="{% url 'schools_manage' %}" class="quick-action">
-                    <div class="qa-icon" style="background: #eff6ff; color: #3b82f6;">
-                        {% include 'partials/icons.html' with name="school" size=24 %}
-                    </div>
-                    <div class="qa-title">Manage Schools</div>
-                    <div class="qa-sub">View, edit, activate</div>
-                </a>
-                
-                <a href="{% url 'school_add' %}" class="quick-action">
-                    <div class="qa-icon" style="background: #ecfdf5; color: #10b981;">
-                        {% include 'partials/icons.html' with name="plus" size=24 %}
-                    </div>
-                    <div class="qa-title">Add New School</div>
-                    <div class="qa-sub">Register + admin account</div>
-                </a>
-                
-                <a href="{% url 'subscription_admin_picker' %}" class="quick-action">
-                    <div class="qa-icon" style="background: #fffbeb; color: #f59e0b;">
-                        {% include 'partials/icons.html' with name="credit-card" size=24 %}
-                    </div>
-                    <div class="qa-title">Subscriptions</div>
-                    <div class="qa-sub">Manage plans & billing</div>
-                </a>
-            </div>
-        </div>
-
-        <!-- Pending Payments Alert -->
-        {% if pending_payments %}
-        <div class="card" style="margin-bottom: 0; overflow: hidden;">
-            <div style="padding: 20px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
-                <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px;">
-                    <span style="color: #d97706;">{% include 'partials/icons.html' with name="alert-circle" size=18 %}</span> Pending Subscription Payments
-                </h3>
-                <a href="{% url 'subscription_admin_picker' %}" style="font-size: 13px; color: #10b981; text-decoration: none; font-weight: 600;">View all &rarr;</a>
-            </div>
-            <div style="overflow-x: auto;">
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>SCHOOL</th>
-                            <th>PLAN</th>
-                            <th>STATUS</th>
-                            <th style="text-align: right;">ACTION</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for payment in pending_payments %}
-                        <tr>
-                            <td style="font-weight: 600;">{{ payment.school.name }}</td>
-                            <td style="color: #475569;">{{ payment.plan.name|default:"—" }}</td>
-                            <td><span class="badge badge-warning">Pending</span></td>
-                            <td style="text-align: right;">
-                                <a href="{% url 'confirm_subscription_payment' payment.id %}" class="btn-sm" style="border: 1px solid #e2e8f0; padding: 4px 10px; border-radius: 6px; text-decoration: none; color: #475569; font-size: 12px; font-weight: 600;">Review</a>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-        {% endif %}
-    </div>
-
-    <!-- Right Column: System Overview -->
+    <!-- Left Side: Quick Actions -->
     <div>
-        <div class="card" style="padding: 24px; margin-bottom: 0;">
-            <h3 style="margin: 0 0 20px 0; font-size: 16px; font-weight: 700; color: #0f172a;">System Links</h3>
+        <h3 style="margin: 0 0 16px 0; font-size: 16px; font-weight: 700; color: var(--ink-900);">Quick Actions</h3>
+        <div class="quick-actions-grid">
             
-            <div style="display: flex; flex-direction: column; gap: 12px;">
-                <a href="{% url 'super_admin_mpesa_settings' %}" style="display: flex; align-items: center; justify-content: space-between; padding: 16px; border: 1px solid #e2e8f0; border-radius: 8px; text-decoration: none; transition: background 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='white'">
-                    <div style="display: flex; align-items: center; gap: 12px;">
-                        <div style="color: #10b981;">{% include 'partials/icons.html' with name="settings" size=20 %}</div>
-                        <span style="font-weight: 600; color: #0f172a; font-size: 14px;">Platform M-Pesa</span>
-                    </div>
-                    <span style="color: #94a3b8;">&rarr;</span>
-                </a>
-                
-                <a href="{% url 'super_admin_ledger' %}" style="display: flex; align-items: center; justify-content: space-between; padding: 16px; border: 1px solid #e2e8f0; border-radius: 8px; text-decoration: none; transition: background 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='white'">
-                    <div style="display: flex; align-items: center; gap: 12px;">
-                        <div style="color: #3b82f6;">{% include 'partials/icons.html' with name="credit-card" size=20 %}</div>
-                        <span style="font-weight: 600; color: #0f172a; font-size: 14px;">School Ledger</span>
-                    </div>
-                    <span style="color: #94a3b8;">&rarr;</span>
-                </a>
+            <!-- CORRECTED URL: schools_manage -->
+            <a href="{% url 'schools_manage' %}" class="action-card">
+                <div style="width: 48px; height: 48px; border-radius: 50%; background: #eff6ff; color: #3b82f6; display: flex; align-items: center; justify-content: center;">
+                    {% include 'partials/icons.html' with name="home" size=24 %}
+                </div>
+                <div style="font-size: 14px; font-weight: 700;">Manage Schools</div>
+                <div style="font-size: 12px; color: var(--ink-500);">View, edit, activate</div>
+            </a>
 
-                <a href="{% url 'manage_users' %}" style="display: flex; align-items: center; justify-content: space-between; padding: 16px; border: 1px solid #e2e8f0; border-radius: 8px; text-decoration: none; transition: background 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='white'">
-                    <div style="display: flex; align-items: center; gap: 12px;">
-                        <div style="color: #8b5cf6;">{% include 'partials/icons.html' with name="users" size=20 %}</div>
-                        <span style="font-weight: 600; color: #0f172a; font-size: 14px;">All Platform Users</span>
+            <!-- CONFIRMED URL: school_add -->
+            <a href="{% url 'school_add' %}" class="action-card">
+                <div style="width: 48px; height: 48px; border-radius: 50%; background: #ecfdf5; color: #10b981; display: flex; align-items: center; justify-content: center;">
+                    {% include 'partials/icons.html' with name="plus" size=24 %}
+                </div>
+                <div style="font-size: 14px; font-weight: 700;">Add New School</div>
+                <div style="font-size: 12px; color: var(--ink-500);">Register + admin account</div>
+            </a>
+
+            <!-- CORRECTED URL: subscription_admin_picker -->
+            <a href="{% url 'subscription_admin_picker' %}" class="action-card">
+                <div style="width: 48px; height: 48px; border-radius: 50%; background: #fffbeb; color: #f59e0b; display: flex; align-items: center; justify-content: center;">
+                    {% include 'partials/icons.html' with name="credit-card" size=24 %}
+                </div>
+                <div style="font-size: 14px; font-weight: 700;">Subscriptions</div>
+                <div style="font-size: 12px; color: var(--ink-500);">Manage plans & billing</div>
+            </a>
+
+        </div>
+    </div>
+
+    <!-- Right Side: System Links -->
+    <div>
+        <h3 style="margin: 0 0 16px 0; font-size: 16px; font-weight: 700; color: var(--ink-900);">System Links</h3>
+        <div class="system-links">
+            <a href="{% url 'super_admin_mpesa_settings' %}" class="system-link-item">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="color: #10b981;">
+                        {% include 'partials/icons.html' with name="settings" size=18 %}
                     </div>
-                    <span style="color: #94a3b8;">&rarr;</span>
-                </a>
-            </div>
+                    <span style="font-size: 14px; font-weight: 600;">Platform M-Pesa</span>
+                </div>
+                <span style="color: var(--ink-400);">&rarr;</span>
+            </a>
+            
+            <a href="{% url 'super_admin_ledger' %}" class="system-link-item">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="color: #3b82f6;">
+                        {% include 'partials/icons.html' with name="credit-card" size=18 %}
+                    </div>
+                    <span style="font-size: 14px; font-weight: 600;">School Ledger</span>
+                </div>
+                <span style="color: var(--ink-400);">&rarr;</span>
+            </a>
+            
+            <!-- CONFIRMED URL: manage_users -->
+            <a href="{% url 'manage_users' %}" class="system-link-item">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="color: #a855f7;">
+                        {% include 'partials/icons.html' with name="users" size=18 %}
+                    </div>
+                    <span style="font-size: 14px; font-weight: 600;">All Platform Users</span>
+                </div>
+                <span style="color: var(--ink-400);">&rarr;</span>
+            </a>
         </div>
     </div>
 
 </div>
+
 {% endblock %}
