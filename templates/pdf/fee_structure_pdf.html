@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Fee Structure - {{ class_level.name }}</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 12mm 15mm;
+        }
+        body {
+            font-family: Helvetica, Arial, sans-serif;
+            font-size: 10pt;
+            color: #1a1a1a;
+            margin: 0;
+            padding: 0;
+            line-height: 1.4;
+        }
+
+        /* PREMIUM HEADER */
+        .header-wrapper {
+            width: 100%;
+            border-bottom: 3px solid #047857; /* DARK GREEN */
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+        }
+        .header-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .logo-cell {
+            width: 80px;
+            height: 80px;
+            vertical-align: middle;
+            padding-right: 20px;
+        }
+        .logo-img {
+            width: 80px;
+            height: 80px;
+            object-fit: contain;
+        }
+        .text-cell {
+            vertical-align: middle;
+        }
+        .school-name {
+            font-size: 26px;
+            font-weight: 900;
+            color: #0f172a;
+            margin: 0;
+            text-transform: uppercase;
+            line-height: 1.1;
+            letter-spacing: 1px;
+        }
+        .school-motto {
+            font-size: 11px;
+            font-style: italic;
+            color: #047857; /* DARK GREEN */
+            margin: 4px 0 6px 0;
+            text-transform: uppercase;
+            font-weight: 700;
+        }
+        .school-contact {
+            font-size: 10px;
+            color: #475569;
+            margin: 0;
+            line-height: 1.4;
+        }
+
+        /* GENERATED INFO */
+        .generated-text {
+            text-align: right;
+            font-size: 9px;
+            color: #475569;
+            line-height: 1.5;
+            vertical-align: top;
+            width: 160px;
+        }
+        .generated-text strong {
+            color: #0f172a;
+            font-size: 10px;
+        }
+
+        /* TITLE */
+        .title-block {
+            text-align: center;
+            margin: 25px 0 20px 0;
+        }
+        .title-main {
+            font-size: 22px;
+            font-weight: 900;
+            color: #047857;
+            margin: 0;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+        .title-sub {
+            font-size: 12px;
+            color: #475569;
+            margin: 6px 0 0 0;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        /* TABLES */
+        .fee-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 40px;
+        }
+        .fee-table th {
+            background: #f8fafc;
+            color: #0f172a;
+            font-size: 9pt;
+            font-weight: 700;
+            text-transform: uppercase;
+            text-align: left;
+            padding: 10px 12px;
+            border: 1px solid #cbd5e1;
+        }
+        .fee-table td {
+            font-size: 10pt;
+            color: #1e293b;
+            padding: 10px 12px;
+            border: 1px solid #cbd5e1;
+            font-weight: 600;
+        }
+        .fee-table tr.total-row td {
+            background: #e6f5ef;
+            font-weight: 900;
+            font-size: 12pt;
+            color: #004d40;
+            border-top: 2px solid #047857;
+        }
+
+        /* FOOTER */
+        .footer-table {
+            width: 100%;
+            margin-top: 60px;
+        }
+        .footer-table td {
+            width: 50%;
+            text-align: center;
+        }
+        .signature-line {
+            border-top: 1px solid #94a3b8;
+            width: 60%;
+            margin: 0 auto;
+            margin-bottom: 5px;
+        }
+        .signature-label {
+            font-size: 9pt;
+            color: #64748b;
+            text-transform: uppercase;
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- PREMIUM HEADER -->
+    <div class="header-wrapper">
+        <table class="header-table">
+            <tr>
+                <td class="logo-cell">
+                    {% if school_logo_b64 %}
+                        <img src="{{ school_logo_b64 }}" class="logo-img" alt="Logo">
+                    {% endif %}
+                </td>
+                <td class="text-cell">
+                    <h1 class="school-name">{{ school.name|upper }}</h1>
+                    <p class="school-motto">"{{ school.motto|default:'DISCIPLINE PRECEED SUCCESS' }}"</p>
+                    <p class="school-contact">
+                        P.O BOX {{ school.postal_address|default:"410-50200" }} - {{ school.county|upper }}<br>
+                        {{ school.email }} &bull; {{ school.phone }}
+                    </p>
+                </td>
+                <td class="generated-text">
+                    GENERATED<br>
+                    <strong>{% now "j F Y" %}</strong><br>
+                    {% now "H:i" %}<br><br>
+                    BY<br>
+                    <strong>{{ generated_by.get_full_name|default:generated_by.email|upper }}</strong>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- Document Title -->
+    <div class="title-block">
+        <p class="title-main">Official Fee Structure</p>
+        <p class="title-sub">{{ class_level.name }} · {{ term }} {{ academic_year }}</p>
+    </div>
+
+    <!-- Fee Items Table -->
+    <table class="fee-table">
+        <thead>
+            <tr>
+                <th>Fee Item Description</th>
+                <th>Due Date</th>
+                <th style="text-align: right;">Amount (KES)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for fee in fees %}
+            <tr>
+                <td>{{ fee.name|upper }}</td>
+                <td>{{ fee.due_date|date:"j M Y"|default:"—" }}</td>
+                <td style="text-align: right;">{{ fee.amount_kes|floatformat:2 }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="3" style="text-align: center; padding: 20px;">No fees found for this term.</td>
+            </tr>
+            {% endfor %}
+            
+            <!-- Total Row -->
+            <tr class="total-row">
+                <td colspan="2" style="text-align: right;">TOTAL FEES:</td>
+                <td style="text-align: right;">KES {{ total_amount|floatformat:2 }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- Signatures -->
+    <table class="footer-table">
+        <tr>
+            <td>
+                <div class="signature-line"></div>
+                <div class="signature-label">Accountant / Bursar Signature</div>
+            </td>
+            <td>
+                <div class="signature-line"></div>
+                <div class="signature-label">Official School Stamp</div>
+            </td>
+        </tr>
+    </table>
+
+</body>
+</html>

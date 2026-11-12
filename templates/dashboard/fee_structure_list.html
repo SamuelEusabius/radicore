@@ -9,58 +9,130 @@
     <p class="page-subtitle">Manage and group fees by Class Level.</p>
   </div>
   <div style="display: flex; gap: 8px;">
-    <a href="{% url 'fee_structure_matrix' %}" class="btn btn-primary">Matrix Draft</a>
-    <a href="{% url 'fee_structure_add' %}" class="btn btn-secondary" style="background: white;">+ Add Single Item</a>
+    <a href="{% url 'fee_structure_matrix' %}" class="btn btn-primary" style="background: var(--primary); color: white;">Matrix Draft</a>
+    <a href="{% url 'fee_structure_add' %}" class="btn btn-secondary" style="background: white; border: 1px solid var(--border); color: var(--ink-900);">+ Add Single Item</a>
   </div>
 </div>
 
-<!-- Iterate over the grouped data from the view -->
-{% for group in grouped_fees %}
-<div class="card mb-6" style="padding: 0; overflow: hidden;">
-  <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding: 16px 20px; background: #f8fafc;">
-    <div>
-      <h3 style="margin: 0; font-size: 18px; color: var(--ink-900);">{{ group.class_name }}</h3>
-      <p style="margin: 4px 0 0 0; font-size: 13px; color: var(--ink-500);">
-        {{ group.items|length }} Item{{ group.items|length|pluralize }} | Total: <strong>KES {{ group.total|floatformat:2 }}</strong>
-      </p>
-    </div>
-    <div style="display: flex; gap: 8px;">
-      <a href="{% url 'fee_structure_class_pdf' group.class_name %}" target="_blank" class="btn btn-secondary" style="background: white; padding: 8px 16px; font-size: 14px;">
-        Print Structure PDF
-      </a>
-    </div>
-  </div>
+<!-- SEARCH & FILTER BAR -->
+<div class="card mb-6" style="padding: 20px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 24px;">
+  <form method="GET" action="{% url 'fee_structure_list' %}">
+    <div style="display: flex; gap: 16px; align-items: flex-end; flex-wrap: wrap;">
+      
+      <div style="flex: 1; min-width: 250px;">
+        <label class="form-label" style="font-size: 12px; margin-bottom: 4px; display: block; color: var(--ink-500);">SEARCH</label>
+        <input type="text" name="q" value="{{ search_query|default:'' }}" placeholder="Student name, fee item..." class="form-input" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px;">
+      </div>
 
-  <table class="table" style="width: 100%; border-collapse: collapse; margin: 0;">
-    <thead>
-      <tr style="border-bottom: 1px solid var(--border);">
-        <th style="padding: 12px 20px; text-align: left; font-size: 12px; color: var(--ink-500);">Fee Item</th>
-        <th style="padding: 12px 20px; text-align: left; font-size: 12px; color: var(--ink-500);">Term / Year</th>
-        <th style="padding: 12px 20px; text-align: left; font-size: 12px; color: var(--ink-500);">Due Date</th>
-        <th style="padding: 12px 20px; text-align: right; font-size: 12px; color: var(--ink-500);">Amount (KES)</th>
-        <th style="padding: 12px 20px; text-align: right; font-size: 12px; color: var(--ink-500);">Actions</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for item in group.items %}
-      <tr style="border-bottom: 1px solid var(--border);">
-        <td style="padding: 16px 20px; font-weight: 500; color: var(--ink-900);">{{ item.name }}</td>
-        <td style="padding: 16px 20px; color: var(--ink-500); font-size: 13px;">{{ item.term }} {{ item.academic_year }}</td>
-        <td style="padding: 16px 20px; color: var(--ink-500); font-size: 13px;">{{ item.due_date|date:"d M Y"|default:"—" }}</td>
-        <td style="padding: 16px 20px; text-align: right; font-family: monospace; font-weight: 600; color: var(--ink-900);">{{ item.amount_kes|floatformat:2 }}</td>
-        <td style="padding: 16px 20px; text-align: right;">
-          <a href="{% url 'fee_structure_edit' item.id %}" class="btn btn-sm" style="background: white; border: 1px solid var(--border); padding: 4px 8px; font-size: 12px;">Edit</a>
-          <a href="{% url 'fee_structure_delete' item.id %}" class="btn btn-sm" style="background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; padding: 4px 8px; font-size: 12px;">Delete</a>
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</div>
-{% empty %}
-<div class="card" style="text-align: center; padding: 40px;">
-  <p style="color: var(--ink-500);">No fee structures found. Click "Matrix Draft" to create one.</p>
-</div>
-{% endfor %}
+      <div style="width: 200px;">
+        <label class="form-label" style="font-size: 12px; margin-bottom: 4px; display: block; color: var(--ink-500);">CLASS</label>
+        <select name="class_id" class="form-input" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px;">
+            <option value="">All Classes</option>
+            {% for cls in classes %}
+                <option value="{{ cls.id }}" {% if selected_class_id == cls.id %}selected{% endif %}>{{ cls.name }}</option>
+            {% endfor %}
+        </select>
+      </div>
 
+      <div style="width: 150px;">
+        <label class="form-label" style="font-size: 12px; margin-bottom: 4px; display: block; color: var(--ink-500);">TERM</label>
+        <select name="term" class="form-input" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px;">
+            <option value="">All Terms</option>
+            <option value="Term 1" {% if selected_term == 'Term 1' %}selected{% endif %}>Term 1</option>
+            <option value="Term 2" {% if selected_term == 'Term 2' %}selected{% endif %}>Term 2</option>
+            <option value="Term 3" {% if selected_term == 'Term 3' %}selected{% endif %}>Term 3</option>
+        </select>
+      </div>
+
+      <button type="submit" class="btn btn-primary" style="padding: 10px 24px; font-weight: 600; background: var(--primary); color: white; border: none; border-radius: 6px; display: flex; align-items: center; gap: 6px;">
+        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+        Filter
+      </button>
+    </div>
+  </form>
+</div>
+
+<!-- RESULTS AREA -->
+{% if has_filters %}
+    
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <p style="font-size: 14px; color: var(--ink-500); margin: 0;">
+            {{ grouped_fees|length }} Class Group{{ grouped_fees|length|pluralize }} matched
+        </p>
+    </div>
+
+    <!-- Iterate over the grouped data from the view -->
+    {% for group in grouped_fees %}
+    <div class="card mb-6" style="padding: 0; overflow: hidden; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 24px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding: 16px 20px; background: #f8fafc;">
+        <div>
+          <h3 style="margin: 0; font-size: 18px; color: var(--ink-900);">{{ group.class_name }}</h3>
+          <p style="margin: 4px 0 0 0; font-size: 13px; color: var(--ink-500);">
+            {{ group.items|length }} Item{{ group.items|length|pluralize }} | Total: <strong>KES {{ group.total|floatformat:2 }}</strong>
+          </p>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <a href="#" onclick="downloadPdf({{ group.class_id }}, '{{ group.term }}', '{{ group.academic_year }}'); return false;" class="btn btn-secondary" style="background: white; padding: 8px 16px; font-size: 14px; display: flex; align-items: center; gap: 6px; border: 1px solid var(--border);">
+            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+            Print Structure PDF
+          </a>
+        </div>
+      </div>
+
+      <table class="table" style="width: 100%; border-collapse: collapse; margin: 0;">
+        <thead>
+          <tr style="border-bottom: 1px solid var(--border);">
+            <th style="padding: 12px 20px; text-align: left; font-size: 12px; color: var(--ink-500); text-transform: uppercase;">Fee Item</th>
+            <th style="padding: 12px 20px; text-align: left; font-size: 12px; color: var(--ink-500); text-transform: uppercase;">Term / Year</th>
+            <th style="padding: 12px 20px; text-align: left; font-size: 12px; color: var(--ink-500); text-transform: uppercase;">Due Date</th>
+            <th style="padding: 12px 20px; text-align: right; font-size: 12px; color: var(--ink-500); text-transform: uppercase;">Amount (KES)</th>
+            <th style="padding: 12px 20px; text-align: right; font-size: 12px; color: var(--ink-500); text-transform: uppercase; width: 140px;">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in group.items %}
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 16px 20px; font-weight: 500; color: var(--ink-900);">{{ item.name }}</td>
+            <td style="padding: 16px 20px; color: var(--ink-500); font-size: 13px;">{{ item.term }} {{ item.academic_year }}</td>
+            <td style="padding: 16px 20px; color: var(--ink-500); font-size: 13px;">{{ item.due_date|date:"d M Y"|default:"—" }}</td>
+            <td style="padding: 16px 20px; text-align: right; font-family: monospace; font-weight: 600; color: var(--ink-900);">{{ item.amount_kes|floatformat:2 }}</td>
+            <td style="padding: 16px 20px; text-align: right;">
+              <a href="{% url 'fee_structure_edit' item.id %}" class="btn btn-sm" style="background: white; border: 1px solid var(--border); padding: 4px 8px; font-size: 12px; text-decoration: none;">Edit</a>
+              <a href="{% url 'fee_structure_delete' item.id %}" class="btn btn-sm" style="background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; padding: 4px 8px; font-size: 12px; text-decoration: none;">Delete</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+        <tfoot>
+          <tr style="background: #ecfdf5;">
+            <td colspan="3" style="padding: 16px 20px; text-align: right; font-weight: 700; font-size: 14px; color: #047857;">SUBTOTAL FOR THIS CLASS:</td>
+            <td style="padding: 16px 20px; text-align: right; font-weight: 900; font-size: 15px; color: #047857;">KES {{ group.total|floatformat:2 }}</td>
+            <td></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+    {% empty %}
+        <div class="card" style="text-align: center; padding: 40px;">
+            <p style="color: var(--ink-500);">No fee structures found matching your search criteria.</p>
+        </div>
+    {% endfor %}
+
+{% else %}
+    <!-- Empty State when no filters are applied -->
+    <div class="card" style="text-align: center; padding: 80px 20px; background: #f8fafc; border: 1px dashed #cbd5e1;">
+        <svg width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin: 0 auto 16px auto; color: #94a3b8;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
+        <h3 style="margin: 0 0 8px 0; color: var(--ink-900); font-size: 18px;">Ready to View</h3>
+        <p style="margin: 0; color: var(--ink-500); font-size: 14px;">Select a class or term from the filter above and click "Filter" to view fee structures.</p>
+    </div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function downloadPdf(classId, term, year) {
+        window.location.href = `/dashboard/finance/fee-structure/download/${classId}/?term=${encodeURIComponent(term)}&year=${encodeURIComponent(year)}`;
+    }
+</script>
 {% endblock %}

@@ -1,97 +1,251 @@
 {% extends 'base.html' %}
+{% load static %}
 {% block title %}Draft Fee Matrix{% endblock %}
-{% block header_title %}Fee Structure Drafting{% endblock %}
+{% block header_title %}Draft Fee Matrix{% endblock %}
 
 {% block content %}
-<div class="card mb-6" style="padding: 20px;">
-  <form method="get" style="display: flex; gap: 16px; align-items: flex-end; flex-wrap: wrap;">
-    <div style="flex: 1; min-width: 200px;">
-      <label style="display: block; font-size: 13px; font-weight: 600; color: var(--ink-500); margin-bottom: 6px;">Select Class</label>
-      <select name="class_id" required style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px;">
-        <option value="">— Choose Class —</option>
-        {% for c in classes %}
-          <option value="{{ c.id }}" {% if selected_class_id == c.id|stringformat:"s" %}selected{% endif %}>{{ c.name }}</option>
-        {% endfor %}
-      </select>
-    </div>
-    
-    <div style="width: 150px;">
-      <label style="display: block; font-size: 13px; font-weight: 600; color: var(--ink-500); margin-bottom: 6px;">Academic Year</label>
-      <select name="year" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px;">
-        {% for y in years %}
-          <option value="{{ y }}" {% if selected_year == y|stringformat:"s" %}selected{% endif %}>{{ y }}</option>
-        {% endfor %}
-      </select>
+<div class="card" style="max-width: 1100px; margin: 0 auto; padding: 32px;">
+
+    <!-- Header Instructions -->
+    <div style="background: #ecfdf5; border-left: 4px solid var(--primary); padding: 16px; border-radius: 8px; margin-bottom: 24px;">
+        <h4 style="margin: 0; color: var(--primary); font-weight: 700;">Bulk Draft Fee Structure</h4>
+        <p style="margin: 4px 0 0 0; font-size: 13px; color: var(--ink-600);">
+            Select the classes you want to apply fees to, add multiple fee items below, and save them all at once.
+        </p>
     </div>
 
-    <div style="width: 150px;">
-      <label style="display: block; font-size: 13px; font-weight: 600; color: var(--ink-500); margin-bottom: 6px;">Term</label>
-      <select name="term" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px;">
-        {% for t in terms %}
-          <option value="{{ t }}" {% if selected_term == t %}selected{% endif %}>{{ t }}</option>
-        {% endfor %}
-      </select>
+    <form id="matrixForm">
+        {% csrf_token %}
+        
+        <!-- 1. Term and Year -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; background: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid var(--border);">
+            <div>
+                <label class="form-label">Term *</label>
+                <select id="matrix_term" class="form-input" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                    <option value="">— Select Term —</option>
+                    {% for term in terms %}
+                        <option value="{{ term }}" {% if term == default_term_name %}selected{% endif %}>{{ term }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label class="form-label">Academic Year *</label>
+                <select id="matrix_year" class="form-input" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                    <option value="">— Select Year —</option>
+                    {% for year in years %}
+                        <option value="{{ year }}" {% if year == default_year %}selected{% endif %}>{{ year }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <!-- 2. Class Selection -->
+        <h4 style="font-size: 15px; font-weight: 700; color: #1e293b; border-bottom: 2px solid var(--primary); padding-bottom: 8px; margin-bottom: 16px;">1. Select Classes</h4>
+        <div style="display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 32px;">
+            <label style="display: flex; align-items: center; gap: 8px; background: #e2e8f0; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600;">
+                <input type="checkbox" id="select_all_classes" style="width: 18px; height: 18px; accent-color: var(--primary);"> 
+                Select All Classes
+            </label>
+            {% for cls in classes %}
+            <label style="display: flex; align-items: center; gap: 8px; background: #f1f5f9; border: 1px solid #cbd5e1; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 500;">
+                <input type="checkbox" class="class-checkbox" value="{{ cls.id }}" style="width: 18px; height: 18px; accent-color: var(--primary);"> 
+                {{ cls.name }}
+            </label>
+            {% endfor %}
+        </div>
+
+        <!-- 3. Fee Items -->
+        <h4 style="font-size: 15px; font-weight: 700; color: #1e293b; border-bottom: 2px solid var(--primary); padding-bottom: 8px; margin-bottom: 16px;">2. Draft Fee Items</h4>
+        <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; text-align: left;" id="feeItemsTable">
+                <thead>
+                    <tr style="background: #1a2332; color: white;">
+                        <th style="padding: 12px; border: 1px solid #0f172a; font-size: 13px; width: 40%;">Fee Item Name *</th>
+                        <th style="padding: 12px; border: 1px solid #0f172a; font-size: 13px; width: 25%;">Amount (KES) *</th>
+                        <th style="padding: 12px; border: 1px solid #0f172a; font-size: 13px; width: 25%;">Due Date *</th>
+                        <th style="padding: 12px; border: 1px solid #0f172a; font-size: 13px; width: 10%; text-align: center;">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="feeItemsBody">
+                    <!-- Initial Row -->
+                    <tr class="fee-item-row">
+                        <td style="padding: 8px; border: 1px solid #e2e8f0;">
+                            <input type="text" class="fee-name" placeholder="e.g. Tuition Fees" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px;">
+                        </td>
+                        <td style="padding: 8px; border: 1px solid #e2e8f0;">
+                            <input type="number" class="fee-amount" placeholder="0.00" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px;">
+                        </td>
+                        <td style="padding: 8px; border: 1px solid #e2e8f0;">
+                            <input type="date" class="fee-due-date" value="{{ default_due_date }}" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px;">
+                        </td>
+                        <td style="padding: 8px; border: 1px solid #e2e8f0; text-align: center;">
+                            <button type="button" class="remove-row-btn" style="background: #fee2e2; color: #dc2626; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: bold;">✕</button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <button type="button" id="addRowBtn" style="margin-top: 12px; padding: 10px 20px; background: #e2e8f0; color: #1e293b; border: none; border-radius: 6px; font-weight: 600; cursor: pointer;">
+            + Add Another Fee Item
+        </button>
+
+        <!-- 4. Actions -->
+        <div style="display: flex; justify-content: flex-end; margin-top: 32px; border-top: 1px solid var(--border); padding-top: 24px;">
+            <button type="button" onclick="saveMatrix()" class="btn btn-primary" style="padding: 12px 32px; font-size: 16px;">
+                Save Fee Matrix
+            </button>
+        </div>
+    </form>
+
+    <!-- Download Section (Separate from Form) -->
+    <div style="margin-top: 40px; padding-top: 24px; border-top: 2px dashed #cbd5e1;">
+        <h4 style="font-size: 15px; font-weight: 700; color: #1e293b; margin-bottom: 12px;">Download Fee Structure PDF</h4>
+        <div style="display: flex; gap: 12px; align-items: center;">
+            <select id="download_class_id" class="form-input" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; min-width: 250px;">
+                <option value="">— Select Class to Download —</option>
+                {% for cls in classes %}
+                    <option value="{{ cls.id }}">{{ cls.name }}</option>
+                {% endfor %}
+            </select>
+            <button type="button" onclick="downloadPdf()" class="btn btn-secondary" style="padding: 10px 20px; font-weight: 600;">
+                Download PDF
+            </button>
+        </div>
     </div>
 
-    <button type="submit" class="btn btn-primary" style="padding: 10px 24px;">Load Matrix</button>
-  </form>
 </div>
+{% endblock %}
 
-{% if selected_class %}
-<div class="card">
-  <h3 style="margin-bottom: 16px; color: var(--ink-900);">
-    Drafting: {{ selected_class.name }} — {{ selected_term }} {{ selected_year }}
-  </h3>
-  
-  <form method="post">
-    {% csrf_token %}
-    <table class="table" id="fee-table" style="width: 100%; margin-bottom: 20px;">
-      <thead style="background: #f8fafc;">
-        <tr>
-          <th style="padding: 12px; text-align: left; font-size: 13px; color: var(--ink-500);">Fee Item Name</th>
-          <th style="padding: 12px; text-align: right; font-size: 13px; color: var(--ink-500); width: 200px;">Amount (KES)</th>
-          <th style="padding: 12px; text-align: left; font-size: 13px; color: var(--ink-500); width: 200px;">Due Date (Optional)</th>
-          <th style="padding: 12px; width: 50px;"></th>
-        </tr>
-      </thead>
-      <tbody id="fee-rows">
-        {% for fee in existing_fees %}
-        <tr>
-          <td style="padding: 8px;"><input type="text" name="item_name[]" value="{{ fee.name }}" required style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 4px;"></td>
-          <td style="padding: 8px;"><input type="number" name="item_amount[]" value="{{ fee.amount_kes }}" required style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 4px; text-align: right; font-family: monospace;"></td>
-          <td style="padding: 8px;"><input type="date" name="item_date[]" value="{{ fee.due_date|date:'Y-m-d' }}" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 4px;"></td>
-          <td style="padding: 8px; text-align: center;"><button type="button" onclick="this.closest('tr').remove()" style="background: #fee2e2; color: #991b1b; border: none; padding: 8px; border-radius: 4px; cursor: pointer;">✕</button></td>
-        </tr>
-        {% empty %}
-        <tr>
-          <td style="padding: 8px;"><input type="text" name="item_name[]" placeholder="e.g. Tuition" required style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 4px;"></td>
-          <td style="padding: 8px;"><input type="number" name="item_amount[]" placeholder="0.00" required style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 4px; text-align: right; font-family: monospace;"></td>
-          <td style="padding: 8px;"><input type="date" name="item_date[]" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 4px;"></td>
-          <td style="padding: 8px; text-align: center;"><button type="button" onclick="this.closest('tr').remove()" style="background: #fee2e2; color: #991b1b; border: none; padding: 8px; border-radius: 4px; cursor: pointer;">✕</button></td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-
-    <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); padding-top: 20px;">
-      <button type="button" onclick="addRow()" class="btn btn-secondary" style="background: white;">+ Add Another Item</button>
-      <button type="submit" class="btn btn-primary" style="padding: 12px 32px; font-size: 16px;">Save Fee Matrix</button>
-    </div>
-  </form>
-</div>
-
+{% block extra_js %}
 <script>
-  function addRow() {
-    const tbody = document.getElementById('fee-rows');
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td style="padding: 8px;"><input type="text" name="item_name[]" placeholder="e.g. Transport" required style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 4px;"></td>
-      <td style="padding: 8px;"><input type="number" name="item_amount[]" placeholder="0.00" required style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 4px; text-align: right; font-family: monospace;"></td>
-      <td style="padding: 8px;"><input type="date" name="item_date[]" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 4px;"></td>
-      <td style="padding: 8px; text-align: center;"><button type="button" onclick="this.closest('tr').remove()" style="background: #fee2e2; color: #991b1b; border: none; padding: 8px; border-radius: 4px; cursor: pointer;">✕</button></td>
-    `;
-    tbody.appendChild(tr);
-  }
+    // Select All Classes
+    document.getElementById('select_all_classes').addEventListener('change', function() {
+        const isChecked = this.checked;
+        document.querySelectorAll('.class-checkbox').forEach(cb => {
+            cb.checked = isChecked;
+        });
+    });
+
+    // Add / Remove Fee Rows
+    document.getElementById('addRowBtn').addEventListener('click', function() {
+        const tbody = document.getElementById('feeItemsBody');
+        const newRow = document.createElement('tr');
+        newRow.className = 'fee-item-row';
+        newRow.innerHTML = `
+            <td style="padding: 8px; border: 1px solid #e2e8f0;">
+                <input type="text" class="fee-name" placeholder="e.g. Transport" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px;">
+            </td>
+            <td style="padding: 8px; border: 1px solid #e2e8f0;">
+                <input type="number" class="fee-amount" placeholder="0.00" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px;">
+            </td>
+            <td style="padding: 8px; border: 1px solid #e2e8f0;">
+                <input type="date" class="fee-due-date" value="{{ default_due_date }}" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px;">
+            </td>
+            <td style="padding: 8px; border: 1px solid #e2e8f0; text-align: center;">
+                <button type="button" class="remove-row-btn" style="background: #fee2e2; color: #dc2626; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: bold;">✕</button>
+            </td>
+        `;
+        tbody.appendChild(newRow);
+    });
+
+    // Delegate remove event
+    document.getElementById('feeItemsBody').addEventListener('click', function(e) {
+        if (e.target.classList.contains('remove-row-btn')) {
+            const rows = document.querySelectorAll('.fee-item-row');
+            if (rows.length > 1) {
+                e.target.closest('tr').remove();
+            } else {
+                alert("You must have at least one fee item.");
+            }
+        }
+    });
+
+    // Save Matrix
+    function saveMatrix() {
+        const term = document.getElementById('matrix_term').value;
+        const year = document.getElementById('matrix_year').value;
+        
+        if (!term || !year) {
+            alert("Please select Term and Academic Year.");
+            return;
+        }
+
+        // Get selected classes
+        const selectedClasses = [];
+        document.querySelectorAll('.class-checkbox:checked').forEach(cb => {
+            selectedClasses.push(cb.value);
+        });
+
+        if (selectedClasses.length === 0) {
+            alert("Please check at least one class.");
+            return;
+        }
+
+        // Get fee items
+        const feeItems = [];
+        document.querySelectorAll('.fee-item-row').forEach(row => {
+            const name = row.querySelector('.fee-name').value.trim();
+            const amount = row.querySelector('.fee-amount').value;
+            const dueDate = row.querySelector('.fee-due-date').value;
+            
+            if (name && amount && dueDate) {
+                feeItems.push({ name, amount: parseFloat(amount), due_date: dueDate });
+            }
+        });
+
+        if (feeItems.length === 0) {
+            alert("Please fill in at least one complete fee item (Name, Amount, Due Date).");
+            return;
+        }
+
+        const payload = {
+            term: term,
+            year: year,
+            class_ids: selectedClasses,
+            fee_items: feeItems
+        };
+
+        fetch("{% url 'fee_structure_matrix_save' %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify(payload)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                window.location.reload();
+            } else {
+                alert("Error: " + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert("An error occurred while saving.");
+        });
+    }
+
+    // Download PDF
+    function downloadPdf() {
+        const classId = document.getElementById('download_class_id').value;
+        const term = document.getElementById('matrix_term').value;
+        const year = document.getElementById('matrix_year').value;
+
+        if (!classId) {
+            alert("Please select a class to download.");
+            return;
+        }
+        if (!term || !year) {
+            alert("Please select the Term and Academic Year first.");
+            return;
+        }
+
+        window.location.href = `/dashboard/finance/fee-structure/download/${classId}/?term=${encodeURIComponent(term)}&year=${encodeURIComponent(year)}`;
+    }
 </script>
-{% endif %}
 {% endblock %}

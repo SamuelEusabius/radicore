@@ -106,7 +106,7 @@ from .finance import (
     class_fee_statement_pdf,
     fee_structure_list,
     fee_structure_add,
-    fee_structure_edit,
+    fee_structure_edit,                                                                                                     download_fee_structure_pdf,
     fee_structure_delete,
     fee_structure_bulk,
     fee_structure_matrix,

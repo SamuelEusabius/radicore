@@ -3,7 +3,7 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from apps.dashboard.views import locations_api
-
+from apps.dashboard import views
 from apps.accounts.views import logout_view, school_blocked
 from apps.accounts.views import logout_view, school_blocked, change_password, profile_view
 from apps.accounts.views import logout_view, school_blocked, change_password, profile_view, super_admin_profile
@@ -41,6 +41,7 @@ urlpatterns = [
     path('unallocated/', include('apps.finance.unallocated_urls')),
     path('api/locations/constituencies/', locations_api.get_constituencies, name='api_constituencies'),
     path('api/locations/wards/', locations_api.get_wards, name='api_wards'),
+    path('dashboard/finance/fee-structure/download/<int:class_id>/', views.download_fee_structure_pdf, name='download_fee_structure_pdf'),
 ]
 
 if settings.DEBUG:
