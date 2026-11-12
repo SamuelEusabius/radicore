@@ -127,4 +127,34 @@ class User(AbstractUser):
 
     @property
     def is_parent(self):
-        return self.role == Role.PARENT
+        return self.role == Role.PARENT 
+import secrets
+import hashlib
+from django.db import models
+from django.conf import settings
+
+class UserSession(models.Model):
+    """
+    Stores the 95-character opaque key system for secure login.
+    """
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='active_sessions')
+    school = models.ForeignKey('schools.School', on_delete=models.CASCADE)
+    
+    # We only store the SHA-256 hash. The raw key is only sent to the user's cookie.
+    key_hash = models.CharField(max_length=64, unique=True, db_index=True)
+    
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    device = models.CharField(max_length=255, blank=True) # User Agent
+    is_active = models.BooleanField(default=True)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    last_activity = models.DateTimeField(auto_now=True)
+
+    def generate_key(self):
+        """Generates a 95-char URL safe key and returns it. Stores only the hash."""
+        raw_key = secrets.token_urlsafe(72)[:95] # URL-safe gives ~96 chars, we slice to 95
+        self.key_hash = hashlib.sha256(raw_key.encode()).hexdigest()
+        return raw_key
+
+    def __str__(self):
+        return f"{self.user.email} - {self.ip_address} - {'Active' if self.is_active else 'Dead'}"

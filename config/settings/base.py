@@ -57,6 +57,7 @@ LOCAL_APPS = [
     'apps.boarding',
     'apps.locations',
     "kenyan_counties",
+    
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -76,6 +77,7 @@ MIDDLEWARE = [
     'allauth.account.middleware.AccountMiddleware',
     'apps.schools.middleware.SchoolTenantMiddleware',
     'apps.schools.middleware_subscription.SubscriptionBlockMiddleware',
+    'apps.core.middleware.SecureSessionMiddleware',
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -136,7 +138,7 @@ ACCOUNT_LOGIN_ON_EMAIL_CONFIRMATION = True
 ACCOUNT_SESSION_REMEMBER = True
 ACCOUNT_EMAIL_CONFIRMATION_EXPIRE_DAYS = 3
 ACCOUNT_EMAIL_SUBJECT_PREFIX = '[ElimuCore] '
-ACCOUNT_ADAPTER = 'apps.accounts.adapters.CustomAccountAdapter'
+
 
 LOGIN_URL = '/accounts/login/'
 LOGIN_REDIRECT_URL = '/dashboard/'
@@ -147,11 +149,8 @@ ACCOUNT_LOGIN_REDIRECT_URL = '/dashboard/'
 ACCOUNT_EMAIL_CONFIRMATION_EXPIRE_DAYS = 3
 ACCOUNT_EMAIL_SUBJECT_PREFIX = '[School MS] '
 
-# Adapter for signup
-ACCOUNT_ADAPTER = 'allauth.account.adapter.DefaultAccountAdapter'
-
 ACCOUNT_ADAPTER = 'apps.accounts.adapters.CustomAccountAdapter'
-LOGIN_REDIRECT_URL = '/dashboard/'   # fallback
+LOGIN_REDIRECT_URL = '/dashboard/'  
 ACCOUNT_LOGIN_REDIRECT_URL = '/dashboard/'
 
 # ==========================================================
