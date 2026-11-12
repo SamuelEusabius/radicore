@@ -80,6 +80,10 @@
             <button @click="tab = 'statement'" :class="tab === 'statement' ? 'border-b-2 border-emerald-600 text-emerald-700 font-bold bg-emerald-50' : 'text-gray-500 hover:text-gray-700 font-medium'" style="padding: 16px 24px; font-size: 14px; border: none; background: transparent; cursor: pointer; white-space: nowrap;">
                 Statement
             </button>
+            <!-- NEW RECEIPTS TAB -->
+            <button @click="tab = 'receipts'" :class="tab === 'receipts' ? 'border-b-2 border-emerald-600 text-emerald-700 font-bold bg-emerald-50' : 'text-gray-500 hover:text-gray-700 font-medium'" style="padding: 16px 24px; font-size: 14px; border: none; background: transparent; cursor: pointer; white-space: nowrap;">
+                Receipts
+            </button>
         </div>
     </div>
 
@@ -193,7 +197,6 @@
     <!-- ============ TAB: FEES ============ -->
     <div x-show="tab === 'fees'" x-transition>
         
-        <!-- Informational Banner if no invoices exist -->
         {% if total_due == 0 %}
         <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 12px; padding: 16px 20px; margin-bottom: 20px; display: flex; align-items: center; gap: 12px;">
             <div style="color: #3b82f6;">
@@ -252,27 +255,17 @@
 
     <!-- ============ TAB: STATEMENT ============ -->
     <div x-show="tab === 'statement'" x-transition>
-
-        <!-- Period Selector -->
         <div style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 16px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
             <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                <a href="?period=term" style="padding: 8px 16px; font-size: 13px; font-weight: 600; border-radius: 6px; text-decoration: none; {% if period == 'term' %}background: #10b981; color: white;{% else %}background: #f1f5f9; color: #475569;{% endif %}">
-                    This Term
-                </a>
-                <a href="?period=year" style="padding: 8px 16px; font-size: 13px; font-weight: 600; border-radius: 6px; text-decoration: none; {% if period == 'year' %}background: #10b981; color: white;{% else %}background: #f1f5f9; color: #475569;{% endif %}">
-                    This Year
-                </a>
-                <a href="?period=all" style="padding: 8px 16px; font-size: 13px; font-weight: 600; border-radius: 6px; text-decoration: none; {% if period == 'all' %}background: #10b981; color: white;{% else %}background: #f1f5f9; color: #475569;{% endif %}">
-                    All Time
-                </a>
+                <a href="?period=term" style="padding: 8px 16px; font-size: 13px; font-weight: 600; border-radius: 6px; text-decoration: none; {% if period == 'term' %}background: #10b981; color: white;{% else %}background: #f1f5f9; color: #475569;{% endif %}">This Term</a>
+                <a href="?period=year" style="padding: 8px 16px; font-size: 13px; font-weight: 600; border-radius: 6px; text-decoration: none; {% if period == 'year' %}background: #10b981; color: white;{% else %}background: #f1f5f9; color: #475569;{% endif %}">This Year</a>
+                <a href="?period=all" style="padding: 8px 16px; font-size: 13px; font-weight: 600; border-radius: 6px; text-decoration: none; {% if period == 'all' %}background: #10b981; color: white;{% else %}background: #f1f5f9; color: #475569;{% endif %}">All Time</a>
             </div>
-
             <a href="{% url 'parent_child_statement_pdf' child.id %}?period={{ period }}" target="_blank" style="display: inline-flex; align-items: center; gap: 6px; background: #0f172a; color: white; padding: 8px 16px; border-radius: 6px; font-size: 13px; font-weight: 600; text-decoration: none;">
                 {% include 'partials/icons.html' with name="download" size=14 %} Download PDF
             </a>
         </div>
 
-        <!-- Summary Cards -->
         <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 16px;">
             <div style="background: white; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0;">
                 <div style="font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase;">Total Invoiced</div>
@@ -290,7 +283,6 @@
             </div>
         </div>
 
-        <!-- Ledger Table -->
         <div style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden;">
             <div style="padding: 20px; border-bottom: 1px solid #e2e8f0;">
                 <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: #0f172a;">Transaction Ledger</h3>
@@ -328,7 +320,53 @@
                 </tbody>
             </table>
         </div>
+    </div>
 
+    <!-- ============ TAB: RECEIPTS (NEW) ============ -->
+    <div x-show="tab === 'receipts'" x-transition>
+        <div style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden;">
+            <div style="padding: 20px; border-bottom: 1px solid #e2e8f0;">
+                <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: #0f172a;">Payment Receipts</h3>
+                <p style="margin: 4px 0 0 0; font-size: 13px; color: #64748b;">Download your official receipts for paid fees.</p>
+            </div>
+            
+            <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                <thead style="background: #f8fafc;">
+                    <tr>
+                        <th style="padding: 16px; font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase;">Date</th>
+                        <th style="padding: 16px; font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase;">Reference</th>
+                        <th style="padding: 16px; font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase;">For Invoice</th>
+                        <th style="padding: 16px; font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; text-align: right;">Amount</th>
+                        <th style="padding: 16px; font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; text-align: right;">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for payment in payments %}
+                    <tr style="border-bottom: 1px solid #f1f5f9;">
+                        <td style="padding: 16px; font-size: 13px; color: #64748b; white-space: nowrap;">{{ payment.paid_at|date:"d M Y" }}</td>
+                        <td style="padding: 16px; font-family: monospace; font-weight: 600; color: #0f172a;">{{ payment.reference|default:payment.id }}</td>
+                        <td style="padding: 16px; font-size: 13px; color: #64748b;">
+                            {% if payment.invoice.fee_structure %}{{ payment.invoice.fee_structure.name }}{% else %}Invoice #{{ payment.invoice.id }}{% endif %}
+                        </td>
+                        <td style="padding: 16px; font-size: 14px; font-weight: 700; text-align: right; color: #047857;">
+                            KES {{ payment.amount_kes|floatformat:2 }}
+                        </td>
+                        <td style="padding: 16px; text-align: right;">
+                            <a href="{% url 'receipt_pdf' payment.id %}" target="_blank" style="display: inline-flex; align-items: center; gap: 6px; background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; padding: 6px 12px; border-radius: 4px; font-weight: 600; font-size: 12px; text-decoration: none;">
+                                {% include 'partials/icons.html' with name="download" size=14 %} Download Receipt
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" style="padding: 60px 20px; text-align: center; color: #64748b;">
+                            No payments have been recorded yet.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
 
 </div>

@@ -7,6 +7,7 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.template.loader import render_to_string
+from django.http import HttpResponseForbidden
 
 
 from .models import FeeStructure, Invoice, Payment
@@ -149,16 +150,47 @@ def fee_statement_pdf(request, student_id):
 
 @login_required
 def receipt_pdf(request, payment_id):
-    """Generate an A5 receipt PDF for a payment."""
-    from .models import Payment
+    """Generate an A5 receipt PDF for a payment.
+    Accessible to: Accountants, Principals, and Parents (only their own child).
+    """
+    from .models import Payment, Invoice
     from apps.core.pdf_utils import html_to_pdf_response
     from django.template.loader import render_to_string
-    payment = get_object_or_404(
-        Payment, id=payment_id,
-        invoice__student__school=request.user.school
-    )
-    # Refresh invoice to get latest amount_paid/balance
-    from apps.finance.models import Invoice
+
+    user = request.user
+    role = getattr(user, 'role', None)
+
+    # -------------------------------
+    # ROLE-BASED ACCESS
+    # -------------------------------
+    if role in ('accountant', 'principal', 'bursar', 'super_admin'):
+        # Staff: they can see any receipt for their own school
+        payment = get_object_or_404(Payment, id=payment_id)
+
+        # Ensure the payment belongs to the staff member's school
+        if role != 'super_admin':
+            if not user.school or payment.invoice.student.school != user.school:
+                return HttpResponseForbidden("Access denied.")
+
+    elif role == 'parent':
+        # Parents: can only download receipts for their own children
+        try:
+            parent = user.parent_profile
+            child_ids = parent.students.values_list('id', flat=True)
+        except Exception:
+            return HttpResponseForbidden("Parent profile not found.")
+
+        payment = get_object_or_404(Payment, id=payment_id)
+
+        if payment.invoice.student_id not in child_ids:
+            return HttpResponseForbidden("You can only download receipts for your own child.")
+
+    else:
+        return HttpResponseForbidden("You do not have permission to view this receipt.")
+
+    # -------------------------------
+    # BUILD PDF
+    # -------------------------------
     invoice = Invoice.objects.get(id=payment.invoice_id)
     student = invoice.student
     school = student.school
@@ -166,16 +198,15 @@ def receipt_pdf(request, payment_id):
     html_string = render_to_string('pdf/receipt.html',
         build_pdf_context(
             school=school,
-            generated_by=request.user,
+            generated_by=user,
             payment=payment,
             invoice=invoice,
             student=student,
-            user=request.user,
+            user=user,
         )
     )
-    filename = f'receipt_{payment.reference}.pdf'
+    filename = f'receipt_{payment.reference or payment.id}.pdf'
     return html_to_pdf_response(html_string, filename)
-
 
 # ==========================================================
 # FEE STATEMENT PDF (A5)

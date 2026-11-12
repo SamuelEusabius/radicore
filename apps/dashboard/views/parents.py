@@ -173,7 +173,7 @@ def parent_children(request):
 @login_required
 @parent_only
 def parent_child_detail(request, student_id):
-    """Detail view for one child: grades, attendance, invoices, fees, statement."""
+    """Detail view for one child: grades, attendance, invoices, fees, statement, payments."""
     from apps.students.models import Student
     from apps.grades.models import Grade
     from apps.attendance.models import Attendance
@@ -199,9 +199,9 @@ def parent_child_detail(request, student_id):
 
     exam_summaries = []
     for exam, grade_list in exams_map.items():
-        total_marks = sum(float(g.marks) for g in grade_list)
-        total_out_of = sum(float(g.out_of or 100) for g in grade_list) or 1
-        avg = round((total_marks / total_out_of) * 100, 1) if grade_list else 0
+        total = sum(float(g.marks) for g in grade_list)
+        out_of = sum(float(g.out_of or 100) for g in grade_list) or 1
+        avg = round((total / out_of) * 100, 1) if grade_list else 0
 
         if avg >= 80:
             cbc, cbc_label, cbc_color = 'EE', 'Exceeding Expectation', 'green'
@@ -245,10 +245,9 @@ def parent_child_detail(request, student_id):
             class_level__name__iexact=child.class_level, 
         ).order_by('name')
         for fs in fs_qs:
-            # Extract item name from "Term 1 2026 — Tuition" format
             name = fs.name
             if ' — ' in name:
-                term_part, item_part = name.split(' — ', 1)
+                _, item_part = name.split(' — ', 1)
                 display_name = item_part
             else:
                 display_name = name
@@ -265,12 +264,10 @@ def parent_child_detail(request, student_id):
     now = timezone.now()
 
     if period == 'term':
-        # Current term = last 90 days
         start = now - timedelta(days=90)
     elif period == 'year':
-        # Current year
         start = now.replace(month=1, day=1, hour=0, minute=0, second=0)
-    else:  # 'all'
+    else:
         start = None
 
     invoice_qs = Invoice.objects.filter(student=child)
@@ -280,7 +277,7 @@ def parent_child_detail(request, student_id):
         invoice_qs = invoice_qs.filter(created_at__gte=start)
         payment_qs = payment_qs.filter(paid_at__gte=start)
 
-    # Build ledger sorted by date
+    # Build ledger
     ledger_events = []
     for inv in invoice_qs:
         ledger_events.append({
@@ -298,7 +295,6 @@ def parent_child_detail(request, student_id):
         })
     ledger_events.sort(key=lambda x: x['date'])
 
-    # Compute running balance
     running = 0
     ledger = []
     for ev in ledger_events:
@@ -318,6 +314,11 @@ def parent_child_detail(request, student_id):
     period_paid = sum(ev['payment'] for ev in ledger if ev['payment'])
     period_balance = period_invoiced - period_paid
 
+    # ---------- ALL PAYMENTS (for receipt download table) ----------
+    all_payments = Payment.objects.filter(
+        invoice__student=child
+    ).select_related('invoice', 'invoice__fee_structure').order_by('-paid_at')
+
     return render(request, 'dashboard/parent_child_detail.html', {
         'child': child,
         'exam_summaries': exam_summaries,
@@ -334,8 +335,8 @@ def parent_child_detail(request, student_id):
         'period_invoiced': period_invoiced,
         'period_paid': period_paid,
         'period_balance': period_balance,
+        'payments': all_payments,
     })
-
 
 @login_required
 @school_staff_only
