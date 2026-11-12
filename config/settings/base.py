@@ -30,6 +30,7 @@ THIRD_PARTY_APPS = [
     'rest_framework_simplejwt',
     'allauth',
     'allauth.account',
+    'axes',
     'crispy_forms',
     'crispy_tailwind',
 ]
@@ -78,6 +79,7 @@ MIDDLEWARE = [
     'apps.schools.middleware.SchoolTenantMiddleware',
     'apps.schools.middleware_subscription.SubscriptionBlockMiddleware',
     'apps.core.middleware.SecureSessionMiddleware',
+    'axes.middleware.AxesMiddleware',
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -282,3 +284,17 @@ CELERY_BEAT_SCHEDULE = {
         'schedule': crontab(hour=0, minute=0),  # Runs at midnight every day
     },
 }
+
+AUTHENTICATION_BACKENDS = [
+    'axes.backends.AxesStandaloneBackend',
+    'django.contrib.auth.backends.ModelBackend',
+]
+
+# ==========================================================
+# SECURITY: BRUTE FORCE PROTECTION
+# ==========================================================
+AXES_FAILURE_LIMIT = 5
+AXES_COOLOFF_TIME = 0.25
+AXES_LOCKOUT_PARAMETERS = [["ip_address", "username"]]
+AXES_RESET_ON_SUCCESS = True
+AXES_ENABLE_ACCESS_FAILURE_LOG = True
