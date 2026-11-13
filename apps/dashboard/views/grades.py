@@ -914,30 +914,36 @@ def class_teacher_all_report_cards_merged(request):
 
 def _render_report_card_pdf(request, student, exam, rankings, positions, class_size):
     """Helper — returns PDF bytes for a single student's report card, or None."""
-    from apps.grades.models import Grade
-    from apps.grades.services.report_card import (
-        cbc_grade, previous_exam_for, build_performance_chart,
-    )
+    from apps.grades.models import Grade, Exam
+    from apps.grades.services.report_card import cbc_grade, build_performance_chart
     from django.template.loader import render_to_string
     from xhtml2pdf import pisa
+    from django.db.models import Q, Sum, F, DecimalField, ExpressionWrapper
+    from apps.finance.models import Invoice
+    from apps.schools.models import CompanyProfile
+    from apps.core.pdf_utils import image_to_base64
+    import qrcode
+    import base64
     from io import BytesIO
-    from django.utils import timezone
 
+    # --- FETCH CURRENT GRADES ---
     current_grades = list(
         Grade.objects.filter(student=student, exam=exam)
         .select_related('subject').order_by('subject__name')
     )
     if not current_grades:
-        return None  # skip students with no grades for this exam
+        return None
 
     total_marks = sum(float(g.marks) for g in current_grades)
     total_out_of = sum(float(g.out_of) for g in current_grades) or 1
     avg_pct = round((total_marks / total_out_of) * 100, 1) if current_grades else 0
-
     class_rank_info = rankings.get(student.id, {'rank': '—', 'total': total_marks, 'avg': avg_pct})
 
-    # Previous exam + chart
-    prev_exam = previous_exam_for(exam, student.school)
+    # --- FETCH PREVIOUS EXAM ---
+    prev_exam = Exam.objects.filter(school=student.school).exclude(id=exam.id).filter(
+        Q(year__lt=exam.year) | Q(year=exam.year, id__lt=exam.id)
+    ).order_by('-year', '-id').first()
+
     previous_grades_map = {}
     if prev_exam:
         prev_qs = Grade.objects.filter(student=student, exam=prev_exam)
@@ -946,83 +952,141 @@ def _render_report_card_pdf(request, student, exam, rankings, positions, class_s
             for g in prev_qs
         }
 
-    current_grades_map = {
-        g.subject.name: round((float(g.marks) / float(g.out_of or 100)) * 100, 1)
-        for g in current_grades
-    }
-
-    chart_path = None
-    if prev_exam and previous_grades_map:
-        chart_path = build_performance_chart(current_grades_map, previous_grades_map)
-
+    # --- BUILD GRADE ROWS ---
     grade_rows = []
+    total_points = 0
+    class_avg_sum = 0
+    class_avg_count = 0
+
     for g in current_grades:
         pct = round((float(g.marks) / float(g.out_of or 100)) * 100, 1)
-        pos = positions.get(g.subject_id, {}).get(student.id, '—')
         
-        # --- Calculate Trend ---
-        trend = '—'
+        # Trend
+        trend = 'flat'
+        trend_diff = 0
         prev_pct = previous_grades_map.get(g.subject.name)
         if prev_pct is not None:
             diff = pct - prev_pct
+            trend_diff = abs(round(diff, 1))
             if diff > 2:
-                trend = 'Improving ↑'
+                trend = 'up'
             elif diff < -2:
-                trend = 'Dropping ↓'
+                trend = 'down'
             else:
-                trend = 'Stable →'
+                trend = 'flat'
+
+        # Points
+        points = 0
+        if pct >= 90: points = 8
+        elif pct >= 75: points = 7
+        elif pct >= 58: points = 6
+        elif pct >= 41: points = 5
+        elif pct >= 31: points = 4
+        elif pct >= 21: points = 3
+        elif pct >= 11: points = 2
+        else: points = 1
+        total_points += points
+
+        # Teacher Name
+        teacher_name = '—'
+        try:
+            if hasattr(g.subject, 'teacher') and g.subject.teacher:
+                teacher_name = g.subject.teacher.user.get_full_name() or g.subject.teacher.user.email
+        except Exception:
+            pass
+
+        # Class Average
+        class_avg_qs = Grade.objects.filter(exam=exam, subject=g.subject).aggregate(avg=Sum('marks'))
+        class_avg = class_avg_qs.get('avg') or 0
+        class_avg_count_qs = Grade.objects.filter(exam=exam, subject=g.subject).count()
+        if class_avg_count_qs > 0:
+            class_avg = round(class_avg / class_avg_count_qs, 0)
+            class_avg_sum += class_avg
+            class_avg_count += 1
+        else:
+            class_avg = 0
 
         grade_rows.append({
             'subject': g.subject.name,
+            'teacher': teacher_name,
             'marks': g.marks,
             'out_of': g.out_of,
             'pct': pct,
             'grade': cbc_grade(pct),
-            'position': pos,
+            'points': points,
+            'class_avg': class_avg,
+            'position': positions.get(g.subject_id, {}).get(student.id, '—'),
             'trend': trend,
+            'trend_diff': trend_diff,
         })
 
     overall_grade = cbc_grade(avg_pct)
-    
-        # --- FEE BALANCE (using the model's built-in .balance property) ---
-    from apps.finance.models import Invoice
-    from django.db.models import Sum, F, DecimalField, ExpressionWrapper
+    class_average = round(class_avg_sum / class_avg_count, 0) if class_avg_count > 0 else 0
 
+    # --- CHART GENERATION ---
+    chart_data_uri = None
+    if prev_exam and previous_grades_map:
+        current_grades_map = {g.subject.name: round((float(g.marks) / float(g.out_of or 100)) * 100, 1) for g in current_grades}
+        chart_path = build_performance_chart(current_grades_map, previous_grades_map)
+        if chart_path:
+            chart_data_uri = chart_path
+
+    # --- AUTO REMARKS ---
+    if avg_pct >= 80:
+        teacher_remarks = f"An outstanding overall average of {avg_pct}% places this student among the top performers. Maintain this exceptional standard."
+        principal_remarks = "A truly remarkable performance. Your hard work has paid off, and you serve as an inspiration to your peers."
+    elif avg_pct >= 65:
+        teacher_remarks = f"A solid overall average of {avg_pct}%. With continued focus and dedication, the student is well on their way to achieving top grades."
+        principal_remarks = "You have achieved a respectable result. Continue to strive for excellence and utilize the resources available."
+    elif avg_pct >= 50:
+        teacher_remarks = f"A fair average of {avg_pct}%. The student is encouraged to revise thoroughly and seek extra support to push their grades higher."
+        principal_remarks = "There is room for significant improvement. We believe in your potential, but success requires greater commitment."
+    else:
+        teacher_remarks = f"An average of {avg_pct}% is below expectations. Urgent intervention, extra lessons, and a structured study plan are highly recommended."
+        principal_remarks = "This is a disappointing result. It is imperative that you reflect on your study habits and show a willingness to work harder."
+
+    # --- FEE BALANCE ---
     balance_agg = Invoice.objects.filter(student=student).aggregate(
-        total=Sum(
-            ExpressionWrapper(
-                F('amount_due') - F('amount_paid'),
-                output_field=DecimalField(max_digits=12, decimal_places=2),
-            )
-        )
+        total=Sum(ExpressionWrapper(F('amount_due') - F('amount_paid'), output_field=DecimalField(max_digits=12, decimal_places=2)))
     )
     fee_balance = balance_agg['total'] or 0
 
-    # --- TERM DATES ---
-    term_close_date = exam.date if exam else None
-    next_term_open_date = None
+    # --- PRINCIPAL SIGNATURE ---
+    principal_signature_b64 = None
+    try:
+        profile = CompanyProfile.objects.first()
+        if profile and profile.signature_image:
+            principal_signature_b64 = profile.signature_image.url
+    except Exception:
+        pass
+
+    # --- STUDENT PHOTO ---
+    student_photo_b64 = None
+    if student.photo:
+        try:
+            student_photo_b64 = image_to_base64(student.photo, max_width=150)
+        except Exception:
+            pass
+
+    # --- QR CODE ---
     qr_data_uri = None
     try:
         from django.urls import reverse as _rev
         qr_url = request.build_absolute_uri(
             _rev('public_report_card_view', args=[student.id, exam.id])
         )
-        print(f"[QR CARD] Building for {qr_url}")
-
         qr = qrcode.QRCode(version=1, box_size=10, border=1)
         qr.add_data(qr_url)
         qr.make(fit=True)
         img = qr.make_image(fill_color="black", back_color="white")
-
         qr_buffer = BytesIO()
         img.save(qr_buffer, format="PNG")
         qr_base64 = base64.b64encode(qr_buffer.getvalue()).decode('utf-8')
-        qr_data_uri = f"data:image/png;base64,{qr_base64}"
-        print(f"[QR CARD] Generated, length: {len(qr_data_uri)}")
+        qr_data_uri = qr_base64  # Template adds the data:image/png;base64, prefix
     except Exception as e:
         print(f"[QR CARD ERROR] {e}")
-        qr_data_uri = None
 
+    # --- RENDER HTML ---
     html_string = render_to_string('pdf/report_card.html',
         build_pdf_context(
             school=student.school,
@@ -1030,19 +1094,24 @@ def _render_report_card_pdf(request, student, exam, rankings, positions, class_s
             student=student,
             exam=exam,
             prev_exam=prev_exam,
-            grade_rows=grade_rows,
+            grade_rows=grade_rows, 
             avg_pct=avg_pct,
             overall_grade=overall_grade,
             class_rank=class_rank_info['rank'],
             class_size=class_size,
             total_marks=total_marks,
             total_out_of=total_out_of,
-            chart_data_uri=chart_path,
-            teacher_remarks='',
+            total_points=total_points,
+            class_average=class_average,
+            teacher_remarks=teacher_remarks,
+            principal_remarks=principal_remarks,
             fee_balance=fee_balance,
-            term_close_date=term_close_date,
-            next_term_open_date=next_term_open_date,
+            term_close_date=exam.date if hasattr(exam, 'date') else None,
+            next_term_open_date=None,
+            principal_signature_b64=principal_signature_b64,
             qr_data_uri=qr_data_uri,
+            chart_data_uri=chart_data_uri,
+            student_photo_b64=student_photo_b64,
         )
     )
 
@@ -1051,7 +1120,6 @@ def _render_report_card_pdf(request, student, exam, rankings, positions, class_s
     if pisa_status.err:
         return None
     return buffer.getvalue()
-
 
 @login_required
 @class_teacher_only

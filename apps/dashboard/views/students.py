@@ -369,8 +369,10 @@ def leaving_certificate_pdf(request, student_id):
         student.leaving_certificate_notes = request.POST.get('certificate_notes', '').strip()
         student.save()
 
-    content = student.leaving_certificate_content
+      # Fallback content if none provided
+    content = student.leaving_certificate_content.strip() if student.leaving_certificate_content else ""
     if not content:
+        
         content = f"""
         <p style="text-align: justify;">This is to certify that <strong>{student.full_name}</strong>
         {f"(Admission No: <strong>{student.admission_number}</strong>)" if student.admission_number else ""}
@@ -383,7 +385,8 @@ def leaving_certificate_pdf(request, student_id):
 
         <p style="text-align: justify;">We wish the student every success in their future endeavours.</p>
         """
-
+        
+        
     from apps.core.pdf_utils import get_school_logo_data_uri
 
     school_logo_b64 = get_school_logo_data_uri(student.school, max_width=120)

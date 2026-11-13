@@ -1065,7 +1065,16 @@ def fee_structure_add(request):
         messages.success(request, f'Fee structure "{name}" created for {cls.name}.')
         return redirect('fee_structure_list')
 
-    return render(request, 'dashboard/fee_structure_form.html', {'classes': classes, 'action': 'add'})
+    return render(request, 'dashboard/fee_structure_form.html', {
+        'classes': classes,
+        'action': 'add',
+        'form_data': {
+            'name': '',
+            'class_level': '',
+            'amount_kes': '',
+            'due_date': '',
+        }
+    })
 
 
 @login_required
@@ -1103,18 +1112,33 @@ def fee_structure_edit(request, fee_id):
 
     return render(request, 'dashboard/fee_structure_form.html', {
         'classes': classes, 'fee_structure': fs, 'action': 'edit',
+        'form_data': {
+            'name': fs.name,
+            'class_level': str(fs.class_level.id) if fs.class_level else '',
+            'amount_kes': fs.amount_kes,
+            'due_date': fs.due_date.strftime('%Y-%m-%d') if fs.due_date else '',
+        }
     })
 
 
 @login_required
 @role_required('accountant', 'principal')
 def fee_structure_delete(request, fee_id):
+    from django.db.models import ProtectedError
     fs = get_object_or_404(FeeStructure, id=fee_id, school=request.user.school)
     name = fs.name
-    fs.delete()
-    messages.success(request, f'Fee structure "{name}" deleted.')
+    
+    try:
+        fs.delete()
+        messages.success(request, f'Fee structure "{name}" deleted successfully.')
+    except ProtectedError:
+        messages.error(
+            request, 
+            f'Cannot delete "{name}" because invoices have already been generated using it. '
+            f'Please remove or reassign the invoices first.'
+        )
+    
     return redirect('fee_structure_list')
-
 
 @login_required
 @role_required('accountant', 'principal')
@@ -1178,38 +1202,50 @@ def fee_structure_matrix(request):
     if request.user.role not in ('accountant', 'principal'):
         return redirect('dashboard_home')
 
+    import json
     from datetime import date
     school = request.user.school
     classes = ClassLevel.objects.filter(school=school).order_by('order', 'name')
     
-    # 1. Fetch existing years from the database, or default to the current year
+    # 1. Fetch existing years
     current_year = date.today().year
     existing_years = FeeStructure.objects.filter(school=school).values_list('academic_year', flat=True).distinct()
-    
-    # Convert everything to strings to avoid int vs str comparison errors
     years_set = set(str(y) for y in existing_years if y)
     years_set.add(str(current_year))
     years_set.add(str(current_year + 1))
     years = sorted(list(years_set))
 
-    # 2. Build term options
     terms = ['Term 1', 'Term 2', 'Term 3']
-
-    # 3. Default values
     today = timezone.now().date()
     default_term_name = f"Term {((today.month - 1) // 4) + 1}"
     default_year = str(today.year)
     default_due_date = (today + timedelta(days=30)).strftime('%Y-%m-%d')
 
+    # 2. FETCH EXISTING FEE ITEMS FOR THE SELECTED TERM/YEAR
+    selected_term = request.GET.get('term', default_term_name)
+    selected_year = request.GET.get('year', default_year)
+    
+    existing_fees = FeeStructure.objects.filter(
+        school=school, 
+        term=selected_term, 
+        academic_year=selected_year
+    ).values('name', 'amount_kes', 'due_date').distinct()
+
+    # Format for the template JavaScript
+    existing_fees_list = list(existing_fees)
+    for item in existing_fees_list:
+        item['due_date'] = item['due_date'].strftime('%Y-%m-%d') if item['due_date'] else default_due_date
+        item['amount_kes'] = float(item['amount_kes'])
+
     return render(request, 'dashboard/fee_structure_matrix.html', {
         'classes': classes,
         'years': years,
         'terms': terms,
-        'default_term_name': default_term_name,
-        'default_year': default_year,
+        'default_term_name': selected_term,
+        'default_year': selected_year,
         'default_due_date': default_due_date,
+        'existing_fees_json': json.dumps(existing_fees_list),
     })
-
 
 @login_required
 def fee_structure_matrix_save(request):

@@ -6,43 +6,24 @@
   @page { size: A4 landscape; margin: 10mm; }
   body { font-family: Arial, sans-serif; font-size: 9px; color: #1a1a1a; }
 
-  /* ============ HEADER ============ */
-  .header {
-    border-bottom: 3px solid #00695c;
-    padding-bottom: 10px;
-    margin-bottom: 14px;
+  /* ==========================================================
+     PREMIUM HEADER (MATCHING FIRST IMAGE)
+     ========================================================== */
+  .header-wrapper {
+    width: 100%;
+    border-bottom: 3px solid #047857;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
   }
   .header-table { width: 100%; border-collapse: collapse; }
-  .header-table td { vertical-align: top; padding: 0; }
-  .logo-cell { width: 70px; }
-  .logo-cell img { width: 60px; height: 60px; object-fit: contain; }
-  .logo-placeholder {
-    width: 60px; height: 60px;
-    background: #00695c;
-    color: white;
-    font-size: 22px;
-    font-weight: 800;
-    text-align: center;
-    line-height: 60px;
-  }
-  .school-info h1 {
-    font-size: 20px;
-    color: #00695c;
-    margin: 0 0 4px 0;
-  }
-  .school-motto {
-    font-size: 10px;
-    font-style: italic;
-    color: #6b7280;
-    margin: 0 0 6px 0;
-  }
-  .school-contacts {
-    font-size: 9px;
-    color: #4b5563;
-    line-height: 1.5;
-    margin: 0;
-  }
-  .school-contacts span { margin-right: 12px; }
+  .logo-cell { width: 75px; vertical-align: middle; padding-right: 15px; }
+  .logo-img { width: 70px; height: 70px; object-fit: contain; }
+  .text-cell { vertical-align: middle; }
+  .school-name { font-size: 24px; font-weight: 900; color: #047857; margin: 0; text-transform: uppercase; line-height: 1.1; }
+  .school-motto { font-size: 10px; font-style: italic; color: #475569; margin: 3px 0 5px 0; text-transform: uppercase; font-weight: 700; }
+  .school-contact { font-size: 9px; color: #475569; margin: 0; }
+  .generated-cell { text-align: right; vertical-align: top; font-size: 8px; color: #475569; width: 140px; line-height: 1.4; }
+  .generated-cell strong { color: #0f172a; }
 
   /* ============ DOC TITLE ============ */
   .doc-title {
@@ -52,7 +33,7 @@
     text-transform: uppercase;
     margin: 6px 0 3px 0;
     letter-spacing: 0.05em;
-    color: #00695c;
+    color: #047857;
   }
   .doc-subtitle {
     text-align: center;
@@ -68,10 +49,10 @@
   /* ============ HEADINGS ============ */
   h3 {
     font-size: 12px;
-    color: #00695c;
+    color: #047857;
     margin: 0 0 8px 0;
     padding-bottom: 4px;
-    border-bottom: 2px solid #00695c;
+    border-bottom: 2px solid #047857;
     text-transform: uppercase;
     letter-spacing: 0.05em;
   }
@@ -81,14 +62,14 @@
     width: 100%;
     border-collapse: collapse;
     margin-bottom: 10px;
-    table-layout: fixed; /* CRITICAL: Fixes the column squishing */
+    table-layout: fixed;
   }
   table.data thead th {
     background: #1a2332;
     color: #ffffff;
-    padding: 6px 3px; /* Reduced padding to fit */
+    padding: 6px 3px;
     text-align: left;
-    font-size: 7px; /* Smaller font to fit subject names */
+    font-size: 7px;
     text-transform: uppercase;
     letter-spacing: 0.04em;
     border: 1px solid #0f172a;
@@ -97,30 +78,18 @@
   table.data thead th.center { text-align: center; }
 
   table.data tbody td {
-    padding: 5px 3px; /* Reduced padding */
+    padding: 5px 3px;
     font-size: 8px;
     border: 1px solid #e5e7eb;
     vertical-align: middle;
-    background: #ffffff;      
+    background: #ffffff;
     word-wrap: break-word;
   }
   table.data tbody td.center { text-align: center; }
 
-  /* Light cream for top 3 only */
-  table.data tbody tr.top-3 td {
-    background: #fef9c3;
-    color: #111827;
-  }
-
-  /* Hover effect (browsers only, xhtml2pdf ignores) */
+  table.data tbody tr.top-3 td { background: #fef9c3; color: #111827; }
   table.data tbody tr:hover td { background: #f0fdfa; }
-
-  /* Total row highlighted */
-  table.data tbody tr.total-row td {
-    background: #e6f5ef;
-    font-weight: 700;
-    color: #004d40;
-  }
+  table.data tbody tr.total-row td { background: #e6f5ef; font-weight: 700; color: #004d40; }
 
   /* ============ BADGES ============ */
   .badge {
@@ -144,41 +113,24 @@
   .grade-AE1, .grade-AE2 { color: #d97706; font-weight: 700; }
   .grade-BE1, .grade-BE2 { color: #dc2626; font-weight: 700; }
 
-  /* Mean & total columns — teal emphasis */
-  .td-total {
-    font-weight: 700;
-    color: #004d40;
-  }
-  .td-mean {
-    font-weight: 700;
-    color: #00695c;
-  }
+  /* Mean & total columns */
+  .td-total { font-weight: 700; color: #004d40; }
+  .td-mean { font-weight: 700; color: #047857; }
 
-  /* ============ KPI CARDS (page 4) ============ */
+  /* ============ KPI CARDS ============ */
   .kpi-grid { display: flex; gap: 12px; margin-bottom: 16px; }
   .kpi-card {
     flex: 1;
     padding: 14px;
     background: #ffffff;
-    border-left: 5px solid #00695c;
+    border-left: 5px solid #047857;
     border-top: 1px solid #e5e7eb;
     border-right: 1px solid #e5e7eb;
     border-bottom: 1px solid #e5e7eb;
     border-radius: 4px;
   }
-  .kpi-label {
-    font-size: 8px;
-    color: #666;
-    text-transform: uppercase;
-    font-weight: 700;
-    letter-spacing: 0.05em;
-  }
-  .kpi-value {
-    font-size: 24px;
-    font-weight: 800;
-    color: #00695c;
-    margin-top: 6px;
-  }
+  .kpi-label { font-size: 8px; color: #666; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; }
+  .kpi-value { font-size: 24px; font-weight: 800; color: #047857; margin-top: 6px; }
 
   /* ============ BEST SUBJECT BANNER ============ */
   .best-banner {
@@ -188,23 +140,9 @@
     margin-bottom: 16px;
     border-radius: 4px;
   }
-  .best-banner .label {
-    font-size: 9px;
-    color: #065f46;
-    text-transform: uppercase;
-    font-weight: 700;
-    letter-spacing: 0.05em;
-  }
-  .best-banner .value {
-    font-size: 20px;
-    font-weight: 800;
-    color: #065f46;
-    margin: 4px 0;
-  }
-  .best-banner .meta {
-    font-size: 10px;
-    color: #065f46;
-  }
+  .best-banner .label { font-size: 9px; color: #065f46; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; }
+  .best-banner .value { font-size: 20px; font-weight: 800; color: #065f46; margin: 4px 0; }
+  .best-banner .meta { font-size: 10px; color: #065f46; }
 
   /* ============ FOOTER ============ */
   .footer {
@@ -225,31 +163,29 @@
 <!-- ============================================ -->
 <div class="page">
 
-  <div class="header">
+  <!-- NEW PREMIUM HEADER -->
+  <div class="header-wrapper">
     <table class="header-table">
-      <tr>
-        <td class="logo-cell">
-          {% if school_logo_b64 %}
-            <img src="{{ school_logo_b64 }}" alt="Logo">
-          {% else %}
-            <div class="logo-placeholder">{{ school.name|slice:":2"|upper }}</div>
-          {% endif %}
-        </td>
-        <td class="school-info">
-          <h1>{{ school.name }}</h1>
-          {% if school.motto %}
-            <p class="school-motto">"{{ school.motto }}"</p>
-          {% endif %}
-          <p class="school-contacts">
-            {% if school.postal_address %}<span><strong>P.O. Box:</strong> {{ school.postal_address }}</span>{% endif %}
-            {% if school.physical_address %}<span>{{ school.physical_address }}</span>{% endif %}
-            {% if school.county %}<span>{{ school.county }} County</span>{% endif %}
-            {% if school.phone %}<span><strong>Tel:</strong> {{ school.phone }}</span>{% endif %}
-            {% if school.email %}<span><strong>Email:</strong> {{ school.email }}</span>{% endif %}
-            {% if school.code %}<span><strong>Code:</strong> {{ school.code }}</span>{% endif %}
-          </p>
-        </td>
-      </tr>
+        <tr>
+            <td class="logo-cell">
+                {% if school_logo_b64 %}
+                    <img src="{{ school_logo_b64 }}" class="logo-img" alt="Logo">
+                {% elif school.logo %}
+                    <img src="{{ school.logo.path }}" class="logo-img" alt="Logo">
+                {% endif %}
+            </td>
+            <td class="text-cell">
+                <h1 class="school-name">{{ school.name|upper }}</h1>
+                <p class="school-motto">"{{ school.motto|default:'DISCIPLINE PRECEED SUCCESS' }}"</p>
+                <p class="school-contact">
+                    P.O BOX {{ school.postal_address|default:"—" }} &bull; {{ school.email|default:"—" }} &bull; {{ school.phone|default:"—" }}
+                </p>
+            </td>
+            <td class="generated-cell">
+                GENERATED<br><strong>{% now "j F Y" %}</strong><br>{% now "H:i" %}<br><br>
+                BY<br><strong>{{ generated_by.get_full_name|upper|default:"SYSTEM" }}</strong>
+            </td>
+        </tr>
     </table>
   </div>
 
@@ -297,22 +233,19 @@
   </table>
 
   <div class="footer">
-    {{ school.name }} · Page 1 of 4 · Full Class Results Sheet · Generated {{ today|date:"j F Y" }}
+    {{ school.name }} · Page 1 of 4 · Full Class Results Sheet · Generated {% now "j F Y" %}
   </div>
 </div>
-
 
 <!-- ============================================ -->
 <!-- PAGE 2: BEST STUDENT PER SUBJECT              -->
 <!-- ============================================ -->
 <div class="page">
-
   <div class="doc-title">Best Student per Subject</div>
   <div class="doc-subtitle">
     {% for c in selected_classes %}{{ c.name }}{% if not forloop.last %} + {% endif %}{% endfor %}
     · {{ exam.name }} — {{ exam.term }} {{ exam.year }}
   </div>
-
   <table class="data">
     <thead>
       <tr>
@@ -343,23 +276,19 @@
       {% endfor %}
     </tbody>
   </table>
-
   <div class="footer">
     {{ school.name }} · Page 2 of 4 · Best Student per Subject
   </div>
 </div>
 
-
 <!-- ============================================ -->
 <!-- PAGE 3: STREAM COMPARISON                     -->
 <!-- ============================================ -->
 <div class="page">
-
   <div class="doc-title">Stream Comparison</div>
   <div class="doc-subtitle">
     {{ exam.name }} — {{ exam.term }} {{ exam.year }}
   </div>
-
   <table class="data">
     <thead>
       <tr>
@@ -392,18 +321,15 @@
       {% endfor %}
     </tbody>
   </table>
-
   <div class="footer">
     {{ school.name }} · Page 3 of 4 · Stream Comparison
   </div>
 </div>
 
-
 <!-- ============================================ -->
-<!-- PAGE 4: SUMMARY (KPI + BEST SUBJECT)          -->
+<!-- PAGE 4: SUMMARY                               -->
 <!-- ============================================ -->
 <div class="page">
-
   <div class="doc-title">Combined Analysis Summary</div>
   <div class="doc-subtitle">
     {% for c in selected_classes %}{{ c.name }}{% if not forloop.last %} + {% endif %}{% endfor %}
@@ -471,7 +397,7 @@
 
   <div class="footer">
     {{ school.name }} · Page 4 of 4 · Summary & Analytics
-    <br>Generated {{ today|date:"j F Y" }} by {{ user.get_full_name|default:user.email }}
+    <br>Generated {% now "j F Y" %} by {{ user.get_full_name|default:user.email }}
   </div>
 </div>
 

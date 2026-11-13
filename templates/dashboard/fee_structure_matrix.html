@@ -40,19 +40,24 @@
             </div>
         </div>
 
-        <!-- 2. Class Selection -->
-        <h4 style="font-size: 15px; font-weight: 700; color: #1e293b; border-bottom: 2px solid var(--primary); padding-bottom: 8px; margin-bottom: 16px;">1. Select Classes</h4>
-        <div style="display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 32px;">
-            <label style="display: flex; align-items: center; gap: 8px; background: #e2e8f0; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600;">
-                <input type="checkbox" id="select_all_classes" style="width: 18px; height: 18px; accent-color: var(--primary);"> 
-                Select All Classes
-            </label>
-            {% for cls in classes %}
-            <label style="display: flex; align-items: center; gap: 8px; background: #f1f5f9; border: 1px solid #cbd5e1; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 500;">
-                <input type="checkbox" class="class-checkbox" value="{{ cls.id }}" style="width: 18px; height: 18px; accent-color: var(--primary);"> 
-                {{ cls.name }}
-            </label>
-            {% endfor %}
+        <!-- 2. Class Selection (IMPROVED FOR VISIBILITY) -->
+        <h4 style="font-size: 15px; font-weight: 700; color: #1e293b; border-bottom: 2px solid var(--primary); padding-bottom: 8px; margin-bottom: 16px;">1. Select Classes to Apply Fees</h4>
+        <div style="background: #fffbeb; border: 1px solid #fde68a; padding: 16px; border-radius: 8px; margin-bottom: 24px;">
+            <p style="margin: 0 0 12px 0; font-size: 13px; color: #b45309; font-weight: 600;">
+                ⚠️ Important: You must tick at least one class below before clicking "Save".
+            </p>
+            <div style="display: flex; flex-wrap: wrap; gap: 12px;">
+                <label style="display: flex; align-items: center; gap: 8px; background: white; border: 2px solid #f59e0b; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 700; color: #b45309;">
+                    <input type="checkbox" id="select_all_classes" style="width: 18px; height: 18px; accent-color: #f59e0b;"> 
+                    Select All Classes
+                </label>
+                {% for cls in classes %}
+                <label style="display: flex; align-items: center; gap: 8px; background: white; border: 1px solid #cbd5e1; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 500;">
+                    <input type="checkbox" class="class-checkbox" value="{{ cls.id }}" style="width: 18px; height: 18px; accent-color: var(--primary);"> 
+                    {{ cls.name }}
+                </label>
+                {% endfor %}
+            </div>
         </div>
 
         <!-- 3. Fee Items -->
@@ -68,21 +73,7 @@
                     </tr>
                 </thead>
                 <tbody id="feeItemsBody">
-                    <!-- Initial Row -->
-                    <tr class="fee-item-row">
-                        <td style="padding: 8px; border: 1px solid #e2e8f0;">
-                            <input type="text" class="fee-name" placeholder="e.g. Tuition Fees" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px;">
-                        </td>
-                        <td style="padding: 8px; border: 1px solid #e2e8f0;">
-                            <input type="number" class="fee-amount" placeholder="0.00" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px;">
-                        </td>
-                        <td style="padding: 8px; border: 1px solid #e2e8f0;">
-                            <input type="date" class="fee-due-date" value="{{ default_due_date }}" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px;">
-                        </td>
-                        <td style="padding: 8px; border: 1px solid #e2e8f0; text-align: center;">
-                            <button type="button" class="remove-row-btn" style="background: #fee2e2; color: #dc2626; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: bold;">✕</button>
-                        </td>
-                    </tr>
+                    <!-- Rows will be injected by JavaScript -->
                 </tbody>
             </table>
         </div>
@@ -120,38 +111,48 @@
 
 {% block extra_js %}
 <script>
-    // Select All Classes
-    document.getElementById('select_all_classes').addEventListener('change', function() {
-        const isChecked = this.checked;
-        document.querySelectorAll('.class-checkbox').forEach(cb => {
-            cb.checked = isChecked;
-        });
-    });
+    // --- 1. Initialize Data from Django ---
+    const existingFees = {{ existing_fees_json|safe }};
+    const defaultDueDate = "{{ default_due_date }}";
+    const feeItemsBody = document.getElementById('feeItemsBody');
 
-    // Add / Remove Fee Rows
-    document.getElementById('addRowBtn').addEventListener('click', function() {
-        const tbody = document.getElementById('feeItemsBody');
-        const newRow = document.createElement('tr');
-        newRow.className = 'fee-item-row';
-        newRow.innerHTML = `
+    // --- 2. Function to add a row to the table ---
+    function addRow(name = '', amount = '', dueDate = '') {
+        const row = document.createElement('tr');
+        row.className = 'fee-item-row';
+        row.innerHTML = `
             <td style="padding: 8px; border: 1px solid #e2e8f0;">
-                <input type="text" class="fee-name" placeholder="e.g. Transport" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px;">
+                <input type="text" class="fee-name" placeholder="e.g. Transport" value="${name}" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px;">
             </td>
             <td style="padding: 8px; border: 1px solid #e2e8f0;">
-                <input type="number" class="fee-amount" placeholder="0.00" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px;">
+                <input type="number" class="fee-amount" placeholder="0.00" value="${amount}" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px;">
             </td>
             <td style="padding: 8px; border: 1px solid #e2e8f0;">
-                <input type="date" class="fee-due-date" value="{{ default_due_date }}" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px;">
+                <input type="date" class="fee-due-date" value="${dueDate || defaultDueDate}" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px;">
             </td>
             <td style="padding: 8px; border: 1px solid #e2e8f0; text-align: center;">
                 <button type="button" class="remove-row-btn" style="background: #fee2e2; color: #dc2626; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: bold;">✕</button>
             </td>
         `;
-        tbody.appendChild(newRow);
+        feeItemsBody.appendChild(row);
+    }
+
+    // --- 3. Load Existing Fees OR Start Fresh ---
+    if (existingFees && existingFees.length > 0) {
+        existingFees.forEach(fee => {
+            addRow(fee.name, fee.amount_kes, fee.due_date);
+        });
+    } else {
+        addRow();
+    }
+
+    // --- 4. Add Row Button Logic ---
+    document.getElementById('addRowBtn').addEventListener('click', function() {
+        addRow();
     });
 
-    // Delegate remove event
-    document.getElementById('feeItemsBody').addEventListener('click', function(e) {
+    // --- 5. Remove Row Logic ---
+    feeItemsBody.addEventListener('click', function(e) {
         if (e.target.classList.contains('remove-row-btn')) {
             const rows = document.querySelectorAll('.fee-item-row');
             if (rows.length > 1) {
@@ -162,7 +163,23 @@
         }
     });
 
-    // Save Matrix
+    // --- 6. Select All Classes ---
+    document.getElementById('select_all_classes').addEventListener('change', function() {
+        const isChecked = this.checked;
+        document.querySelectorAll('.class-checkbox').forEach(cb => {
+            cb.checked = isChecked;
+        });
+    });
+
+    // --- 7. Reload page on Term/Year change ---
+    document.getElementById('matrix_term').addEventListener('change', function() {
+        window.location.href = `?term=${this.value}&year=${document.getElementById('matrix_year').value}`;
+    });
+    document.getElementById('matrix_year').addEventListener('change', function() {
+        window.location.href = `?term=${document.getElementById('matrix_term').value}&year=${this.value}`;
+    });
+
+    // --- 8. Save Matrix Logic ---
     function saveMatrix() {
         const term = document.getElementById('matrix_term').value;
         const year = document.getElementById('matrix_year').value;
@@ -172,18 +189,16 @@
             return;
         }
 
-        // Get selected classes
         const selectedClasses = [];
         document.querySelectorAll('.class-checkbox:checked').forEach(cb => {
             selectedClasses.push(cb.value);
         });
 
         if (selectedClasses.length === 0) {
-            alert("Please check at least one class.");
+            alert("STOP: You must tick at least one class at the top before saving!");
             return;
         }
 
-        // Get fee items
         const feeItems = [];
         document.querySelectorAll('.fee-item-row').forEach(row => {
             const name = row.querySelector('.fee-name').value.trim();
@@ -219,7 +234,15 @@
         .then(data => {
             if (data.success) {
                 alert(data.message);
-                window.location.reload();
+                
+                // NEW LOGIC: Redirect based on selection
+                if (selectedClasses.length === 1) {
+                    // Send them straight to the specific class's fee structure view
+                    window.location.href = `/dashboard/accountant/fee-structures/?class_id=${selectedClasses[0]}&term=${encodeURIComponent(term)}`;
+                } else {
+                    // Send them to the main list
+                    window.location.href = `/dashboard/accountant/fee-structures/`;
+                }
             } else {
                 alert("Error: " + data.error);
             }
@@ -230,7 +253,7 @@
         });
     }
 
-    // Download PDF
+    // --- 9. Download PDF Logic ---
     function downloadPdf() {
         const classId = document.getElementById('download_class_id').value;
         const term = document.getElementById('matrix_term').value;
