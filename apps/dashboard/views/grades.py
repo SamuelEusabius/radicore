@@ -921,7 +921,6 @@ def _render_report_card_pdf(request, student, exam, rankings, positions, class_s
     from django.db.models import Q, Sum, F, DecimalField, ExpressionWrapper
     from apps.finance.models import Invoice
     from apps.schools.models import CompanyProfile
-    from apps.core.pdf_utils import image_to_base64
     import qrcode
     import base64
     from io import BytesIO
@@ -961,7 +960,7 @@ def _render_report_card_pdf(request, student, exam, rankings, positions, class_s
     for g in current_grades:
         pct = round((float(g.marks) / float(g.out_of or 100)) * 100, 1)
         
-        # Trend
+        # Trend logic
         trend = 'flat'
         trend_diff = 0
         prev_pct = previous_grades_map.get(g.subject.name)
@@ -1060,13 +1059,19 @@ def _render_report_card_pdf(request, student, exam, rankings, positions, class_s
     except Exception:
         pass
 
-    # --- STUDENT PHOTO ---
+    # --- STUDENT PHOTO (SELF-CONTAINED BASE64) ---
     student_photo_b64 = None
     if student.photo:
         try:
-            student_photo_b64 = image_to_base64(student.photo, max_width=150)
-        except Exception:
-            pass
+            from PIL import Image
+            img = Image.open(student.photo.path)
+            img.thumbnail((200, 200), Image.LANCZOS)
+            buf = BytesIO()
+            img.convert('RGB').save(buf, format='JPEG', quality=85)
+            student_photo_b64 = 'data:image/jpeg;base64,' + base64.b64encode(buf.getvalue()).decode('ascii')
+        except Exception as e:
+            print(f"[PHOTO ERROR] {e}")
+            student_photo_b64 = None
 
     # --- QR CODE ---
     qr_data_uri = None
@@ -1082,7 +1087,7 @@ def _render_report_card_pdf(request, student, exam, rankings, positions, class_s
         qr_buffer = BytesIO()
         img.save(qr_buffer, format="PNG")
         qr_base64 = base64.b64encode(qr_buffer.getvalue()).decode('utf-8')
-        qr_data_uri = qr_base64  # Template adds the data:image/png;base64, prefix
+        qr_data_uri = qr_base64
     except Exception as e:
         print(f"[QR CARD ERROR] {e}")
 

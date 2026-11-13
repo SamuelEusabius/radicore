@@ -3,154 +3,100 @@
 <head>
 <meta charset="utf-8">
 <style>
-  /* ==========================================================
-     STANDARD REPORT HEADER CSS
-     ========================================================== */
-  @page {
-    size: A4 portrait; !-important;
-    margin: 10mm 12mm 10mm 12mm;
-  }
+  @page { size: A4 portrait; margin: 10mm 12mm; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
   body {
     font-family: Helvetica, Arial, sans-serif;
-    font-size: 8pt;
-    color: #1a1a1a;
-    line-height: 1.25;
+    font-size: 9px;
+    color: #1e293b;
+    line-height: 1.3;
   }
 
   /* ==========================================================
-     NEW HEADER (Matching Bio-Data / Fee Structure)
+     HEADER (EXACT MATCH TO BIO-DATA)
      ========================================================== */
   .header-wrapper {
       width: 100%;
       border-bottom: 3px solid #047857;
-      margin-bottom: 15px;
+      margin-bottom: 25px; /* Proper spacing below border */
       padding-bottom: 10px;
   }
   .header-table { width: 100%; border-collapse: collapse; }
-  .logo-cell { width: 75px; vertical-align: middle; padding-right: 15px; }
-  .logo-img { width: 70px; height: 70px; object-fit: contain; }
+  .logo-cell { width: 80px; vertical-align: middle; padding-right: 15px; }
+  .logo-img { width: 75px; height: 75px; object-fit: contain; }
   .text-cell { vertical-align: middle; }
-  .school-name { font-size: 24px; font-weight: 900; color: #0f172a; margin: 0; text-transform: uppercase; line-height: 1.1; }
-  .school-motto { font-size: 10px; font-style: italic; color: #047857; margin: 3px 0 5px 0; text-transform: uppercase; font-weight: 700; }
+  .school-name { font-size: 26px; font-weight: 900; color: #0f172a; margin: 0; text-transform: uppercase; line-height: 1.1; }
+  .school-motto { font-size: 10px; font-style: italic; color: #047857; margin: 4px 0 6px 0; text-transform: uppercase; font-weight: 700; }
   .school-contact { font-size: 9px; color: #475569; margin: 0; }
-  .generated-cell { text-align: right; vertical-align: top; font-size: 8px; color: #475569; width: 140px; line-height: 1.4; }
+  .generated-cell { text-align: right; vertical-align: top; font-size: 8px; color: #475569; width: 150px; line-height: 1.4; }
   .generated-cell strong { color: #0f172a; }
 
-  /* ==========================================================
-     TITLE & PHOTO
-     ========================================================== */
-  .title-block {
-    text-align: center;
-    margin: 15px 0;
-    position: relative;
-  }
-  .title-main {
-    font-size: 20px;
-    font-weight: 900;
-    color: #047857;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    margin: 0;
-  }
-  .title-sub {
-    font-size: 10px;
-    color: #475569;
-    margin: 4px 0 0 0;
-    font-weight: 700;
-    text-transform: uppercase;
-  }
+  /* ============ TITLE & PHOTO ============ */
+  .title-block { text-align: center; margin: 20px 0; position: relative; }
+  .title-main { font-size: 20px; font-weight: 900; color: #047857; letter-spacing: 2px; text-transform: uppercase; margin: 0; }
+  .title-sub { font-size: 10px; color: #475569; margin: 4px 0 0 0; font-weight: 700; text-transform: uppercase; }
   
-  /* STUDENT PHOTO IMMEDIATELY AFTER HEADER */
+  /* STUDENT PHOTO */
   .student-photo-wrapper {
-    width: 60px;
-    height: 75px;
+    width: 60px; height: 75px;
     border: 2px solid #cbd5e1;
     border-radius: 4px;
     overflow: hidden;
     position: absolute;
     right: 0;
     top: -5px;
+    background: #f1f5f9;
   }
-  .student-photo-wrapper img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
+  .student-photo-wrapper img { width: 100%; height: 100%; object-fit: cover; }
+  .photo-placeholder {
+    width: 100%; height: 100%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 7px; font-weight: 700; color: #94a3b8;
+    text-align: center; text-transform: uppercase; letter-spacing: 0.5px;
+    line-height: 1.2;
   }
 
   /* ============ INFO ============ */
   .info-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-bottom: 10px;
-    font-size: 8pt;
-    background: #f8fafc;
-    border: 1px solid #cbd5e1;
-    border-radius: 6px;
-    padding: 6px 10px;
+    width: 100%; border-collapse: collapse; margin-bottom: 15px;
+    font-size: 9pt; background: #f8fafc; border: 1px solid #cbd5e1;
+    border-radius: 6px; padding: 8px 12px;
   }
-  .info-table td {
-    padding: 4px;
-    vertical-align: top;
-  }
+  .info-table td { padding: 4px; vertical-align: top; }
   .info-label { color: #6b7280; }
   .info-value { font-weight: bold; color: #111827; }
 
   /* ============ SUBJECTS TABLE ============ */
-  .subjects-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-bottom: 10px;
-    table-layout: fixed;
-  }
+  .subjects-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; table-layout: fixed; }
   .subjects-table th {
-    background: #00695c;
-    color: white;
-    font-size: 7pt;
-    padding: 5px 3px;
-    text-align: center;
-    font-weight: bold;
+    background: #00695c; color: white; font-size: 7pt;
+    padding: 6px 3px; text-align: center; font-weight: bold;
     border: 1px solid #004d40;
   }
   .subjects-table th.subject-col { text-align: left; width: 22%; }
-  .subjects-table th.teacher-col { text-align: left; width: 18%; }
+  .subjects-table th.teacher-col { text-align: left; width: 16%; }
   .subjects-table td {
-    padding: 4px 3px;
-    font-size: 7.5pt;
-    border: 1px solid #d1d5db;
-    text-align: center;
-    white-space: nowrap; 
-    overflow: hidden;
-    text-overflow: ellipsis;
+    padding: 5px 3px; font-size: 7.5pt; border: 1px solid #d1d5db;
+    text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
   .subjects-table td.subject-name { text-align: left; background: #f9fafb; font-weight: 600; }
-  .subjects-table td.teacher-name { text-align: left; font-size: 7pt; color: #4b5563; font-style: italic; }
+  .subjects-table td.teacher-name { text-align: left; font-size: 6.5pt; color: #4b5563; font-style: italic; }
   .subjects-table tr.total-row td {
-    background: #e6f5ef;
-    font-weight: bold;
-    font-size: 8pt;
-    color: #004d40;
-    border-top: 2px solid #00695c;
+    background: #e6f5ef; font-weight: bold; font-size: 8pt;
+    color: #004d40; border-top: 2px solid #00695c;
   }
 
   .grade-EE1, .grade-EE2 { color: #059669; font-weight: bold; }
   .grade-ME1, .grade-ME2 { color: #2563eb; font-weight: bold; }
   .grade-AE1, .grade-AE2 { color: #d97706; font-weight: bold; }
   .grade-BE1, .grade-BE2 { color: #dc2626; font-weight: bold; }
-
   .trend-up { color: #059669; font-weight: bold; }
   .trend-down { color: #dc2626; font-weight: bold; }
   .trend-flat { color: #6b7280; }
 
-  /* ============ OVERALL GRADE CARD ============ */
-  .overall-grade-card {
-    margin: 10px 0;
-    padding: 8px 14px;
-    background: #00695c;
-    color: white;
-    border-radius: 4px;
-  }
+  /* ============ OVERALL CARD ============ */
+  .overall-grade-card { margin: 10px 0; padding: 8px 14px; background: #00695c; color: white; border-radius: 4px; }
   .overall-grade-card table { width: 100%; border-collapse: collapse; }
   .overall-grade-card td { vertical-align: middle; color: white; padding: 0; }
   .overall-grade-card .label { font-size: 7pt; text-transform: uppercase; letter-spacing: 0.1em; opacity: 0.9; }
@@ -158,83 +104,71 @@
   .overall-grade-card .points-value { font-family: Helvetica, sans-serif; font-size: 14pt; font-weight: 700; line-height: 1; margin-top: 2px; }
   .overall-grade-card .sub { font-size: 7pt; opacity: 0.9; margin-top: 2px; }
 
-  /* ============ CHART ============ */
-  .chart-section { margin: 10px 0; page-break-inside: avoid; }
-  .chart-title { font-size: 8pt; font-weight: bold; color: #111827; margin-bottom: 3px; text-transform: uppercase; }
-  .chart-img { width: 100%; }
+  /* ============ CHART (FIXED SIZE) ============ */
+  .chart-section { margin: 10px 0; page-break-inside: avoid; text-align: center; }
+  .chart-title { text-align: left; font-size: 8pt; font-weight: bold; color: #111827; margin-bottom: 4px; text-transform: uppercase; }
+  .chart-img {
+    display: block;
+    width: 400px;      
+    height: 130px;     
+    margin: 0 auto;
+  }
 
-  /* ============ REMARKS ============ */
+  /* ============ REMARKS (WITH PADDING) ============ */
   .remarks-section {
-    margin: 8px 0;
-    padding: 8px 12px;
+    margin: 10px 0; 
+    padding: 12px 14px; /* Proper padding */
     background: #f9fafb;
-    border: 1px solid #cbd5e1;
-    border-left: 3px solid #00695c;
+    border: 1px solid #cbd5e1; 
+    border-left: 4px solid #00695c; 
     border-radius: 4px;
   }
   .remarks-section.principal { border-left-color: #7c3aed; }
-  .remarks-title { font-size: 8pt; font-weight: bold; color: #374151; margin-bottom: 4px; text-transform: uppercase; }
-  .remarks-text { font-size: 7.5pt; color: #4b5563; line-height: 1.35; min-height: 14px; font-style: italic; }
+  .remarks-title { font-size: 8pt; font-weight: bold; color: #374151; margin-bottom: 6px; text-transform: uppercase; }
+  .remarks-text { font-size: 7.5pt; color: #4b5563; line-height: 1.35; font-style: italic; }
 
   /* ============ FOOTER ============ */
   .footer {
-    margin-top: 10px;
-    padding-top: 6px;
+    margin-top: 10px; padding-top: 6px;
     border-top: 1px solid #d1d5db;
-    font-size: 6.5pt;
-    color: #6b7280;
-    text-align: center;
+    font-size: 6pt; color: #6b7280; text-align: center;
   }
 </style>
 </head>
 <body>
 
-<!-- ============================================================ -->
-<!-- NEW PREMIUM HEADER                                            -->
-<!-- ============================================================ -->
+<!-- HEADER (BIO-DATA STYLE) -->
 <div class="header-wrapper">
     <table class="header-table">
         <tr>
             <td class="logo-cell">
-                {% if school_logo_b64 %}
-                    <img src="{{ school_logo_b64 }}" class="logo-img" alt="Logo">
-                {% elif school.logo %}
-                    <img src="{{ school.logo.path }}" class="logo-img" alt="Logo">
+                {% if school_logo_b64 %}<img src="{{ school_logo_b64 }}" class="logo-img" alt="Logo">
+                {% elif school.logo %}<img src="{{ school.logo.path }}" class="logo-img" alt="Logo">
                 {% endif %}
             </td>
             <td class="text-cell">
                 <h1 class="school-name">{{ school.name|upper }}</h1>
                 <p class="school-motto">"{{ school.motto|default:'DISCIPLINE PRECEED SUCCESS' }}"</p>
-                <p class="school-contact">
-                    P.O BOX {{ school.postal_address|default:"—" }} &bull; {{ school.email|default:"—" }} &bull; {{ school.phone|default:"—" }}
-                </p>
+                <p class="school-contact">P.O BOX {{ school.postal_address|default:"—" }} &bull; {{ school.email|default:"—" }} &bull; {{ school.phone|default:"—" }}</p>
             </td>
             <td class="generated-cell">
-                GENERATED<br>
-                <strong>{% now "j F Y" %}</strong><br>
-                {% now "H:i" %}<br><br>
-                BY<br>
-                <strong>{{ generated_by.get_full_name|upper|default:"SYSTEM" }}</strong>
+                GENERATED<br><strong>{% now "j F Y" %}</strong><br>{% now "H:i" %}<br><br>
+                BY<br><strong>{{ generated_by.get_full_name|upper|default:"SYSTEM" }}</strong>
             </td>
         </tr>
     </table>
 </div>
 
-<!-- TITLE & STUDENT PHOTO -->
+<!-- TITLE & PHOTO -->
 <div class="title-block">
   <p class="title-main">Student Report Card</p>
   <p class="title-sub">{{ exam.name }} · {{ exam.term }} {{ exam.year }}</p>
   
-  <!-- Student Photo (Right side of title) -->
   <div class="student-photo-wrapper">
-      {% if student.photo %}
-          <img src="{{ student.photo.path }}" alt="Student Photo">
-      {% elif student_photo_b64 %}
+      {% if student_photo_b64 %}
           <img src="{{ student_photo_b64 }}" alt="Student Photo">
       {% else %}
-          <div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:#f1f5f9; color:#94a3b8; font-size:16px; font-weight:bold;">
-              {{ student.first_name|first|upper }}{{ student.last_name|first|upper }}
-          </div>
+          <div class="photo-placeholder">NO<br>PHOTO</div>
       {% endif %}
   </div>
 </div>
@@ -243,26 +177,21 @@
 <table class="info-table">
   <tr>
     <td style="width: 60%;">
-      <span class="info-label">Student:</span>
-      <span class="info-value">{{ student.full_name }}</span>
+      <span class="info-label">Student:</span> <span class="info-value">{{ student.full_name }}</span>
       &nbsp;·&nbsp;
-      <span class="info-label">Adm No:</span>
-      <span class="info-value">{{ student.admission_number }}</span>
+      <span class="info-label">Adm No:</span> <span class="info-value">{{ student.admission_number }}</span>
       &nbsp;·&nbsp;
-      <span class="info-label">Class:</span>
-      <span class="info-value">{{ student.class_level }}</span>
+      <span class="info-label">Class:</span> <span class="info-value">{{ student.class_level }}</span>
     </td>
     <td style="text-align: right;">
-      <span class="info-label">Class Rank:</span>
-      <span class="info-value">{{ class_rank }} / {{ class_size }}</span>
+      <span class="info-label">Class Rank:</span> <span class="info-value">{{ class_rank }} / {{ class_size }}</span>
       &nbsp;·&nbsp;
-      <span class="info-label">Overall:</span>
-      <span class="info-value grade-{{ overall_grade }}">{{ overall_grade }}</span>
+      <span class="info-label">Overall:</span> <span class="info-value grade-{{ overall_grade }}">{{ overall_grade }}</span>
     </td>
   </tr>
 </table>
 
-<!-- SUBJECTS TABLE (EXACT ORIGINAL LAYOUT) -->
+<!-- SUBJECTS TABLE -->
 <table class="subjects-table">
   <thead>
     <tr>
@@ -286,27 +215,12 @@
       <td>{{ row.out_of|floatformat:0 }}</td>
       <td>{{ row.pct|floatformat:1 }}%</td>
       <td class="grade-{{ row.grade }}">{{ row.grade }}</td>
-      <td>
-        {% if row.pct >= 90 %}8
-        {% elif row.pct >= 75 %}7
-        {% elif row.pct >= 58 %}6
-        {% elif row.pct >= 41 %}5
-        {% elif row.pct >= 31 %}4
-        {% elif row.pct >= 21 %}3
-        {% elif row.pct >= 11 %}2
-        {% else %}1{% endif %}
-      </td>
+      <td>{% if row.pct >= 90 %}8{% elif row.pct >= 75 %}7{% elif row.pct >= 58 %}6{% elif row.pct >= 41 %}5{% elif row.pct >= 31 %}4{% elif row.pct >= 21 %}3{% elif row.pct >= 11 %}2{% else %}1{% endif %}</td>
       <td>{{ row.position }}</td>
       <td>
-        {% if row.trend == 'up' %}
-          <span class="trend-up">↑{{ row.trend_diff }}</span>
-        {% elif row.trend == 'down' %}
-          <span class="trend-down">↓{{ row.trend_diff }}</span>
-        {% elif row.trend == 'flat' %}
-          <span class="trend-flat">—</span>
-        {% else %}
-          <span class="trend-flat">—</span>
-        {% endif %}
+        {% if row.trend == 'up' %}<span class="trend-up">↑{{ row.trend_diff }}</span>
+        {% elif row.trend == 'down' %}<span class="trend-down">↓{{ row.trend_diff }}</span>
+        {% else %}<span class="trend-flat">—</span>{% endif %}
       </td>
     </tr>
     {% endfor %}
@@ -318,25 +232,14 @@
       <td>{{ total_out_of|floatformat:0 }}</td>
       <td>{{ avg_pct|floatformat:1 }}%</td>
       <td class="grade-{{ overall_grade }}">{{ overall_grade }}</td>
-      <td>
-        <strong>
-        {% if avg_pct >= 90 %}8.0
-        {% elif avg_pct >= 75 %}7.0
-        {% elif avg_pct >= 58 %}6.0
-        {% elif avg_pct >= 41 %}5.0
-        {% elif avg_pct >= 31 %}4.0
-        {% elif avg_pct >= 21 %}3.0
-        {% elif avg_pct >= 11 %}2.0
-        {% else %}1.0{% endif %}
-        </strong>
-      </td>
+      <td><strong>{% if avg_pct >= 90 %}8.0{% elif avg_pct >= 75 %}7.0{% elif avg_pct >= 58 %}6.0{% elif avg_pct >= 41 %}5.0{% elif avg_pct >= 31 %}4.0{% elif avg_pct >= 21 %}3.0{% elif avg_pct >= 11 %}2.0{% else %}1.0{% endif %}</strong></td>
       <td>{{ class_rank }} / {{ class_size }}</td>
       <td></td>
     </tr>
   </tbody>
 </table>
 
-<!-- OVERALL GRADE CARD (EXACT ORIGINAL LAYOUT) -->
+<!-- OVERALL CARD -->
 <div class="overall-grade-card">
   <table>
     <tr>
@@ -346,65 +249,40 @@
       </td>
       <td style="text-align: right;">
         <div class="label">Average Points</div>
-        <div class="points-value">
-          {% if avg_pct >= 90 %}8.0
-          {% elif avg_pct >= 75 %}7.0
-          {% elif avg_pct >= 58 %}6.0
-          {% elif avg_pct >= 41 %}5.0
-          {% elif avg_pct >= 31 %}4.0
-          {% elif avg_pct >= 21 %}3.0
-          {% elif avg_pct >= 11 %}2.0
-          {% else %}1.0{% endif %} / 8.0
-        </div>
+        <div class="points-value">{% if avg_pct >= 90 %}8.0{% elif avg_pct >= 75 %}7.0{% elif avg_pct >= 58 %}6.0{% elif avg_pct >= 41 %}5.0{% elif avg_pct >= 31 %}4.0{% elif avg_pct >= 21 %}3.0{% elif avg_pct >= 11 %}2.0{% else %}1.0{% endif %} / 8.0</div>
         <div class="sub">Average: {{ avg_pct|floatformat:1 }}%</div>
       </td>
     </tr>
   </table>
 </div>
 
-<!-- PERFORMANCE CHART -->
+<!-- CHART (FIXED SIZE) -->
 {% if chart_data_uri %}
-<table cellpadding="0" cellspacing="0" style="width: 100%; margin-top: 12px; margin-bottom: 12px; page-break-inside: avoid;">
-  <tr>
-    <td style="padding: 6px 0; font-size: 9px; font-weight: bold; color: #0f172a; text-transform: uppercase;">
-      Performance Trend{% if prev_exam %} vs {{ prev_exam.name }}{% endif %}
-    </td>
-  </tr>
-  <tr>
-    <td style="text-align: center; padding: 8px; border: 1px solid #e5e7eb; background: #ffffff;">
-      <img src="{{ chart_data_uri|safe }}"
-           alt="Performance Chart"
-           style="display: block; width: 620px; height: auto; max-width: 100%;"
-           width="620" height="195">
-    </td>
-  </tr>
-</table>
+<div class="chart-section">
+    <div class="chart-title">Performance Trend{% if prev_exam %} vs {{ prev_exam.name }}{% endif %}</div>
+    <img src="{{ chart_data_uri|safe }}" alt="Performance Chart" class="chart-img">
+</div>
 {% endif %}
 
-<!-- TEACHER REMARKS -->
+<!-- REMARKS WITH PADDING -->
 <div class="remarks-section">
   <div class="remarks-title">Class Teacher's Remarks:</div>
   <div class="remarks-text">{{ teacher_remarks|default:"&nbsp;" }}</div>
 </div>
-
-<!-- PRINCIPAL REMARKS -->
 <div class="remarks-section principal">
   <div class="remarks-title">Principal's Remarks:</div>
   <div class="remarks-text">{{ principal_remarks|default:"&nbsp;" }}</div>
 </div>
 
-<!-- FEE & TERM INFO -->
+<!-- FEE & CALENDAR -->
 <table style="width: 100%; margin-top: 15px; font-size: 10px; page-break-inside: avoid;">
   <tr>
     <td style="width: 50%; vertical-align: top;">
       <div style="border: 1px solid #cbd5e1; padding: 8px; background: #f8fafc;">
         <p style="margin: 0 0 4px 0; font-weight: bold; color: #0f172a;">Fee Balance:</p>
         <p style="margin: 0; font-size: 12px;">
-          {% if fee_balance > 0 %}
-            <span style="color: #dc2626; font-weight: bold;">KES {{ fee_balance|floatformat:2 }}</span>
-          {% else %}
-            <span style="color: #16a34a; font-weight: bold;">Fully Paid</span>
-          {% endif %}
+          {% if fee_balance > 0 %}<span style="color: #dc2626; font-weight: bold;">KES {{ fee_balance|floatformat:2 }}</span>
+          {% else %}<span style="color: #16a34a; font-weight: bold;">Fully Paid</span>{% endif %}
         </p>
       </div>
     </td>
@@ -418,45 +296,32 @@
   </tr>
 </table>
 
-<!-- COMBINED SIGNATURES, RUBBERSTAMP & QR CODE (EXACT ORIGINAL LAYOUT) -->
+<!-- SIGNATURES & QR -->
 <table style="width: 100%; margin-top: 25px; page-break-inside: avoid;">
   <tr>
-    <!-- Class Teacher -->
     <td style="width: 30%; vertical-align: bottom;">
       <div style="border-bottom: 1px solid #000; height: 30px; margin-bottom: 4px;"></div>
       <p style="margin: 0; font-size: 9px; font-weight: bold;">Class Teacher Signature</p>
       <p style="margin: 0; font-size: 8px; color: #475569;">Date: _______________</p>
     </td>
-
-    <!-- Principal -->
     <td style="width: 30%; vertical-align: bottom; padding-left: 10px;">
       <div style="border-bottom: 1px solid #000; height: 30px; margin-bottom: 4px;">
-        {% if principal_signature_b64 %}
-            <img src="{{ principal_signature_b64 }}" style="height: 30px; max-width: 100%; object-fit: contain;">
-        {% endif %}
+        {% if principal_signature_b64 %}<img src="{{ principal_signature_b64 }}" style="height: 30px; max-width: 100%; object-fit: contain;">{% endif %}
       </div>
       <p style="margin: 0; font-size: 9px; font-weight: bold;">Principal Signature</p>
       <p style="margin: 0; font-size: 8px; color: #475569;">Date: _______________</p>
     </td>
-
-    <!-- Rubberstamp Space -->
-    <td style="width: 20%; vertical-align: bottom; text-align: center; padding-left: 5px;">
+    <td style="width: 20%; vertical-align: bottom; text-align: center;">
       <div style="border: 2px dashed #94a3b8; height: 60px; width: 90px; margin: 0 auto; display: flex; align-items: center; justify-content: center;">
-        <span style="font-size: 8px; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; text-align: center;">
-          Official School<br>Rubberstamp
-        </span>
+        <span style="font-size: 8px; color: #94a3b8; text-transform: uppercase; text-align: center;">Official<br>Stamp</span>
       </div>
     </td>
-
-    <!-- QR Code (FIXED TO INCLUDE BASE64 PREFIX) -->
     <td style="width: 20%; vertical-align: bottom; text-align: right;">
       {% if qr_data_uri %}
         <div style="width: 80px; height: 80px; margin-left: auto;">
-          <img src="data:image/png;base64,{{ qr_data_uri }}" alt="QR Code" style="width: 80px; height: 80px;" />
+          <img src="data:image/png;base64,{{ qr_data_uri }}" alt="QR Code" style="width: 80px; height: 80px;">
         </div>
         <p style="margin: 2px 0 0 0; font-size: 7px; color: #64748b; text-align: center;">Scan to verify</p>
-      {% else %}
-        <p style="font-size: 8px; color: red;">QR Not Generated</p>
       {% endif %}
     </td>
   </tr>
