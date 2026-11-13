@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% block title %}Platform SMS Settings{% endblock %}
+{% block header_title %}Platform SMS Settings{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 800px; margin: 0 auto; padding: 32px;">
+    <h3 style="margin: 0 0 6px 0; font-size: 18px; font-weight: 700; color: var(--ink-900);">Africa's Talking — Platform Level</h3>
+    <p style="font-size: 13px; color: var(--ink-500); margin-bottom: 24px;">Used for system-wide alerts (subscription expiry, service notices).</p>
+
+    {% if balance %}
+        <div style="padding: 12px 16px; background: #ecfdf5; border-left: 4px solid #047857; border-radius: 6px; margin-bottom: 20px;">
+            <strong style="color: #047857;">Current Balance:</strong> {{ balance }}
+        </div>
+    {% endif %}
+
+    <form method="POST">
+        {% csrf_token %}
+        <div style="margin-bottom: 16px;">
+            <label class="form-label">Username</label>
+            <input type="text" name="username" value="{{ config.username|default:'' }}" class="form-input" required>
+        </div>
+        <div style="margin-bottom: 16px;">
+            <label class="form-label">API Key</label>
+            <input type="password" name="api_key" value="{{ config.api_key|default:'' }}" class="form-input" required>
+        </div>
+        <div style="margin-bottom: 16px;">
+            <label class="form-label">Sender ID (max 11 chars)</label>
+            <input type="text" name="sender_id" value="{{ config.sender_id|default:'RacodCore' }}" class="form-input" maxlength="11" required>
+        </div>
+        <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; margin-bottom: 24px;">
+            <input type="checkbox" name="is_active" {% if config.is_active %}checked{% endif %}>
+            Active
+        </label>
+        <button type="submit" class="btn btn-primary" style="padding: 12px 32px;">Save Settings</button>
+    </form>
+
+    <hr style="margin: 32px 0; border: none; border-top: 1px solid var(--border);">
+
+    <h4 style="margin: 0 0 12px 0; font-size: 14px; font-weight: 700;">Send Test SMS</h4>
+    <form method="POST" action="{% url 'test_sms' %}">
+        {% csrf_token %}
+        <div style="display: flex; gap: 8px;">
+            <input type="text" name="phone" placeholder="+2547XXXXXXXX" class="form-input" style="flex: 1;" required>
+            <button type="submit" class="btn btn-secondary">Send Test</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

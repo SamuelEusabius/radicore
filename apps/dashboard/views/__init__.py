@@ -4,6 +4,7 @@ Dashboard views package.
 Re-exports all views so that `from . import views` continues to work in urls.py.
 """
 from .security import security_dashboard, force_logout_session, force_logout_user_all
+from .sms import super_admin_sms_settings, school_sms_settings, test_sms, sms_log
 from .core import (
     redirect_dashboard,
     redirect_to_own_dashboard,

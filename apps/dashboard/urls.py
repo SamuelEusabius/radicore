@@ -338,8 +338,15 @@ urlpatterns = [
     path('accountant/fee-structures/<int:fee_id>/edit/',
          views.fee_structure_edit, name='fee_structure_edit'),
 
-     path('accountant/fee-structures/<int:fee_id>/delete/',
+    path('accountant/fee-structures/<int:fee_id>/delete/',
          views.fee_structure_delete, name='fee_structure_delete'),
+
+    # ==========================================================
+    # AFRICA'S TALKING SMS SETTINGS
+    # ==========================================================
+    path('super-admin/sms/', views.super_admin_sms_settings, name='super_admin_sms_settings'),
+    path('school/sms/', views.school_sms_settings, name='school_sms_settings'),
+    path('sms/test/', views.test_sms, name='test_sms'),
     # Fee Structure Matrix (bulk draft editor)
     path('accountant/fee-structures/matrix/',
          views.fee_structure_matrix, name='fee_structure_matrix'),

@@ -322,3 +322,45 @@ class SchoolSmsConfig(models.Model):
 
     def __str__(self):
         return f"{self.school.name} - SMS Settings"
+    
+
+
+
+
+class SMSMessageLog(models.Model):
+    """Audit log for every SMS sent (safety + billing)."""
+    STATUS_CHOICES = [
+        ('sent', 'Sent'),
+        ('failed', 'Failed'),
+        ('pending', 'Pending'),
+    ]
+    school = models.ForeignKey('schools.School', on_delete=models.CASCADE, null=True, blank=True)
+    user = models.ForeignKey('accounts.User', on_delete=models.SET_NULL, null=True, blank=True)
+    phone_number = models.CharField(max_length=20)
+    message = models.TextField()
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    provider_status = models.CharField(max_length=100, blank=True, help_text="Raw status from AT")
+    response_data = models.JSONField(null=True, blank=True)
+    cost = models.DecimalField(max_digits=8, decimal_places=4, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['school', '-created_at']),
+            models.Index(fields=['status']),
+        ]
+
+    def __str__(self):
+        return f"{self.phone_number} — {self.status}"
+    
+class PlatformSMSConfig(models.Model):
+    """For Super Admin — sends system-wide alerts to schools."""
+    username = models.CharField(max_length=100)
+    api_key = models.CharField(max_length=200)
+    sender_id = models.CharField(max_length=20, default="RacodCore")
+    is_active = models.BooleanField(default=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Platform SMS: {self.sender_id}"
