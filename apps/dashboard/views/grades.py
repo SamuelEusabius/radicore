@@ -1059,16 +1059,20 @@ def _render_report_card_pdf(request, student, exam, rankings, positions, class_s
     except Exception:
         pass
 
-    # --- STUDENT PHOTO (SELF-CONTAINED BASE64) ---
+     # --- STUDENT PHOTO (SAME LOGIC AS BIO-DATA) ---
     student_photo_b64 = None
     if student.photo:
         try:
+            import base64 as b64
             from PIL import Image
+            from io import BytesIO as _Bio
+            
             img = Image.open(student.photo.path)
-            img.thumbnail((200, 200), Image.LANCZOS)
-            buf = BytesIO()
+            img.thumbnail((200, 200))
+            buf = _Bio()
             img.convert('RGB').save(buf, format='JPEG', quality=85)
-            student_photo_b64 = 'data:image/jpeg;base64,' + base64.b64encode(buf.getvalue()).decode('ascii')
+            student_photo_b64 = 'data:image/jpeg;base64,' + b64.b64encode(buf.getvalue()).decode('ascii')
+            print(f"[PHOTO] Converted for {student.full_name}: {len(student_photo_b64)} bytes")
         except Exception as e:
             print(f"[PHOTO ERROR] {e}")
             student_photo_b64 = None
@@ -1217,6 +1221,11 @@ def class_teacher_results_sheet_pdf(request):
     class_avg = round(sum(r['avg'] for r in rows) / len(rows), 1) if rows else 0
 
     school_logo_b64 = image_to_base64(request.user.school.logo) if request.user.school.logo else None
+    
+    print(f"[PHOTO] student_photo_b64 size: {len(student_photo_b64) if student_photo_b64 else 0}")
+    print(f"[CHART] chart_data_uri size: {len(chart_data_uri) if chart_data_uri else 0}")
+    print(f"[SIGNATURE] principal_signature_b64: {principal_signature_b64}")
+    print(f"[QR] qr_data_uri size: {len(qr_data_uri) if qr_data_uri else 0}\n")
 
     html_string = render_to_string('pdf/class_results.html',
         build_pdf_context(
