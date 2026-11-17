@@ -26,11 +26,9 @@ def send_sms(school, phone_number, message, user=None):
     """
     Send an SMS using the school's Africa's Talking credentials.
     Falls back to platform config if the school has none.
-
-    Returns: (success: bool, status_string: str)
     """
     from apps.notifications.models import (
-        SchoolSMSConfig, PlatformSMSConfig, SMSMessageLog
+        SchoolSmsConfig, PlatformSMSConfig, SMSMessageLog
     )
 
     phone = format_kenyan_phone(phone_number)
@@ -40,13 +38,13 @@ def send_sms(school, phone_number, message, user=None):
     school_for_log = school
     if school:
         try:
-            config = SchoolSMSConfig.objects.get(school=school, is_active=True)
-        except SchoolSMSConfig.DoesNotExist:
+            config = SchoolSmsConfig.objects.get(school=school, is_active=True)
+        except SchoolSmsConfig.DoesNotExist:
             config = None
 
     if not config:
         config = PlatformSMSConfig.objects.filter(is_active=True).first()
-        school_for_log = None  # Platform sent it
+        school_for_log = None
 
     if not config:
         return False, "No SMS configuration found (neither school nor platform)."
@@ -96,13 +94,13 @@ def send_sms(school, phone_number, message, user=None):
 
 def fetch_balance(school=None):
     """Fetch current SMS credit balance from Africa's Talking."""
-    from apps.notifications.models import SchoolSMSConfig, PlatformSMSConfig
+    from apps.notifications.models import SchoolSmsConfig, PlatformSMSConfig
 
     config = None
     if school:
         try:
-            config = SchoolSMSConfig.objects.get(school=school, is_active=True)
-        except SchoolSMSConfig.DoesNotExist:
+            config = SchoolSmsConfig.objects.get(school=school, is_active=True)
+        except SchoolSmsConfig.DoesNotExist:
             pass
     if not config:
         config = PlatformSMSConfig.objects.filter(is_active=True).first()
@@ -116,10 +114,8 @@ def fetch_balance(school=None):
         response = application.fetch_application_data()
         balance = response.get('UserData', {}).get('balance', 'KES 0.0000')
 
-        # Extract numeric value
         numeric = float(balance.replace('KES', '').strip())
 
-        # Cache it
         if school and hasattr(school, 'sms_config'):
             school.sms_config.cached_balance = numeric
             school.sms_config.last_balance_check = timezone.now()
