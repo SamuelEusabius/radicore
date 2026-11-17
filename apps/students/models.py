@@ -179,6 +179,8 @@ class Student(models.Model):
         next_num = max_num + 1
         suffix = 'B' if gender == 'M' else 'G'
         return f"{next_num:05d}{suffix}"
+    
+    credit_balance = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, help_text="Overpayment held as credit")
 
 
 class CoCurricularActivity(models.Model):
