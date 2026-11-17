@@ -5,66 +5,157 @@
 
 {% block content %}
 <style>
-    .dash-grid {
+    /* ==========================================================
+       PREMIUM STAT CARDS (Top Row)
+       ========================================================== */
+    .premium-grid {
         display: grid;
-        gap: 20px;
-        margin-bottom: 24px;
+        grid-template-columns: 1fr;
+        gap: 16px;
+        margin-bottom: 32px;
+        padding: 0 4px;
     }
-    
-    .stats-grid {
-        grid-template-columns: repeat(4, 1fr);
+    @media (min-width: 640px) { .premium-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (min-width: 1024px) { .premium-grid { grid-template-columns: repeat(4, 1fr); } }
+
+    .premium-card {
+        position: relative;
+        background: #ffffff;
+        border-radius: 16px;
+        padding: 24px;
+        overflow: hidden;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+        border: 1px solid #f1f5f9;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        text-decoration: none;
     }
-    
-    .main-grid {
-        grid-template-columns: 2fr 1fr;
+    .premium-card::before {
+        content: '';
+        position: absolute;
+        left: 0; top: 0; bottom: 0;
+        width: 6px;
+        background: linear-gradient(180deg, #10b981 0%, #06b6d4 100%);
+        border-radius: 16px 0 0 16px;
+    }
+    .premium-card::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background-image: 
+            linear-gradient(45deg, transparent 48%, rgba(0, 0, 0, 0.015) 49%, rgba(0, 0, 0, 0.015) 51%, transparent 52%),
+            linear-gradient(-45deg, transparent 48%, rgba(0, 0, 0, 0.015) 49%, rgba(0, 0, 0, 0.015) 51%, transparent 52%);
+        background-size: 30px 30px;
+        pointer-events: none;
+        z-index: 0;
+    }
+    .premium-card > * { position: relative; z-index: 1; }
+
+    .premium-icon {
+        width: 40px; height: 40px;
+        border-radius: 10px;
+        display: flex; align-items: center; justify-content: center;
+        margin-bottom: 12px;
+    }
+    .premium-icon.blue  { background: #dbeafe; color: #2563eb; }
+    .premium-icon.green { background: #d1fae5; color: #047857; }
+    .premium-icon.red { background: #fee2e2; color: #b91c1c; }
+    .premium-icon.purple { background: #f3e8ff; color: #7e22ce; }
+
+    .premium-label {
+        font-size: 11px; font-weight: 700; text-transform: uppercase;
+        letter-spacing: 0.05em; color: #64748b; margin-bottom: 4px;
+    }
+    .premium-value {
+        font-size: 32px; font-weight: 900; color: #0f172a; line-height: 1.1; margin-bottom: 4px;
+    }
+    .premium-sub {
+        font-size: 12px; color: #94a3b8;
+    }
+
+    /* ==========================================================
+       NEW PREMIUM ACTION CARDS (Quick Actions)
+       ========================================================== */
+    .bottom-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 32px;
         align-items: start;
     }
-
     .quick-actions-grid {
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: 1fr;
         gap: 16px;
     }
+    @media (min-width: 640px) { .quick-actions-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (min-width: 1024px) { 
+        .bottom-grid { grid-template-columns: 2fr 1fr; } 
+        .quick-actions-grid { grid-template-columns: repeat(3, 1fr); }
+    }
 
-    .stat-card {
-        background: white;
-        padding: 24px;
-        border-radius: 12px;
-        border: 1px solid var(--border);
+    /* The Action Card matches the second image */
+    .premium-action-card {
+        position: relative;
+        background: #ffffff;
+        border-radius: 16px;
+        padding: 32px 24px 24px 24px;
+        overflow: hidden;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+        border: 1px solid #f1f5f9;
         display: flex;
         flex-direction: column;
-        position: relative;
-    }
-    .stat-icon {
-        position: absolute;
-        top: 24px;
-        right: 24px;
-        width: 32px;
-        height: 32px;
-        border-radius: 8px;
-        display: flex;
         align-items: center;
-        justify-content: center;
-    }
-
-    .action-card {
-        background: white;
-        padding: 24px;
-        border-radius: 12px;
-        border: 1px solid var(--border);
         text-align: center;
         text-decoration: none;
-        color: var(--ink-900);
-        transition: transform 0.2s, box-shadow 0.2s;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        gap: 12px;
+        transition: transform 0.2s;
     }
-    .action-card:hover {
+    .premium-action-card:hover {
         transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+    /* The Gradient Border */
+    .premium-action-card::before {
+        content: '';
+        position: absolute;
+        left: 0; top: 0; bottom: 0;
+        width: 6px;
+        background: linear-gradient(180deg, #10b981 0%, #06b6d4 100%);
+        border-radius: 16px 0 0 16px;
+    }
+    /* The Faint Pattern */
+    .premium-action-card::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background-image: 
+            linear-gradient(45deg, transparent 48%, rgba(0, 0, 0, 0.015) 49%, rgba(0, 0, 0, 0.015) 51%, transparent 52%),
+            linear-gradient(-45deg, transparent 48%, rgba(0, 0, 0, 0.015) 49%, rgba(0, 0, 0, 0.015) 51%, transparent 52%);
+        background-size: 30px 30px;
+        pointer-events: none;
+        z-index: 0;
+    }
+    .premium-action-card > * { position: relative; z-index: 1; }
+
+    /* The Action Card Button (View Statements style) */
+    .premium-action-btn {
+        display: block;
+        width: 100%;
+        padding: 12px;
+        border: 2px solid #047857; /* Dark green outline */
+        border-radius: 8px;
+        color: #047857;
+        font-weight: 700;
+        font-size: 14px;
+        margin-top: 20px;
+        background: white;
+        transition: background 0.2s;
+    }
+    .premium-action-card:hover .premium-action-btn {
+        background: #ecfdf5;
+    }
+
+    .section-title {
+        font-size: 16px; font-weight: 700; color: var(--ink-900); margin: 0 0 16px 0;
     }
 
     .system-links {
@@ -83,22 +174,8 @@
         border-bottom: 1px solid var(--border);
         transition: background 0.2s;
     }
-    .system-link-item:last-child {
-        border-bottom: none;
-    }
-    .system-link-item:hover {
-        background: #f8fafc;
-    }
-
-    /* RESPONSIVE BREAKPOINTS */
-    @media (max-width: 1024px) {
-        .stats-grid { grid-template-columns: repeat(2, 1fr); }
-        .main-grid { grid-template-columns: 1fr; }
-    }
-    @media (max-width: 768px) {
-        .stats-grid { grid-template-columns: 1fr; }
-        .quick-actions-grid { grid-template-columns: 1fr; }
-    }
+    .system-link-item:last-child { border-bottom: none; }
+    .system-link-item:hover { background: #f8fafc; }
 </style>
 
 <!-- Welcome Banner -->
@@ -110,85 +187,89 @@
 
 <!-- Greeting -->
 <h2 style="margin: 0 0 4px 0; font-size: 24px; font-weight: 700; color: var(--ink-900);">Good evening, {{ user.first_name|upper }}</h2>
-<div style="display: inline-flex; align-items: center; gap: 6px; margin-bottom: 24px;">
+<div style="display: inline-flex; align-items: center; gap: 6px; margin-bottom: 32px;">
     <span style="background: #f3e8ff; color: #7e22ce; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; text-transform: uppercase;">
         Platform Owner
     </span>
     <span style="font-size: 13px; color: var(--ink-500);">Aggregate view — no tenant data mixed in.</span>
 </div>
 
-<!-- STATS ROW -->
-<div class="dash-grid stats-grid">
-    <div class="stat-card">
-        <div class="stat-icon" style="background: #eff6ff; color: #3b82f6;">
-            {% include 'partials/icons.html' with name="home" size=18 %}
-        </div>
-        <div style="font-size: 12px; font-weight: 700; color: var(--ink-500); text-transform: uppercase; letter-spacing: 0.5px;">Total Schools</div>
-        <div style="font-size: 32px; font-weight: 800; color: var(--ink-900); margin-top: 8px;">{{ school_count }}</div>
-        <div style="font-size: 13px; color: var(--ink-500); margin-top: 4px;">{{ active_count }} active · {{ inactive_count }} inactive</div>
+<!-- ========================================== -->
+<!-- PREMIUM STATS ROW                          -->
+<!-- ========================================== -->
+<div class="premium-grid">
+    <!-- Card 1 -->
+    <div class="premium-card">
+        <div class="premium-icon blue">{% include 'partials/icons.html' with name="home" size=20 %}</div>
+        <div class="premium-label">Total Schools</div>
+        <div class="premium-value">{{ school_count }}</div>
+        <div class="premium-sub">Active on platform</div>
     </div>
 
-    <div class="stat-card">
-        <div class="stat-icon" style="background: #ecfdf5; color: #10b981;">
-            {% include 'partials/icons.html' with name="check-circle" size=18 %}
-        </div>
-        <div style="font-size: 12px; font-weight: 700; color: var(--ink-500); text-transform: uppercase; letter-spacing: 0.5px;">Active Schools</div>
-        <div style="font-size: 32px; font-weight: 800; color: #10b981; margin-top: 8px;">{{ active_count }}</div>
-        <div style="font-size: 13px; color: var(--ink-500); margin-top: 4px;">Currently running on the platform</div>
+    <!-- Card 2 -->
+    <div class="premium-card">
+        <div class="premium-icon green">{% include 'partials/icons.html' with name="check-circle" size=20 %}</div>
+        <div class="premium-label">Active Schools</div>
+        <div class="premium-value">{{ active_count }}</div>
+        <div class="premium-sub">Currently running</div>
     </div>
 
-    <div class="stat-card">
-        <div class="stat-icon" style="background: #fef2f2; color: #ef4444;">
-            {% include 'partials/icons.html' with name="x-circle" size=18 %}
-        </div>
-        <div style="font-size: 12px; font-weight: 700; color: var(--ink-500); text-transform: uppercase; letter-spacing: 0.5px;">Inactive Schools</div>
-        <div style="font-size: 32px; font-weight: 800; color: #ef4444; margin-top: 8px;">{{ inactive_count }}</div>
-        <div style="font-size: 13px; color: var(--ink-500); margin-top: 4px;">Awaiting activation or suspended</div>
+    <!-- Card 3 -->
+    <div class="premium-card">
+        <div class="premium-icon red">{% include 'partials/icons.html' with name="x-circle" size=20 %}</div>
+        <div class="premium-label">Inactive Schools</div>
+        <div class="premium-value">{{ inactive_count }}</div>
+        <div class="premium-sub">Awaiting activation</div>
     </div>
 
-    <div class="stat-card" style="cursor: pointer;" onclick="window.location.href='{% url 'super_admin_performance' %}'">
-        <div class="stat-icon" style="background: #f3e8ff; color: #a855f7;">
-            {% include 'partials/icons.html' with name="bar-chart" size=18 %}
-        </div>
-        <div style="font-size: 12px; font-weight: 700; color: var(--ink-500); text-transform: uppercase; letter-spacing: 0.5px;">Analytics</div>
-        <div style="font-size: 20px; font-weight: 800; color: var(--ink-900); margin-top: 8px;">View Report &rarr;</div>
-        <div style="font-size: 13px; color: var(--ink-500); margin-top: 4px;">Platform-wide performance metrics</div>
-    </div>
+    <!-- Card 4 -->
+    <a href="{% url 'super_admin_performance' %}" class="premium-card">
+        <div class="premium-icon purple">{% include 'partials/icons.html' with name="bar-chart" size=20 %}</div>
+        <div class="premium-label">Analytics</div>
+        <div class="premium-value" style="font-size: 24px;">View &rarr;</div>
+        <div class="premium-sub">Platform metrics</div>
+    </a>
 </div>
 
-<!-- MAIN CONTENT ROW (Quick Actions + System Links) -->
-<div class="dash-grid main-grid">
+<!-- ========================================== -->
+<!-- BOTTOM SECTION                             -->
+<!-- ========================================== -->
+<div class="bottom-grid">
     
-    <!-- Left Side: Quick Actions -->
+    <!-- Left Side: Quick Actions (Now Premium) -->
     <div>
-        <h3 style="margin: 0 0 16px 0; font-size: 16px; font-weight: 700; color: var(--ink-900);">Quick Actions</h3>
+        <h3 class="section-title">Quick Actions</h3>
+        
         <div class="quick-actions-grid">
             
-            <!-- CORRECTED URL: schools_manage -->
-            <a href="{% url 'schools_manage' %}" class="action-card">
-                <div style="width: 48px; height: 48px; border-radius: 50%; background: #eff6ff; color: #3b82f6; display: flex; align-items: center; justify-content: center;">
-                    {% include 'partials/icons.html' with name="home" size=24 %}
+            <!-- Manage Schools -->
+            <a href="{% url 'schools_manage' %}" class="premium-action-card">
+                <div class="premium-icon blue" style="width: 56px; height: 56px; border-radius: 50%; margin-bottom: 16px;">
+                    {% include 'partials/icons.html' with name="home" size=28 %}
                 </div>
-                <div style="font-size: 14px; font-weight: 700;">Manage Schools</div>
-                <div style="font-size: 12px; color: var(--ink-500);">View, edit, activate</div>
+                <div style="font-size: 18px; font-weight: 800; color: #0f172a; margin-bottom: 8px;">Manage Schools</div>
+                <div style="font-size: 13px; color: #64748b;">View, edit, activate</div>
+                <div class="premium-action-btn">View Schools</div>
             </a>
 
-            <!-- CONFIRMED URL: school_add -->
-            <a href="{% url 'school_add' %}" class="action-card">
-                <div style="width: 48px; height: 48px; border-radius: 50%; background: #ecfdf5; color: #10b981; display: flex; align-items: center; justify-content: center;">
-                    {% include 'partials/icons.html' with name="plus" size=24 %}
+            <!-- Add New School -->
+            <a href="{% url 'school_add' %}" class="premium-action-card">
+                <div class="premium-icon green" style="width: 56px; height: 56px; border-radius: 50%; margin-bottom: 16px;">
+                    {% include 'partials/icons.html' with name="plus" size=28 %}
                 </div>
-                <div style="font-size: 14px; font-weight: 700;">Add New School</div>
-                <div style="font-size: 12px; color: var(--ink-500);">Register + admin account</div>
+                <div style="font-size: 18px; font-weight: 800; color: #0f172a; margin-bottom: 8px;">Add New School</div>
+                <div style="font-size: 13px; color: #64748b;">Register + admin</div>
+                <div class="premium-action-btn">Add School</div>
             </a>
 
-            <!-- CORRECTED URL: subscription_admin_picker -->
-            <a href="{% url 'subscription_admin_picker' %}" class="action-card">
-                <div style="width: 48px; height: 48px; border-radius: 50%; background: #fffbeb; color: #f59e0b; display: flex; align-items: center; justify-content: center;">
-                    {% include 'partials/icons.html' with name="credit-card" size=24 %}
+            <!-- Subscriptions -->
+            <a href="{% url 'subscription_admin_picker' %}" class="premium-action-card">
+                <div class="premium-icon amber" style="width: 56px; height: 56px; border-radius: 50%; margin-bottom: 16px; background: #fef3c7; color: #d97706;">
+                    {% include 'partials/icons.html' with name="credit-card" size=28 %}
                 </div>
-                <div style="font-size: 14px; font-weight: 700;">Subscriptions</div>
-                <div style="font-size: 12px; color: var(--ink-500);">Manage plans & billing</div>
+                <div style="font-size: 18px; font-weight: 800; color: #0f172a; margin-bottom: 8px;">Subscriptions</div>
+                <div style="font-size: 13px; color: #64748b;">Plans & billing</div>
+                <div class="premium-action-btn">Manage Billing</div>
             </a>
 
         </div>
@@ -196,13 +277,11 @@
 
     <!-- Right Side: System Links -->
     <div>
-        <h3 style="margin: 0 0 16px 0; font-size: 16px; font-weight: 700; color: var(--ink-900);">System Links</h3>
+        <h3 class="section-title">System Links</h3>
         <div class="system-links">
             <a href="{% url 'super_admin_mpesa_settings' %}" class="system-link-item">
                 <div style="display: flex; align-items: center; gap: 12px;">
-                    <div style="color: #10b981;">
-                        {% include 'partials/icons.html' with name="settings" size=18 %}
-                    </div>
+                    <div style="color: #10b981;">{% include 'partials/icons.html' with name="settings" size=18 %}</div>
                     <span style="font-size: 14px; font-weight: 600;">Platform M-Pesa</span>
                 </div>
                 <span style="color: var(--ink-400);">&rarr;</span>
@@ -210,20 +289,15 @@
             
             <a href="{% url 'super_admin_ledger' %}" class="system-link-item">
                 <div style="display: flex; align-items: center; gap: 12px;">
-                    <div style="color: #3b82f6;">
-                        {% include 'partials/icons.html' with name="credit-card" size=18 %}
-                    </div>
+                    <div style="color: #3b82f6;">{% include 'partials/icons.html' with name="credit-card" size=18 %}</div>
                     <span style="font-size: 14px; font-weight: 600;">School Ledger</span>
                 </div>
                 <span style="color: var(--ink-400);">&rarr;</span>
             </a>
             
-            <!-- CONFIRMED URL: manage_users -->
             <a href="{% url 'manage_users' %}" class="system-link-item">
                 <div style="display: flex; align-items: center; gap: 12px;">
-                    <div style="color: #a855f7;">
-                        {% include 'partials/icons.html' with name="users" size=18 %}
-                    </div>
+                    <div style="color: #a855f7;">{% include 'partials/icons.html' with name="users" size=18 %}</div>
                     <span style="font-size: 14px; font-weight: 600;">All Platform Users</span>
                 </div>
                 <span style="color: var(--ink-400);">&rarr;</span>

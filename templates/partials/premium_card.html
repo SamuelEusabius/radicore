@@ -1,0 +1,14 @@
+<!-- 
+  Usage: 
+  {% include 'partials/premium_card.html' with label="Total Students" value=school_count sub="Active on platform" icon="users" color="blue" %}
+-->
+<div class="premium-card">
+    <div class="premium-icon {{ color|default:'green' }}">
+        {% include 'partials/icons.html' with name=icon size=20 %}
+    </div>
+    <div class="premium-label">{{ label }}</div>
+    <div class="premium-value">{{ value }}</div>
+    {% if sub %}
+        <div class="premium-sub">{{ sub }}</div>
+    {% endif %}
+</div>

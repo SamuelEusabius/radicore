@@ -1,0 +1,132 @@
+/* ==========================================================
+   RACODCORE PREMIUM DASHBOARD CARDS
+   Applies to all dashboards automatically
+   ========================================================== */
+
+/* Target the stat cards grid */
+.dash-grid.stats-grid, .stats-grid, .quick-actions-grid {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+    margin-bottom: 24px !important;
+}
+
+@media (min-width: 640px) {
+    .dash-grid.stats-grid, .stats-grid, .quick-actions-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+}
+
+@media (min-width: 1024px) {
+    .dash-grid.stats-grid, .stats-grid {
+        grid-template-columns: repeat(3, 1fr) !important;
+    }
+    .quick-actions-grid {
+        grid-template-columns: repeat(3, 1fr) !important;
+    }
+}
+
+/* Make every .stat-card and .action-card premium */
+.stat-card, .action-card, .metric-card, .kpi-card {
+    position: relative !important;
+    background: #ffffff !important;
+    border-radius: 16px !important;
+    padding: 24px !important;
+    overflow: hidden !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04) !important;
+    border: 1px solid #f1f5f9 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-start !important;
+    text-decoration: none !important;
+    transition: transform 0.2s, box-shadow 0.2s !important;
+}
+
+/* Gradient left border */
+.stat-card::before, .action-card::before, .metric-card::before, .kpi-card::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 6px;
+    background: linear-gradient(180deg, #10b981 0%, #06b6d4 100%);
+    border-radius: 16px 0 0 16px;
+}
+
+/* Faint background pattern */
+.stat-card::after, .action-card::after, .metric-card::after, .kpi-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: 
+        linear-gradient(45deg, transparent 48%, rgba(0, 0, 0, 0.015) 49%, rgba(0, 0, 0, 0.015) 51%, transparent 52%),
+        linear-gradient(-45deg, transparent 48%, rgba(0, 0, 0, 0.015) 49%, rgba(0, 0, 0, 0.015) 51%, transparent 52%);
+    background-size: 30px 30px;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.stat-card > *, .action-card > *, .metric-card > *, .kpi-card > * {
+    position: relative;
+    z-index: 1;
+}
+
+.stat-card:hover, .action-card:hover, .metric-card:hover, .kpi-card:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Icon positions */
+.stat-icon {
+    position: static !important;
+    width: 40px !important;
+    height: 40px !important;
+    border-radius: 10px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin-bottom: 12px !important;
+}
+
+/* Typography inside cards */
+.stat-card > div:not(.stat-icon) {
+    font-size: 32px !important;
+    font-weight: 900 !important;
+    color: #0f172a !important;
+    line-height: 1.1 !important;
+    margin-top: 4px !important;
+}
+
+/* Small labels (uppercase) */
+.stat-card div[style*="text-transform: uppercase"],
+.stat-card div[style*="text-transform:uppercase"] {
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    color: #64748b !important;
+    letter-spacing: 0.05em !important;
+    margin-bottom: 8px !important;
+}
+
+/* The M-Pesa Wallet Card */
+.premium-wallet-card {
+    position: relative;
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 24px;
+    overflow: hidden;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+    border: 1px solid #f1f5f9;
+    margin-bottom: 24px;
+}
+
+.premium-wallet-card::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 6px;
+    background: linear-gradient(180deg, #10b981 0%, #06b6d4 100%);
+    border-radius: 16px 0 0 16px;
+}
