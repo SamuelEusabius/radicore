@@ -79,7 +79,13 @@
         {% include 'partials/icons.html' with name="credit-card" size=18 %}
         <span class="sidebar-link-text">Subscriptions</span>
       </a>
+
+      <a href="{% url 'super_admin_sms_settings' %}" class="sidebar-link">
+        {% include 'partials/icons.html' with name="message-square" size=18 %}
+        <span class="sidebar-link-text">Platform SMS</span>
+      </a>
     {% endif %}
+
 
     <!-- ============================================ -->
     <!-- SCHOOL ADMIN (PRINCIPAL)                      -->

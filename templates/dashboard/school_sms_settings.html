@@ -3,92 +3,254 @@
 {% block header_title %}SMS Configuration{% endblock %}
 
 {% block content %}
-<div class="card" style="max-width: 800px; margin: 0 auto; padding: 0; overflow: hidden;">
+<style>
+    /* Africa's Talking Brand Colors */
+    :root {
+        --at-orange: #F59E0B;
+        --at-orange-dark: #D97706;
+        --at-orange-light: #FFFBEB;
+        --at-text: #1F2937;
+        --at-bg: #F9FAFB;
+    }
 
-    <!-- Premium Header -->
-    <div style="background: #ecfdf5; padding: 24px 32px; border-bottom: 2px solid #047857;">
-        <h3 style="margin: 0 0 6px 0; font-size: 20px; font-weight: 800; color: #0f172a;">Africa's Talking</h3>
-        <p style="font-size: 14px; color: #475569; margin: 0;">
-            Connect your school to Africa's Talking. Parents will receive SMS alerts from your unique Sender ID.
-        </p>
+    .at-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 0 16px; /* Safe padding for mobile */
+    }
+
+    /* Header - Orange */
+    .at-header {
+        background: var(--at-orange);
+        border-radius: 12px 12px 0 0;
+        padding: 24px;
+        color: white;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+    .at-header h3 {
+        margin: 0;
+        font-size: 20px;
+        font-weight: 800;
+        letter-spacing: -0.5px;
+    }
+    .at-badge {
+        background: rgba(255, 255, 255, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        color: white;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 4px 10px;
+        border-radius: 20px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        align-self: flex-start;
+    }
+
+    /* Body Container */
+    .at-body {
+        background: white;
+        border-radius: 0 0 12px 12px;
+        border: 1px solid #e2e8f0;
+        border-top: none;
+        padding: 24px;
+    }
+
+    /* Form Fields */
+    .at-label {
+        display: block;
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--at-text);
+        margin-bottom: 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    .at-input {
+        width: 100%;
+        padding: 12px 16px;
+        font-size: 14px;
+        color: #1e293b;
+        background: var(--at-bg);
+        border: 2px solid #e2e8f0;
+        border-radius: 8px;
+        transition: all 0.2s;
+        box-sizing: border-box;
+    }
+    .at-input:focus {
+        outline: none;
+        border-color: var(--at-orange);
+        background: white;
+        box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2);
+    }
+    .at-input.mono {
+        font-family: 'Courier New', Courier, monospace;
+        letter-spacing: 1px;
+    }
+
+    /* Buttons */
+    .at-btn {
+        background: var(--at-orange);
+        color: white;
+        font-weight: 700;
+        font-size: 14px;
+        padding: 12px 24px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background 0.2s;
+        width: 100%; /* Full width on mobile */
+    }
+    .at-btn:hover {
+        background: var(--at-orange-dark);
+    }
+    
+    .at-btn-outline {
+        background: transparent;
+        color: var(--at-text);
+        border: 2px solid #e2e8f0;
+        font-weight: 700;
+        padding: 10px 20px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s;
+        width: 100%;
+    }
+    .at-btn-outline:hover {
+        border-color: var(--at-orange);
+        color: var(--at-orange);
+        background: white;
+    }
+
+    /* Test Console Box */
+    .at-test-console {
+        margin-top: 32px;
+        padding: 24px;
+        background: var(--at-orange-light);
+        border: 2px dashed #fcd34d;
+        border-radius: 12px;
+    }
+
+    /* Alerts */
+    .at-alert-error {
+        background: #fef2f2;
+        border-left: 4px solid #ef4444;
+        color: #b91c1c;
+        padding: 16px;
+        border-radius: 6px;
+        margin-bottom: 24px;
+        font-size: 14px;
+        font-weight: 600;
+    }
+    .at-alert-success {
+        background: #ecfdf5;
+        border-left: 4px solid #10b981;
+        color: #047857;
+        padding: 16px;
+        border-radius: 6px;
+        margin-bottom: 24px;
+        font-size: 14px;
+        font-weight: 600;
+    }
+
+    /* RESPONSIVE GRID FOR FORM FIELDS */
+    .form-grid {
+        display: grid;
+        grid-template-columns: 1fr; /* Mobile: Stack vertically */
+        gap: 20px;
+        margin-bottom: 24px;
+    }
+
+    /* Desktop: Side-by-side */
+    @media (min-width: 768px) {
+        .form-grid { grid-template-columns: 1fr 1fr; }
+        .at-btn { width: auto; }
+        .at-header { flex-direction: row; align-items: center; justify-content: space-between; }
+        .at-badge { align-self: auto; }
+    }
+</style>
+
+<div class="at-container">
+    
+    <!-- Alert Messages -->
+    {% if messages %}
+        {% for message in messages %}
+            {% if message.tags == 'error' %}
+                <div class="at-alert-error">{{ message }}</div>
+            {% else %}
+                <div class="at-alert-success">{{ message }}</div>
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+
+    <!-- Balance Notice -->
+    {% if balance %}
+        <div style="margin-bottom: 20px; padding: 16px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 13px; font-weight: 700; color: #64748b;">CURRENT BALANCE</span>
+            <span style="font-size: 18px; font-weight: 800; color: var(--at-text);">{{ balance }}</span>
+        </div>
+    {% endif %}
+
+    <!-- Main Form -->
+    <div class="at-header">
+        <h3>Africa's Talking — School Level</h3>
+        <span class="at-badge">School Account</span>
     </div>
-
-    <div style="padding: 32px;">
-        
-        <!-- Success/Error Messages -->
-        {% if messages %}
-            {% for message in messages %}
-                <div style="padding: 12px 16px; border-radius: 6px; margin-bottom: 24px; font-weight: 600; font-size: 14px;
-                    {% if message.tags == 'error' %}background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca;
-                    {% else %}background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0;{% endif %}">
-                    {{ message }}
-                </div>
-            {% endfor %}
-        {% endif %}
-
-        <!-- Balance Card (If exists) -->
-        {% if balance %}
-            <div style="padding: 16px 20px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; margin-bottom: 32px; display: flex; justify-content: space-between; align-items: center;">
-                <div>
-                    <span style="font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase;">Current Balance</span>
-                    <div style="font-size: 20px; font-weight: 800; color: #047857; margin-top: 4px;">{{ balance }}</div>
-                </div>
-                <div style="width: 40px; height: 40px; border-radius: 50%; background: #d1fae5; color: #059669; display: flex; align-items: center; justify-content: center;">
-                    <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                </div>
-            </div>
-        {% endif %}
-
+    
+    <div class="at-body">
         <form method="POST">
             {% csrf_token %}
-
-            <!-- API Credentials Section -->
-            <h4 style="font-size: 14px; font-weight: 700; color: #047857; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 16px 0;">1. API Credentials</h4>
             
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px;">
-                <div>
-                    <label class="form-label">Username</label>
-                    <input type="text" name="username" value="{{ config.username|default:'' }}" class="form-input" style="padding: 12px; font-size: 14px;" required>
-                </div>
-                <div>
-                    <label class="form-label">API Key</label>
-                    <input type="password" name="api_key" value="{{ config.api_key|default:'' }}" class="form-input" style="padding: 12px; font-size: 14px;" required>
-                </div>
+            <div style="margin-bottom: 20px;">
+                <label class="at-label">Username (App Name)</label>
+                <input type="text" name="username" value="{{ config.username|default:'' }}" class="at-input" required>
             </div>
-
-            <!-- Sender ID Section -->
-            <h4 style="font-size: 14px; font-weight: 700; color: #047857; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 16px 0; padding-top: 24px; border-top: 1px solid #e2e8f0;">2. Sender Identification</h4>
             
-            <div style="margin-bottom: 24px;">
-                <label class="form-label">Sender ID (Max 11 Chars)</label>
-                <input type="text" name="sender_id" value="{{ config.sender_id|default:'' }}" class="form-input" maxlength="11" required placeholder="e.g. NAIROBI SCH" style="padding: 12px; font-size: 14px; text-transform: uppercase;">
-                <p style="font-size: 12px; color: #64748b; margin-top: 6px;">This is the name parents will see when they receive an SMS.</p>
+            <div style="margin-bottom: 20px;">
+                <label class="at-label">API Key</label>
+                <input type="password" name="api_key" value="{{ config.api_key|default:'' }}" class="at-input mono" required>
             </div>
-
-            <div style="margin-bottom: 32px;">
-                <label style="display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 600; color: #1e293b; cursor: pointer;">
-                    <input type="checkbox" name="is_active" {% if config.is_active %}checked{% endif %} style="width: 18px; height: 18px; accent-color: #047857;">
-                    Enable SMS sending for this school
-                </label>
+            
+            <!-- Responsive Grid -->
+            <div class="form-grid">
+                <div>
+                    <label class="at-label">Sender ID (Max 11 chars)</label>
+                    <input type="text" name="sender_id" value="{{ config.sender_id|default:'' }}" class="at-input" maxlength="11" required placeholder="e.g. NAIROBI SCH">
+                    <p style="font-size: 12px; color: #64748b; margin-top: 6px;">This is the name parents will see.</p>
+                </div>
+                <div style="display: flex; align-items: flex-end; padding-bottom: 12px;">
+                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: 700; font-size: 14px; color: var(--at-text);">
+                        <input type="checkbox" name="is_active" {% if config.is_active %}checked{% endif %} style="width: 18px; height: 18px; accent-color: var(--at-orange);">
+                        Enable SMS for this school
+                    </label>
+                </div>
             </div>
-
+            
             <div style="display: flex; justify-content: flex-end;">
-                <button type="submit" class="btn btn-primary" style="padding: 12px 32px; font-size: 15px;">Save Configurations</button>
+                <button type="submit" class="at-btn">Save Configurations</button>
             </div>
         </form>
-
-        <!-- Test SMS Section -->
-        <div style="margin-top: 40px; padding: 24px; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px;">
-            <h4 style="font-size: 14px; font-weight: 700; color: #0f172a; margin: 0 0 8px 0;">Test Your Connection</h4>
-            <p style="font-size: 13px; color: #64748b; margin: 0 0 16px 0;">Send a test SMS to confirm your credentials are working.</p>
-            
-            <form method="POST" action="{% url 'test_sms' %}" style="display: flex; gap: 12px;">
-                {% csrf_token %}
-                <input type="text" name="phone" placeholder="+2547XXXXXXXX" class="form-input" style="flex: 1; padding: 10px;" required>
-                <button type="submit" class="btn btn-secondary" style="background: white; border: 1px solid #cbd5e1; color: #1e293b; padding: 10px 20px;">Send Test</button>
-            </form>
-        </div>
-
     </div>
+
+    <!-- Test SMS Console -->
+    <div class="at-test-console">
+        <h4 style="margin: 0 0 8px 0; font-size: 16px; font-weight: 800; color: var(--at-orange-dark);">Developer Test Console</h4>
+        <p style="margin: 0 0 16px 0; font-size: 13px; color: #b45309;">Send a live test SMS to verify your API credentials.</p>
+        
+        <form method="POST" action="{% url 'test_sms' %}">
+            {% csrf_token %}
+            <div class="form-grid" style="margin-bottom: 0;">
+                <div>
+                    <label class="at-label" style="color: var(--at-orange-dark);">Test Phone Number</label>
+                    <input type="text" name="phone" placeholder="+254712345678" class="at-input" style="background: white; border-color: #fcd34d;" required>
+                </div>
+                <div style="display: flex; align-items: flex-end;">
+                    <button type="submit" class="at-btn-outline">Send Test</button>
+                </div>
+            </div>
+        </form>
+    </div>
+
 </div>
 {% endblock %}

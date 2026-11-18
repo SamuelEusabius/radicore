@@ -1,26 +1,180 @@
 {% extends 'base.html' %}
-{% block title %}School Settings{% endblock %}
-{% block header_title %}General Settings{% endblock %}
+{% block title %}School Configuration{% endblock %}
+{% block header_title %}School Settings{% endblock %}
 
 {% block content %}
-<div class="card" style="max-width: 600px; margin: 0 auto;">
-  <h3 class="mb-4">School Configuration</h3>
-  <p class="mb-6" style="color: var(--ink-500);">Manage system-wide settings for {{ school.name }}.</p>
+<style>
+    /* RacodCore Premium Theme */
+    :root {
+        --premium-green: #047857;
+        --premium-green-dark: #065f46;
+        --premium-charcoal: #1F2937;
+        --premium-bg: #F3F4F6;
+    }
 
-  <form method="post">
-    {% csrf_token %}
+    .settings-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    /* Premium Card */
+    .settings-card {
+        position: relative;
+        background: white;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        border: 1px solid #e5e7eb;
+    }
+
+    /* Gradient Left Border */
+    .settings-card::before {
+        content: '';
+        position: absolute;
+        left: 0; top: 0; bottom: 0;
+        width: 6px;
+        background: linear-gradient(180deg, #10b981 0%, #06b6d4 100%);
+        z-index: 10;
+    }
+
+    /* Header */
+    .settings-header {
+        padding: 24px 32px;
+        border-bottom: 2px solid #f3f4f6;
+    }
+    .settings-header h2 {
+        margin: 0 0 8px 0;
+        font-size: 22px;
+        font-weight: 800;
+        color: var(--premium-charcoal);
+        letter-spacing: -0.5px;
+    }
+    .settings-header p {
+        margin: 0;
+        font-size: 14px;
+        color: #6b7280;
+    }
+
+    /* Body */
+    .settings-body {
+        padding: 32px;
+    }
+
+    /* Form Fields */
+    .settings-label {
+        display: block;
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--premium-charcoal);
+        margin-bottom: 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    .settings-input {
+        width: 100%;
+        padding: 14px 16px;
+        font-size: 14px;
+        color: var(--premium-charcoal);
+        background: var(--premium-bg);
+        border: 2px solid transparent;
+        border-radius: 8px;
+        transition: all 0.2s;
+        box-sizing: border-box;
+    }
+    .settings-input:focus {
+        outline: none;
+        border-color: #10b981;
+        background: white;
+        box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.15);
+    }
+
+    .help-text {
+        font-size: 12px;
+        color: #6b7280;
+        margin-top: 8px;
+        line-height: 1.5;
+    }
+
+    /* Button */
+    .btn-save {
+        padding: 12px 32px;
+        background: var(--premium-green);
+        border: none;
+        color: white;
+        font-weight: 700;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background 0.2s;
+        font-size: 15px;
+    }
+    .btn-save:hover {
+        background: var(--premium-green-dark);
+    }
+
+    /* Alerts */
+    .settings-alert-success {
+        background: #ecfdf5;
+        border-left: 4px solid #10b981;
+        color: #047857;
+        padding: 16px;
+        border-radius: 6px;
+        margin-bottom: 24px;
+        font-weight: 600;
+        font-size: 14px;
+    }
+    .settings-alert-error {
+        background: #fef2f2;
+        border-left: 4px solid #ef4444;
+        color: #b91c1c;
+        padding: 16px;
+        border-radius: 6px;
+        margin-bottom: 24px;
+        font-weight: 600;
+        font-size: 14px;
+    }
+</style>
+
+<div class="settings-container">
     
-    <div style="margin-bottom: 24px;">
-      <label style="display: block; font-weight: 600; margin-bottom: 6px;">Starting Admission Number</label>
-      <input type="number" name="starting_admission_number" value="{{ school.starting_admission_number }}" required min="1" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px;">
-      <p style="font-size: 12px; color: var(--ink-500); margin-top: 4px;">
-        This is the number the system will use for the very first student you admit. Subsequent students will automatically increment from here (e.g., 500, 501, 502).
-      </p>
-    </div>
+    <!-- Alerts -->
+    {% if messages %}
+        {% for message in messages %}
+            {% if message.tags == 'error' %}
+                <div class="settings-alert-error">{{ message }}</div>
+            {% else %}
+                <div class="settings-alert-success">{{ message }}</div>
+            {% endif %}
+        {% endfor %}
+    {% endif %}
 
-    <div style="display: flex; justify-content: flex-end;">
-      <button type="submit" class="btn btn-primary">Save Settings</button>
+    <!-- Main Card -->
+    <div class="settings-card">
+        
+        <div class="settings-header">
+            <h2>School Configuration</h2>
+            <p>Manage system-wide settings for {{ request.user.school.name }}.</p>
+        </div>
+
+        <div class="settings-body">
+            <form method="POST">
+                {% csrf_token %}
+
+                <div style="margin-bottom: 24px;">
+                    <label class="settings-label">Starting Admission Number</label>
+                    <input type="number" name="starting_admission_number" value="{{ config.starting_admission_number|default:'' }}" class="settings-input" required>
+                    <p class="help-text">
+                        This is the number the system will use for the very first student you admit. Subsequent students will automatically increment from here (e.g., 500, 501, 502).
+                    </p>
+                </div>
+
+                <!-- Actions -->
+                <div style="display: flex; justify-content: flex-end; border-top: 1px solid #f3f4f6; padding-top: 24px; margin-top: 24px;">
+                    <button type="submit" class="btn-save">Save Settings</button>
+                </div>
+
+            </form>
+        </div>
+
     </div>
-  </form>
 </div>
 {% endblock %}
