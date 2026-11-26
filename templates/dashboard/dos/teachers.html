@@ -3,54 +3,93 @@
 {% block header_title %}Teacher Monitoring{% endblock %}
 
 {% block content %}
+<style>
+  .elegant-card {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 24px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .elegant-card:hover {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  }
+  .status-badge {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+</style>
 
-<div class="page-header">
+<div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 24px;">
   <div class="page-header-info">
     <h1 class="page-title">Teacher Academic Monitoring</h1>
-    <p class="page-subtitle">{{ teacher_rows|length }} teacher{{ teacher_rows|length|pluralize }}</p>
+    <p class="page-subtitle">{{ teacher_rows|length }} teacher{{ teacher_rows|length|pluralize }} found</p>
   </div>
-  <a href="{% url 'dos_dashboard' %}" class="btn btn-secondary">← Dashboard</a>
+  <a href="{% url 'dos_dashboard' %}" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 6px;">
+    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+    Back to Dashboard
+  </a>
 </div>
 
-<div class="card">
+<div class="elegant-card">
   {% if teacher_rows %}
-  <table class="table">
-    <thead>
-      <tr>
-        <th>Teacher</th>
-        <th>Subjects</th>
-        <th>Class Teacher</th>
-        <th>Students</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for row in teacher_rows %}
-      <tr>
-        <td><strong>{{ row.teacher.user.get_full_name|default:row.teacher.user.email }}</strong></td>
-        <td>
-          {% if row.subjects %}
-            {% for s in row.subjects %}
-              <span class="badge badge-info">{{ s.name }}</span>
-            {% endfor %}
-          {% else %}
-            <span style="color: var(--ink-400);">—</span>
-          {% endif %}
-        </td>
-        <td>
-          {% if row.is_class_teacher %}
-            <span class="badge badge-success">Yes</span>
-          {% else %}
-            <span class="badge badge-gray">No</span>
-          {% endif %}
-        </td>
-        <td>{{ row.student_count }}</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+  <div class="table-responsive" style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
+    <table class="table" style="width: 100%; border-collapse: collapse; min-width: 700px;">
+      <thead>
+        <tr style="border-bottom: 2px solid #e2e8f0;">
+          <th style="text-align: left; padding: 12px 16px; font-size: 11px; color: #64748b; text-transform: uppercase;">Teacher</th>
+          <th style="text-align: left; padding: 12px 16px; font-size: 11px; color: #64748b; text-transform: uppercase;">Subjects</th>
+          <th style="text-align: left; padding: 12px 16px; font-size: 11px; color: #64748b; text-transform: uppercase;">Class Teacher</th>
+          <th style="text-align: left; padding: 12px 16px; font-size: 11px; color: #64748b; text-transform: uppercase;">Students</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in teacher_rows %}
+        <tr style="border-bottom: 1px solid #f1f5f9; transition: background 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+          <td style="padding: 16px; font-weight: 600; color: #1e293b;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <div style="width: 36px; height: 36px; border-radius: 50%; background: #eff6ff; color: #3b82f6; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px;">
+                {{ row.teacher.user.first_name|first|default:row.teacher.user.email|first|upper }}{{ row.teacher.user.last_name|first|upper }}
+              </div>
+              {{ row.teacher.user.get_full_name|default:row.teacher.user.email }}
+            </div>
+          </td>
+          <td style="padding: 16px;">
+            {% if row.subjects %}
+              <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                {% for s in row.subjects %}
+                  <span class="status-badge" style="background: #dbeafe; color: #1e40af;">{{ s.name }}</span>
+                {% endfor %}
+              </div>
+            {% else %}
+              <span style="color: #94a3b8;">—</span>
+            {% endif %}
+          </td>
+          <td style="padding: 16px;">
+            {% if row.is_class_teacher %}
+              <span class="status-badge" style="background: #d1fae5; color: #047857;">Yes</span>
+            {% else %}
+              <span class="status-badge" style="background: #f1f5f9; color: #475569;">No</span>
+            {% endif %}
+          </td>
+          <td style="padding: 16px; font-weight: 600; color: #475569;">
+            {{ row.student_count }}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
   {% else %}
-  <div class="pro-empty" style="border: none; padding: 60px;">
-    <p style="color: var(--ink-500);">No teachers registered.</p>
+  <div style="text-align: center; padding: 60px 20px;">
+    <svg width="48" height="48" fill="none" stroke="#cbd5e1" viewBox="0 0 24 24" style="margin: 0 auto 16px auto;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+    <h3 style="margin: 0 0 8px 0; color: #1e293b; font-size: 16px; font-weight: 600;">No Teachers Found</h3>
+    <p style="color: #64748b; margin: 0;">No teachers have been registered in the system yet.</p>
   </div>
   {% endif %}
 </div>

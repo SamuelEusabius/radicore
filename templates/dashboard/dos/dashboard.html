@@ -5,6 +5,56 @@
 {% block header_sub %}{{ current_school.name }}{% endblock %}
 
 {% block content %}
+<style>
+  /* Elegant Premium Card Style (No Gradients) */
+  .elegant-card {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 24px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    display: flex;
+    flex-direction: column;
+  }
+  .elegant-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  }
+  
+  /* Elegant Action Button Style */
+  .elegant-action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 12px;
+    background: #ffffff;
+    padding: 16px 20px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    color: #1e293b;
+    font-weight: 600;
+    font-size: 14px;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  }
+  .elegant-action-btn:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+    background: #f8fafc;
+  }
+  
+  /* Status Badge */
+  .status-badge {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+</style>
 
 <div class="page-header">
   <div class="page-header-info">
@@ -12,30 +62,49 @@
     <p class="page-subtitle">Whole-school academic overview — {{ today|date:"l, j F Y" }}</p>
   </div>
   <div style="display: flex; gap: 8px;">
-    <a href="{% url 'dos_report_pdf' %}" class="btn btn-primary">📄 Export Report</a>
-    <a href="{% url 'dos_combine' %}" class="btn btn-secondary">🔗 Combine Classes</a>
+    <a href="{% url 'dos_report_pdf' %}" class="btn btn-primary">
+      {% include 'partials/icons.html' with name="download" size=16 %} Export Report
+    </a>
+    <a href="{% url 'dos_combine' %}" class="btn btn-secondary">
+      {% include 'partials/icons.html' with name="layers" size=16 %} Combine Classes
+    </a>
   </div>
 </div>
 
 <!-- ============ KPI ROW 1 ============ -->
 <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-  <a href="{% url 'students_list' %}" class="card card-hover" style="text-decoration: none; color: inherit;">
-    <div class="stat-label">Students</div>
+  <a href="{% url 'students_list' %}" class="elegant-card" style="text-decoration: none; color: inherit;">
+    <div class="stat-label" style="display: flex; justify-content: space-between; align-items: center;">
+      Students
+      <span style="color: #3b82f6;">{% include 'partials/icons.html' with name="users" size=18 %}</span>
+    </div>
     <div class="stat-value">{{ total_students }}</div>
     <div class="stat-meta">Active enrollment</div>
   </a>
-  <a href="{% url 'teachers_list' %}" class="card card-hover" style="text-decoration: none; color: inherit;">
-    <div class="stat-label">Teachers</div>
+  
+  <a href="{% url 'teachers_list' %}" class="elegant-card" style="text-decoration: none; color: inherit;">
+    <div class="stat-label" style="display: flex; justify-content: space-between; align-items: center;">
+      Teachers
+      <span style="color: #10b981;">{% include 'partials/icons.html' with name="user-check" size=18 %}</span>
+    </div>
     <div class="stat-value">{{ total_teachers }}</div>
     <div class="stat-meta">Active staff</div>
   </a>
-  <div class="card">
-    <div class="stat-label">Classes</div>
+  
+  <div class="elegant-card">
+    <div class="stat-label" style="display: flex; justify-content: space-between; align-items: center;">
+      Classes
+      <span style="color: #8b5cf6;">{% include 'partials/icons.html' with name="book-open" size=18 %}</span>
+    </div>
     <div class="stat-value">{{ total_classes }}</div>
     <div class="stat-meta">{{ total_streams }} streams</div>
   </div>
-  <div class="card">
-    <div class="stat-label">Subjects</div>
+  
+  <div class="elegant-card">
+    <div class="stat-label" style="display: flex; justify-content: space-between; align-items: center;">
+      Subjects
+      <span style="color: #f59e0b;">{% include 'partials/icons.html' with name="list" size=18 %}</span>
+    </div>
     <div class="stat-value">{{ total_subjects }}</div>
     <div class="stat-meta">Offered</div>
   </div>
@@ -43,19 +112,21 @@
 
 <!-- ============ KPI ROW 2 ============ -->
 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-  <div class="card">
+  <div class="elegant-card">
     <div class="stat-label">Average Performance</div>
     <div class="stat-value" style="color: var(--primary);">{{ avg_performance }}%</div>
     <div class="stat-meta">Across all grades</div>
   </div>
-  <div class="card">
+  
+  <div class="elegant-card">
     <div class="stat-label">Attendance (Last 7 Days)</div>
     <div class="stat-value" style="color: {% if attendance_pct >= 80 %}var(--success){% elif attendance_pct >= 60 %}var(--warning){% else %}var(--danger){% endif %};">
       {{ attendance_pct }}%
     </div>
     <div class="stat-meta">School-wide</div>
   </div>
-  <div class="card">
+  
+  <div class="elegant-card">
     <div class="stat-label">Examinations</div>
     <div class="stat-value">{{ total_exams }}</div>
     <div class="stat-meta">Recorded this year</div>
@@ -63,69 +134,106 @@
 </div>
 
 <!-- ============ QUICK ACTIONS ============ -->
-<div class="card mb-6">
-  <h3 style="margin-bottom: 16px; font-family: var(--font-heading);">Quick Actions</h3>
-  <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-    <a href="{% url 'dos_classes' %}" class="btn btn-primary">📚 Classes</a>
-    <a href="{% url 'dos_analytics' %}" class="btn btn-secondary">📊 Analytics</a>
-    <a href="{% url 'dos_subject_matrix' %}" class="btn btn-secondary">🔢 Subject Matrix</a>
-    <a href="{% url 'dos_comparison' %}" class="btn btn-secondary">📈 Exam Trends</a>
+<div class="card mb-6" style="padding: 24px;">
+  <h3 style="margin-bottom: 20px; font-family: var(--font-heading); font-size: 18px; font-weight: 700;">Quick Actions</h3>
+  
+  <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+    <a href="{% url 'dos_classes' %}" class="elegant-action-btn">
+      <div style="background: #eff6ff; color: #3b82f6; padding: 8px; border-radius: 8px;">
+        {% include 'partials/icons.html' with name="book" size=18 %}
+      </div>
+      Classes
+    </a>
+    
+    <a href="{% url 'dos_analytics' %}" class="elegant-action-btn">
+      <div style="background: #ecfdf5; color: #10b981; padding: 8px; border-radius: 8px;">
+        {% include 'partials/icons.html' with name="bar-chart" size=18 %}
+      </div>
+      Analytics
+    </a>
+    
+    <a href="{% url 'dos_subject_matrix' %}" class="elegant-action-btn">
+      <div style="background: #f3e8ff; color: #8b5cf6; padding: 8px; border-radius: 8px;">
+        {% include 'partials/icons.html' with name="grid" size=18 %}
+      </div>
+      Subject Matrix
+    </a>
+    
+    <a href="{% url 'dos_comparison' %}" class="elegant-action-btn">
+      <div style="background: #fffbeb; color: #f59e0b; padding: 8px; border-radius: 8px;">
+        {% include 'partials/icons.html' with name="trending-up" size=18 %}
+      </div>
+      Exam Trends
+    </a>
   </div>
 </div>
 
 <!-- ============ SUBJECT PERFORMANCE ============ -->
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
 
-  <div class="card">
-    <h3 style="margin-bottom: 16px; font-family: var(--font-heading);">Top Performing Subjects</h3>
+  <div class="elegant-card">
+    <h3 style="margin-bottom: 16px; font-family: var(--font-heading); font-size: 16px; font-weight: 700;">Top Performing Subjects</h3>
     {% if subject_stats %}
-    <table class="table">
-      <thead>
-        <tr><th>Subject</th><th>Mean</th><th>Assessments</th></tr>
-      </thead>
-      <tbody>
-        {% for row in subject_stats %}
-        <tr>
-          <td><strong>{{ row.subject.name }}</strong></td>
-          <td>
-            <span class="badge badge-{% if row.mean >= 70 %}success{% elif row.mean >= 50 %}info{% else %}warning{% endif %}">
-              {{ row.mean }}%
-            </span>
-          </td>
-          <td>{{ row.count }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+    <div class="table-responsive">
+      <table class="table" style="width: 100%; border-collapse: collapse;">
+        <thead>
+          <tr style="border-bottom: 1px solid #e2e8f0;">
+            <th style="text-align: left; padding: 12px 8px; font-size: 11px; color: #64748b; text-transform: uppercase;">Subject</th>
+            <th style="text-align: left; padding: 12px 8px; font-size: 11px; color: #64748b; text-transform: uppercase;">Mean</th>
+            <th style="text-align: left; padding: 12px 8px; font-size: 11px; color: #64748b; text-transform: uppercase;">Assessments</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in subject_stats %}
+          <tr style="border-bottom: 1px solid #f1f5f9;">
+            <td style="padding: 12px 8px; font-weight: 600; color: #1e293b;">{{ row.subject.name }}</td>
+            <td style="padding: 12px 8px;">
+              <span class="status-badge badge-{% if row.mean >= 70 %}success{% elif row.mean >= 50 %}info{% else %}warning{% endif %}">
+                {{ row.mean }}%
+              </span>
+            </td>
+            <td style="padding: 12px 8px; color: #64748b;">{{ row.count }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
     {% else %}
     <p style="text-align: center; padding: 40px; color: var(--ink-500);">No grades recorded yet.</p>
     {% endif %}
   </div>
 
-  <div class="card">
-    <h3 style="margin-bottom: 16px; font-family: var(--font-heading);">Class Performance</h3>
+  <div class="elegant-card">
+    <h3 style="margin-bottom: 16px; font-family: var(--font-heading); font-size: 16px; font-weight: 700;">Class Performance</h3>
     {% if class_stats %}
-    <table class="table">
-      <thead>
-        <tr><th>Class</th><th>Students</th><th>Mean</th><th></th></tr>
-      </thead>
-      <tbody>
-        {% for row in class_stats %}
-        <tr>
-          <td><strong>{{ row.cls.name }}</strong></td>
-          <td>{{ row.student_count }}</td>
-          <td>
-            <span class="badge badge-{% if row.mean >= 70 %}success{% elif row.mean >= 50 %}info{% else %}warning{% endif %}">
-              {{ row.mean }}%
-            </span>
-          </td>
-          <td style="text-align: right;">
-            <a href="{% url 'dos_class_detail' row.cls.id %}" class="btn btn-sm btn-secondary">View</a>
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+    <div class="table-responsive">
+      <table class="table" style="width: 100%; border-collapse: collapse;">
+        <thead>
+          <tr style="border-bottom: 1px solid #e2e8f0;">
+            <th style="text-align: left; padding: 12px 8px; font-size: 11px; color: #64748b; text-transform: uppercase;">Class</th>
+            <th style="text-align: left; padding: 12px 8px; font-size: 11px; color: #64748b; text-transform: uppercase;">Students</th>
+            <th style="text-align: left; padding: 12px 8px; font-size: 11px; color: #64748b; text-transform: uppercase;">Mean</th>
+            <th style="text-align: right; padding: 12px 8px;"></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in class_stats %}
+          <tr style="border-bottom: 1px solid #f1f5f9;">
+            <td style="padding: 12px 8px; font-weight: 600; color: #1e293b;">{{ row.cls.name }}</td>
+            <td style="padding: 12px 8px; color: #64748b;">{{ row.student_count }}</td>
+            <td style="padding: 12px 8px;">
+              <span class="status-badge badge-{% if row.mean >= 70 %}success{% elif row.mean >= 50 %}info{% else %}warning{% endif %}">
+                {{ row.mean }}%
+              </span>
+            </td>
+            <td style="padding: 12px 8px; text-align: right;">
+              <a href="{% url 'dos_class_detail' row.cls.id %}" class="btn btn-sm btn-secondary">View</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
     {% else %}
     <p style="text-align: center; padding: 40px; color: var(--ink-500);">No class data.</p>
     {% endif %}
@@ -135,25 +243,32 @@
 
 <!-- ============ RECENT EXAMS ============ -->
 {% if recent_exams %}
-<div class="card">
-  <h3 style="margin-bottom: 16px; font-family: var(--font-heading);">Recent Examinations</h3>
-  <table class="table">
-    <thead>
-      <tr><th>Exam</th><th>Term</th><th>Year</th><th style="text-align: right;">Actions</th></tr>
-    </thead>
-    <tbody>
-      {% for e in recent_exams %}
-      <tr>
-        <td><strong>{{ e.name }}</strong></td>
-        <td>{{ e.term }}</td>
-        <td>{{ e.year }}</td>
-        <td style="text-align: right;">
-          <a href="{% url 'dos_analytics' %}?exam={{ e.id }}" class="btn btn-sm btn-primary">Analyse</a>
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+<div class="elegant-card">
+  <h3 style="margin-bottom: 16px; font-family: var(--font-heading); font-size: 16px; font-weight: 700;">Recent Examinations</h3>
+  <div class="table-responsive">
+    <table class="table" style="width: 100%; border-collapse: collapse;">
+      <thead>
+        <tr style="border-bottom: 1px solid #e2e8f0;">
+          <th style="text-align: left; padding: 12px 8px; font-size: 11px; color: #64748b; text-transform: uppercase;">Exam</th>
+          <th style="text-align: left; padding: 12px 8px; font-size: 11px; color: #64748b; text-transform: uppercase;">Term</th>
+          <th style="text-align: left; padding: 12px 8px; font-size: 11px; color: #64748b; text-transform: uppercase;">Year</th>
+          <th style="text-align: right; padding: 12px 8px; font-size: 11px; color: #64748b; text-transform: uppercase;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for e in recent_exams %}
+        <tr style="border-bottom: 1px solid #f1f5f9;">
+          <td style="padding: 12px 8px; font-weight: 600; color: #1e293b;">{{ e.name }}</td>
+          <td style="padding: 12px 8px; color: #64748b;">{{ e.term }}</td>
+          <td style="padding: 12px 8px; color: #64748b;">{{ e.year }}</td>
+          <td style="padding: 12px 8px; text-align: right;">
+            <a href="{% url 'dos_analytics' %}?exam={{ e.id }}" class="btn btn-sm btn-primary">Analyse</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 </div>
 {% endif %}
 
